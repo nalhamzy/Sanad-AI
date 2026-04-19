@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Privacy Policy · Sanad-AI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Kufi+Arabic:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/theme.css"/>
+<style>
+  body { font-family: 'Inter', sans-serif; background: linear-gradient(180deg, #fbf8f3, #f5efe4); }
+  [dir="rtl"] body { font-family: 'Noto Kufi Arabic', sans-serif; }
+  .prose h2 { font-size: 1.2rem; font-weight: 700; margin-top: 1.8rem; margin-bottom: .6rem; color: #0e7c86; }
+  .prose h3 { font-size: 1.02rem; font-weight: 600; margin-top: 1.2rem; margin-bottom: .4rem; }
+  .prose p, .prose li { font-size: 14.5px; line-height: 1.65; color: #1e293b; }
+  .prose ul { list-style: disc; padding-inline-start: 1.4rem; }
+  .prose li { margin-bottom: .3rem; }
+  .prose .muted { color: #64748b; font-size: 13px; }
+  .lang-switch { position: sticky; top: 14px; float: inline-end; }
+  section[dir="rtl"] { display: none; }
+  body.ar section[dir="ltr"] { display: none; }
+  body.ar section[dir="rtl"] { display: block; }
+</style>
+</head>
+<body class="min-h-screen">
+<div class="max-w-3xl mx-auto px-5 py-10">
+  <div class="flex items-center justify-between mb-6">
+    <a href="/" class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-xl grid place-items-center text-white font-extrabold" style="background:linear-gradient(135deg,#0e7c86,#126e3d)">S</div>
+      <span class="font-extrabold text-[15px]">Sanad-AI</span>
+    </a>
+    <button id="langBtn" class="btn btn-secondary" style="height:34px">العربية</button>
+  </div>
+
+  <!-- ENGLISH -->
+  <section dir="ltr" class="prose">
+    <h1 class="text-3xl font-extrabold mb-1">Privacy Policy</h1>
+    <p class="muted">Last updated: 19 April 2026</p>
+
+    <p class="mt-4">Sanad-AI ("we", "the service") is an automated assistant that helps citizens and residents of the Sultanate of Oman obtain licensed Sanad services through licensed Sanad offices. This policy explains what personal data we handle, why, and your rights over it.</p>
+
+    <h2>1 · What data we collect</h2>
+    <p>When you interact with Sanad-AI on WhatsApp or the web, we may collect and process:</p>
+    <ul>
+      <li><b>Identity data</b> — name, civil ID number (الرقم المدني), passport or residence ID, date of birth, nationality.</li>
+      <li><b>Contact data</b> — phone number, email address (if provided).</li>
+      <li><b>Service data</b> — photos and scans of documents you upload (e.g. medical certificate, personal photo, civil ID image) strictly for the Sanad service you requested.</li>
+      <li><b>Conversation data</b> — the text and audio messages you send to the assistant, and our replies, so we can complete your request and audit service quality.</li>
+      <li><b>Technical data</b> — timestamps, device / channel type (WhatsApp, web), approximate governorate (if the office needs it to route your request).</li>
+      <li><b>Payment metadata</b> — fee amount and Sanad transaction reference. <b>We never store card numbers, bank details, or PINs.</b> Payment is processed by the licensed Sanad office or its PKI / AmwalPay provider.</li>
+    </ul>
+
+    <h2>2 · Why we collect it (lawful basis)</h2>
+    <ul>
+      <li><b>Performance of a service you requested</b> — e.g. to renew your driving licence we must pass your civil ID and photo to a licensed Sanad officer.</li>
+      <li><b>Compliance with Omani law</b> — Royal Decree 6/2022 (Personal Data Protection Law) and Ministry of Transport & Communications e-services regulations.</li>
+      <li><b>Service improvement</b> — anonymised usage statistics to improve the assistant's language understanding and speed.</li>
+    </ul>
+
+    <h2>3 · Who can see your data</h2>
+    <ul>
+      <li>The <b>licensed Sanad officer</b> assigned to your request, and their office supervisor.</li>
+      <li>The relevant <b>government entity</b> you requested a service from (ROP, MOCIIP, Civil Status, Ministry of Health, etc.) — only the fields that entity requires.</li>
+      <li>Our <b>operations team</b> for abuse prevention and dispute resolution, under strict internal access controls.</li>
+      <li>Our <b>subprocessors</b>: Render (hosting, USA), Alibaba DashScope (Qwen LLM, inference only, no training on your data), Meta / WhatsApp (message transport). Each is bound by their own data-processing terms.</li>
+    </ul>
+    <p>We <b>do not sell</b> your personal data. We <b>do not share</b> it for advertising.</p>
+
+    <h2>4 · How long we keep it</h2>
+    <ul>
+      <li><b>Active request data</b> — until the request is completed or cancelled.</li>
+      <li><b>Completed requests</b> — kept for <b>5 years</b> to comply with Omani government records-retention rules, then deleted.</li>
+      <li><b>Chat transcripts</b> — 12 months from last message, then purged.</li>
+      <li><b>Document scans</b> — 60 days after completion, then permanently deleted from our storage (the relevant government entity keeps their own copy per their own policy).</li>
+    </ul>
+
+    <h2>5 · How we protect it</h2>
+    <ul>
+      <li>All data is encrypted in transit (TLS 1.2+) and at rest.</li>
+      <li>Officer access is role-based and tenant-scoped — an officer can only see requests routed to their own office.</li>
+      <li>OTPs are shown to officers for a strict 5-minute window; we never ask you to type a password.</li>
+      <li>We run continuous abuse / fraud detection on the assistant's traffic.</li>
+    </ul>
+
+    <h2>6 · Your rights (PDPL, Royal Decree 6/2022)</h2>
+    <ul>
+      <li><b>Access</b> — request a copy of all data we hold about you.</li>
+      <li><b>Correction</b> — ask us to fix inaccurate data.</li>
+      <li><b>Deletion</b> — ask us to delete your data (subject to legal retention obligations above).</li>
+      <li><b>Withdraw consent</b> — at any time, by messaging the assistant or emailing us.</li>
+      <li><b>Complaint</b> — to the Omani Personal Data Protection Authority if you believe we've mishandled your data.</li>
+    </ul>
+
+    <h2>7 · Children</h2>
+    <p>Sanad-AI is intended for adults (18+) and for guardians acting on behalf of their minors for lawful service requests. We do not knowingly target children with direct messaging.</p>
+
+    <h2>8 · International transfers</h2>
+    <p>Our primary hosting region is Oregon, USA (Render). Data in transit between Oman and Oregon is TLS-encrypted. We are working to migrate to a Gulf region once our hosting partner makes it available.</p>
+
+    <h2>9 · Contact</h2>
+    <p>For any privacy question, data access or deletion request:</p>
+    <p><b>Email:</b> privacy@sanad-ai.om &nbsp;·&nbsp; <b>WhatsApp:</b> +968 9591 1028</p>
+
+    <h2>10 · Changes</h2>
+    <p>We will post the updated policy at this URL and, for material changes, notify you through the WhatsApp channel before the change takes effect.</p>
+
+    <hr class="my-8" style="border-color:#e2e8f0"/>
+    <p class="muted">Sanad-AI is an independent service operator licensed to integrate with Sanad offices; it is not the government of Oman, and the government's own Sanad / Bashair services may have their own separate privacy notices.</p>
+  </section>
+
+  <!-- ARABIC -->
+  <section dir="rtl" class="prose">
+    <h1 class="text-3xl font-extrabold mb-1">سياسة الخصوصية</h1>
+    <p class="muted">آخر تحديث: 19 أبريل 2026</p>
+
+    <p class="mt-4">سند-AI (ويُشار إليه بـ "نحن" أو "الخدمة") هو مساعد آلي يساعد المواطنين والمقيمين في سلطنة عُمان على الحصول على خدمات سند عبر مكاتب سند المرخّصة. توضّح هذه السياسة ما نجمعه من بيانات شخصية، ولماذا، وحقوقك عليها.</p>
+
+    <h2>١ · ما نجمعه من بيانات</h2>
+    <p>عند تفاعلك مع سند-AI عبر واتساب أو الويب، قد نجمع ونعالج:</p>
+    <ul>
+      <li><b>بيانات الهوية</b> — الاسم، الرقم المدني، الجواز أو بطاقة الإقامة، تاريخ الميلاد، الجنسية.</li>
+      <li><b>بيانات الاتصال</b> — رقم الهاتف، البريد الإلكتروني إن قدمته.</li>
+      <li><b>بيانات الخدمة</b> — صور ومسحات المستندات التي ترفعها (مثل الشهادة الطبية، الصورة الشخصية، صورة البطاقة) وذلك حصراً لإتمام الخدمة التي طلبتها.</li>
+      <li><b>بيانات المحادثة</b> — الرسائل النصية والصوتية التي ترسلها للمساعد وردوده عليك، لاستكمال طلبك ومراجعة جودة الخدمة.</li>
+      <li><b>بيانات تقنية</b> — الطوابع الزمنية، نوع القناة (واتساب، ويب)، المحافظة التقريبية إن احتاجها المكتب.</li>
+      <li><b>بيانات الدفع التعريفية</b> — مبلغ الرسوم ومرجع معاملة سند. <b>لا نخزّن أرقام البطاقات أو بيانات البنك أو الأرقام السرية.</b> تتم معالجة الدفع عبر مكتب سند المعتمد أو مزوّد PKI / أموال باي.</li>
+    </ul>
+
+    <h2>٢ · لماذا نجمعها (الأساس القانوني)</h2>
+    <ul>
+      <li><b>تنفيذ خدمة طلبتها</b> — مثلاً لتجديد رخصة القيادة نحتاج تمرير رقمك المدني وصورتك لموظف سند معتمد.</li>
+      <li><b>الامتثال للقانون العُماني</b> — المرسوم السلطاني ٦/٢٠٢٢ (قانون حماية البيانات الشخصية) ولوائح وزارة النقل والاتصالات للخدمات الإلكترونية.</li>
+      <li><b>تحسين الخدمة</b> — إحصاءات استخدام مجهّلة الهوية لتحسين فهم اللغة وسرعة المساعد.</li>
+    </ul>
+
+    <h2>٣ · من يطّلع على بياناتك</h2>
+    <ul>
+      <li><b>موظف سند المرخّص</b> الذي أُسند إليه طلبك، ومشرف مكتبه.</li>
+      <li><b>الجهة الحكومية</b> المعنية بالخدمة (شرطة عُمان السلطانية، وزارة التجارة والصناعة، الأحوال المدنية، وزارة الصحة…) — وفقط الحقول التي تحتاجها تلك الجهة.</li>
+      <li><b>فريق عملياتنا</b> لأغراض مكافحة الاحتيال وتسوية النزاعات، تحت ضوابط وصول داخلية صارمة.</li>
+      <li><b>مزوّدونا الفرعيون</b>: Render (الاستضافة، الولايات المتحدة)، Alibaba DashScope (نموذج Qwen، للاستدلال فقط دون تدريب على بياناتك)، واتساب / Meta (نقل الرسائل). كلٌّ مُلزَم ببنود معالجة بيانات خاصة به.</li>
+    </ul>
+    <p><b>لا نبيع</b> بياناتك الشخصية. <b>لا نشاركها</b> لأغراض الإعلانات.</p>
+
+    <h2>٤ · مدة الاحتفاظ</h2>
+    <ul>
+      <li><b>الطلبات النشطة</b> — حتى إتمامها أو إلغائها.</li>
+      <li><b>الطلبات المُنجَزة</b> — تُحفظ <b>٥ سنوات</b> التزاماً بلوائح الحفظ الحكومية ثم تُحذف.</li>
+      <li><b>نصوص المحادثات</b> — ١٢ شهراً من آخر رسالة ثم تُمحى.</li>
+      <li><b>مسحات المستندات</b> — ٦٠ يوماً بعد الإنجاز ثم تُحذف نهائياً من تخزيننا (تحتفظ الجهة الحكومية بنسختها الخاصة).</li>
+    </ul>
+
+    <h2>٥ · كيف نحمي بياناتك</h2>
+    <ul>
+      <li>تُشفَّر البيانات في النقل (TLS 1.2+) وفي التخزين.</li>
+      <li>وصول الموظف قائم على الدور ومحصور بمكتبه — لا يرى إلا الطلبات المُوجَّهة إليه.</li>
+      <li>تُعرض رموز OTP للموظف لنافذة صارمة مدتها ٥ دقائق؛ لا نطلب منك كلمة سر مطلقاً.</li>
+      <li>نُشغّل أنظمة رصد احتيال متواصلة على حركة المساعد.</li>
+    </ul>
+
+    <h2>٦ · حقوقك (قانون حماية البيانات الشخصية – م.س. ٦/٢٠٢٢)</h2>
+    <ul>
+      <li><b>الاطلاع</b> — طلب نسخة من كل بياناتك لدينا.</li>
+      <li><b>التصحيح</b> — تصحيح أي بيانات غير دقيقة.</li>
+      <li><b>الحذف</b> — حذف بياناتك (مع مراعاة الالتزامات القانونية أعلاه).</li>
+      <li><b>سحب الموافقة</b> — في أي وقت عبر مراسلة المساعد أو البريد الإلكتروني.</li>
+      <li><b>الشكوى</b> — لدى هيئة حماية البيانات الشخصية في سلطنة عُمان.</li>
+    </ul>
+
+    <h2>٧ · القاصرون</h2>
+    <p>سند-AI موجَّه للبالغين (١٨ سنة فأكثر) ولأولياء الأمور الذين يتصرفون نيابةً عن أبنائهم القاصرين لطلبات خدمات مشروعة. لا نستهدف الأطفال برسائل مباشرة.</p>
+
+    <h2>٨ · نقل البيانات دولياً</h2>
+    <p>منطقة الاستضافة الرئيسية هي Oregon في الولايات المتحدة (Render). كل بيانات النقل بين عُمان والولايات المتحدة مشفّرة عبر TLS. نعمل على الترحيل إلى منطقة خليجية فور توفّرها من مزوّدنا.</p>
+
+    <h2>٩ · التواصل</h2>
+    <p>لأي استفسار خصوصي، أو طلب اطلاع أو حذف:</p>
+    <p><b>البريد:</b> privacy@sanad-ai.om &nbsp;·&nbsp; <b>واتساب:</b> ٩٥٩١ ١٠٢٨ ٩٦٨+</p>
+
+    <h2>١٠ · التحديثات</h2>
+    <p>سننشر السياسة المحدّثة على هذا الرابط، وسنُعلمك عبر قناة واتساب قبل نفاذ أي تغيير جوهري.</p>
+
+    <hr class="my-8" style="border-color:#e2e8f0"/>
+    <p class="muted">سند-AI مشغّل خدمة مستقل مُرخّص للتكامل مع مكاتب سند، وهو ليس الجهة الحكومية في سلطنة عُمان؛ ولخدمات سند / بشائر الحكومية إشعارات خصوصية مستقلة خاصة بها.</p>
+  </section>
+</div>
+
+<script>
+  const btn = document.getElementById('langBtn');
+  const apply = (ar) => {
+    document.documentElement.setAttribute('lang', ar ? 'ar' : 'en');
+    document.documentElement.setAttribute('dir', ar ? 'rtl' : 'ltr');
+    document.body.classList.toggle('ar', ar);
+    btn.textContent = ar ? 'English' : 'العربية';
+    localStorage.setItem('sanad.lang', ar ? 'ar' : 'en');
+  };
+  btn.addEventListener('click', () => apply(!document.body.classList.contains('ar')));
+  apply(localStorage.getItem('sanad.lang') === 'ar');
+</script>
+</body>
+</html>
