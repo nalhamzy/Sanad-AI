@@ -1,0 +1,1495 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sanad-AI — v2 Product Mockup</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          sand: { 50:'#fbf8f3', 100:'#f5efe4', 200:'#e9dcc0', 300:'#d7bf8f' },
+          ink:  { 900:'#0b1220', 800:'#111827', 700:'#1f2937', 600:'#374151', 500:'#64748b', 400:'#94a3b8', 300:'#cbd5e1', 200:'#e2e8f0', 100:'#f1f5f9' },
+          teal: { 50:'#f0fdfa', 100:'#ccfbf1', 500:'#0e7c86', 600:'#0b656e', 700:'#0a555d' },
+          oman: { red:'#8a1a2b', green:'#126e3d', gold:'#c9a227' },
+          ok:'#16a34a', warn:'#d97706', bad:'#dc2626'
+        },
+        fontFamily: {
+          sans: ['Inter','system-ui','sans-serif'],
+          ar:   ['"Noto Kufi Arabic"','"Segoe UI"','sans-serif']
+        },
+        boxShadow: {
+          soft: '0 1px 2px rgba(15,23,42,.04), 0 4px 12px rgba(15,23,42,.06)',
+          pop:  '0 8px 30px rgba(15,23,42,.12)'
+        }
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Kufi+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  html { font-family:'Inter',sans-serif; }
+  html[dir="rtl"] { font-family:'Noto Kufi Arabic',sans-serif; }
+  [data-screen]{ display:none; }
+  [data-screen].active{ display:block; }
+  .nav-item[data-active="true"]{ background:#0e7c86; color:#fff; }
+  .nav-item[data-active="true"] svg{ color:#fff; }
+  .tag{ padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; display:inline-flex; align-items:center; gap:4px; }
+  .kanban-col{ min-height:60vh; }
+  .dot{ width:8px; height:8px; border-radius:999px; display:inline-block; }
+  .pulse{ animation:pulse 2s infinite; }
+  @keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.45} }
+  .phone-shell{ width:380px; height:720px; border-radius:36px; background:#111; padding:12px; box-shadow:0 40px 60px -30px rgba(0,0,0,.35); }
+  .phone-screen{ width:100%; height:100%; border-radius:26px; overflow:hidden; background:#e5ddd5; display:flex; flex-direction:column; }
+  .bubble{ max-width:80%; padding:8px 12px; border-radius:12px; font-size:14px; line-height:1.4; box-shadow:0 1px 0 rgba(0,0,0,.04); }
+  .bubble-in{ background:#fff; align-self:flex-start; border-bottom-left-radius:2px; }
+  .bubble-out{ background:#dcf8c6; align-self:flex-end; border-bottom-right-radius:2px; }
+  .bubble-bot{ background:#e8f5f7; align-self:flex-start; border:1px solid #bfe3e6; border-bottom-left-radius:2px; }
+  .doc-thumb{ background:linear-gradient(135deg,#f1f5f9 25%,#e2e8f0 25%,#e2e8f0 50%,#f1f5f9 50%,#f1f5f9 75%,#e2e8f0 75%); background-size:14px 14px; }
+  .scrollbar-thin::-webkit-scrollbar{ width:6px; height:6px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb{ background:#cbd5e1; border-radius:3px; }
+  .kbd{ border:1px solid #cbd5e1; border-bottom-width:2px; border-radius:4px; padding:0 4px; font-size:11px; background:#fff; color:#334155; font-family:'Inter',sans-serif; }
+  .grad-hero{ background:
+    radial-gradient(1200px 600px at 10% -10%, #0e7c86 0%, transparent 60%),
+    radial-gradient(1000px 500px at 110% 10%, #126e3d 0%, transparent 55%),
+    linear-gradient(180deg,#fbf8f3,#f5efe4); }
+  .stripe-row:nth-child(even){ background:#fbfaf7; }
+  .wordmark-s{ background:linear-gradient(135deg,#0e7c86,#126e3d); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .dark .doc-thumb{ background:linear-gradient(135deg,#1f2937 25%,#111827 25%,#111827 50%,#1f2937 50%,#1f2937 75%,#111827 75%); background-size:14px 14px; }
+</style>
+</head>
+<body class="bg-sand-50 text-ink-900 dark:bg-ink-900 dark:text-ink-100">
+
+<!-- ============ SHELL ============ -->
+<div class="flex min-h-screen">
+
+  <!-- SIDEBAR -->
+  <aside class="w-64 shrink-0 border-r border-sand-200 bg-white dark:bg-ink-800 dark:border-ink-700 hidden md:block">
+    <div class="h-16 flex items-center gap-2 px-5 border-b border-sand-200 dark:border-ink-700">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-oman-green text-white grid place-items-center font-bold shadow-soft">S</div>
+      <div>
+        <div class="font-bold leading-tight wordmark-s">Sanad-AI</div>
+        <div class="text-[11px] text-ink-500 leading-tight">منصة مكاتب سند الوطنية</div>
+      </div>
+    </div>
+    <nav class="p-3 space-y-0.5 text-sm">
+      <div class="px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-ink-400">Public</div>
+      <button class="nav-item w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sand-100 dark:hover:bg-ink-700" data-nav="landing">
+        <svg class="w-4 h-4 text-ink-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2 7-7 7 7 2 2v7a2 2 0 01-2 2h-4v-6H11v6H7a2 2 0 01-2-2v-7z"/></svg>
+        Landing
+      </button>
+      <button class="nav-item w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sand-100 dark:hover:bg-ink-700" data-nav="office-profile">
+        <svg class="w-4 h-4 text-ink-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-6 9 6v12H3V9z"/><path d="M9 21V12h6v9"/></svg>
+        Office public profile
+      </button>
+      <button class="nav-item w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sand-100 dark:hover:bg-ink-700" data-nav="citizen-pay">
+        <svg class="w-4 h-4 text-ink-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 10h18M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z"/></svg>
+        Citizen pay page
+      </button>
+
+      <div class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-ink-400">Citizen</div>
+      <button class="nav-item w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sand-100 dark:hover:bg-ink-700" data-nav="whatsapp">
+        <svg class="w-4 h-4 text-ink-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-1.9 5.4 8.5 8.5 0 01-14.2-3A8.5 8.5 0 0111 3a8.5 8.5 0 018.1 6"/><path d="M21 3l-7 7"/></svg>
+        WhatsApp simulator
+      </button>
+
+      <div class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-ink-400">Office</div>
+      <button class="nav-item w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sand-100 dark:hover:bg-ink-700" data-nav="onboard">
+        <svg class="w-4 h-4 text-ink-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        Onboarding wizard
+      </button>
+      <button class="nav-item w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sand-100 dark:hover:bg-ink-700" data-nav="inbox" data-active="true">
+        <svg class="w-4 h-4 text-ink-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+        Officer inbox
+        <span class="ml-auto text-[10px] font-bold text-white bg-bad rounded-full px-1.5">12</span>
+      </button>
+      <button class="nav-item w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sand-100 dark:hover:bg-ink-700" data-nav="detail">
+        <svg class="w-4 h-4 text-ink-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6M7 4h10a2 2 0 012 2v14l-4-3H7a2 2 0 01-2-2V6a2 2 0 012-2z"/></svg>
+        Request detail
+      </button>
+      <button class="nav-item w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sand-100 dark:hover:bg-ink-700" data-nav="manage">
+        <svg class="w-4 h-4 text-ink-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M12 12a4 4 0 100-8 4 4 0 000 8zm6 0a3 3 0 100-6 3 3 0 000 6zM6 12a3 3 0 100-6 3 3 0 000 6z"/></svg>
+        Manage office
+      </button>
+
+      <div class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-ink-400">Knowledge</div>
+      <button class="nav-item w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sand-100 dark:hover:bg-ink-700" data-nav="catalogue">
+        <svg class="w-4 h-4 text-ink-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20V3H6.5A2.5 2.5 0 004 5.5v14z"/><path d="M4 19.5A2.5 2.5 0 006.5 22H20v-5"/></svg>
+        Catalogue (smart FAQ)
+      </button>
+      <button class="nav-item w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sand-100 dark:hover:bg-ink-700" data-nav="service-detail">
+        <svg class="w-4 h-4 text-ink-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/><path d="M14 2v6h6M9 15h6M9 11h6"/></svg>
+        Service page + edit
+      </button>
+      <button class="nav-item w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sand-100 dark:hover:bg-ink-700" data-nav="testchat">
+        <svg class="w-4 h-4 text-ink-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Web test chatbot
+      </button>
+
+      <div class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-ink-400">Platform</div>
+      <button class="nav-item w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sand-100 dark:hover:bg-ink-700" data-nav="admin">
+        <svg class="w-4 h-4 text-ink-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18M7 15l3-3 4 4 6-7"/></svg>
+        Admin console
+      </button>
+    </nav>
+
+    <div class="px-5 pt-8 pb-4 text-[10px] text-ink-400">v2 · one national number · OTP-only</div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="flex-1 min-w-0">
+
+    <!-- TOPBAR -->
+    <header class="h-16 border-b border-sand-200 bg-white/80 dark:bg-ink-800/80 dark:border-ink-700 backdrop-blur flex items-center gap-3 px-4 md:px-6 sticky top-0 z-40">
+      <div class="flex items-center gap-2">
+        <button id="mobileNav" class="md:hidden p-2 rounded-lg hover:bg-sand-100"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        <div class="hidden md:flex items-center gap-2 text-sm text-ink-500">
+          <span id="breadcrumb">Office · Inbox</span>
+        </div>
+      </div>
+      <div class="flex-1 max-w-lg mx-auto">
+        <div class="relative">
+          <svg class="w-4 h-4 absolute left-3 top-2.5 text-ink-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
+          <input class="w-full pl-9 pr-3 py-2 rounded-lg bg-sand-100 dark:bg-ink-700 border border-transparent focus:border-teal-500 focus:bg-white dark:focus:bg-ink-800 outline-none text-sm" placeholder="Search requests, citizens, services …" />
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="langBtn" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-sand-200 dark:border-ink-700 hover:bg-sand-100 dark:hover:bg-ink-700">EN ⇄ AR</button>
+        <button id="themeBtn" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-sand-200 dark:border-ink-700 hover:bg-sand-100 dark:hover:bg-ink-700" title="Toggle dark">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        </button>
+        <div class="w-px h-6 bg-sand-200 dark:bg-ink-700"></div>
+        <div class="flex items-center gap-2 pl-1">
+          <div class="hidden sm:block text-right">
+            <div class="text-xs font-semibold leading-tight">Khalid Al-Harthy</div>
+            <div class="text-[10px] text-ink-500 leading-tight">Officer · مكتب سند النهضة</div>
+          </div>
+          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-oman-green to-teal-500 text-white grid place-items-center text-xs font-bold">KH</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============================================= -->
+    <!-- SCREEN 1 · LANDING                             -->
+    <!-- ============================================= -->
+    <section data-screen="landing" class="min-h-[calc(100vh-4rem)]">
+      <div class="grad-hero">
+        <div class="max-w-6xl mx-auto px-6 py-16">
+          <div class="flex items-center gap-2 mb-6">
+            <span class="tag bg-white/70 text-teal-600">🇴🇲 Oman · one national number</span>
+            <span class="tag bg-white/70 text-ink-600">Arabic-first · WhatsApp · AmwalPay</span>
+          </div>
+          <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight">
+            One WhatsApp for <span class="wordmark-s">every Sanad service</span><br/>in the Sultanate.
+          </h1>
+          <p class="mt-5 max-w-2xl text-lg text-ink-600">
+            Citizens message a single national number. Sanad offices claim the work from a shared dashboard, relay OTPs through the bot, and finish the transaction on the government portal — without the citizen leaving home.
+          </p>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <button class="px-5 py-3 rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-semibold shadow-soft">Onboard your office</button>
+            <button class="px-5 py-3 rounded-xl bg-white border border-sand-200 font-semibold hover:bg-sand-100">Watch a 60s demo</button>
+            <div class="flex items-center gap-2 ml-2 text-sm text-ink-600">
+              <span class="flex -space-x-2">
+                <span class="w-7 h-7 rounded-full bg-teal-500 grid place-items-center text-[10px] text-white font-bold ring-2 ring-sand-50">NH</span>
+                <span class="w-7 h-7 rounded-full bg-oman-red grid place-items-center text-[10px] text-white font-bold ring-2 ring-sand-50">MQ</span>
+                <span class="w-7 h-7 rounded-full bg-oman-green grid place-items-center text-[10px] text-white font-bold ring-2 ring-sand-50">BR</span>
+              </span>
+              23 offices live across Muscat & Al Batinah
+            </div>
+          </div>
+
+          <div class="mt-14 grid md:grid-cols-3 gap-4">
+            <div class="bg-white/80 backdrop-blur rounded-2xl p-5 shadow-soft border border-sand-200">
+              <div class="text-xs font-semibold text-teal-600 uppercase tracking-wider">1 · Collect</div>
+              <div class="mt-1 font-bold text-lg">Bot takes the paperwork</div>
+              <p class="text-sm text-ink-600 mt-1">Citizen chats in Arabic or English. Qwen 3.5 matches from 3,417 services and gathers every required document.</p>
+            </div>
+            <div class="bg-white/80 backdrop-blur rounded-2xl p-5 shadow-soft border border-sand-200">
+              <div class="text-xs font-semibold text-teal-600 uppercase tracking-wider">2 · Claim</div>
+              <div class="mt-1 font-bold text-lg">Offices race to help</div>
+              <p class="text-sm text-ink-600 mt-1">A complete request lands in the governorate marketplace. Any active Sanad office can claim it in one click.</p>
+            </div>
+            <div class="bg-white/80 backdrop-blur rounded-2xl p-5 shadow-soft border border-sand-200">
+              <div class="text-xs font-semibold text-teal-600 uppercase tracking-wider">3 · Close</div>
+              <div class="mt-1 font-bold text-lg">Officer finishes on the portal</div>
+              <p class="text-sm text-ink-600 mt-1">Officer opens the gov portal, asks the bot for the OTP that went to the citizen, pastes, and uploads the receipt. Done.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRICING -->
+      <div class="max-w-6xl mx-auto px-6 py-16">
+        <div class="flex items-end justify-between mb-8">
+          <div>
+            <h2 class="text-3xl font-bold">Simple pricing, Omani-priced</h2>
+            <p class="text-ink-500 mt-1">All plans include citizen fee collection via AmwalPay.</p>
+          </div>
+          <div class="text-sm text-ink-500 hidden md:block">Switch to OMR · USD</div>
+        </div>
+        <div class="grid md:grid-cols-3 gap-4">
+          <div class="rounded-2xl border border-sand-200 bg-white p-6 shadow-soft dark:bg-ink-800 dark:border-ink-700">
+            <div class="text-xs font-semibold uppercase tracking-wider text-ink-500">Starter</div>
+            <div class="mt-2 flex items-baseline gap-1"><span class="text-4xl font-extrabold">29</span><span class="text-ink-500">OMR / mo</span></div>
+            <p class="text-sm text-ink-500 mt-1">For small offices getting started</p>
+            <ul class="mt-5 space-y-2 text-sm">
+              <li class="flex gap-2"><span class="text-ok">✓</span> 3 officer seats</li>
+              <li class="flex gap-2"><span class="text-ok">✓</span> 200 transactions / month</li>
+              <li class="flex gap-2"><span class="text-ok">✓</span> Core entities (ROP, MoL, Nama)</li>
+              <li class="flex gap-2"><span class="text-ok">✓</span> OTP relay + canned replies</li>
+              <li class="flex gap-2 text-ink-400"><span>—</span> Priority queue visibility</li>
+            </ul>
+            <button class="mt-6 w-full py-2.5 rounded-lg border border-sand-300 font-semibold hover:bg-sand-100">Start</button>
+          </div>
+          <div class="rounded-2xl border-2 border-teal-500 bg-white p-6 shadow-pop dark:bg-ink-800 relative">
+            <span class="absolute -top-2 left-6 tag bg-teal-500 text-white">Most popular</span>
+            <div class="text-xs font-semibold uppercase tracking-wider text-teal-600">Pro</div>
+            <div class="mt-2 flex items-baseline gap-1"><span class="text-4xl font-extrabold">79</span><span class="text-ink-500">OMR / mo</span></div>
+            <p class="text-sm text-ink-500 mt-1">For most Sanad offices</p>
+            <ul class="mt-5 space-y-2 text-sm">
+              <li class="flex gap-2"><span class="text-ok">✓</span> 8 officer seats</li>
+              <li class="flex gap-2"><span class="text-ok">✓</span> 1,200 transactions / month</li>
+              <li class="flex gap-2"><span class="text-ok">✓</span> All 3,417 services</li>
+              <li class="flex gap-2"><span class="text-ok">✓</span> Priority queue visibility</li>
+              <li class="flex gap-2"><span class="text-ok">✓</span> Catalogue edit proposals</li>
+            </ul>
+            <button class="mt-6 w-full py-2.5 rounded-lg bg-teal-500 text-white font-semibold hover:bg-teal-600">Start trial</button>
+          </div>
+          <div class="rounded-2xl border border-sand-200 bg-white p-6 shadow-soft dark:bg-ink-800 dark:border-ink-700">
+            <div class="text-xs font-semibold uppercase tracking-wider text-ink-500">Enterprise</div>
+            <div class="mt-2 flex items-baseline gap-1"><span class="text-4xl font-extrabold">Custom</span></div>
+            <p class="text-sm text-ink-500 mt-1">Chains of offices & gov partners</p>
+            <ul class="mt-5 space-y-2 text-sm">
+              <li class="flex gap-2"><span class="text-ok">✓</span> Unlimited seats & volume</li>
+              <li class="flex gap-2"><span class="text-ok">✓</span> REST API + SSO</li>
+              <li class="flex gap-2"><span class="text-ok">✓</span> SLA + dedicated success manager</li>
+              <li class="flex gap-2"><span class="text-ok">✓</span> Dedicated AmwalPay merchant</li>
+            </ul>
+            <button class="mt-6 w-full py-2.5 rounded-lg border border-sand-300 font-semibold hover:bg-sand-100">Talk to sales</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================= -->
+    <!-- SCREEN 2 · OFFICER INBOX                       -->
+    <!-- ============================================= -->
+    <section data-screen="inbox" class="active p-4 md:p-6">
+      <!-- MY DAY STRIP -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
+        <div class="rounded-xl bg-white border border-sand-200 p-3 dark:bg-ink-800 dark:border-ink-700">
+          <div class="text-[11px] uppercase tracking-wider text-ink-500">Today claimed</div>
+          <div class="text-2xl font-bold mt-0.5">14</div>
+        </div>
+        <div class="rounded-xl bg-white border border-sand-200 p-3 dark:bg-ink-800 dark:border-ink-700">
+          <div class="text-[11px] uppercase tracking-wider text-ink-500">Completed</div>
+          <div class="text-2xl font-bold mt-0.5 text-ok">11</div>
+        </div>
+        <div class="rounded-xl bg-white border border-sand-200 p-3 dark:bg-ink-800 dark:border-ink-700">
+          <div class="text-[11px] uppercase tracking-wider text-ink-500">Avg handling</div>
+          <div class="text-2xl font-bold mt-0.5">14m</div>
+        </div>
+        <div class="rounded-xl bg-white border border-sand-200 p-3 dark:bg-ink-800 dark:border-ink-700">
+          <div class="text-[11px] uppercase tracking-wider text-ink-500">CSAT</div>
+          <div class="text-2xl font-bold mt-0.5">4.8 <span class="text-yellow-500 text-base">★</span></div>
+        </div>
+        <div class="rounded-xl bg-gradient-to-br from-teal-500 to-oman-green text-white p-3">
+          <div class="text-[11px] uppercase tracking-wider opacity-80">Today's earnings</div>
+          <div class="text-2xl font-bold mt-0.5">7.150 <span class="text-xs opacity-80">OMR</span></div>
+        </div>
+      </div>
+
+      <!-- MARKETPLACE -->
+      <div class="mb-8">
+        <div class="flex items-end justify-between mb-3">
+          <div>
+            <h2 class="text-lg font-bold">🛒 Marketplace — Muscat governorate</h2>
+            <p class="text-sm text-ink-500">8 unclaimed requests. Claim one with <span class="kbd">C</span>.</p>
+          </div>
+          <div class="flex gap-2 text-xs">
+            <button class="px-2.5 py-1 rounded-lg bg-teal-500 text-white font-semibold">All</button>
+            <button class="px-2.5 py-1 rounded-lg bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700">ROP</button>
+            <button class="px-2.5 py-1 rounded-lg bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700">MoL</button>
+            <button class="px-2.5 py-1 rounded-lg bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700">MoH</button>
+            <button class="px-2.5 py-1 rounded-lg bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700">MOCIIP</button>
+          </div>
+        </div>
+        <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-3">
+          <!-- Card template ×4 -->
+          <article class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-4 hover:shadow-pop transition">
+            <div class="flex items-start gap-2 mb-2">
+              <span class="tag bg-teal-50 text-teal-600">ROP</span>
+              <span class="tag bg-sand-100 text-ink-600">Muscat · Seeb</span>
+              <span class="tag bg-yellow-50 text-warn ml-auto">⏱ new · 2m</span>
+            </div>
+            <h3 class="font-semibold text-sm">Driver's licence renewal · تجديد رخصة القيادة</h3>
+            <p class="text-xs text-ink-500 mt-1">"رخصتي منتهية من شهر، أحتاج أجددها اليوم"</p>
+            <div class="flex items-center gap-2 mt-3 text-xs text-ink-500">
+              <span>👤 Aisha · +968 ••••1234</span>
+              <span class="text-ok">★ 4.9</span>
+            </div>
+            <div class="flex items-center justify-between mt-3 pt-3 border-t border-sand-200 dark:border-ink-700">
+              <div class="text-xs">📎 <b>3/3</b> docs · Fee <b>~5.500 OMR</b></div>
+              <button class="text-xs px-2.5 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-600 text-white font-bold">Claim</button>
+            </div>
+          </article>
+          <article class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-4 hover:shadow-pop transition">
+            <div class="flex items-start gap-2 mb-2">
+              <span class="tag bg-teal-50 text-teal-600">Civil Status</span>
+              <span class="tag bg-sand-100 text-ink-600">Muscat · Bawshar</span>
+              <span class="tag bg-yellow-50 text-warn ml-auto">⏱ 4m</span>
+            </div>
+            <h3 class="font-semibold text-sm">Civil ID renewal · تجديد بطاقة مدنية</h3>
+            <p class="text-xs text-ink-500 mt-1">"أريد تجديد بطاقتي المدنية وإرسال النسخة لمكتب العمل"</p>
+            <div class="flex items-center gap-2 mt-3 text-xs text-ink-500">
+              <span>👤 Saif · +968 ••••9812</span>
+              <span class="text-ok">★ 4.7</span>
+            </div>
+            <div class="flex items-center justify-between mt-3 pt-3 border-t border-sand-200 dark:border-ink-700">
+              <div class="text-xs">📎 <b>2/2</b> docs · Fee <b>~3.000 OMR</b></div>
+              <button class="text-xs px-2.5 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-600 text-white font-bold">Claim</button>
+            </div>
+          </article>
+          <article class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-4 hover:shadow-pop transition relative">
+            <span class="absolute -top-2 right-3 tag bg-oman-gold text-white">📌 Pinned to us</span>
+            <div class="flex items-start gap-2 mb-2">
+              <span class="tag bg-teal-50 text-teal-600">MOCIIP</span>
+              <span class="tag bg-sand-100 text-ink-600">Muscat · Ruwi</span>
+              <span class="tag bg-yellow-50 text-warn ml-auto">⏱ 8m</span>
+            </div>
+            <h3 class="font-semibold text-sm">Commercial registration renewal · تجديد سجل تجاري</h3>
+            <p class="text-xs text-ink-500 mt-1">"أحتاج تجديد السجل التجاري وإضافة نشاط"</p>
+            <div class="flex items-center gap-2 mt-3 text-xs text-ink-500">
+              <span>👤 Mohammed · +968 ••••7621</span>
+              <span class="text-ok">★ 4.8</span>
+            </div>
+            <div class="flex items-center justify-between mt-3 pt-3 border-t border-sand-200 dark:border-ink-700">
+              <div class="text-xs">📎 <b>4/4</b> docs · Fee <b>~18.000 OMR</b></div>
+              <button class="text-xs px-2.5 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-600 text-white font-bold">Claim</button>
+            </div>
+          </article>
+          <article class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-4 hover:shadow-pop transition opacity-60">
+            <div class="flex items-start gap-2 mb-2">
+              <span class="tag bg-teal-50 text-teal-600">ROP</span>
+              <span class="tag bg-sand-100 text-ink-600">Muscat · Al Amerat</span>
+              <span class="tag bg-sand-100 text-ink-500 ml-auto">Just claimed</span>
+            </div>
+            <h3 class="font-semibold text-sm">Vehicle registration renewal · تجديد الملكية</h3>
+            <p class="text-xs text-ink-500 mt-1">Claimed by <b>مكتب سند السيب</b> 3s ago</p>
+            <div class="flex items-center gap-2 mt-3 text-xs text-ink-500">
+              <span>👤 Noura · +968 ••••4421</span>
+            </div>
+            <div class="flex items-center justify-between mt-3 pt-3 border-t border-sand-200 dark:border-ink-700">
+              <div class="text-xs">📎 3/3 · Fee 12.500 OMR</div>
+              <button class="text-xs px-2.5 py-1.5 rounded-lg bg-sand-200 text-ink-500 font-bold cursor-not-allowed">Taken</button>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <!-- MY KANBAN -->
+      <div class="flex items-end justify-between mb-3">
+        <div>
+          <h2 class="text-lg font-bold">📋 My board</h2>
+          <p class="text-sm text-ink-500">Requests I'm handling now</p>
+        </div>
+        <div class="flex gap-2 text-xs">
+          <button class="px-2.5 py-1 rounded-lg bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700">📊 Kanban</button>
+          <button class="px-2.5 py-1 rounded-lg bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700">📄 Table</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <!-- Claimed -->
+        <div class="kanban-col rounded-xl bg-sand-100 dark:bg-ink-800 p-3">
+          <div class="flex items-center justify-between mb-2 text-xs">
+            <span class="font-bold">Claimed <span class="text-ink-500 font-normal">· 2</span></span>
+            <span class="dot bg-teal-500"></span>
+          </div>
+          <article class="rounded-lg bg-white dark:bg-ink-700 p-3 shadow-soft mb-2">
+            <div class="flex items-center gap-2 text-[10px] mb-1"><span class="tag bg-teal-50 text-teal-600">ROP</span><span class="text-ink-400 ml-auto">#R-88421</span></div>
+            <div class="text-sm font-semibold">Licence renewal</div>
+            <div class="text-xs text-ink-500 mt-1">Aisha · Seeb</div>
+          </article>
+          <article class="rounded-lg bg-white dark:bg-ink-700 p-3 shadow-soft">
+            <div class="flex items-center gap-2 text-[10px] mb-1"><span class="tag bg-teal-50 text-teal-600">MOCIIP</span><span class="text-ink-400 ml-auto">#R-88396</span></div>
+            <div class="text-sm font-semibold">CR amendment</div>
+            <div class="text-xs text-ink-500 mt-1">Mohammed · Ruwi</div>
+          </article>
+        </div>
+        <div class="kanban-col rounded-xl bg-sand-100 dark:bg-ink-800 p-3">
+          <div class="flex items-center justify-between mb-2 text-xs">
+            <span class="font-bold">Waiting citizen <span class="text-ink-500 font-normal">· 1</span></span>
+            <span class="dot bg-warn pulse"></span>
+          </div>
+          <article class="rounded-lg bg-white dark:bg-ink-700 p-3 shadow-soft">
+            <div class="flex items-center gap-2 text-[10px] mb-1"><span class="tag bg-yellow-50 text-warn">OTP window</span><span class="text-ink-400 ml-auto">48s</span></div>
+            <div class="text-sm font-semibold">Passport renewal</div>
+            <div class="text-xs text-ink-500 mt-1">Khalifa · awaiting OTP</div>
+          </article>
+        </div>
+        <div class="kanban-col rounded-xl bg-sand-100 dark:bg-ink-800 p-3">
+          <div class="flex items-center justify-between mb-2 text-xs">
+            <span class="font-bold">In progress <span class="text-ink-500 font-normal">· 3</span></span>
+            <span class="dot bg-oman-green"></span>
+          </div>
+          <article class="rounded-lg bg-white dark:bg-ink-700 p-3 shadow-soft mb-2">
+            <div class="flex items-center gap-2 text-[10px] mb-1"><span class="tag bg-teal-50 text-teal-600">Civil Status</span><span class="text-ink-400 ml-auto">#R-88420</span></div>
+            <div class="text-sm font-semibold">Civil ID renewal</div>
+            <div class="text-xs text-ink-500 mt-1">Saif · on portal</div>
+          </article>
+          <article class="rounded-lg bg-white dark:bg-ink-700 p-3 shadow-soft mb-2">
+            <div class="flex items-center gap-2 text-[10px] mb-1"><span class="tag bg-teal-50 text-teal-600">Nama</span><span class="text-ink-400 ml-auto">#R-88411</span></div>
+            <div class="text-sm font-semibold">Bill transfer</div>
+            <div class="text-xs text-ink-500 mt-1">Fatma · payment pending</div>
+          </article>
+          <article class="rounded-lg bg-white dark:bg-ink-700 p-3 shadow-soft">
+            <div class="flex items-center gap-2 text-[10px] mb-1"><span class="tag bg-teal-50 text-teal-600">ROP</span><span class="text-ink-400 ml-auto">#R-88405</span></div>
+            <div class="text-sm font-semibold">Mulkiya renewal</div>
+            <div class="text-xs text-ink-500 mt-1">Noura · uploading receipt</div>
+          </article>
+        </div>
+        <div class="kanban-col rounded-xl bg-sand-100 dark:bg-ink-800 p-3">
+          <div class="flex items-center justify-between mb-2 text-xs">
+            <span class="font-bold">Done today <span class="text-ink-500 font-normal">· 11</span></span>
+            <span class="dot bg-ok"></span>
+          </div>
+          <article class="rounded-lg bg-white dark:bg-ink-700 p-3 shadow-soft opacity-80">
+            <div class="flex items-center gap-2 text-[10px] mb-1"><span class="tag bg-green-50 text-ok">✓</span><span class="text-ink-400 ml-auto">09:42</span></div>
+            <div class="text-sm font-semibold">Medical form stamp</div>
+            <div class="text-xs text-ink-500 mt-1">Hamad · ★5</div>
+          </article>
+          <article class="rounded-lg bg-white dark:bg-ink-700 p-3 shadow-soft opacity-80 mt-2">
+            <div class="flex items-center gap-2 text-[10px] mb-1"><span class="tag bg-green-50 text-ok">✓</span><span class="text-ink-400 ml-auto">10:14</span></div>
+            <div class="text-sm font-semibold">Work permit renewal</div>
+            <div class="text-xs text-ink-500 mt-1">Sara · ★5</div>
+          </article>
+          <div class="text-xs text-center text-ink-400 mt-2">+ 9 more</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================= -->
+    <!-- SCREEN 3 · REQUEST DETAIL                      -->
+    <!-- ============================================= -->
+    <section data-screen="detail" class="p-0">
+      <div class="border-b border-sand-200 dark:border-ink-700 bg-white dark:bg-ink-800 px-6 py-3 flex items-center gap-3 text-sm">
+        <button class="p-1.5 rounded-lg hover:bg-sand-100 dark:hover:bg-ink-700" data-nav-to="inbox">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <span class="font-semibold">#R-88421</span>
+        <span class="tag bg-teal-50 text-teal-600">ROP · Driver's licence renewal</span>
+        <span class="tag bg-oman-green/10 text-oman-green">Claimed by me</span>
+        <span class="text-ink-500">Elapsed 12m · SLA 2h</span>
+        <div class="ml-auto flex gap-2">
+          <button class="text-xs px-2.5 py-1.5 rounded-lg border border-sand-200 dark:border-ink-700 hover:bg-sand-100 dark:hover:bg-ink-700">⏸ Hold</button>
+          <button class="text-xs px-2.5 py-1.5 rounded-lg border border-sand-200 dark:border-ink-700 hover:bg-sand-100 dark:hover:bg-ink-700">↪ Reassign</button>
+          <button class="text-xs px-2.5 py-1.5 rounded-lg border border-bad/40 text-bad hover:bg-red-50 dark:hover:bg-red-900/20">✕ Cannot complete</button>
+          <button class="text-xs px-3 py-1.5 rounded-lg bg-ok text-white font-bold hover:brightness-110">✓ Mark complete</button>
+        </div>
+      </div>
+
+      <!-- SHORTCUTS BAR -->
+      <div class="bg-ink-900 text-white px-6 py-2.5 flex items-center gap-2 flex-wrap text-xs overflow-x-auto">
+        <span class="text-ink-400 mr-1">Shortcuts</span>
+        <button class="px-2.5 py-1.5 rounded-lg bg-ink-800 hover:bg-ink-700 flex items-center gap-1.5">🔗 Open ROP portal</button>
+        <button class="px-2.5 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-600 flex items-center gap-1.5 font-semibold" id="otpBtn">📲 Request OTP <span class="kbd text-ink-700">O</span></button>
+        <button class="px-2.5 py-1.5 rounded-lg bg-ink-800 hover:bg-ink-700 flex items-center gap-1.5">📋 Copy civil ID</button>
+        <button class="px-2.5 py-1.5 rounded-lg bg-ink-800 hover:bg-ink-700 flex items-center gap-1.5">📋 Copy phone</button>
+        <button class="px-2.5 py-1.5 rounded-lg bg-ink-800 hover:bg-ink-700 flex items-center gap-1.5">💰 Copy fee 5.500</button>
+        <button class="px-2.5 py-1.5 rounded-lg bg-ink-800 hover:bg-ink-700 flex items-center gap-1.5">🗣 Canned reply</button>
+        <span class="ml-auto text-ink-400 hidden md:inline">⌨ Hit <span class="kbd text-ink-700">?</span> for all shortcuts</span>
+      </div>
+
+      <!-- 3-PANE -->
+      <div class="grid lg:grid-cols-[320px_1fr_380px] min-h-[calc(100vh-8rem)]">
+
+        <!-- LEFT: Summary -->
+        <aside class="border-r border-sand-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-5 space-y-5 overflow-y-auto scrollbar-thin">
+          <div>
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-full bg-gradient-to-br from-oman-red to-oman-gold text-white grid place-items-center font-bold">AH</div>
+              <div>
+                <div class="font-bold">Aisha Al-Habsi</div>
+                <div class="text-xs text-ink-500">+968 •• 7241 1234 <button class="text-teal-600 ml-1">copy</button></div>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-4 text-xs">
+              <div class="rounded-lg bg-sand-100 dark:bg-ink-700 p-2">
+                <div class="text-ink-500">Civil ID</div>
+                <div class="font-semibold">1234567 <button class="text-teal-600">📋</button></div>
+              </div>
+              <div class="rounded-lg bg-sand-100 dark:bg-ink-700 p-2">
+                <div class="text-ink-500">Language</div>
+                <div class="font-semibold">العربية</div>
+              </div>
+              <div class="rounded-lg bg-sand-100 dark:bg-ink-700 p-2">
+                <div class="text-ink-500">Rating</div>
+                <div class="font-semibold">★ 4.9 · 11 tx</div>
+              </div>
+              <div class="rounded-lg bg-sand-100 dark:bg-ink-700 p-2">
+                <div class="text-ink-500">Governorate</div>
+                <div class="font-semibold">Muscat · Seeb</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-sand-200 dark:border-ink-700 p-3">
+            <div class="text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Fee breakdown</div>
+            <div class="space-y-1.5 text-sm">
+              <div class="flex justify-between"><span>Government fee</span><span class="font-semibold">5.000</span></div>
+              <div class="flex justify-between"><span>Office service fee</span><span class="font-semibold">0.500</span></div>
+              <div class="flex justify-between text-ink-500"><span>Platform fee</span><span>0.500</span></div>
+              <div class="border-t border-sand-200 dark:border-ink-700 pt-1.5 mt-1.5 flex justify-between font-bold"><span>Total OMR</span><span>6.000</span></div>
+              <div class="flex justify-between text-xs text-ok"><span>✓ Paid via AmwalPay</span><span>09:14</span></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Process steps</div>
+            <ul class="space-y-1.5 text-sm">
+              <li class="flex gap-2"><span class="text-ok">✓</span> Login to Maktabi (ROP)</li>
+              <li class="flex gap-2"><span class="text-ok">✓</span> Select "Licence renewal"</li>
+              <li class="flex gap-2"><span class="text-ok">✓</span> Upload medical form</li>
+              <li class="flex gap-2"><input type="checkbox" class="accent-teal-500"/> Submit & pay fee on portal</li>
+              <li class="flex gap-2"><input type="checkbox" class="accent-teal-500"/> Download & send receipt</li>
+            </ul>
+          </div>
+
+          <div>
+            <div class="text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Timeline</div>
+            <ol class="space-y-2 text-xs relative border-l border-sand-200 dark:border-ink-700 pl-4 ml-1">
+              <li><span class="absolute -left-1.5 w-3 h-3 rounded-full bg-teal-500"></span> <b>09:04</b> · Citizen started</li>
+              <li><span class="absolute -left-1.5 w-3 h-3 rounded-full bg-teal-500"></span> <b>09:09</b> · Docs complete</li>
+              <li><span class="absolute -left-1.5 w-3 h-3 rounded-full bg-teal-500"></span> <b>09:14</b> · Payment captured</li>
+              <li><span class="absolute -left-1.5 w-3 h-3 rounded-full bg-teal-500"></span> <b>09:15</b> · Claimed by Khalid</li>
+              <li class="text-ink-400"><span class="absolute -left-1.5 w-3 h-3 rounded-full bg-sand-300"></span> now · Awaiting OTP</li>
+            </ol>
+          </div>
+        </aside>
+
+        <!-- MIDDLE: Docs gallery -->
+        <section class="p-5 overflow-y-auto scrollbar-thin bg-sand-50 dark:bg-ink-900">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold">Documents <span class="text-ink-500 font-normal">· 3/3 ready</span></h3>
+            <div class="flex gap-2 text-xs">
+              <button class="px-2.5 py-1 rounded-lg bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700">🔎 Zoom</button>
+              <button class="px-2.5 py-1 rounded-lg bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700">↻ Rotate</button>
+              <button class="px-2.5 py-1 rounded-lg bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700">⤓ Download all</button>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-3">
+            <!-- Doc card ×3 -->
+            <div class="rounded-xl bg-white dark:bg-ink-800 border-2 border-ok/40 p-3 shadow-soft">
+              <div class="flex items-center justify-between mb-2 text-xs">
+                <span class="font-semibold">Civil ID (front) · البطاقة المدنية</span>
+                <span class="tag bg-green-50 text-ok">✓ Verified</span>
+              </div>
+              <div class="doc-thumb h-40 rounded-lg grid place-items-center text-ink-400 text-xs">[ ID.jpg · 1.2 MB ]</div>
+              <div class="mt-2 grid grid-cols-2 gap-1.5 text-[11px]">
+                <div class="bg-sand-100 dark:bg-ink-700 rounded p-1.5"><span class="text-ink-500">ID</span> <b>1234567</b></div>
+                <div class="bg-sand-100 dark:bg-ink-700 rounded p-1.5"><span class="text-ink-500">Expires</span> <b>2027-11-14</b></div>
+              </div>
+              <div class="flex gap-1.5 mt-2 text-xs">
+                <button class="flex-1 py-1.5 rounded-lg border border-sand-200 dark:border-ink-700 hover:bg-sand-100 dark:hover:bg-ink-700">Reject</button>
+                <button class="flex-1 py-1.5 rounded-lg border border-sand-200 dark:border-ink-700 hover:bg-sand-100 dark:hover:bg-ink-700">Replace</button>
+              </div>
+            </div>
+
+            <div class="rounded-xl bg-white dark:bg-ink-800 border-2 border-ok/40 p-3 shadow-soft">
+              <div class="flex items-center justify-between mb-2 text-xs">
+                <span class="font-semibold">Medical form · الفحص الطبي</span>
+                <span class="tag bg-green-50 text-ok">✓ Verified</span>
+              </div>
+              <div class="doc-thumb h-40 rounded-lg grid place-items-center text-ink-400 text-xs">[ medical.pdf · 380 KB ]</div>
+              <div class="mt-2 grid grid-cols-2 gap-1.5 text-[11px]">
+                <div class="bg-sand-100 dark:bg-ink-700 rounded p-1.5"><span class="text-ink-500">Clinic</span> <b>Al-Nahdha</b></div>
+                <div class="bg-sand-100 dark:bg-ink-700 rounded p-1.5"><span class="text-ink-500">Issued</span> <b>2026-04-12</b></div>
+              </div>
+              <div class="flex gap-1.5 mt-2 text-xs">
+                <button class="flex-1 py-1.5 rounded-lg border border-sand-200 dark:border-ink-700 hover:bg-sand-100 dark:hover:bg-ink-700">Reject</button>
+                <button class="flex-1 py-1.5 rounded-lg border border-sand-200 dark:border-ink-700 hover:bg-sand-100 dark:hover:bg-ink-700">Replace</button>
+              </div>
+            </div>
+
+            <div class="rounded-xl bg-white dark:bg-ink-800 border-2 border-yellow-300 p-3 shadow-soft">
+              <div class="flex items-center justify-between mb-2 text-xs">
+                <span class="font-semibold">Photo (white bg) · الصورة الشخصية</span>
+                <span class="tag bg-yellow-50 text-warn">⚠ Low resolution</span>
+              </div>
+              <div class="doc-thumb h-40 rounded-lg grid place-items-center text-ink-400 text-xs">[ photo.jpg · 85 KB ]</div>
+              <div class="mt-2 text-[11px] text-warn bg-yellow-50 dark:bg-yellow-900/20 rounded p-2">OCR notes: image resolution 480×640, recommended ≥ 600×800. Consider asking for a re-upload.</div>
+              <div class="flex gap-1.5 mt-2 text-xs">
+                <button class="flex-1 py-1.5 rounded-lg bg-warn text-white font-semibold">Ask for re-upload</button>
+                <button class="flex-1 py-1.5 rounded-lg border border-sand-200 dark:border-ink-700">Accept anyway</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- RIGHT: Chat -->
+        <aside class="border-l border-sand-200 dark:border-ink-700 bg-white dark:bg-ink-800 flex flex-col min-h-[calc(100vh-8rem)]">
+          <div class="px-4 py-3 border-b border-sand-200 dark:border-ink-700 flex items-center gap-2">
+            <span class="dot bg-ok"></span>
+            <div>
+              <div class="text-sm font-bold">WhatsApp · Aisha</div>
+              <div class="text-[11px] text-ink-500">Online · replied 12s ago</div>
+            </div>
+            <button class="ml-auto text-xs px-2 py-1 rounded-lg hover:bg-sand-100 dark:hover:bg-ink-700">🔕</button>
+          </div>
+          <div class="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-2 bg-[#e5ddd5]/40 dark:bg-ink-900/60 flex flex-col">
+            <div class="bubble bubble-bot text-[13px]">🤖 مرحبا عائشة، أنا مساعد سند. كيف أقدر أساعدك؟</div>
+            <div class="bubble bubble-in text-[13px]">رخصتي منتهية من شهر، أحتاج أجددها اليوم</div>
+            <div class="bubble bubble-bot text-[13px]">تمام — تجديد رخصة القيادة. احتاج 3 مستندات: البطاقة المدنية، الفحص الطبي، صورة شخصية. الرسوم حوالي <b>5.500 ريال</b>. نبدأ؟</div>
+            <div class="bubble bubble-in text-[13px]">أيوه</div>
+            <div class="bubble bubble-in text-[13px]">📎 ID.jpg</div>
+            <div class="bubble bubble-bot text-[13px]">✅ البطاقة المدنية واضحة. نحتاج الفحص الطبي الآن.</div>
+            <div class="bubble bubble-in text-[13px]">📎 medical.pdf</div>
+            <div class="bubble bubble-bot text-[13px]">✅ ممتاز. الصورة الشخصية؟</div>
+            <div class="bubble bubble-in text-[13px]">📎 photo.jpg</div>
+            <div class="bubble bubble-bot text-[13px]">تم قبول طلبك. موظف سند سيتواصل معك الآن.</div>
+            <div class="bubble bubble-out text-[13px]">مرحبا عائشة، معك خالد من مكتب سند النهضة 👋</div>
+            <div class="bubble bubble-in text-[13px]">أهلا، مشكور</div>
+            <!-- OTP prompt -->
+            <div class="bubble bubble-bot text-[13px] border-teal-500">
+              <div class="flex items-center gap-1.5 text-teal-600 font-semibold mb-1">📲 OTP requested</div>
+              أرسل لنا الرمز الذي وصلك من ROP. <span class="text-ink-500 text-[11px]">(صالح لـ 60 ثانية)</span>
+            </div>
+          </div>
+          <!-- Canned bar -->
+          <div class="px-3 py-2 border-t border-sand-200 dark:border-ink-700 flex gap-1.5 overflow-x-auto scrollbar-thin">
+            <button class="text-[11px] whitespace-nowrap px-2 py-1 rounded-full bg-sand-100 dark:bg-ink-700 hover:bg-teal-500 hover:text-white">الصورة غير واضحة</button>
+            <button class="text-[11px] whitespace-nowrap px-2 py-1 rounded-full bg-sand-100 dark:bg-ink-700 hover:bg-teal-500 hover:text-white">تم استلام الدفع</button>
+            <button class="text-[11px] whitespace-nowrap px-2 py-1 rounded-full bg-sand-100 dark:bg-ink-700 hover:bg-teal-500 hover:text-white">سأبدأ في المعاملة</button>
+            <button class="text-[11px] whitespace-nowrap px-2 py-1 rounded-full bg-sand-100 dark:bg-ink-700 hover:bg-teal-500 hover:text-white">تم ✓</button>
+          </div>
+          <div class="p-3 border-t border-sand-200 dark:border-ink-700 flex gap-2">
+            <button class="p-2 rounded-lg hover:bg-sand-100 dark:hover:bg-ink-700"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></button>
+            <input class="flex-1 px-3 py-2 rounded-lg bg-sand-100 dark:bg-ink-700 focus:outline-none text-sm" placeholder="Type a reply (Arabic/English) …" />
+            <button class="px-3 py-2 rounded-lg bg-teal-500 hover:bg-teal-600 text-white text-sm font-bold">Send <span class="kbd text-ink-700 ml-1">↵</span></button>
+          </div>
+        </aside>
+      </div>
+
+      <!-- OTP MODAL -->
+      <div id="otpModal" class="fixed inset-0 bg-ink-900/60 backdrop-blur-sm grid place-items-center hidden z-50">
+        <div class="w-full max-w-md rounded-2xl bg-white dark:bg-ink-800 shadow-pop p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-teal-500 text-white grid place-items-center">📲</div>
+            <div>
+              <div class="font-bold">OTP window open</div>
+              <div class="text-xs text-ink-500">We'll auto-capture the next 4–6 digit code from Aisha.</div>
+            </div>
+            <button class="ml-auto text-ink-400 hover:text-ink-700" id="otpCloseBtn">✕</button>
+          </div>
+          <div class="rounded-xl bg-gradient-to-br from-teal-50 to-green-50 dark:from-ink-700 dark:to-ink-700 p-5 text-center">
+            <div class="text-xs text-ink-500 uppercase tracking-wider">Countdown</div>
+            <div class="text-5xl font-extrabold text-teal-600 my-1" id="otpCountdown">0:58</div>
+            <div class="h-2 rounded-full bg-white dark:bg-ink-900 overflow-hidden"><div class="h-full bg-teal-500" style="width:95%"></div></div>
+            <div class="text-xs text-ink-500 mt-3">Code received will appear here and be copied to your clipboard automatically.</div>
+          </div>
+          <div class="mt-3 rounded-lg border-2 border-dashed border-sand-300 dark:border-ink-700 p-4 text-center text-ink-400">
+            Waiting for citizen …
+          </div>
+          <div class="flex gap-2 mt-4 text-sm">
+            <button class="flex-1 py-2 rounded-lg border border-sand-200 dark:border-ink-700" id="otpCancelBtn">Cancel</button>
+            <button class="flex-1 py-2 rounded-lg bg-teal-500 hover:bg-teal-600 text-white font-bold">📋 Copy code</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================= -->
+    <!-- SCREEN 4 · MANAGE OFFICE                       -->
+    <!-- ============================================= -->
+    <section data-screen="manage" class="p-4 md:p-6">
+      <div class="flex gap-2 mb-5 flex-wrap">
+        <button data-tab="today" class="tab-btn px-3 py-1.5 rounded-lg bg-teal-500 text-white text-sm font-semibold">Today's board</button>
+        <button data-tab="team" class="tab-btn px-3 py-1.5 rounded-lg bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 text-sm">Team</button>
+        <button data-tab="wallet" class="tab-btn px-3 py-1.5 rounded-lg bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 text-sm">Wallet & payouts</button>
+        <button data-tab="invoices" class="tab-btn px-3 py-1.5 rounded-lg bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 text-sm">Invoices</button>
+        <button data-tab="profile" class="tab-btn px-3 py-1.5 rounded-lg bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 text-sm">Office profile</button>
+      </div>
+
+      <div data-tab-panel="today">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div class="rounded-xl bg-white border border-sand-200 p-3 dark:bg-ink-800 dark:border-ink-700"><div class="text-[11px] uppercase tracking-wider text-ink-500">Requests today</div><div class="text-2xl font-bold">64</div><div class="text-xs text-ok">↑ 12%</div></div>
+          <div class="rounded-xl bg-white border border-sand-200 p-3 dark:bg-ink-800 dark:border-ink-700"><div class="text-[11px] uppercase tracking-wider text-ink-500">Completion rate</div><div class="text-2xl font-bold">91%</div><div class="text-xs text-ok">↑ 3%</div></div>
+          <div class="rounded-xl bg-white border border-sand-200 p-3 dark:bg-ink-800 dark:border-ink-700"><div class="text-[11px] uppercase tracking-wider text-ink-500">Avg handling</div><div class="text-2xl font-bold">13m</div></div>
+          <div class="rounded-xl bg-white border border-sand-200 p-3 dark:bg-ink-800 dark:border-ink-700"><div class="text-[11px] uppercase tracking-wider text-ink-500">Revenue today</div><div class="text-2xl font-bold">38.420 OMR</div></div>
+        </div>
+
+        <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 overflow-hidden">
+          <div class="px-4 py-3 border-b border-sand-200 dark:border-ink-700 flex items-center gap-2">
+            <h3 class="font-bold">Live requests</h3>
+            <span class="tag bg-teal-50 text-teal-600">• 6 in progress</span>
+            <button class="ml-auto text-xs px-2 py-1 rounded-lg border border-sand-200 dark:border-ink-700">Filter</button>
+          </div>
+          <table class="w-full text-sm">
+            <thead class="bg-sand-100 dark:bg-ink-700 text-left text-xs uppercase text-ink-500">
+              <tr><th class="px-4 py-2">#</th><th class="px-4 py-2">Service</th><th class="px-4 py-2">Citizen</th><th class="px-4 py-2">Officer</th><th class="px-4 py-2">Status</th><th class="px-4 py-2">SLA</th><th class="px-4 py-2 text-right">Actions</th></tr>
+            </thead>
+            <tbody>
+              <tr class="stripe-row border-t border-sand-100 dark:border-ink-700"><td class="px-4 py-3 font-mono text-xs">R-88421</td><td class="px-4 py-3">Licence renewal</td><td class="px-4 py-3">Aisha ★4.9</td><td class="px-4 py-3">Khalid</td><td class="px-4 py-3"><span class="tag bg-yellow-50 text-warn">OTP window</span></td><td class="px-4 py-3 text-xs text-ok">1h 42m left</td><td class="px-4 py-3 text-right"><button class="text-teal-600 text-xs font-semibold">Open</button></td></tr>
+              <tr class="stripe-row border-t border-sand-100 dark:border-ink-700"><td class="px-4 py-3 font-mono text-xs">R-88420</td><td class="px-4 py-3">Civil ID renewal</td><td class="px-4 py-3">Saif ★4.7</td><td class="px-4 py-3">Noor</td><td class="px-4 py-3"><span class="tag bg-blue-50 text-blue-600">On portal</span></td><td class="px-4 py-3 text-xs text-ok">1h 22m left</td><td class="px-4 py-3 text-right"><button class="text-teal-600 text-xs font-semibold">Open</button></td></tr>
+              <tr class="stripe-row border-t border-sand-100 dark:border-ink-700"><td class="px-4 py-3 font-mono text-xs">R-88414</td><td class="px-4 py-3">CR amendment</td><td class="px-4 py-3">Mohammed ★4.8</td><td class="px-4 py-3">Khalid</td><td class="px-4 py-3"><span class="tag bg-green-50 text-ok">In progress</span></td><td class="px-4 py-3 text-xs text-warn">28m left</td><td class="px-4 py-3 text-right"><button class="text-teal-600 text-xs font-semibold">Open</button></td></tr>
+              <tr class="stripe-row border-t border-sand-100 dark:border-ink-700"><td class="px-4 py-3 font-mono text-xs">R-88411</td><td class="px-4 py-3">Nama bill transfer</td><td class="px-4 py-3">Fatma ★4.6</td><td class="px-4 py-3">Maha</td><td class="px-4 py-3"><span class="tag bg-yellow-50 text-warn">Waiting citizen</span></td><td class="px-4 py-3 text-xs text-bad">BREACH</td><td class="px-4 py-3 text-right"><button class="text-teal-600 text-xs font-semibold">Open</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div data-tab-panel="team" class="hidden">
+        <div class="flex justify-between items-end mb-3">
+          <div><h3 class="font-bold text-lg">Officer roster</h3><p class="text-sm text-ink-500">5 / 8 seats used on Pro plan.</p></div>
+          <button class="px-3 py-2 rounded-lg bg-teal-500 text-white text-sm font-bold">+ Invite officer</button>
+        </div>
+        <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-sand-100 dark:bg-ink-700 text-left text-xs uppercase text-ink-500">
+              <tr><th class="px-4 py-2">Officer</th><th class="px-4 py-2">Role</th><th class="px-4 py-2">Today</th><th class="px-4 py-2">CSAT</th><th class="px-4 py-2">Avg time</th><th class="px-4 py-2">Last seen</th><th class="px-4 py-2"></th></tr>
+            </thead>
+            <tbody>
+              <tr class="stripe-row border-t border-sand-100 dark:border-ink-700"><td class="px-4 py-3"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-teal-500 text-white grid place-items-center text-[10px] font-bold">KH</div>Khalid Al-Harthy</div></td><td class="px-4 py-3"><span class="tag bg-oman-gold/20 text-oman-gold">Owner</span></td><td class="px-4 py-3">14</td><td class="px-4 py-3">4.8 ★</td><td class="px-4 py-3">14m</td><td class="px-4 py-3 text-ok">• online</td><td class="px-4 py-3"><button class="text-ink-400">⋯</button></td></tr>
+              <tr class="stripe-row border-t border-sand-100 dark:border-ink-700"><td class="px-4 py-3"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-oman-red text-white grid place-items-center text-[10px] font-bold">NA</div>Noor Al-Amri</div></td><td class="px-4 py-3"><span class="tag bg-blue-50 text-blue-600">Manager</span></td><td class="px-4 py-3">11</td><td class="px-4 py-3">4.9 ★</td><td class="px-4 py-3">12m</td><td class="px-4 py-3 text-ok">• online</td><td class="px-4 py-3"><button class="text-ink-400">⋯</button></td></tr>
+              <tr class="stripe-row border-t border-sand-100 dark:border-ink-700"><td class="px-4 py-3"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-oman-green text-white grid place-items-center text-[10px] font-bold">MA</div>Maha Al-Balushi</div></td><td class="px-4 py-3"><span class="tag bg-sand-200 text-ink-700">Officer</span></td><td class="px-4 py-3">9</td><td class="px-4 py-3">4.6 ★</td><td class="px-4 py-3">17m</td><td class="px-4 py-3 text-ok">• online</td><td class="px-4 py-3"><button class="text-ink-400">⋯</button></td></tr>
+              <tr class="stripe-row border-t border-sand-100 dark:border-ink-700"><td class="px-4 py-3"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-ink-500 text-white grid place-items-center text-[10px] font-bold">HA</div>Hassan Al-Zadjali</div></td><td class="px-4 py-3"><span class="tag bg-sand-200 text-ink-700">Officer</span></td><td class="px-4 py-3">7</td><td class="px-4 py-3">4.4 ★</td><td class="px-4 py-3">19m</td><td class="px-4 py-3 text-ink-400">1h ago</td><td class="px-4 py-3"><button class="text-ink-400">⋯</button></td></tr>
+              <tr class="stripe-row border-t border-sand-100 dark:border-ink-700"><td class="px-4 py-3"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-ink-400 text-white grid place-items-center text-[10px] font-bold">SR</div>Sara Al-Habsi</div></td><td class="px-4 py-3"><span class="tag bg-sand-200 text-ink-700">Officer</span></td><td class="px-4 py-3">0</td><td class="px-4 py-3">—</td><td class="px-4 py-3">—</td><td class="px-4 py-3 text-ink-400">3d ago</td><td class="px-4 py-3"><button class="text-ink-400">⋯</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div data-tab-panel="wallet" class="hidden">
+        <div class="grid md:grid-cols-3 gap-4 mb-5">
+          <div class="rounded-2xl bg-gradient-to-br from-teal-500 to-oman-green text-white p-5 shadow-soft md:col-span-2">
+            <div class="text-sm opacity-80">Wallet balance</div>
+            <div class="text-4xl font-extrabold mt-1">1,284.750 <span class="text-lg opacity-80">OMR</span></div>
+            <div class="mt-3 flex gap-2 text-sm">
+              <button class="px-3 py-1.5 rounded-lg bg-white text-teal-600 font-semibold">Withdraw to bank</button>
+              <button class="px-3 py-1.5 rounded-lg bg-white/20 font-semibold">Settlement history</button>
+            </div>
+          </div>
+          <div class="rounded-2xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-5">
+            <div class="text-xs uppercase tracking-wider text-ink-500">This month</div>
+            <div class="mt-2 space-y-1.5 text-sm">
+              <div class="flex justify-between"><span>Gross</span><span class="font-semibold">1,842.500</span></div>
+              <div class="flex justify-between text-ink-500"><span>Platform fee</span><span>-92.120</span></div>
+              <div class="flex justify-between text-ink-500"><span>AmwalPay</span><span>-38.640</span></div>
+              <div class="border-t border-sand-200 dark:border-ink-700 pt-1.5 flex justify-between font-bold"><span>Net</span><span>1,711.740</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 overflow-hidden">
+          <div class="px-4 py-3 border-b border-sand-200 dark:border-ink-700 font-bold">Ledger · last 7 days</div>
+          <table class="w-full text-sm">
+            <thead class="bg-sand-100 dark:bg-ink-700 text-left text-xs uppercase text-ink-500">
+              <tr><th class="px-4 py-2">Date</th><th class="px-4 py-2">Type</th><th class="px-4 py-2">Ref</th><th class="px-4 py-2">Amount</th><th class="px-4 py-2">Balance</th></tr>
+            </thead>
+            <tbody>
+              <tr class="stripe-row border-t border-sand-100 dark:border-ink-700"><td class="px-4 py-3">Apr 17 09:42</td><td class="px-4 py-3">Service fee</td><td class="px-4 py-3 font-mono text-xs">R-88421</td><td class="px-4 py-3 text-ok">+0.500</td><td class="px-4 py-3">1,284.750</td></tr>
+              <tr class="stripe-row border-t border-sand-100 dark:border-ink-700"><td class="px-4 py-3">Apr 17 09:14</td><td class="px-4 py-3">Platform fee</td><td class="px-4 py-3 font-mono text-xs">R-88421</td><td class="px-4 py-3 text-bad">-0.100</td><td class="px-4 py-3">1,284.250</td></tr>
+              <tr class="stripe-row border-t border-sand-100 dark:border-ink-700"><td class="px-4 py-3">Apr 16 18:00</td><td class="px-4 py-3">Withdrawal</td><td class="px-4 py-3 font-mono text-xs">AW-9231</td><td class="px-4 py-3 text-bad">-800.000</td><td class="px-4 py-3">1,284.350</td></tr>
+              <tr class="stripe-row border-t border-sand-100 dark:border-ink-700"><td class="px-4 py-3">Apr 16 16:22</td><td class="px-4 py-3">Settlement</td><td class="px-4 py-3 font-mono text-xs">SET-0416</td><td class="px-4 py-3 text-ok">+142.300</td><td class="px-4 py-3">2,084.350</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div data-tab-panel="invoices" class="hidden">
+        <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-5">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-teal-500 text-white grid place-items-center">💳</div>
+            <div>
+              <div class="font-bold">Pro plan · 79 OMR / month</div>
+              <div class="text-xs text-ink-500">Renews May 16 · 5 / 8 seats · 842 / 1,200 transactions</div>
+            </div>
+            <button class="ml-auto text-xs px-3 py-1.5 rounded-lg border border-sand-200 dark:border-ink-700">Change plan</button>
+            <button class="text-xs px-3 py-1.5 rounded-lg border border-sand-200 dark:border-ink-700">Update card</button>
+          </div>
+          <div class="h-2 rounded-full bg-sand-100 dark:bg-ink-700 overflow-hidden"><div class="h-full bg-teal-500" style="width:70%"></div></div>
+        </div>
+        <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 overflow-hidden mt-5">
+          <div class="px-4 py-3 border-b border-sand-200 dark:border-ink-700 font-bold">Invoices</div>
+          <table class="w-full text-sm">
+            <thead class="bg-sand-100 dark:bg-ink-700 text-left text-xs uppercase text-ink-500"><tr><th class="px-4 py-2">Date</th><th class="px-4 py-2">#</th><th class="px-4 py-2">Amount</th><th class="px-4 py-2">Status</th><th class="px-4 py-2"></th></tr></thead>
+            <tbody>
+              <tr class="stripe-row border-t border-sand-100 dark:border-ink-700"><td class="px-4 py-3">Apr 16, 2026</td><td class="px-4 py-3 font-mono text-xs">INV-2026-0416</td><td class="px-4 py-3">79.000 OMR</td><td class="px-4 py-3"><span class="tag bg-green-50 text-ok">Paid</span></td><td class="px-4 py-3"><a class="text-teal-600 text-xs">Download PDF</a></td></tr>
+              <tr class="stripe-row border-t border-sand-100 dark:border-ink-700"><td class="px-4 py-3">Mar 16, 2026</td><td class="px-4 py-3 font-mono text-xs">INV-2026-0316</td><td class="px-4 py-3">79.000 OMR</td><td class="px-4 py-3"><span class="tag bg-green-50 text-ok">Paid</span></td><td class="px-4 py-3"><a class="text-teal-600 text-xs">Download PDF</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div data-tab-panel="profile" class="hidden">
+        <div class="grid md:grid-cols-[240px_1fr] gap-6">
+          <div>
+            <div class="rounded-2xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-5 text-center">
+              <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-teal-500 to-oman-green grid place-items-center text-white font-bold text-2xl">ن</div>
+              <div class="mt-3 font-bold">مكتب سند النهضة</div>
+              <div class="text-xs text-ink-500">Sanad Al-Nahdha</div>
+              <button class="mt-3 w-full py-2 rounded-lg border border-sand-200 dark:border-ink-700 text-sm">Change logo</button>
+            </div>
+          </div>
+          <form class="space-y-4">
+            <div class="grid md:grid-cols-2 gap-3">
+              <label class="block"><div class="text-xs font-semibold text-ink-500 mb-1">Office name (EN)</div><input class="w-full px-3 py-2 rounded-lg bg-white border border-sand-200 dark:bg-ink-700 dark:border-ink-600" value="Sanad Al-Nahdha"/></label>
+              <label class="block"><div class="text-xs font-semibold text-ink-500 mb-1">Office name (AR)</div><input class="w-full px-3 py-2 rounded-lg bg-white border border-sand-200 dark:bg-ink-700 dark:border-ink-600" value="مكتب سند النهضة"/></label>
+              <label class="block"><div class="text-xs font-semibold text-ink-500 mb-1">Governorate</div><select class="w-full px-3 py-2 rounded-lg bg-white border border-sand-200 dark:bg-ink-700 dark:border-ink-600"><option>Muscat</option><option>Al Batinah North</option></select></label>
+              <label class="block"><div class="text-xs font-semibold text-ink-500 mb-1">Wilayat</div><input class="w-full px-3 py-2 rounded-lg bg-white border border-sand-200 dark:bg-ink-700 dark:border-ink-600" value="Bawshar"/></label>
+              <label class="block"><div class="text-xs font-semibold text-ink-500 mb-1">Working hours</div><input class="w-full px-3 py-2 rounded-lg bg-white border border-sand-200 dark:bg-ink-700 dark:border-ink-600" value="Sun–Thu 07:30–14:30"/></label>
+              <label class="block"><div class="text-xs font-semibold text-ink-500 mb-1">CR number</div><input class="w-full px-3 py-2 rounded-lg bg-white border border-sand-200 dark:bg-ink-700 dark:border-ink-600" value="1184273"/></label>
+            </div>
+            <label class="block"><div class="text-xs font-semibold text-ink-500 mb-1">Service specialties</div>
+              <div class="flex flex-wrap gap-1.5">
+                <span class="tag bg-teal-500 text-white">ROP ×</span>
+                <span class="tag bg-teal-500 text-white">MoL ×</span>
+                <span class="tag bg-teal-500 text-white">Civil Status ×</span>
+                <span class="tag bg-teal-500 text-white">MOCIIP ×</span>
+                <button type="button" class="tag bg-sand-100 text-ink-600 dark:bg-ink-700">+ add</button>
+              </div>
+            </label>
+            <label class="block"><div class="text-xs font-semibold text-ink-500 mb-1">Default office service fee (OMR)</div><input type="number" step="0.100" class="w-48 px-3 py-2 rounded-lg bg-white border border-sand-200 dark:bg-ink-700 dark:border-ink-600" value="0.500"/></label>
+            <div class="flex gap-2"><button class="px-4 py-2 rounded-lg bg-teal-500 text-white font-bold">Save</button><button class="px-4 py-2 rounded-lg border border-sand-200 dark:border-ink-700">Cancel</button></div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================= -->
+    <!-- SCREEN 5 · CATALOGUE (smart FAQ)               -->
+    <!-- ============================================= -->
+    <section data-screen="catalogue" class="p-4 md:p-6">
+      <div class="flex items-end justify-between mb-5 flex-wrap gap-2">
+        <div>
+          <h2 class="text-2xl font-bold">Service catalogue <span class="text-ink-400 font-normal">· 3,417 services · 50 entities</span></h2>
+          <p class="text-sm text-ink-500">The bot reads from this catalogue. If something's out of date — <b>fix it here.</b></p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="tag bg-yellow-50 text-warn">12 open proposals</span>
+          <span class="tag bg-green-50 text-ok">48 approved this month</span>
+        </div>
+      </div>
+      <div class="grid md:grid-cols-[240px_1fr] gap-5">
+        <aside class="space-y-2">
+          <input class="w-full px-3 py-2 rounded-lg bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 text-sm" placeholder="Search services…"/>
+          <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-3 text-sm space-y-1">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-ink-500 mb-1">Entities</div>
+            <button class="w-full text-left px-2 py-1.5 rounded bg-teal-500 text-white font-semibold flex justify-between">All <span>3,417</span></button>
+            <button class="w-full text-left px-2 py-1.5 rounded hover:bg-sand-100 dark:hover:bg-ink-700 flex justify-between">ROP <span class="text-ink-400">233</span></button>
+            <button class="w-full text-left px-2 py-1.5 rounded hover:bg-sand-100 dark:hover:bg-ink-700 flex justify-between">MoH <span class="text-ink-400">103</span></button>
+            <button class="w-full text-left px-2 py-1.5 rounded hover:bg-sand-100 dark:hover:bg-ink-700 flex justify-between">MOCIIP <span class="text-ink-400">146</span></button>
+            <button class="w-full text-left px-2 py-1.5 rounded hover:bg-sand-100 dark:hover:bg-ink-700 flex justify-between">MTCIT <span class="text-ink-400">245</span></button>
+            <button class="w-full text-left px-2 py-1.5 rounded hover:bg-sand-100 dark:hover:bg-ink-700 flex justify-between">Judiciary <span class="text-ink-400">184</span></button>
+            <button class="w-full text-left px-2 py-1.5 rounded hover:bg-sand-100 dark:hover:bg-ink-700 flex justify-between">Civil Status <span class="text-ink-400">42</span></button>
+            <button class="w-full text-left px-2 py-1.5 rounded hover:bg-sand-100 dark:hover:bg-ink-700 flex justify-between">+ 44 more</button>
+          </div>
+          <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-3 text-sm">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-ink-500 mb-2">Filters</div>
+            <label class="flex items-center gap-2 py-1"><input type="checkbox" class="accent-teal-500"/> Has open proposals</label>
+            <label class="flex items-center gap-2 py-1"><input type="checkbox" class="accent-teal-500" checked/> Bot-enabled</label>
+            <label class="flex items-center gap-2 py-1"><input type="checkbox" class="accent-teal-500"/> My specialties only</label>
+          </div>
+        </aside>
+        <div class="space-y-3">
+          <!-- Catalogue row -->
+          <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-4 hover:shadow-pop transition cursor-pointer" data-nav-to="service-detail">
+            <div class="flex items-start gap-2 flex-wrap">
+              <span class="tag bg-teal-50 text-teal-600">ROP</span>
+              <span class="tag bg-sand-100 text-ink-600">G2C</span>
+              <span class="tag bg-yellow-50 text-warn">⚠ 2 open proposals</span>
+              <span class="tag bg-green-50 text-ok ml-auto">v 14</span>
+            </div>
+            <h3 class="font-bold mt-2">Driver's licence renewal · تجديد رخصة القيادة</h3>
+            <p class="text-sm text-ink-500 mt-1">Issued for 10 years; requires recent medical check and personal photo.</p>
+            <div class="flex items-center gap-4 mt-3 text-xs text-ink-500">
+              <span>📎 3 docs</span>
+              <span>💰 5 OMR</span>
+              <span>⏱ ~30 min</span>
+              <span>📊 1,842 citizen visits / mo</span>
+            </div>
+          </div>
+          <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-4 hover:shadow-pop transition cursor-pointer">
+            <div class="flex items-start gap-2 flex-wrap">
+              <span class="tag bg-teal-50 text-teal-600">Civil Status</span>
+              <span class="tag bg-sand-100 text-ink-600">G2C</span>
+              <span class="tag bg-green-50 text-ok ml-auto">v 9</span>
+            </div>
+            <h3 class="font-bold mt-2">Civil ID renewal · تجديد بطاقة مدنية</h3>
+            <p class="text-sm text-ink-500 mt-1">Renewal of national Civil ID card for Omani citizens and residents.</p>
+            <div class="flex items-center gap-4 mt-3 text-xs text-ink-500"><span>📎 2 docs</span><span>💰 3 OMR</span><span>⏱ ~20 min</span><span>📊 3,120 / mo</span></div>
+          </div>
+          <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-4 hover:shadow-pop transition cursor-pointer">
+            <div class="flex items-start gap-2 flex-wrap">
+              <span class="tag bg-teal-50 text-teal-600">MOCIIP</span>
+              <span class="tag bg-sand-100 text-ink-600">G2B</span>
+              <span class="tag bg-green-50 text-ok ml-auto">v 22</span>
+            </div>
+            <h3 class="font-bold mt-2">Commercial registration issuance · إصدار سجل تجاري</h3>
+            <p class="text-sm text-ink-500 mt-1">Issuance of new commercial registration for companies and sole proprietors.</p>
+            <div class="flex items-center gap-4 mt-3 text-xs text-ink-500"><span>📎 5 docs</span><span>💰 variable</span><span>⏱ ~45 min</span><span>📊 612 / mo</span></div>
+          </div>
+          <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-4 hover:shadow-pop transition cursor-pointer">
+            <div class="flex items-start gap-2 flex-wrap">
+              <span class="tag bg-teal-50 text-teal-600">Royal Oman Police</span>
+              <span class="tag bg-sand-100 text-ink-600">G2C</span>
+              <span class="tag bg-red-50 text-bad">⚠ 4 open proposals</span>
+              <span class="tag bg-green-50 text-ok ml-auto">v 31</span>
+            </div>
+            <h3 class="font-bold mt-2">Passport renewal · تجديد جواز السفر</h3>
+            <p class="text-sm text-ink-500 mt-1">Biometric passport renewal; photo and civil ID required.</p>
+            <div class="flex items-center gap-4 mt-3 text-xs text-ink-500"><span>📎 3 docs</span><span>💰 20 OMR</span><span>⏱ ~40 min</span><span>📊 2,210 / mo</span></div>
+          </div>
+          <div class="text-center text-xs text-ink-400 py-4">Showing 4 of 3,417 · <button class="text-teal-600 font-semibold">Load more</button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================= -->
+    <!-- SCREEN 6 · SERVICE DETAIL + EDIT               -->
+    <!-- ============================================= -->
+    <section data-screen="service-detail" class="p-4 md:p-6 max-w-5xl">
+      <button data-nav-to="catalogue" class="text-sm text-ink-500 hover:text-teal-600 mb-3">← Back to catalogue</button>
+      <div class="flex items-start gap-3 flex-wrap mb-4">
+        <div class="flex-1 min-w-[280px]">
+          <div class="flex items-center gap-2 mb-1"><span class="tag bg-teal-50 text-teal-600">ROP</span><span class="tag bg-sand-100 text-ink-600">G2C</span><span class="tag bg-green-50 text-ok">v 14 · live</span></div>
+          <h1 class="text-2xl font-bold">Driver's licence renewal</h1>
+          <div class="text-ink-500 font-ar" dir="rtl">تجديد رخصة القيادة</div>
+        </div>
+        <div class="flex gap-2">
+          <button class="px-3 py-2 rounded-lg border border-sand-200 dark:border-ink-700 text-sm">History</button>
+          <button class="px-3 py-2 rounded-lg bg-teal-500 text-white text-sm font-bold" id="proposeBtn">✏️ Propose an edit</button>
+        </div>
+      </div>
+
+      <!-- Open proposals banner -->
+      <div class="rounded-xl bg-yellow-50 border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-900/40 p-4 mb-5">
+        <div class="font-semibold text-warn flex items-center gap-2">⚠️ 2 open proposals on this service</div>
+        <div class="mt-2 space-y-2 text-sm">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="tag bg-white text-warn">Required docs</span>
+            <span>"Add: Insurance clearance letter"</span>
+            <span class="text-ink-500">by Sanad Al-Amerat · 2 days ago</span>
+            <div class="ml-auto flex gap-1">
+              <button class="px-2 py-1 rounded bg-ok/10 text-ok text-xs font-bold">✓ Confirm (2/3)</button>
+              <button class="px-2 py-1 rounded bg-bad/10 text-bad text-xs font-bold">✕ Dispute</button>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="tag bg-white text-warn">Fees</span>
+            <span>Change 5 OMR → 5.500 OMR</span>
+            <span class="text-ink-500">by Sanad Muttrah · yesterday</span>
+            <div class="ml-auto flex gap-1">
+              <button class="px-2 py-1 rounded bg-ok/10 text-ok text-xs font-bold">✓ Confirm (1/3)</button>
+              <button class="px-2 py-1 rounded bg-bad/10 text-bad text-xs font-bold">✕ Dispute</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Service fields -->
+      <div class="grid md:grid-cols-2 gap-5">
+        <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-5">
+          <div class="flex justify-between items-center mb-3"><h3 class="font-bold">Required documents</h3><button class="text-xs text-teal-600 font-semibold">✏️ Suggest edit</button></div>
+          <ol class="space-y-2 text-sm">
+            <li class="flex gap-2 p-2 rounded bg-sand-100 dark:bg-ink-700"><span class="font-mono text-ink-400">1.</span><div class="flex-1"><b>Civil ID (front + back)</b><div class="text-xs text-ink-500">البطاقة المدنية · must be valid</div></div></li>
+            <li class="flex gap-2 p-2 rounded bg-sand-100 dark:bg-ink-700"><span class="font-mono text-ink-400">2.</span><div class="flex-1"><b>Medical form</b><div class="text-xs text-ink-500">الفحص الطبي · issued within 30 days</div></div></li>
+            <li class="flex gap-2 p-2 rounded bg-sand-100 dark:bg-ink-700"><span class="font-mono text-ink-400">3.</span><div class="flex-1"><b>Personal photo (white bg)</b><div class="text-xs text-ink-500">صورة شخصية · 600×800 recommended</div></div></li>
+          </ol>
+        </div>
+        <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-5">
+          <div class="flex justify-between items-center mb-3"><h3 class="font-bold">Fees</h3><button class="text-xs text-teal-600 font-semibold">✏️ Suggest edit</button></div>
+          <div class="space-y-1.5 text-sm">
+            <div class="flex justify-between"><span>Government fee</span><span class="font-semibold">5.000 OMR</span></div>
+            <div class="flex justify-between text-ink-500"><span>Office fee (default)</span><span>0.500 OMR</span></div>
+            <div class="flex justify-between text-ink-500"><span>Platform fee</span><span>0.500 OMR</span></div>
+            <div class="border-t border-sand-200 dark:border-ink-700 pt-1.5 flex justify-between font-bold"><span>Total</span><span>6.000 OMR</span></div>
+          </div>
+        </div>
+        <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-5">
+          <div class="flex justify-between items-center mb-3"><h3 class="font-bold">Process steps</h3><button class="text-xs text-teal-600 font-semibold">✏️ Suggest edit</button></div>
+          <ol class="space-y-1.5 text-sm list-decimal pl-5">
+            <li>Login to Maktabi (ROP portal) with officer credentials</li>
+            <li>Select "Licence renewal", enter citizen civil ID</li>
+            <li>Upload medical form + photo</li>
+            <li>Request OTP from citizen, enter on portal</li>
+            <li>Pay government fee, download digital licence</li>
+          </ol>
+        </div>
+        <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-5">
+          <div class="flex justify-between items-center mb-3"><h3 class="font-bold">Special conditions</h3><button class="text-xs text-teal-600 font-semibold">✏️ Suggest edit</button></div>
+          <ul class="list-disc pl-5 text-sm space-y-1">
+            <li>Citizen must be ≥ 18 years old</li>
+            <li>Previous licence must not be suspended</li>
+            <li>Medical form must be issued by an approved clinic</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Propose modal (inline, shown by JS) -->
+      <div id="proposeModal" class="fixed inset-0 bg-ink-900/60 backdrop-blur-sm grid place-items-center hidden z-50 p-4">
+        <div class="w-full max-w-xl rounded-2xl bg-white dark:bg-ink-800 shadow-pop p-6 max-h-[90vh] overflow-y-auto scrollbar-thin">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-warn text-white grid place-items-center">✏️</div>
+            <div>
+              <div class="font-bold">Propose a catalogue edit</div>
+              <div class="text-xs text-ink-500">Needs 3 confirms from different offices (or admin approval) to go live.</div>
+            </div>
+            <button class="ml-auto text-ink-400" id="proposeCloseBtn">✕</button>
+          </div>
+          <div class="space-y-3 text-sm">
+            <label class="block"><div class="text-xs font-semibold text-ink-500 mb-1">Field to change</div>
+              <select class="w-full px-3 py-2 rounded-lg bg-white border border-sand-200 dark:bg-ink-700 dark:border-ink-600"><option>Required documents</option><option>Fees</option><option>Process steps</option><option>Special conditions</option></select>
+            </label>
+            <label class="block"><div class="text-xs font-semibold text-ink-500 mb-1">Change (describe the new value)</div>
+              <textarea class="w-full px-3 py-2 rounded-lg bg-white border border-sand-200 dark:bg-ink-700 dark:border-ink-600 min-h-[80px]" placeholder="e.g., Add: Insurance clearance letter (from Mala'a)"></textarea>
+            </label>
+            <label class="block"><div class="text-xs font-semibold text-ink-500 mb-1">Why (required)</div>
+              <textarea class="w-full px-3 py-2 rounded-lg bg-white border border-sand-200 dark:bg-ink-700 dark:border-ink-600 min-h-[70px]" placeholder="e.g., ROP now requires clearance for any licence older than 10 years."></textarea>
+            </label>
+            <label class="block"><div class="text-xs font-semibold text-ink-500 mb-1">Evidence (screenshot / portal URL, optional)</div>
+              <input class="w-full px-3 py-2 rounded-lg bg-white border border-sand-200 dark:bg-ink-700 dark:border-ink-600" placeholder="https://rop.gov.om/…"/>
+            </label>
+            <div class="rounded-lg bg-sand-100 dark:bg-ink-700 p-3 text-xs text-ink-500">After submission, your proposal is visible to other offices. It goes live when 3 distinct offices confirm or an admin approves.</div>
+            <div class="flex gap-2"><button class="flex-1 py-2 rounded-lg border border-sand-200 dark:border-ink-700" id="proposeCancelBtn">Cancel</button><button class="flex-1 py-2 rounded-lg bg-teal-500 text-white font-bold">Submit proposal</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================= -->
+    <!-- SCREEN 7 · WEB TEST CHATBOT                    -->
+    <!-- ============================================= -->
+    <section data-screen="testchat" class="p-4 md:p-6">
+      <div class="flex items-end justify-between mb-4">
+        <div>
+          <h2 class="text-2xl font-bold">Web test chatbot</h2>
+          <p class="text-sm text-ink-500">Same backend agent as WhatsApp. Use <span class="kbd">/reset</span>, <span class="kbd">/state</span>, <span class="kbd">/simulate gov_otp 12345</span>.</p>
+        </div>
+        <div class="flex gap-2 text-xs">
+          <span class="tag bg-green-50 text-ok">● Qwen 3.5 connected</span>
+          <span class="tag bg-sand-100 text-ink-600">temp 0.2</span>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-[1fr_300px] gap-5">
+        <div class="rounded-2xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 flex flex-col h-[72vh]">
+          <div class="px-4 py-2.5 border-b border-sand-200 dark:border-ink-700 flex items-center gap-2">
+            <span class="w-8 h-8 rounded-full bg-teal-500 text-white grid place-items-center">🤖</span>
+            <div><div class="text-sm font-bold">Sanad Assistant</div><div class="text-[11px] text-ink-500">state: <b>collecting(photo)</b> · service: Driver's licence renewal · v14</div></div>
+            <button class="ml-auto text-xs px-2 py-1 rounded-lg border border-sand-200 dark:border-ink-700">Reset</button>
+          </div>
+          <div class="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-2 bg-sand-50 dark:bg-ink-900 flex flex-col">
+            <div class="bubble bubble-bot">🤖 مرحبا، أنا مساعد سند. كيف أقدر أساعدك؟</div>
+            <div class="bubble bubble-out" dir="rtl">أريد تجديد رخصة القيادة</div>
+            <div class="bubble bubble-bot" dir="rtl">تمام — تجديد رخصة القيادة (ROP). الرسوم حوالي <b>5.500 ريال</b>. أحتاج 3 مستندات: البطاقة المدنية، الفحص الطبي، صورة شخصية. نبدأ؟
+              <div class="mt-2 flex flex-wrap gap-1.5">
+                <button class="text-[11px] px-2 py-0.5 rounded-full bg-white border border-sand-300">نعم</button>
+                <button class="text-[11px] px-2 py-0.5 rounded-full bg-white border border-sand-300">كم الرسوم بالضبط؟</button>
+                <button class="text-[11px] px-2 py-0.5 rounded-full bg-white border border-sand-300">خدمة أخرى</button>
+              </div>
+            </div>
+            <div class="bubble bubble-out">نعم</div>
+            <div class="bubble bubble-bot" dir="rtl">ممتاز. ابعثلي صورة البطاقة المدنية (وجه + ظهر) — مثال 👇</div>
+            <div class="bubble bubble-bot w-56">
+              <div class="doc-thumb h-24 rounded-md"></div>
+              <div class="text-[11px] text-ink-500 mt-1">example</div>
+            </div>
+            <div class="bubble bubble-out"><span class="inline-flex items-center gap-1">📎 civil_id.jpg</span></div>
+            <div class="bubble bubble-bot">✅ واضحة. OCR: ID 1234567 · Expires 2027-11-14. الآن الفحص الطبي.</div>
+            <!-- dev trace -->
+            <div class="text-[11px] text-ink-400 self-center mt-2 mb-1 bg-sand-100 dark:bg-ink-800 px-2 py-0.5 rounded">dev · tool_call: record_document(code="civil_id", ocr={id:"1234567", exp:"2027-11-14"})</div>
+          </div>
+          <div class="p-3 border-t border-sand-200 dark:border-ink-700 flex gap-2 bg-white dark:bg-ink-800">
+            <button class="p-2 rounded-lg hover:bg-sand-100 dark:hover:bg-ink-700" title="Upload image">📎</button>
+            <input class="flex-1 px-3 py-2 rounded-lg bg-sand-100 dark:bg-ink-700 text-sm" placeholder="Type or try /simulate gov_otp 12345"/>
+            <button class="px-3 py-2 rounded-lg bg-teal-500 hover:bg-teal-600 text-white text-sm font-bold">Send</button>
+          </div>
+        </div>
+
+        <aside class="space-y-3">
+          <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-4">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-ink-500 mb-2">Current state</div>
+            <pre class="text-[11px] leading-relaxed text-ink-700 dark:text-ink-300 bg-sand-50 dark:bg-ink-900 p-2 rounded overflow-x-auto scrollbar-thin">{
+  "state": "collecting",
+  "service_id": 9412,
+  "service_version": 14,
+  "collected": ["civil_id","medical"],
+  "pending": ["photo"],
+  "fee_quote_omr": 5.5
+}</pre>
+          </div>
+          <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-4">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-ink-500 mb-2">Dev commands</div>
+            <ul class="text-xs space-y-1 text-ink-600 dark:text-ink-300">
+              <li><span class="kbd">/reset</span> — start over</li>
+              <li><span class="kbd">/state</span> — dump state JSON</li>
+              <li><span class="kbd">/simulate gov_otp 12345</span> — inject OTP from "portal"</li>
+              <li><span class="kbd">/as &lt;phone&gt;</span> — impersonate citizen</li>
+              <li><span class="kbd">/service &lt;id&gt;</span> — jump to service</li>
+            </ul>
+          </div>
+          <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-4">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-ink-500 mb-2">Tool calls (live)</div>
+            <ol class="text-[11px] space-y-1 text-ink-600 dark:text-ink-300">
+              <li>• match_service → "Driver's licence renewal"</li>
+              <li>• quote_fee → 5.500</li>
+              <li>• record_document(civil_id)</li>
+              <li>• record_document(medical)</li>
+              <li class="text-ink-400">• waiting…</li>
+            </ol>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============================================= -->
+    <!-- SCREEN 8 · WHATSAPP SIMULATOR                  -->
+    <!-- ============================================= -->
+    <section data-screen="whatsapp" class="p-6">
+      <div class="max-w-4xl mx-auto grid md:grid-cols-[1fr_380px] gap-8 items-start">
+        <div>
+          <h2 class="text-2xl font-bold">Citizen experience on WhatsApp</h2>
+          <p class="text-ink-500 mt-2">One national number. Arabic-first. Zero onboarding. This is exactly what a citizen sees when they message the platform.</p>
+          <ul class="mt-6 space-y-3 text-sm">
+            <li class="flex gap-3"><span class="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-600 grid place-items-center font-bold">1</span>Citizen describes in own words — bot matches from the catalogue.</li>
+            <li class="flex gap-3"><span class="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-600 grid place-items-center font-bold">2</span>Bot confirms service + fee + required docs before collecting.</li>
+            <li class="flex gap-3"><span class="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-600 grid place-items-center font-bold">3</span>Docs collected one-by-one, validated on arrival.</li>
+            <li class="flex gap-3"><span class="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-600 grid place-items-center font-bold">4</span>Citizen pays in-chat via AmwalPay link → request enters the queue.</li>
+            <li class="flex gap-3"><span class="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-600 grid place-items-center font-bold">5</span>OTPs forwarded once the office opens a 60-second window.</li>
+            <li class="flex gap-3"><span class="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-600 grid place-items-center font-bold">6</span>Completion message with receipt + 1-tap rating.</li>
+          </ul>
+        </div>
+        <div class="phone-shell mx-auto">
+          <div class="phone-screen">
+            <div class="bg-[#075e54] text-white px-3 py-2.5 flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-white/20 grid place-items-center text-sm">S</div>
+              <div class="flex-1">
+                <div class="text-sm font-semibold leading-tight">Sanad-AI</div>
+                <div class="text-[11px] opacity-80">online</div>
+              </div>
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20 10.3c-.3-3.8-3.5-6.8-7.3-6.8S5.7 6.5 5.4 10.3C3.9 10.8 3 12.3 3 14c0 2.2 1.8 4 4 4h10c2.2 0 4-1.8 4-4 0-1.7-.9-3.2-1-3.7z"/></svg>
+            </div>
+            <div class="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-1.5 flex flex-col text-[13px]">
+              <div class="bubble bubble-in" dir="rtl">مرحبا</div>
+              <div class="bubble bubble-bot" dir="rtl">مرحبا بك في سند. كيف أقدر أساعدك اليوم؟ 🇴🇲</div>
+              <div class="bubble bubble-in" dir="rtl">أبي أجدد رخصة السياقة</div>
+              <div class="bubble bubble-bot" dir="rtl">تجديد رخصة القيادة. الرسوم حوالي <b>5.500 ريال</b>، احتاج 3 مستندات:<br/>• بطاقة مدنية<br/>• فحص طبي حديث<br/>• صورة شخصية<br/>نبدأ؟</div>
+              <div class="bubble bubble-in" dir="rtl">نعم</div>
+              <div class="bubble bubble-bot" dir="rtl">ابعثلي صورة البطاقة المدنية 📸</div>
+              <div class="bubble bubble-in" dir="rtl">📎 ID.jpg</div>
+              <div class="bubble bubble-bot" dir="rtl">✅ واضحة. الفحص الطبي الآن.</div>
+              <div class="bubble bubble-in" dir="rtl">📎 medical.pdf</div>
+              <div class="bubble bubble-bot" dir="rtl">ممتاز. الصورة الشخصية؟</div>
+              <div class="bubble bubble-in" dir="rtl">📎 photo.jpg</div>
+              <div class="bubble bubble-bot" dir="rtl">الإجمالي <b>6.000 ريال</b>. اضغط على الرابط للدفع 👇<br/><span class="text-teal-600 underline text-[12px]">amwalpay.com/pay/SK48…</span></div>
+              <div class="bubble bubble-in" dir="rtl">تم الدفع ✅</div>
+              <div class="bubble bubble-bot" dir="rtl">رائع! طلبك <b>#R-88421</b> في انتظار أحد مكاتب سند المعتمدة.</div>
+              <div class="bubble bubble-bot" dir="rtl">مرحبا! معك خالد من مكتب سند النهضة. سأبدأ المعاملة الآن.</div>
+              <div class="bubble bubble-bot" dir="rtl">📲 أرسل لنا الرمز الذي وصلك من ROP (صالح 60 ثانية)</div>
+              <div class="bubble bubble-in" dir="rtl">748192</div>
+              <div class="bubble bubble-bot" dir="rtl">✅ تم استلام الرمز.</div>
+              <div class="bubble bubble-bot" dir="rtl">✅ تم إنجاز معاملتك! 🎉<br/>📄 الإيصال مرفق.<br/>قيم خدمتنا:<br/>⭐⭐⭐⭐⭐</div>
+            </div>
+            <div class="bg-[#f0f0f0] border-t border-[#ddd] flex items-center gap-2 p-2">
+              <span class="text-ink-400 text-xs">Type a message…</span>
+              <span class="ml-auto w-8 h-8 rounded-full bg-[#075e54] grid place-items-center text-white">🎤</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================= -->
+    <!-- SCREEN 9 · ONBOARDING WIZARD                   -->
+    <!-- ============================================= -->
+    <section data-screen="onboard" class="p-4 md:p-8 max-w-4xl mx-auto">
+      <h2 class="text-2xl font-bold">Onboard your Sanad office</h2>
+      <p class="text-ink-500">Takes about 8 minutes. You'll go live as soon as an admin approves your CR.</p>
+
+      <!-- stepper -->
+      <div class="flex items-center gap-2 mt-6 mb-8 overflow-x-auto text-xs">
+        <div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-teal-500 text-white grid place-items-center font-bold">1</div><div class="font-semibold">Office</div></div>
+        <div class="flex-1 h-px bg-teal-500"></div>
+        <div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-teal-500 text-white grid place-items-center font-bold">2</div><div class="font-semibold">KYC</div></div>
+        <div class="flex-1 h-px bg-teal-500"></div>
+        <div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-teal-500 text-white grid place-items-center font-bold">3</div><div class="font-semibold text-teal-600">Officers</div></div>
+        <div class="flex-1 h-px bg-sand-300"></div>
+        <div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-white border border-sand-300 grid place-items-center font-bold text-ink-500">4</div><div class="text-ink-500">Plan & pay</div></div>
+        <div class="flex-1 h-px bg-sand-300"></div>
+        <div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-white border border-sand-300 grid place-items-center font-bold text-ink-500">5</div><div class="text-ink-500">Review</div></div>
+      </div>
+
+      <div class="rounded-2xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-6 space-y-4">
+        <h3 class="font-bold">Step 3 · Invite your officers</h3>
+        <p class="text-sm text-ink-500">Add up to 8 officers. They'll each get a magic-link email.</p>
+        <div class="space-y-2 text-sm">
+          <div class="flex gap-2">
+            <input class="flex-1 px-3 py-2 rounded-lg bg-white border border-sand-200 dark:bg-ink-700 dark:border-ink-600" value="Noor Al-Amri"/>
+            <input class="flex-1 px-3 py-2 rounded-lg bg-white border border-sand-200 dark:bg-ink-700 dark:border-ink-600" value="noor@nahdha.om"/>
+            <select class="px-3 py-2 rounded-lg bg-white border border-sand-200 dark:bg-ink-700 dark:border-ink-600"><option>Manager</option><option>Officer</option></select>
+            <button class="px-2 text-ink-400">✕</button>
+          </div>
+          <div class="flex gap-2">
+            <input class="flex-1 px-3 py-2 rounded-lg bg-white border border-sand-200 dark:bg-ink-700 dark:border-ink-600" value="Maha Al-Balushi"/>
+            <input class="flex-1 px-3 py-2 rounded-lg bg-white border border-sand-200 dark:bg-ink-700 dark:border-ink-600" value="maha@nahdha.om"/>
+            <select class="px-3 py-2 rounded-lg bg-white border border-sand-200 dark:bg-ink-700 dark:border-ink-600"><option>Officer</option></select>
+            <button class="px-2 text-ink-400">✕</button>
+          </div>
+          <button class="text-teal-600 font-semibold text-sm">+ Add another officer</button>
+        </div>
+        <div class="rounded-lg bg-teal-50 dark:bg-teal-900/20 p-3 text-xs text-teal-700 dark:text-teal-200">
+          💡 You can also declare your office's <b>service specialties</b> (ROP, MoL, etc.). Our routing engine prefers you for matching requests.
+        </div>
+      </div>
+
+      <div class="flex justify-between mt-5">
+        <button class="px-4 py-2 rounded-lg border border-sand-200 dark:border-ink-700">← Back</button>
+        <button class="px-5 py-2 rounded-lg bg-teal-500 text-white font-bold">Continue to plan →</button>
+      </div>
+    </section>
+
+    <!-- ============================================= -->
+    <!-- SCREEN 10 · OFFICE PUBLIC PROFILE              -->
+    <!-- ============================================= -->
+    <section data-screen="office-profile" class="p-4 md:p-8 max-w-4xl mx-auto">
+      <div class="rounded-2xl overflow-hidden border border-sand-200 dark:border-ink-700 bg-white dark:bg-ink-800">
+        <div class="h-32 bg-gradient-to-br from-teal-500 to-oman-green"></div>
+        <div class="p-6 -mt-12">
+          <div class="flex items-end justify-between flex-wrap gap-3">
+            <div class="flex items-end gap-4">
+              <div class="w-24 h-24 rounded-2xl bg-white border-4 border-white dark:border-ink-800 shadow-pop grid place-items-center text-3xl font-bold wordmark-s">ن</div>
+              <div>
+                <h1 class="text-2xl font-bold">مكتب سند النهضة</h1>
+                <div class="text-ink-500">Sanad Al-Nahdha · Muscat · Bawshar</div>
+                <div class="mt-1 flex items-center gap-2 text-sm"><span class="text-oman-gold">★ 4.8</span><span class="text-ink-500">· 1,248 transactions</span><span class="tag bg-green-50 text-ok ml-2">● Online now</span></div>
+              </div>
+            </div>
+            <button class="px-4 py-2 rounded-lg bg-teal-500 text-white font-bold">💬 Send my next request here</button>
+          </div>
+
+          <div class="mt-6 grid md:grid-cols-4 gap-3 text-sm">
+            <div class="rounded-xl bg-sand-100 dark:bg-ink-700 p-3"><div class="text-[11px] uppercase tracking-wider text-ink-500">Avg response</div><div class="font-bold mt-0.5">2m 12s</div></div>
+            <div class="rounded-xl bg-sand-100 dark:bg-ink-700 p-3"><div class="text-[11px] uppercase tracking-wider text-ink-500">Completion rate</div><div class="font-bold mt-0.5">92%</div></div>
+            <div class="rounded-xl bg-sand-100 dark:bg-ink-700 p-3"><div class="text-[11px] uppercase tracking-wider text-ink-500">Officers online</div><div class="font-bold mt-0.5">3</div></div>
+            <div class="rounded-xl bg-sand-100 dark:bg-ink-700 p-3"><div class="text-[11px] uppercase tracking-wider text-ink-500">Verified</div><div class="font-bold mt-0.5 text-ok">✓ CR-1184273</div></div>
+          </div>
+
+          <div class="mt-6">
+            <div class="text-xs font-bold uppercase tracking-wider text-ink-500 mb-2">Specialties</div>
+            <div class="flex flex-wrap gap-2 text-sm">
+              <span class="tag bg-teal-500 text-white">ROP</span>
+              <span class="tag bg-teal-500 text-white">MoL</span>
+              <span class="tag bg-teal-500 text-white">Civil Status</span>
+              <span class="tag bg-teal-500 text-white">MOCIIP</span>
+              <span class="tag bg-oman-gold/90 text-white">🏅 Trusted contributor · 14 approved edits</span>
+            </div>
+          </div>
+
+          <div class="mt-6 grid md:grid-cols-2 gap-4">
+            <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-700 p-4">
+              <div class="text-xs font-bold uppercase tracking-wider text-ink-500 mb-2">Working hours</div>
+              <ul class="text-sm space-y-1">
+                <li class="flex justify-between"><span>Sun – Thu</span><b>07:30 – 14:30</b></li>
+                <li class="flex justify-between"><span>Fri – Sat</span><span class="text-ink-500">Closed</span></li>
+              </ul>
+            </div>
+            <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-700 p-4">
+              <div class="text-xs font-bold uppercase tracking-wider text-ink-500 mb-2">Recent citizen feedback</div>
+              <ul class="text-sm space-y-2">
+                <li><b>★★★★★</b> Fast and friendly — <span class="text-ink-500">Aisha · 2d ago</span></li>
+                <li><b>★★★★★</b> Finished my CR renewal before lunch — <span class="text-ink-500">Mohammed · 5d ago</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================= -->
+    <!-- SCREEN 11 · CITIZEN PAY PAGE                   -->
+    <!-- ============================================= -->
+    <section data-screen="citizen-pay" class="min-h-[calc(100vh-4rem)] grid place-items-center bg-sand-100 dark:bg-ink-900 p-4">
+      <div class="w-full max-w-md rounded-2xl bg-white dark:bg-ink-800 shadow-pop p-6">
+        <div class="text-center mb-5">
+          <div class="w-12 h-12 mx-auto rounded-xl bg-gradient-to-br from-teal-500 to-oman-green grid place-items-center text-white font-bold text-lg">S</div>
+          <div class="mt-2 text-xs font-semibold text-ink-500">Sanad-AI · Secure payment via AmwalPay</div>
+        </div>
+        <div class="rounded-xl bg-sand-100 dark:bg-ink-700 p-4 text-sm">
+          <div class="flex justify-between"><span class="text-ink-500">Service</span><span class="font-semibold">Driver's licence renewal</span></div>
+          <div class="flex justify-between mt-1"><span class="text-ink-500">Request #</span><span class="font-mono text-xs">R-88421</span></div>
+          <div class="border-t border-sand-200 dark:border-ink-600 my-3"></div>
+          <div class="flex justify-between"><span>Government fee</span><span>5.000</span></div>
+          <div class="flex justify-between"><span>Office service fee</span><span>0.500</span></div>
+          <div class="flex justify-between text-ink-500"><span>Platform fee</span><span>0.500</span></div>
+          <div class="flex justify-between font-bold text-lg mt-2 pt-2 border-t border-sand-200 dark:border-ink-600"><span>Total OMR</span><span>6.000</span></div>
+        </div>
+        <div class="mt-4 space-y-2 text-sm">
+          <button class="w-full py-3 rounded-lg bg-gradient-to-r from-teal-500 to-oman-green text-white font-bold">💳 Pay with card</button>
+          <button class="w-full py-3 rounded-lg bg-white border border-sand-200 dark:bg-ink-700 dark:border-ink-600 font-semibold">📱 Pay with Omani wallet</button>
+        </div>
+        <div class="text-[11px] text-ink-400 text-center mt-4">🔒 Hosted by AmwalPay. Card never touches Sanad-AI servers.</div>
+      </div>
+    </section>
+
+    <!-- ============================================= -->
+    <!-- SCREEN 12 · ADMIN CONSOLE                      -->
+    <!-- ============================================= -->
+    <section data-screen="admin" class="p-4 md:p-6">
+      <div class="flex items-end justify-between mb-5">
+        <div>
+          <h2 class="text-2xl font-bold">Platform admin</h2>
+          <p class="text-sm text-ink-500">Sanad-AI HQ · Apr 17, 2026</p>
+        </div>
+        <div class="flex items-center gap-2 text-xs">
+          <span class="tag bg-green-50 text-ok">● all systems nominal</span>
+        </div>
+      </div>
+
+      <!-- KPI STRIP -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
+        <div class="rounded-xl bg-white border border-sand-200 p-3 dark:bg-ink-800 dark:border-ink-700"><div class="text-[11px] uppercase tracking-wider text-ink-500">Active offices</div><div class="text-2xl font-bold mt-0.5">23</div><div class="text-xs text-ok">+2 this week</div></div>
+        <div class="rounded-xl bg-white border border-sand-200 p-3 dark:bg-ink-800 dark:border-ink-700"><div class="text-[11px] uppercase tracking-wider text-ink-500">Officers online</div><div class="text-2xl font-bold mt-0.5">84</div></div>
+        <div class="rounded-xl bg-white border border-sand-200 p-3 dark:bg-ink-800 dark:border-ink-700"><div class="text-[11px] uppercase tracking-wider text-ink-500">Txns today</div><div class="text-2xl font-bold mt-0.5">1,142</div><div class="text-xs text-ok">↑ 14%</div></div>
+        <div class="rounded-xl bg-white border border-sand-200 p-3 dark:bg-ink-800 dark:border-ink-700"><div class="text-[11px] uppercase tracking-wider text-ink-500">MRR</div><div class="text-2xl font-bold mt-0.5">1,817 OMR</div></div>
+        <div class="rounded-xl bg-white border border-sand-200 p-3 dark:bg-ink-800 dark:border-ink-700"><div class="text-[11px] uppercase tracking-wider text-ink-500">P95 webhook</div><div class="text-2xl font-bold mt-0.5">184ms</div></div>
+      </div>
+
+      <!-- TABS -->
+      <div class="flex gap-2 mb-4 flex-wrap text-sm">
+        <button class="px-3 py-1.5 rounded-lg bg-teal-500 text-white font-semibold">Offices</button>
+        <button class="px-3 py-1.5 rounded-lg bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700">Onboarding queue <span class="ml-1 tag bg-warn text-white">4</span></button>
+        <button class="px-3 py-1.5 rounded-lg bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700">Catalogue approvals <span class="ml-1 tag bg-warn text-white">12</span></button>
+        <button class="px-3 py-1.5 rounded-lg bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700">Disputes <span class="ml-1 tag bg-bad text-white">3</span></button>
+        <button class="px-3 py-1.5 rounded-lg bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700">Audit log</button>
+      </div>
+
+      <div class="grid lg:grid-cols-3 gap-5">
+        <!-- Offices list -->
+        <div class="lg:col-span-2 rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 overflow-hidden">
+          <div class="px-4 py-3 border-b border-sand-200 dark:border-ink-700 flex items-center gap-2">
+            <h3 class="font-bold">Offices</h3>
+            <input class="ml-auto px-2 py-1 text-xs rounded bg-sand-100 dark:bg-ink-700 w-56" placeholder="Search…"/>
+          </div>
+          <table class="w-full text-sm">
+            <thead class="bg-sand-100 dark:bg-ink-700 text-left text-xs uppercase text-ink-500"><tr><th class="px-4 py-2">Office</th><th class="px-4 py-2">Plan</th><th class="px-4 py-2">CSAT</th><th class="px-4 py-2">This month</th><th class="px-4 py-2">Status</th><th class="px-4 py-2"></th></tr></thead>
+            <tbody>
+              <tr class="stripe-row border-t border-sand-100 dark:border-ink-700"><td class="px-4 py-3"><div class="flex items-center gap-2"><span class="w-7 h-7 rounded bg-teal-500/20 grid place-items-center text-teal-600 font-bold">ن</span><div><div class="font-semibold">Sanad Al-Nahdha</div><div class="text-xs text-ink-500">Muscat · Bawshar</div></div></div></td><td class="px-4 py-3"><span class="tag bg-teal-50 text-teal-600">Pro</span></td><td class="px-4 py-3">4.8 ★</td><td class="px-4 py-3">842 tx</td><td class="px-4 py-3"><span class="tag bg-green-50 text-ok">Active</span></td><td class="px-4 py-3"><button class="text-teal-600 text-xs font-semibold">Open</button></td></tr>
+              <tr class="stripe-row border-t border-sand-100 dark:border-ink-700"><td class="px-4 py-3"><div class="flex items-center gap-2"><span class="w-7 h-7 rounded bg-oman-red/20 grid place-items-center text-oman-red font-bold">م</span><div><div class="font-semibold">Sanad Muttrah</div><div class="text-xs text-ink-500">Muscat · Muttrah</div></div></div></td><td class="px-4 py-3"><span class="tag bg-teal-50 text-teal-600">Pro</span></td><td class="px-4 py-3">4.7 ★</td><td class="px-4 py-3">614 tx</td><td class="px-4 py-3"><span class="tag bg-green-50 text-ok">Active</span></td><td class="px-4 py-3"><button class="text-teal-600 text-xs font-semibold">Open</button></td></tr>
+              <tr class="stripe-row border-t border-sand-100 dark:border-ink-700"><td class="px-4 py-3"><div class="flex items-center gap-2"><span class="w-7 h-7 rounded bg-oman-green/20 grid place-items-center text-oman-green font-bold">ب</span><div><div class="font-semibold">Sanad Barka</div><div class="text-xs text-ink-500">Al Batinah N · Barka</div></div></div></td><td class="px-4 py-3"><span class="tag bg-sand-200 text-ink-700">Starter</span></td><td class="px-4 py-3">4.4 ★</td><td class="px-4 py-3">142 tx</td><td class="px-4 py-3"><span class="tag bg-yellow-50 text-warn">Low CSAT</span></td><td class="px-4 py-3"><button class="text-teal-600 text-xs font-semibold">Open</button></td></tr>
+              <tr class="stripe-row border-t border-sand-100 dark:border-ink-700"><td class="px-4 py-3"><div class="flex items-center gap-2"><span class="w-7 h-7 rounded bg-ink-500/20 grid place-items-center text-ink-600 font-bold">س</span><div><div class="font-semibold">Sanad Seeb</div><div class="text-xs text-ink-500">Muscat · Seeb</div></div></div></td><td class="px-4 py-3"><span class="tag bg-teal-50 text-teal-600">Pro</span></td><td class="px-4 py-3">4.9 ★</td><td class="px-4 py-3">1,204 tx</td><td class="px-4 py-3"><span class="tag bg-green-50 text-ok">Active</span></td><td class="px-4 py-3"><button class="text-teal-600 text-xs font-semibold">Open</button></td></tr>
+              <tr class="stripe-row border-t border-sand-100 dark:border-ink-700"><td class="px-4 py-3"><div class="flex items-center gap-2"><span class="w-7 h-7 rounded bg-sand-300 grid place-items-center font-bold">ع</span><div><div class="font-semibold">Sanad Al-Amerat</div><div class="text-xs text-ink-500">Muscat · Al Amerat</div></div></div></td><td class="px-4 py-3"><span class="tag bg-sand-200 text-ink-700">Starter</span></td><td class="px-4 py-3">—</td><td class="px-4 py-3">0 tx</td><td class="px-4 py-3"><span class="tag bg-yellow-50 text-warn">Pending KYC</span></td><td class="px-4 py-3"><button class="text-teal-600 text-xs font-semibold">Review</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Approvals + disputes side column -->
+        <div class="space-y-5">
+          <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-4">
+            <div class="flex items-center justify-between mb-3"><h3 class="font-bold">Catalogue proposals</h3><button class="text-xs text-teal-600 font-semibold">View all</button></div>
+            <ul class="space-y-3 text-sm">
+              <li class="pb-3 border-b border-sand-100 dark:border-ink-700">
+                <div class="flex items-start gap-2"><span class="tag bg-warn text-white">Docs</span><span class="font-semibold">Driver's licence renewal</span></div>
+                <div class="text-xs text-ink-500 mt-1">Add: Insurance clearance letter — by Sanad Al-Amerat</div>
+                <div class="flex gap-2 mt-2"><button class="flex-1 py-1.5 rounded bg-ok text-white text-xs font-bold">Approve</button><button class="flex-1 py-1.5 rounded border border-sand-200 dark:border-ink-700 text-xs">Reject</button></div>
+              </li>
+              <li class="pb-3 border-b border-sand-100 dark:border-ink-700">
+                <div class="flex items-start gap-2"><span class="tag bg-warn text-white">Fees</span><span class="font-semibold">Passport renewal</span></div>
+                <div class="text-xs text-ink-500 mt-1">20 OMR → 20.500 OMR — by Sanad Seeb</div>
+                <div class="text-[11px] text-ok mt-1">✓ 3/3 confirms from distinct offices · auto-approved</div>
+              </li>
+              <li>
+                <div class="flex items-start gap-2"><span class="tag bg-warn text-white">Steps</span><span class="font-semibold">CR issuance</span></div>
+                <div class="text-xs text-ink-500 mt-1">Reorder step 3 & 4 — by Sanad Muttrah</div>
+                <div class="flex gap-2 mt-2"><button class="flex-1 py-1.5 rounded bg-ok text-white text-xs font-bold">Approve</button><button class="flex-1 py-1.5 rounded border border-sand-200 dark:border-ink-700 text-xs">Reject</button></div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="rounded-xl bg-white border border-sand-200 dark:bg-ink-800 dark:border-ink-700 p-4">
+            <div class="flex items-center justify-between mb-3"><h3 class="font-bold">Recent audit log</h3><button class="text-xs text-teal-600 font-semibold">Open full log</button></div>
+            <ol class="space-y-2 text-xs relative border-l border-sand-200 dark:border-ink-700 pl-4 ml-1">
+              <li><span class="absolute -left-1.5 w-3 h-3 rounded-full bg-teal-500"></span> <b>11:32</b> · Admin approved proposal P-1189 on service 9412</li>
+              <li><span class="absolute -left-1.5 w-3 h-3 rounded-full bg-teal-500"></span> <b>11:28</b> · Sanad Seeb claimed request R-88421</li>
+              <li><span class="absolute -left-1.5 w-3 h-3 rounded-full bg-oman-gold"></span> <b>11:14</b> · Admin impersonated Sanad Barka</li>
+              <li><span class="absolute -left-1.5 w-3 h-3 rounded-full bg-teal-500"></span> <b>10:58</b> · AmwalPay webhook SET-0417 reconciled</li>
+              <li><span class="absolute -left-1.5 w-3 h-3 rounded-full bg-bad"></span> <b>10:42</b> · Office suspended: Sanad Al-Khuwair (CSAT &lt; 3.5)</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============ SCRIPTS ============ -->
+<script>
+(function(){
+  const screens = document.querySelectorAll('[data-screen]');
+  const navs = document.querySelectorAll('.nav-item');
+  const breadcrumb = document.getElementById('breadcrumb');
+  const titles = {
+    landing:'Public · Landing', 'office-profile':'Public · Office profile', 'citizen-pay':'Public · Citizen pay',
+    whatsapp:'Citizen · WhatsApp', onboard:'Office · Onboarding',
+    inbox:'Office · Inbox', detail:'Office · Request detail', manage:'Office · Management',
+    catalogue:'Knowledge · Catalogue', 'service-detail':'Knowledge · Service page', testchat:'Knowledge · Web test chat',
+    admin:'Platform · Admin'
+  };
+  function show(name){
+    screens.forEach(s => s.classList.toggle('active', s.getAttribute('data-screen')===name));
+    navs.forEach(n => n.setAttribute('data-active', n.getAttribute('data-nav')===name));
+    if (breadcrumb) breadcrumb.textContent = titles[name] || name;
+    window.scrollTo({top:0,behavior:'instant'});
+  }
+  navs.forEach(n => n.addEventListener('click', () => show(n.getAttribute('data-nav'))));
+  document.querySelectorAll('[data-nav-to]').forEach(b => b.addEventListener('click', () => show(b.getAttribute('data-nav-to'))));
+
+  // Lang toggle
+  const langBtn = document.getElementById('langBtn');
+  langBtn.addEventListener('click', () => {
+    const html = document.documentElement;
+    html.dir = html.dir === 'rtl' ? 'ltr' : 'rtl';
+  });
+
+  // Theme toggle
+  const themeBtn = document.getElementById('themeBtn');
+  themeBtn.addEventListener('click', () => document.documentElement.classList.toggle('dark'));
+
+  // Tabs (in manage screen)
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      const t = b.getAttribute('data-tab');
+      document.querySelectorAll('.tab-btn').forEach(x => { x.classList.remove('bg-teal-500','text-white'); x.classList.add('bg-white','border','border-sand-200','dark:bg-ink-800','dark:border-ink-700'); });
+      b.classList.remove('bg-white','border','border-sand-200','dark:bg-ink-800','dark:border-ink-700');
+      b.classList.add('bg-teal-500','text-white');
+      document.querySelectorAll('[data-tab-panel]').forEach(p => p.classList.toggle('hidden', p.getAttribute('data-tab-panel')!==t));
+    });
+  });
+
+  // OTP modal
+  const otpBtn = document.getElementById('otpBtn');
+  const otpModal = document.getElementById('otpModal');
+  if (otpBtn) otpBtn.addEventListener('click', () => otpModal.classList.remove('hidden'));
+  ['otpCloseBtn','otpCancelBtn'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('click', () => otpModal.classList.add('hidden')); });
+
+  // Propose modal
+  const proposeBtn = document.getElementById('proposeBtn');
+  const proposeModal = document.getElementById('proposeModal');
+  if (proposeBtn) proposeBtn.addEventListener('click', () => proposeModal.classList.remove('hidden'));
+  ['proposeCloseBtn','proposeCancelBtn'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('click', () => proposeModal.classList.add('hidden')); });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) return;
+    if (e.key === 'o' || e.key === 'O') { const m = document.getElementById('otpModal'); if (m) m.classList.toggle('hidden'); }
+    if (e.key === 'Escape') { document.querySelectorAll('#otpModal,#proposeModal').forEach(m => m.classList.add('hidden')); }
+  });
+})();
+</script>
+</body>
+</html>

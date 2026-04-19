@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Sanad-AI · Service catalogue</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/theme.css"/>
+<style>
+  body{font-family:'Inter',sans-serif}
+  [dir="rtl"] body, html[dir="rtl"] *{font-family:'Noto Kufi Arabic',sans-serif}
+  .tag{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+  .skel{background:linear-gradient(90deg,#f1f5f9,#e2e8f0,#f1f5f9);background-size:200% 100%;animation:sk 1.2s infinite}
+  @keyframes sk{0%{background-position:0 0}100%{background-position:-200% 0}}
+</style>
+</head>
+<body class="bg-slate-50">
+
+<header class="bg-white border-b border-slate-200 px-5 py-3 flex items-center gap-3 sticky top-0 z-40">
+  <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-green-700 text-white grid place-items-center font-bold">S</div>
+  <div><div class="font-bold">Service catalogue</div><div class="text-[11px] text-slate-500"><span id="totalCount">—</span> services · FTS search</div></div>
+  <div class="ms-auto flex gap-2 text-xs">
+    <button id="langBtn" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 font-semibold" data-i18n="lang.toggle"></button>
+    <a href="/" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200" data-i18n="nav.home"></a>
+    <a href="/chat.html" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200" data-i18n="nav.chat"></a>
+    <a href="/officer.html" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200" data-i18n="nav.officer"></a>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto p-4 md:p-6 grid md:grid-cols-[260px_1fr] gap-5">
+
+  <aside class="space-y-3">
+    <div class="rounded-xl bg-white border border-slate-200 p-3">
+      <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Search</label>
+      <div class="relative mt-1">
+        <svg class="w-4 h-4 absolute left-3 top-2.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
+        <input id="q" class="w-full ps-9 pe-3 py-2 rounded-lg bg-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" placeholder="passport, تجديد, fishing…"/>
+      </div>
+      <div class="text-[11px] text-slate-500 mt-2"><span class="kbd">/</span> to focus</div>
+    </div>
+
+    <div class="rounded-xl bg-white border border-slate-200 p-3 text-sm">
+      <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Entities</div>
+      <div id="entities" class="max-h-[60vh] overflow-y-auto space-y-0.5 text-xs"></div>
+    </div>
+  </aside>
+
+  <section>
+    <div class="flex items-center justify-between mb-3">
+      <div class="text-sm text-slate-600"><b id="resultCount">0</b> results <span id="filterLabel" class="text-slate-400"></span></div>
+      <div class="text-xs text-slate-500" id="searchTime"></div>
+    </div>
+    <div id="results" class="space-y-3"></div>
+    <div class="text-center py-6"><button id="loadMore" class="px-4 py-2 rounded-lg border border-slate-200 hover:bg-white font-semibold text-sm hidden">Load more</button></div>
+  </section>
+</main>
+
+<!-- Detail modal -->
+<div id="detail" class="fixed inset-0 bg-slate-900/60 backdrop-blur z-50 p-4 hidden overflow-y-auto">
+  <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl">
+    <div class="flex items-start gap-3 px-5 py-4 border-b border-slate-200">
+      <button id="closeDetail" class="text-slate-400 hover:text-slate-900 text-xl leading-none">✕</button>
+      <div class="flex-1" id="detailHeader">—</div>
+      <a id="tryBot" target="_blank" class="text-xs px-3 py-1.5 rounded-lg bg-teal-500 text-white font-bold hover:bg-teal-600">💬 Try in chatbot</a>
+    </div>
+    <div id="detailBody" class="p-5 space-y-5"></div>
+  </div>
+</div>
+
+<script src="/i18n.js"></script>
+<script src="/ui.js"></script>
+<script>
+(function(){
+  const q = document.getElementById('q');
+  const entitiesEl = document.getElementById('entities');
+  const results = document.getElementById('results');
+  const resultCount = document.getElementById('resultCount');
+  const filterLabel = document.getElementById('filterLabel');
+  const searchTime = document.getElementById('searchTime');
+  const loadMoreBtn = document.getElementById('loadMore');
+
+  let entityFilter = '';
+  let offset = 0;
+  let lastQuery = '';
+  let timer;
+
+  function skel() {
+    return Array.from({length:6}).map(()=>`<div class="skel h-20 rounded-xl"></div>`).join('');
+  }
+
+  async function loadEntities() {
+    const r = await fetch('/api/catalogue/entities').then(r=>r.json());
+    const html = [`<button data-ent="" class="w-full text-start px-2 py-1.5 rounded hover:bg-slate-100 flex justify-between"><span>All</span><span class="text-slate-400">${r.entities.reduce((a,b)=>a+Number(b.n),0)}</span></button>`]
+      .concat(r.entities.map(e => `<button data-ent="${e.entity_en.replace(/"/g,'&quot;')}" class="w-full text-start px-2 py-1.5 rounded hover:bg-slate-100 flex justify-between"><span class="truncate me-2" title="${e.entity_en}">${e.entity_en || '—'}</span><span class="text-slate-400">${e.n}</span></button>`))
+      .join('');
+    entitiesEl.innerHTML = html;
+    entitiesEl.querySelectorAll('[data-ent]').forEach(b => b.onclick = () => {
+      entityFilter = b.getAttribute('data-ent');
+      entitiesEl.querySelectorAll('button').forEach(x => x.classList.remove('bg-teal-500','text-white'));
+      b.classList.add('bg-teal-500','text-white');
+      filterLabel.textContent = entityFilter ? ' · ' + entityFilter : '';
+      offset = 0; run();
+    });
+  }
+
+  async function run(append) {
+    if (!append) {
+      results.innerHTML = skel();
+      offset = 0;
+    }
+    const term = q.value.trim();
+    lastQuery = term;
+    const t0 = performance.now();
+    const params = new URLSearchParams({ q: term, entity: entityFilter, limit: '40', offset: String(offset) });
+    let data;
+    try {
+      data = await fetch('/api/catalogue/search?' + params).then(r => r.json());
+    } catch (e) {
+      Sanad.toast('Search failed', 'err'); return;
+    }
+    const t1 = performance.now();
+    searchTime.textContent = (t1 - t0).toFixed(0) + ' ms';
+    resultCount.textContent = data.results.length + (offset > 0 ? ' (more)' : '');
+    document.getElementById('totalCount').textContent = data.total.toLocaleString();
+    const html = data.results.map(r => `
+      <article class="rounded-xl bg-white border border-slate-200 p-4 hover:shadow-md cursor-pointer" data-id="${r.id}">
+        <div class="flex items-start gap-2 mb-1 flex-wrap">
+          <span class="tag bg-teal-50 text-teal-700">${r.entity_en || '—'}</span>
+          ${r.fee_omr > 0 ? `<span class="tag bg-amber-50 text-amber-700">${r.fee_omr} OMR</span>` : r.fee_omr === 0 ? '<span class="tag bg-emerald-50 text-emerald-700">free</span>' : ''}
+          <span class="tag bg-slate-100 text-slate-600 ms-auto">#${r.id}</span>
+        </div>
+        <div class="font-semibold text-sm">${r.name_en || '(no English name)'}</div>
+        ${r.name_ar ? `<div class="text-sm text-slate-500 mt-0.5" dir="rtl">${r.name_ar}</div>` : ''}
+      </article>
+    `).join('');
+    if (append) results.insertAdjacentHTML('beforeend', html);
+    else results.innerHTML = html || `<div class="text-center py-12 text-slate-400 italic">No matches. Try Arabic or a broader term.</div>`;
+    loadMoreBtn.classList.toggle('hidden', data.results.length < 40);
+
+    results.querySelectorAll('[data-id]').forEach(c => c.onclick = () => openDetail(c.getAttribute('data-id')));
+  }
+
+  async function openDetail(id) {
+    const r = await fetch('/api/catalogue/' + id).then(r=>r.json());
+    const s = r.service;
+    document.getElementById('detail').classList.remove('hidden');
+    document.getElementById('detailHeader').innerHTML = `
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="tag bg-teal-50 text-teal-700">${s.entity_en || '—'}</span>
+        <span class="tag bg-slate-100 text-slate-600">v ${s.version ?? 1}</span>
+        <span class="tag ${s.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}">${s.is_active ? 'live' : 'inactive'}</span>
+      </div>
+      <div class="font-bold text-lg mt-1">${s.name_en || '—'}</div>
+      ${s.name_ar ? `<div class="text-slate-500" dir="rtl">${s.name_ar}</div>` : ''}
+    `;
+    document.getElementById('tryBot').href = '/chat.html?service=' + encodeURIComponent(s.name_en || '');
+
+    const docs = s.required_documents || [];
+    const docsHtml = docs.length
+      ? `<ol class="space-y-1.5 text-sm list-decimal ps-5">${docs.map(d => `<li><b>${d.label_en || d.code}</b>${d.label_ar ? ` · <span dir="rtl">${d.label_ar}</span>` : ''}</li>`).join('')}</ol>`
+      : '<div class="text-sm text-slate-500 italic">No structured document list — the bot will ask in free-text.</div>';
+
+    document.getElementById('detailBody').innerHTML = `
+      <div class="grid md:grid-cols-2 gap-5">
+        <div>
+          <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Description</div>
+          <p class="text-sm text-slate-700">${s.description_en || '—'}</p>
+          ${s.description_ar ? `<p class="text-sm text-slate-500 mt-1" dir="rtl">${s.description_ar}</p>` : ''}
+        </div>
+        <div>
+          <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Fees</div>
+          <p class="text-sm">${s.fees_text || '—'} ${s.fee_omr!=null ? `<span class="text-slate-500">· ${s.fee_omr} OMR</span>` : ''}</p>
+        </div>
+        <div class="md:col-span-2">
+          <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Required documents</div>
+          ${docsHtml}
+        </div>
+        ${s.source_url ? `<div class="md:col-span-2 text-xs"><a href="${s.source_url}" target="_blank" class="text-teal-600 underline">Source on services directory ↗</a></div>` : ''}
+      </div>
+    `;
+  }
+
+  document.getElementById('closeDetail').onclick = () => document.getElementById('detail').classList.add('hidden');
+  document.getElementById('detail').addEventListener('click', e => { if (e.target.id === 'detail') e.currentTarget.classList.add('hidden'); });
+  document.getElementById('langBtn').onclick = () => I18N.setLang(I18N.lang === 'ar' ? 'en' : 'ar');
+  loadMoreBtn.onclick = () => { offset += 40; run(true); };
+
+  q.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => run(false), 150); });
+  document.addEventListener('keydown', e => {
+    if (e.key === '/' && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) {
+      e.preventDefault(); q.focus();
+    }
+  });
+
+  Sanad.attachShortcuts([
+    { key: '/', desc: 'Focus search' },
+    { key: 'Esc', desc: 'Close overlay' },
+    { key: '?', desc: 'Show shortcuts' }
+  ]);
+
+  loadEntities();
+  run(false);
+})();
+</script>
+</body>
+</html>

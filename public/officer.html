@@ -1,0 +1,1363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Sanad · Officer workspace</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          brand: { 50:'#f0fdfa',100:'#ccfbf1',400:'#2dd4bf',500:'#14b8a6',600:'#0d9488',700:'#0f766e' },
+          ink: { 950:'#020617',900:'#0b1220',800:'#0f172a',700:'#1e293b',600:'#334155',500:'#475569',400:'#64748b',300:'#94a3b8',200:'#cbd5e1',100:'#e2e8f0',50:'#f1f5f9' }
+        },
+        fontFamily: { sans:['Inter','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] }
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Kufi+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  [dir="rtl"] body { font-family: 'Noto Kufi Arabic', sans-serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* Page-specific micro-tweaks */
+  .sidebar { background: transparent; }
+  .sidebar-inner {
+    background: linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,.5));
+    backdrop-filter: blur(8px);
+  }
+  html.dark .sidebar-inner {
+    background: linear-gradient(180deg, rgba(15,23,42,.7), rgba(15,23,42,.5));
+  }
+  .topbar {
+    background: linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.7));
+    backdrop-filter: blur(12px) saturate(180%);
+  }
+  html.dark .topbar {
+    background: linear-gradient(180deg, rgba(15,23,42,.85), rgba(15,23,42,.7));
+  }
+  .filter-btn {
+    display:flex; align-items:center; gap:10px;
+    padding: 7px 10px; border-radius: 10px;
+    font-size: 12.5px; color: var(--text);
+    transition: background .15s, transform .1s;
+    width: 100%; text-align: start;
+  }
+  .filter-btn:hover { background: var(--surface-3); }
+  .filter-btn.active { background: var(--brand-soft); color: var(--brand-dark); font-weight: 600; }
+  html.dark .filter-btn.active { color: #5eead4; }
+  .filter-count {
+    margin-inline-start: auto;
+    font-size: 10.5px; font-variant-numeric: tabular-nums;
+    color: var(--text-mute);
+    background: var(--surface-3);
+    padding: 1px 6px; border-radius: 999px;
+    min-width: 22px; text-align: center;
+  }
+  .filter-btn.active .filter-count { background: var(--brand); color: white; }
+
+  /* Sidebar section header */
+  .sh { font-size:10px; text-transform:uppercase; letter-spacing:.1em; color: var(--text-mute); font-weight:700; padding: 4px 10px 6px; }
+
+  /* Inbox list item */
+  .card {
+    padding: 12px 14px; cursor: pointer;
+    transition: background .14s, transform .1s;
+    position: relative;
+  }
+  .card:hover { background: var(--surface-3); }
+  .card.selected { background: var(--brand-soft); }
+  .card.selected::before {
+    content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px;
+    background: var(--brand); border-radius: 0 3px 3px 0;
+  }
+
+  /* KPI pill */
+  .kpi {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 12px; border-radius: 999px;
+    background: var(--surface); box-shadow: var(--shadow-sm);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .kpi:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+
+  /* Tab underline */
+  .tab {
+    position: relative;
+    height: 40px; padding: 0 14px;
+    font-size: 12.5px; font-weight: 600; color: var(--text-mute);
+    transition: color .15s;
+    cursor: pointer;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--brand-dark); }
+  html.dark .tab.active { color: #5eead4; }
+  .tab.active::after {
+    content: ''; position: absolute; left: 10px; right: 10px; bottom: 0;
+    height: 2px; background: var(--brand); border-radius: 2px 2px 0 0;
+  }
+
+  /* Shortcut key hint */
+  .hint {
+    font-size: 10.5px; color: var(--text-mute);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+
+  /* Slide-in drawer */
+  .drawer {
+    width: 0; overflow: hidden; transition: width .24s cubic-bezier(.4,0,.2,1);
+    background: var(--surface); box-shadow: -16px 0 32px -16px rgba(15,23,42,.08);
+  }
+  html.dark .drawer { box-shadow: -16px 0 32px -16px rgba(0,0,0,.4); }
+  .drawer.open { width: 420px; }
+  .drawer.expanded { width: 640px; }
+
+  /* Smooth icon-btn group in dark bar */
+  .shortcuts-bar {
+    background: linear-gradient(180deg, #111827, #0f172a);
+    color: rgb(226 232 240);
+  }
+  .shortcuts-bar .sbtn {
+    height: 30px; padding: 0 11px; border-radius: 8px;
+    font-size: 11.5px; font-weight: 600;
+    background: rgba(255,255,255,.06); color: rgb(226 232 240);
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: background .15s;
+  }
+  .shortcuts-bar .sbtn:hover { background: rgba(255,255,255,.12); }
+  .shortcuts-bar .sbtn.primary {
+    background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+    color: white; box-shadow: 0 4px 12px -4px rgba(20,184,166,.45);
+  }
+
+  /* Doc card */
+  .doc {
+    background: var(--surface); border-radius: 14px; overflow: hidden;
+    box-shadow: var(--shadow-sm); transition: all .2s ease-out;
+  }
+  .doc:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+
+  /* ─── Grid / list view for inbox ─── */
+  /* Default inbox sizing */
+  #inboxHost { flex: 1 1 100%; min-width: 0; }
+
+  /* No detail open: inbox takes the whole main pane, detail pane is hidden */
+  #inboxWrap:not(.has-detail) #detailPane { display: none; }
+  #inboxWrap:not(.has-detail) #inboxHost { flex: 1 1 100%; border-right: 0 !important; }
+
+  /* Grid view (no detail): card grid */
+  #inboxWrap.grid-view:not(.has-detail) #inbox {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 14px;
+    padding: 8px 20px 24px;
+  }
+  #inboxWrap.grid-view:not(.has-detail) .card {
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow-md);
+    padding: 16px;
+    border-top: none !important;
+  }
+  #inboxWrap.grid-view:not(.has-detail) .card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+  #inboxWrap.grid-view:not(.has-detail) .card.selected { box-shadow: 0 0 0 2px var(--brand), var(--shadow-lg); background: var(--surface); }
+  #inboxWrap.grid-view:not(.has-detail) .card.selected::before { display: none; }
+  #inboxWrap.grid-view:not(.has-detail) .divide-soft > * + * { border-top: 0; }
+
+  /* List view (no detail): stacked list, full width */
+  #inboxWrap.list-view:not(.has-detail) #inbox { display: block; padding: 0; }
+  #inboxWrap.list-view:not(.has-detail) .card { padding: 12px 14px; }
+
+  /* ─── Detail open: floating modal overlay, inbox stays full-width behind ─── */
+  #inboxWrap.has-detail #inboxHost { flex: 1 1 100%; border-right: 0 !important; }
+
+  /* Detail pane becomes a large floating card below the topbar */
+  #inboxWrap.has-detail #detailPane {
+    position: fixed;
+    top: 72px;
+    left: 48px;
+    right: 48px;
+    bottom: 32px;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border-radius: 18px;
+    box-shadow: 0 32px 80px -20px rgba(15,23,42,.35), 0 0 0 1px var(--line);
+    overflow: hidden;
+    animation: detailPop .22s cubic-bezier(.4,0,.2,1);
+  }
+  html.dark #inboxWrap.has-detail #detailPane {
+    box-shadow: 0 32px 80px -20px rgba(0,0,0,.6), 0 0 0 1px var(--line);
+  }
+
+  /* Empty state inside the detail pane isn't shown when it's a modal — workspace is */
+  #inboxWrap.has-detail #emptyState { display: none; }
+
+  /* Backdrop */
+  #detailBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, .42);
+    backdrop-filter: blur(6px) saturate(140%);
+    -webkit-backdrop-filter: blur(6px) saturate(140%);
+    z-index: 39;
+    animation: fadeIn .2s ease;
+    cursor: pointer;
+  }
+  html.dark #detailBackdrop { background: rgba(2, 6, 23, .6); }
+
+  @keyframes detailPop {
+    from { opacity: 0; transform: scale(.985) translateY(6px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+  /* Chat drawer — when the detail modal is open, anchor it to the modal's right edge */
+  #inboxWrap.has-detail #chatDrawer {
+    position: fixed;
+    top: 72px;
+    right: 0;
+    bottom: 32px;
+    z-index: 41;
+    height: auto;
+    border-radius: 18px 0 0 18px;
+    box-shadow: -20px 0 60px -16px rgba(15, 23, 42, .3);
+  }
+  #inboxWrap.has-detail #chatDrawer.expanded { right: 0; }
+
+  /* Responsive: tighten margins on smaller screens */
+  @media (max-width: 1280px) {
+    #inboxWrap.has-detail #detailPane { left: 24px; right: 24px; top: 66px; bottom: 20px; }
+    #inboxWrap.has-detail #workspace > .flex-1 > aside { display: none; }
+  }
+  @media (max-width: 768px) {
+    #inboxWrap.has-detail #detailPane { left: 0; right: 0; top: 56px; bottom: 0; border-radius: 16px 16px 0 0; }
+  }
+
+  /* View toggle */
+  .viewtoggle { display:inline-flex; background: var(--surface-3); border-radius: 10px; padding: 3px; }
+  .viewtoggle button { height: 28px; padding: 0 10px; border-radius: 7px; font-size: 11.5px; font-weight: 600; color: var(--text-mute); transition: all .15s; }
+  .viewtoggle button.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+</style>
+</head>
+<body class="antialiased">
+
+<!-- ======================================================== -->
+<!-- APP SHELL                                                  -->
+<!-- ======================================================== -->
+<div class="h-screen flex flex-col">
+
+  <!-- TOP BAR -->
+  <header class="topbar flex items-center gap-3 h-14 px-3 md:px-5 sticky top-0 z-30" style="border-bottom:1px solid var(--line)">
+    <button id="toggleSidebar" class="icon-btn" data-tip="Toggle sidebar">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <div class="flex items-center gap-2.5 me-2">
+      <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#14b8a6,#0d9488)"><span class="text-[11px] font-extrabold">S</span></div>
+      <div class="hidden sm:block leading-none">
+        <div class="text-[13px] font-bold">Sanad Officer</div>
+        <div class="text-[10.5px] mt-0.5" style="color:var(--text-mute)" id="officerSub">loading…</div>
+      </div>
+    </div>
+    <button id="openCmd" class="hidden md:flex items-center gap-2 h-9 px-3 rounded-xl text-[12px]" style="background:var(--surface-3);color:var(--text-mute)">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
+      <span>Search or jump to…</span>
+      <span class="ms-6 kbd">⌘K</span>
+    </button>
+
+    <div class="ms-auto flex items-center gap-1.5">
+      <div class="hidden lg:flex items-center gap-2 px-3 h-9 rounded-xl text-[11px]" style="background:var(--surface-3)">
+        <span class="w-1.5 h-1.5 rounded-full pulse-dot" style="background:var(--ok)"></span>
+        <span class="font-semibold">Online</span>
+        <span class="mono" id="tickTime" style="color:var(--text-mute)">—</span>
+      </div>
+      <select id="officerPick" class="input" style="width:auto;font-size:12px;font-weight:500"></select>
+      <button id="soundBtn" class="icon-btn" data-tip="Sound">🔔</button>
+      <button id="themeBtn" class="icon-btn" data-tip="Theme">
+        <svg class="w-4 h-4 dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
+        <svg class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+      <button id="langBtn" class="btn btn-secondary" style="height:34px">AR</button>
+      <div class="w-px h-5 mx-1" style="background:var(--line)"></div>
+      <button id="helpBtn" class="icon-btn" data-tip="Shortcuts">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <div class="flex-1 flex min-h-0">
+
+    <!-- LEFT SIDEBAR -->
+    <aside id="sidebar" class="w-64 shrink-0 flex flex-col overflow-hidden sidebar">
+      <div class="sidebar-inner flex-1 flex flex-col overflow-hidden" style="border-right:1px solid var(--line)">
+        <!-- Claim next CTA -->
+        <div class="px-3 pt-3 pb-2">
+          <button id="quickClaim" class="btn btn-primary w-full justify-center" style="height:38px;font-size:13px">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></svg>
+            Claim next
+            <span class="kbd" style="background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.35);color:white">C</span>
+          </button>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto scroll-y px-2 pb-4">
+          <div class="sh">Queue</div>
+          <button data-filter="all" class="filter-btn">
+            <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="16" width="18" height="4" rx="1"/></svg>
+            <span>All requests</span>
+            <span class="filter-count" data-count="all">—</span>
+          </button>
+          <button data-filter="ready" class="filter-btn">
+            <span class="w-2 h-2 rounded-full" style="background:var(--warn)"></span>
+            <span>Marketplace</span>
+            <span class="filter-count" data-count="ready">—</span>
+          </button>
+          <button data-filter="mine" class="filter-btn">
+            <span class="w-2 h-2 rounded-full" style="background:var(--brand)"></span>
+            <span>Claimed by me</span>
+            <span class="filter-count" data-count="mine">—</span>
+          </button>
+          <button data-filter="waiting" class="filter-btn">
+            <span class="w-2 h-2 rounded-full pulse-dot" style="background:var(--warn)"></span>
+            <span>Waiting citizen</span>
+            <span class="filter-count" data-count="waiting">—</span>
+          </button>
+          <button data-filter="sla" class="filter-btn">
+            <span class="w-2 h-2 rounded-full" style="background:var(--bad)"></span>
+            <span>SLA at risk</span>
+            <span class="filter-count" data-count="sla">—</span>
+          </button>
+          <button data-filter="done" class="filter-btn">
+            <span class="w-2 h-2 rounded-full" style="background:var(--ok)"></span>
+            <span>Completed</span>
+            <span class="filter-count" data-count="done">—</span>
+          </button>
+
+          <div class="sh mt-4">By entity</div>
+          <button class="filter-btn">
+            <span class="chip chip-rose chip-sm">ROP</span>
+          </button>
+          <button class="filter-btn">
+            <span class="chip chip-indigo chip-sm">MOCIIP</span>
+          </button>
+          <button class="filter-btn">
+            <span class="chip chip-amber chip-sm">MOH</span>
+          </button>
+          <button class="filter-btn">
+            <span class="chip chip-violet chip-sm">Civil Status</span>
+          </button>
+
+          <div class="sh mt-4">Views</div>
+          <button class="filter-btn" style="color:var(--text-mute);font-style:italic">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            <span>New saved view</span>
+          </button>
+
+          <div class="sh mt-4">Navigate</div>
+          <a href="/" class="filter-btn">
+            <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9v9a2 2 0 01-2 2h-4v-6H10v6H6a2 2 0 01-2-2v-9z"/></svg>
+            <span>Landing</span>
+          </a>
+          <a href="/chat.html" target="_blank" class="filter-btn">
+            <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-1.9 5.4 8.5 8.5 0 01-14.2-3A8.5 8.5 0 0111 3a8.5 8.5 0 018.1 6"/></svg>
+            <span>Citizen chat</span>
+            <span style="margin-inline-start:auto;color:var(--text-mute)">↗</span>
+          </a>
+          <a href="/catalogue.html" class="filter-btn">
+            <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20V3H6.5A2.5 2.5 0 004 5.5v14z"/></svg>
+            <span>Catalogue</span>
+          </a>
+          <a href="/admin.html" class="filter-btn">
+            <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18M7 15l3-3 4 4 6-7"/></svg>
+            <span>Admin</span>
+          </a>
+        </nav>
+
+        <!-- Activity feed -->
+        <div class="px-3 pt-3 pb-3" style="border-top:1px solid var(--line)">
+          <div class="sh">Live activity</div>
+          <ul id="activity" class="space-y-1.5 text-[11px]" style="color:var(--text-mute);max-height:120px;overflow-y:auto" class="scroll-y"></ul>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col min-w-0">
+
+      <!-- KPI STRIP -->
+      <div id="kpiStrip" class="flex items-center gap-2.5 px-5 py-3 overflow-x-auto scroll-x">
+        <div class="kpi">
+          <span class="text-[10px] font-bold uppercase tracking-wider" style="color:var(--text-mute)">Today</span>
+          <span class="font-extrabold text-sm mono" id="kpi_claimed">—</span>
+          <span class="text-[11px]" style="color:var(--text-mute)">claimed</span>
+        </div>
+        <div class="kpi">
+          <span class="w-1.5 h-1.5 rounded-full" style="background:var(--ok)"></span>
+          <span class="font-extrabold text-sm mono" id="kpi_done">—</span>
+          <span class="text-[11px]" style="color:var(--text-mute)">done</span>
+        </div>
+        <div class="kpi">
+          <span class="w-1.5 h-1.5 rounded-full" style="background:var(--brand)"></span>
+          <span class="font-extrabold text-sm mono" id="kpi_inflight">—</span>
+          <span class="text-[11px]" style="color:var(--text-mute)">in flight</span>
+        </div>
+        <div class="kpi">
+          <span class="w-1.5 h-1.5 rounded-full" style="background:var(--warn)"></span>
+          <span class="font-extrabold text-sm mono" id="kpi_mkt">—</span>
+          <span class="text-[11px]" style="color:var(--text-mute)">marketplace</span>
+        </div>
+        <div class="kpi" style="background:linear-gradient(135deg, rgba(20,184,166,.1), rgba(20,184,166,.04));box-shadow:inset 0 0 0 1px rgba(20,184,166,.2)">
+          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24" style="color:var(--brand)"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+          <span class="font-extrabold text-sm mono" style="color:var(--brand-dark)" id="kpi_money">—</span>
+          <span class="text-[11px]" style="color:var(--brand-dark)">OMR today</span>
+        </div>
+        <div class="ms-auto flex items-center gap-1">
+          <button id="refreshBtn" class="icon-btn" data-tip="Refresh (R)">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="flex items-center gap-2 px-5 pb-3 overflow-x-auto scroll-x">
+        <div class="relative shrink-0">
+          <svg class="w-3.5 h-3.5 absolute" style="top:10px;left:11px;color:var(--text-mute)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
+          <input id="filterInput" class="input" style="width:288px;padding-inline-start:34px" placeholder="Filter by service, citizen, entity…"/>
+          <span class="absolute kbd" style="top:8px;right:10px">/</span>
+        </div>
+        <button class="chip shrink-0 surface-hover cursor-pointer">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          Today
+        </button>
+        <button class="chip chip-amber shrink-0 cursor-pointer">
+          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+          VIP
+        </button>
+        <button class="chip chip-bad shrink-0 cursor-pointer">
+          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm0 6v6m0 3v.01"/></svg>
+          Urgent
+        </button>
+        <span class="ms-auto hint shrink-0">Sort: <b style="color:var(--text)">Newest</b></span>
+      </div>
+
+      <!-- Panes -->
+      <div id="inboxWrap" class="grid-view flex-1 flex min-h-0 gap-0">
+
+        <!-- INBOX -->
+        <section id="inboxHost" class="flex flex-col min-w-0">
+          <div class="flex items-center justify-between px-5 py-3">
+            <div>
+              <div class="text-[12.5px] font-bold" id="inboxTitle">Marketplace</div>
+              <div class="text-[10.5px]" style="color:var(--text-mute)"><span id="inboxCount">0</span> requests</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="viewtoggle">
+                <button id="vmGrid" class="active" data-tip="Grid view">▦ Grid</button>
+                <button id="vmList" data-tip="List view">☰ List</button>
+              </div>
+              <button class="icon-btn" data-tip="Sort">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
+              </button>
+            </div>
+          </div>
+          <ul id="inbox" class="flex-1 overflow-y-auto scroll-y divide-soft min-h-0"></ul>
+        </section>
+
+        <!-- DETAIL / WORKSPACE -->
+        <section id="detailPane" class="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <!-- Empty state -->
+          <div id="emptyState" class="flex-1 grid place-items-center">
+            <div class="empty">
+              <div class="empty-icon">📭</div>
+              <div class="empty-title">Select a request to begin</div>
+              <div class="empty-desc">Pick one from the left, or press <span class="kbd">C</span> to claim the next in the marketplace.</div>
+            </div>
+          </div>
+
+          <!-- Workspace -->
+          <div id="workspace" class="flex-1 flex-col hidden min-h-0">
+            <!-- HEADER -->
+            <div class="flex items-center gap-3 flex-wrap px-5 py-3" style="border-bottom:1px solid var(--line)">
+              <button id="closeWorkspace" class="icon-btn" data-tip="Close (Esc)">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="mono text-[11.5px]" style="color:var(--text-mute)" id="detailRef">—</span>
+                  <span class="chip" id="detailStatus">—</span>
+                  <span class="chip chip-amber" id="detailSla">—</span>
+                </div>
+                <div class="font-bold text-[15px] truncate mt-0.5" id="detailTitle">Request</div>
+                <div class="text-[11.5px]" style="color:var(--text-mute)" id="detailMeta">—</div>
+                <!-- SLA progress bar -->
+                <div class="bar mt-2" style="max-width:260px" id="slaBar"><div class="bar-fill" id="slaFill" style="width:0"></div></div>
+              </div>
+              <div class="flex items-center gap-1.5" id="detailActions"></div>
+            </div>
+
+            <!-- SHORTCUTS BAR -->
+            <div id="shortcutsBar" class="shortcuts-bar px-5 py-2 flex items-center gap-1.5 flex-wrap hidden">
+              <span class="me-2 text-[10px] uppercase tracking-wider font-bold" style="color:rgba(255,255,255,.5)">Shortcuts</span>
+              <button id="sc_portal" class="sbtn">🔗 Portal</button>
+              <button id="sc_otp" class="sbtn primary">📲 Request OTP <span class="kbd" style="background:rgba(0,0,0,.25);color:white;border-color:rgba(255,255,255,.25)">O</span></button>
+              <button id="sc_copyid" class="sbtn">📋 ID</button>
+              <button id="sc_copyphone" class="sbtn">📋 Phone</button>
+              <button id="sc_copyfee" class="sbtn">💰 Fee</button>
+              <span id="otpStatus" class="ms-auto text-[11px] mono" style="color:#6ee7b7"></span>
+            </div>
+
+            <!-- Tabs + split -->
+            <div class="flex-1 flex min-h-0">
+              <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+                <div class="flex items-center gap-0 px-3 shrink-0" style="border-bottom:1px solid var(--line)">
+                  <button data-tab="overview" class="tab">Overview</button>
+                  <button data-tab="docs" class="tab active">
+                    Documents <span class="ms-1 chip chip-brand chip-sm" id="docsPillCount">0</span>
+                  </button>
+                  <button data-tab="timeline" class="tab">Timeline</button>
+                  <div class="ms-auto me-2">
+                    <button id="toggleChat" class="btn btn-secondary" style="height:32px">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-1.9 5.4 8.5 8.5 0 01-14.2-3A8.5 8.5 0 0111 3a8.5 8.5 0 018.1 6"/></svg>
+                      <span>Chat</span>
+                      <span id="chatUnread" class="chip chip-bad chip-sm hidden" style="padding:0 6px">0</span>
+                      <span class="kbd">T</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div id="tab-overview" data-tab-panel hidden class="flex-1 overflow-y-auto scroll-y p-5 space-y-4">
+                  <div id="overviewContent"></div>
+                </div>
+                <div id="tab-docs" data-tab-panel class="flex-1 overflow-y-auto scroll-y p-5">
+                  <div id="docsGrid" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4"></div>
+                </div>
+                <div id="tab-timeline" data-tab-panel hidden class="flex-1 overflow-y-auto scroll-y p-5">
+                  <div id="timelineContent"></div>
+                </div>
+              </div>
+
+              <!-- Context pane -->
+              <aside class="w-[300px] shrink-0 overflow-y-auto scroll-y flex flex-col" style="border-left:1px solid var(--line)">
+                <div id="contextContent" class="p-5 space-y-4"></div>
+              </aside>
+            </div>
+          </div>
+        </section>
+
+        <!-- CHAT DRAWER -->
+        <aside id="chatDrawer" class="drawer shrink-0 flex flex-col">
+          <div class="flex items-center gap-2 px-4 h-12 shrink-0" style="border-bottom:1px solid var(--line)">
+            <span class="w-1.5 h-1.5 rounded-full pulse-dot" style="background:var(--ok)"></span>
+            <div class="text-[12.5px] font-bold">Chat with citizen</div>
+            <span class="text-[10.5px] mono" style="color:var(--text-mute)">live</span>
+            <div class="ms-auto flex items-center gap-1">
+              <button id="expandChat" class="icon-btn" data-tip="Expand">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+              </button>
+              <button id="closeChat" class="icon-btn" data-tip="Close">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </div>
+          <div id="chatPane" class="flex-1 overflow-y-auto scroll-y p-4 flex flex-col gap-2 chat-bg"></div>
+          <div class="px-3 py-2 flex gap-1.5 overflow-x-auto scroll-x shrink-0" style="border-top:1px solid var(--line)">
+            <button class="canned chip surface-hover cursor-pointer shrink-0">الصورة غير واضحة</button>
+            <button class="canned chip surface-hover cursor-pointer shrink-0">تم استلام الدفع ✅</button>
+            <button class="canned chip surface-hover cursor-pointer shrink-0">سأبدأ معاملتك الآن</button>
+            <button class="canned chip surface-hover cursor-pointer shrink-0">Forward the OTP please</button>
+          </div>
+          <form id="officerSend" class="p-2.5 flex gap-2 shrink-0" style="border-top:1px solid var(--line)">
+            <button type="button" class="icon-btn" data-tip="Attach">📎</button>
+            <input id="officerInput" class="input" style="flex:1;border-radius:999px;height:38px" placeholder="Type a reply…"/>
+            <button type="submit" class="btn btn-primary" style="width:38px;height:38px;border-radius:999px;padding:0;justify-content:center">
+              <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+          </form>
+        </aside>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- DETAIL BACKDROP (shown when a request is open) -->
+<div id="detailBackdrop" class="hidden"></div>
+
+<!-- COMMAND PALETTE -->
+<div id="cmdOverlay" class="hidden fixed inset-0 z-50 overlay grid place-items-start pt-[12vh] p-4">
+  <div class="surface-pop w-full max-w-xl overflow-hidden scale-in" style="background:var(--surface)">
+    <div class="flex items-center gap-2 px-4 h-12" style="border-bottom:1px solid var(--line)">
+      <svg class="w-4 h-4" style="color:var(--text-mute)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
+      <input id="cmdInput" class="flex-1 bg-transparent outline-none text-[14px]" placeholder="Search a request, claim next, change theme…" autocomplete="off"/>
+      <span class="kbd">Esc</span>
+    </div>
+    <div id="cmdResults" class="max-h-[50vh] overflow-y-auto scroll-y p-2"></div>
+    <div class="px-4 py-2 text-[10.5px] flex items-center gap-3" style="color:var(--text-mute);border-top:1px solid var(--line);background:var(--surface-3)">
+      <span><span class="kbd">↑</span><span class="kbd">↓</span> navigate</span>
+      <span><span class="kbd">Enter</span> run</span>
+      <span class="ms-auto">⌘K</span>
+    </div>
+  </div>
+</div>
+
+<!-- HELP -->
+<div id="helpOverlay" class="hidden fixed inset-0 z-50 overlay grid place-items-center p-4">
+  <div class="surface-pop w-full max-w-md overflow-hidden scale-in">
+    <div class="px-5 py-3 flex items-center" style="border-bottom:1px solid var(--line)">
+      <div class="font-bold text-[14px]">Keyboard shortcuts</div>
+      <button id="closeHelp" class="icon-btn ms-auto">✕</button>
+    </div>
+    <div class="p-5 grid grid-cols-1 gap-2 text-[12.5px]" id="shortcutsList">
+      <div class="flex justify-between items-center"><span>Command palette</span><span class="kbd">⌘K</span></div>
+      <div class="flex justify-between items-center"><span>Focus filter</span><span class="kbd">/</span></div>
+      <div class="flex justify-between items-center"><span>Claim next</span><span class="kbd">C</span></div>
+      <div class="flex justify-between items-center"><span>Navigate cards</span><span><span class="kbd">J</span> <span class="kbd">K</span></span></div>
+      <div class="flex justify-between items-center"><span>Open selected</span><span class="kbd">Enter</span></div>
+      <div class="flex justify-between items-center"><span>Toggle chat drawer</span><span class="kbd">T</span></div>
+      <div class="flex justify-between items-center"><span>Request OTP</span><span class="kbd">O</span></div>
+      <div class="flex justify-between items-center"><span>Refresh</span><span class="kbd">R</span></div>
+      <div class="flex justify-between items-center"><span>Dark mode</span><span class="kbd">⌘D</span></div>
+      <div class="flex justify-between items-center"><span>Close overlay</span><span class="kbd">Esc</span></div>
+    </div>
+  </div>
+</div>
+
+<script src="/i18n.js"></script>
+<script src="/ui.js"></script>
+<script>
+(function(){
+  // ─ State ─
+  let officerId = Number(localStorage.getItem('sanad.officer') || 1);
+  let currentRequestId = null;
+  let lastChatMsgId = 0;
+  let selectedCardIdx = 0;
+  let filterText = '';
+  let filterMode = 'all';
+  let allInbox = { me: {}, marketplace: [], mine: [] };
+  let soundOn = localStorage.getItem('sanad.sound') !== 'off';
+  let viewMode = localStorage.getItem('sanad.view') || 'grid'; // 'grid' | 'list'
+  let chatDrawerOpen = false;
+  let chatExpanded = false;
+  let unreadChats = new Map();
+  let lastMsgIdSeen = 0;
+
+  async function api(path, opts={}) {
+    const headers = Object.assign({ 'x-officer-id': String(officerId), 'content-type':'application/json' }, opts.headers || {});
+    const res = await fetch(path, Object.assign({}, opts, { headers }));
+    if (!res.ok) throw new Error(res.status + ' ' + await res.text().catch(()=>''));
+    return res.json();
+  }
+
+  const isAr = s => /[\u0600-\u06FF]/.test(s || '');
+  const pickName = r => I18N.lang === 'ar' ? (r.service_name_ar || r.service_name) : (r.service_name || r.service_name_ar);
+  const avatarGradient = id => {
+    const list = ['linear-gradient(135deg,#f43f5e,#ec4899)','linear-gradient(135deg,#f97316,#f59e0b)','linear-gradient(135deg,#10b981,#14b8a6)','linear-gradient(135deg,#0ea5e9,#6366f1)','linear-gradient(135deg,#8b5cf6,#a855f7)','linear-gradient(135deg,#d946ef,#f43f5e)'];
+    return list[(id || 0) % list.length];
+  };
+  const relativeTime = iso => {
+    if (!iso) return '—';
+    const d = new Date(iso.replace(' ','T')+'Z');
+    const diff = Date.now() - d.getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return 'just now';
+    if (m < 60) return m + 'm ago';
+    const h = Math.floor(m / 60);
+    if (h < 24) return h + 'h ago';
+    return Math.floor(h/24) + 'd ago';
+  };
+  const entChip = e => {
+    const l = (e || '').toLowerCase();
+    if (/police|rop/.test(l)) return 'chip-rose';
+    if (/commerce|mociip/.test(l)) return 'chip-indigo';
+    if (/health/.test(l)) return 'chip-amber';
+    if (/labour|labor/.test(l)) return 'chip-cyan';
+    if (/civil/.test(l)) return 'chip-violet';
+    return '';
+  };
+
+  // ─ Officers picker ─
+  function seedOfficers() {
+    const opts = [
+      { id:1, name:'Khalid Al-Harthy · Al-Nahdha' },
+      { id:2, name:'Noor Al-Amri · Al-Nahdha' },
+      { id:3, name:'Hassan Al-Zadjali · Seeb' }
+    ];
+    const sel = document.getElementById('officerPick');
+    sel.innerHTML = opts.map(o => `<option value="${o.id}" ${o.id===officerId?'selected':''}>${o.name}</option>`).join('');
+    sel.onchange = () => { officerId = Number(sel.value); localStorage.setItem('sanad.officer', officerId); loadInbox(); };
+  }
+
+  // ─ KPIs / counts ─
+  function updateKPIs() {
+    const mine = allInbox.mine || [];
+    const mkt = allInbox.marketplace || [];
+    const today = iso => iso && new Date(iso).toDateString() === new Date().toDateString();
+    document.getElementById('kpi_claimed').textContent = mine.filter(x => today(x.claimed_at)).length;
+    document.getElementById('kpi_done').textContent = mine.filter(x => x.status === 'completed' && today(x.completed_at || x.created_at)).length;
+    document.getElementById('kpi_inflight').textContent = mine.filter(x => x.status === 'in_progress' || x.status === 'claimed').length;
+    document.getElementById('kpi_mkt').textContent = mkt.length;
+    const money = mine.filter(x => today(x.claimed_at)).reduce((a, b) => a + (b.fee_omr || 0) * 0.1, 0);
+    document.getElementById('kpi_money').textContent = money.toFixed(3);
+    const set = (sel, v) => { const el = document.querySelector(sel); if (el) el.textContent = v; };
+    set('[data-count="all"]', mine.length + mkt.length);
+    set('[data-count="ready"]', mkt.length);
+    set('[data-count="mine"]', mine.length);
+    set('[data-count="waiting"]', mine.filter(x => x.status === 'claimed').length);
+    set('[data-count="sla"]', 0);
+    set('[data-count="done"]', mine.filter(x => x.status === 'completed' && today(x.completed_at)).length);
+  }
+
+  function highlightFilter() {
+    document.querySelectorAll('[data-filter]').forEach(b => b.classList.toggle('active', b.getAttribute('data-filter') === filterMode));
+    const titles = { all:'All requests', ready:'Marketplace', mine:'Claimed by me', waiting:'Waiting on citizen', sla:'SLA at risk', done:'Completed' };
+    document.getElementById('inboxTitle').textContent = titles[filterMode] || 'Requests';
+  }
+
+  function currentList() {
+    const mine = allInbox.mine || [];
+    const mkt = allInbox.marketplace || [];
+    let list = [];
+    if (filterMode === 'all') list = mine.concat(mkt);
+    else if (filterMode === 'ready') list = mkt;
+    else if (filterMode === 'mine') list = mine;
+    else if (filterMode === 'waiting') list = mine.filter(x => x.status === 'claimed');
+    else if (filterMode === 'sla') list = [];
+    else if (filterMode === 'done') list = mine.filter(x => x.status === 'completed');
+    else list = mkt;
+    if (filterText) {
+      const q = filterText.toLowerCase();
+      list = list.filter(r => [r.service_name, r.service_name_ar, r.entity_en, r.governorate, String(r.id)].filter(Boolean).join(' ').toLowerCase().includes(q));
+    }
+    return list;
+  }
+
+  // ─ Card ─
+  function cardHtml(r, idx) {
+    const name = pickName(r) || '(service)';
+    const ent = r.entity_en || '';
+    const claimable = r.status === 'ready';
+    const unread = unreadChats.get(r.id) || 0;
+    const claimedAt = r.claimed_at ? new Date(r.claimed_at.replace(' ','T')+'Z').getTime() : null;
+    const slaMs = claimedAt ? Math.max(0, 2*3600*1000 - (Date.now() - claimedAt)) : null;
+    const slaText = slaMs != null ? (slaMs > 0 ? Math.floor(slaMs/60000)+'m SLA' : 'BREACH') : null;
+    const slaPct = slaMs != null ? (slaMs/(2*3600*1000))*100 : null;
+    return `
+      <li class="card" data-req="${r.id}" data-idx="${idx}">
+        <div class="flex items-start gap-3">
+          <div class="avatar avatar-md shrink-0" style="background:${avatarGradient(r.id)}">${r.id % 100}</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="chip ${entChip(ent)} chip-sm">${ent || '—'}</span>
+              ${claimable ? '<span class="chip chip-warn chip-sm">⏱ ready</span>' : ''}
+              ${r.status === 'in_progress' ? '<span class="chip chip-brand chip-sm">on portal</span>' : ''}
+              ${r.status === 'claimed' ? '<span class="chip chip-cyan chip-sm">claimed</span>' : ''}
+              ${r.status === 'completed' ? '<span class="chip chip-ok chip-sm">✓ done</span>' : ''}
+              ${unread ? `<span class="chip chip-bad chip-sm">${unread} new</span>` : ''}
+            </div>
+            <div class="mt-1 font-semibold text-[13px] truncate" ${isAr(name)?'dir="rtl"':''}>${name}</div>
+            <div class="mt-1 flex items-center gap-2 text-[11px]" style="color:var(--text-mute)">
+              <span class="mono">#R-${r.id}</span>
+              <span class="w-0.5 h-0.5 rounded-full" style="background:currentColor;opacity:.5"></span>
+              <span>${r.governorate || 'Muscat'}</span>
+              <span class="w-0.5 h-0.5 rounded-full" style="background:currentColor;opacity:.5"></span>
+              <span>${relativeTime(r.created_at)}</span>
+            </div>
+            <div class="mt-1.5 flex items-center gap-2 flex-wrap">
+              <span class="text-[11.5px] font-semibold mono">${r.fee_omr?.toFixed ? r.fee_omr.toFixed(3) : r.fee_omr} OMR</span>
+              ${slaText ? `<span class="chip ${slaMs > 600000 ? '' : slaMs > 0 ? 'chip-warn' : 'chip-bad'} chip-sm">${slaText}</span>` : ''}
+              <div class="ms-auto flex items-center gap-1">
+                ${claimable
+                  ? `<button data-claim="${r.id}" class="btn btn-primary" style="height:28px;padding:0 11px;font-size:11.5px">⚡ Claim</button>`
+                  : r.status === 'completed'
+                    ? `<button data-open="${r.id}" class="btn btn-secondary" style="height:28px;padding:0 11px;font-size:11.5px">View</button>`
+                    : `<button data-complete="${r.id}" class="btn" data-tip="Mark complete" style="height:28px;width:28px;padding:0;justify-content:center;background:rgba(16,185,129,.12);color:rgb(5,120,87)">✓</button>
+                       <button data-release="${r.id}" class="btn btn-secondary" data-tip="Release" style="height:28px;width:28px;padding:0;justify-content:center">↩</button>
+                       <button data-open="${r.id}" class="btn btn-primary" style="height:28px;padding:0 11px;font-size:11.5px">Open →</button>`
+                }
+              </div>
+            </div>
+            ${slaPct != null ? `<div class="bar mt-2" style="height:2px"><div class="bar-fill ${slaPct < 25 ? 'bad' : slaPct < 50 ? 'warn' : ''}" style="width:${slaPct}%"></div></div>` : ''}
+          </div>
+        </div>
+      </li>`;
+  }
+
+  function skeletonInbox() {
+    return Array.from({length:5}, () => `
+      <li class="card">
+        <div class="flex items-start gap-3">
+          <div class="skeleton" style="width:36px;height:36px;border-radius:999px"></div>
+          <div class="flex-1">
+            <div class="flex gap-2"><div class="skeleton" style="width:40px;height:16px"></div><div class="skeleton" style="width:60px;height:16px"></div></div>
+            <div class="skeleton mt-2" style="width:80%;height:14px"></div>
+            <div class="skeleton mt-2" style="width:40%;height:11px"></div>
+          </div>
+        </div>
+      </li>`).join('');
+  }
+
+  // ─ Load inbox ─
+  async function loadInbox() {
+    if (!document.getElementById('inbox').children.length) {
+      document.getElementById('inbox').innerHTML = skeletonInbox();
+    }
+    try {
+      allInbox = await api('/api/officer/inbox');
+      document.getElementById('officerSub').textContent = `${allInbox.me.full_name} · ${allInbox.me.role}`;
+    } catch (e) { Sanad.toast('Inbox load failed', 'err'); return; }
+
+    updateKPIs();
+    highlightFilter();
+
+    const list = currentList();
+    document.getElementById('inboxCount').textContent = list.length;
+    const inbox = document.getElementById('inbox');
+    if (!list.length) {
+      inbox.innerHTML = `<div class="empty" style="padding:40px 24px">
+        <div class="empty-icon">📭</div>
+        <div class="empty-title">Nothing here</div>
+        <div class="empty-desc">Try a different filter, or open the citizen chat to create a test request.</div>
+      </div>`;
+    } else {
+      inbox.innerHTML = list.map((r, i) => cardHtml(r, i)).join('');
+    }
+
+    inbox.querySelectorAll('[data-req]').forEach(li => {
+      li.addEventListener('click', e => {
+        if (e.target.closest('button')) return;   // any button click handles its own action
+        openDetail(li.getAttribute('data-req'));
+      });
+    });
+
+    // Quick-action buttons on cards
+    inbox.querySelectorAll('[data-claim]').forEach(b => {
+      b.addEventListener('click', async e => {
+        e.stopPropagation();
+        const id = b.getAttribute('data-claim');
+        try {
+          await api('/api/officer/claim/' + id, { method:'POST' });
+          Sanad.toast('✅ Claimed R-' + id, 'ok', 1800);
+          await loadInbox();
+          openDetail(id);
+        } catch (err) {
+          Sanad.toast(err.message.includes('409') ? 'Already claimed by another office' : 'Claim failed', err.message.includes('409') ? 'warn' : 'err');
+        }
+      });
+    });
+    inbox.querySelectorAll('[data-open]').forEach(b => {
+      b.addEventListener('click', e => {
+        e.stopPropagation();
+        openDetail(b.getAttribute('data-open'));
+      });
+    });
+    inbox.querySelectorAll('[data-complete]').forEach(b => {
+      b.addEventListener('click', async e => {
+        e.stopPropagation();
+        const id = b.getAttribute('data-complete');
+        if (!confirm('Mark R-' + id + ' as complete?')) return;
+        try {
+          await api('/api/officer/request/' + id + '/complete', { method:'POST' });
+          Sanad.toast('✓ Completed R-' + id, 'ok');
+          await loadInbox();
+          if (currentRequestId === Number(id)) closeDetail();
+        } catch (err) { Sanad.toast(err.message, 'err'); }
+      });
+    });
+    inbox.querySelectorAll('[data-release]').forEach(b => {
+      b.addEventListener('click', async e => {
+        e.stopPropagation();
+        const id = b.getAttribute('data-release');
+        try {
+          await api('/api/officer/request/' + id + '/release', { method:'POST' });
+          Sanad.toast('↩ Released R-' + id, 'info');
+          await loadInbox();
+          if (currentRequestId === Number(id)) closeDetail();
+        } catch (err) { Sanad.toast(err.message, 'err'); }
+      });
+    });
+
+    highlightSelected();
+  }
+
+  function highlightSelected() {
+    document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+    const cards = document.querySelectorAll('.card');
+    if (cards[selectedCardIdx]) cards[selectedCardIdx].classList.add('selected');
+  }
+
+  // ─ View mode ─
+  function applyViewMode() {
+    const wrap = document.getElementById('inboxWrap');
+    wrap.classList.toggle('grid-view', viewMode === 'grid');
+    wrap.classList.toggle('list-view', viewMode === 'list');
+    document.getElementById('vmGrid').classList.toggle('active', viewMode === 'grid');
+    document.getElementById('vmList').classList.toggle('active', viewMode === 'list');
+  }
+  function setViewMode(m) { viewMode = m; localStorage.setItem('sanad.view', m); applyViewMode(); }
+
+  // ─ Detail ─
+  async function openDetail(id) {
+    // Switch the layout into "detail open" mode — the detail workspace becomes a
+    // floating modal over the inbox, with a dimmed backdrop. Grid/list view of
+    // the inbox behind is preserved for when the detail closes.
+    document.getElementById('inboxWrap').classList.add('has-detail');
+    document.getElementById('detailBackdrop').classList.remove('hidden');
+    try {
+      const data = await api('/api/officer/request/' + id);
+      currentRequestId = Number(id);
+      unreadChats.delete(currentRequestId);
+      lastChatMsgId = 0;
+
+      document.getElementById('emptyState').classList.add('hidden');
+      const ws = document.getElementById('workspace');
+      ws.classList.remove('hidden');
+      ws.classList.add('flex');
+      ws.classList.add('fade-in');
+
+      const r = data.request;
+      document.getElementById('detailRef').textContent = '#R-' + r.id;
+      const statusEl = document.getElementById('detailStatus');
+      statusEl.textContent = r.status;
+      statusEl.className = 'chip ' + (r.status==='completed'?'chip-ok':r.status==='ready'?'chip-warn':r.status==='claimed'||r.status==='in_progress'?'chip-brand':'');
+      document.getElementById('detailTitle').textContent = pickName(r) || '—';
+      const meta = [];
+      if (r.fee_omr != null) meta.push((r.fee_omr.toFixed ? r.fee_omr.toFixed(3) : r.fee_omr) + ' OMR');
+      if (r.entity_en) meta.push(r.entity_en);
+      if (r.governorate) meta.push(r.governorate);
+      document.getElementById('detailMeta').textContent = meta.join(' · ');
+
+      const claimedAt = r.claimed_at ? new Date(r.claimed_at.replace(' ','T')+'Z').getTime() : null;
+      if (claimedAt) {
+        const rem = Math.max(0, 2*3600*1000 - (Date.now() - claimedAt));
+        const pct = (rem/(2*3600*1000))*100;
+        document.getElementById('detailSla').textContent = '⏱ ' + Math.floor(rem/60000) + 'm SLA';
+        document.getElementById('detailSla').classList.remove('hidden');
+        document.getElementById('slaFill').style.width = pct + '%';
+        document.getElementById('slaFill').className = 'bar-fill ' + (pct < 25 ? 'bad' : pct < 50 ? 'warn' : '');
+        document.getElementById('slaBar').style.display = '';
+      } else {
+        document.getElementById('detailSla').classList.add('hidden');
+        document.getElementById('slaBar').style.display = 'none';
+      }
+
+      renderOverview(r);
+      renderDocs(data.documents);
+      renderTimeline(r, data.messages);
+      renderContext(r, data);
+      renderActions(r);
+      document.getElementById('shortcutsBar').classList.toggle('hidden', !r.officer_id);
+
+      document.getElementById('sc_copyid').onclick = () => { navigator.clipboard.writeText(r.civil_id || ''); Sanad.toast('ID copied', 'ok', 1200); };
+      document.getElementById('sc_copyphone').onclick = () => { navigator.clipboard.writeText(r.citizen_phone || ''); Sanad.toast('Phone copied', 'ok', 1200); };
+      document.getElementById('sc_copyfee').onclick = () => { navigator.clipboard.writeText(String(r.fee_omr || '')); Sanad.toast('Fee copied', 'ok', 1200); };
+      document.getElementById('sc_portal').onclick = () => window.open('https://www.rop.gov.om', '_blank');
+      document.getElementById('sc_otp').onclick = openOtpWindow;
+
+      renderChat(data.messages);
+      switchTab('docs');
+    } catch (e) {
+      Sanad.toast('Open failed', 'err');
+    }
+  }
+
+  function closeDetail() {
+    currentRequestId = null;
+    document.getElementById('workspace').classList.add('hidden');
+    document.getElementById('workspace').classList.remove('flex');
+    document.getElementById('emptyState').classList.remove('hidden');
+    closeChatDrawer();
+    // Drop the "detail open" layout state — inbox goes back to full-width grid/list
+    document.getElementById('inboxWrap').classList.remove('has-detail');
+    document.getElementById('detailBackdrop').classList.add('hidden');
+  }
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.getAttribute('data-tab') === name));
+    document.querySelectorAll('[data-tab-panel]').forEach(p => p.hidden = (p.id !== 'tab-' + name));
+  }
+
+  function renderOverview(r) {
+    document.getElementById('overviewContent').innerHTML = `
+      <div class="surface-raised p-5">
+        <div class="flex items-center gap-4">
+          <div class="avatar avatar-lg with-presence" style="background:${avatarGradient(r.citizen_id)}">${(r.citizen_name||'C').charAt(0)}</div>
+          <div class="min-w-0 flex-1">
+            <div class="font-bold text-[14px] truncate">${r.citizen_name || 'Citizen'}</div>
+            <div class="text-[12px]" style="color:var(--text-mute)">${r.citizen_phone || '—'}</div>
+            ${r.civil_id ? `<div class="text-[10.5px] mono mt-0.5" style="color:var(--text-mute)">Civil ID: ${r.civil_id}</div>` : ''}
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center text-[11px]">
+            <div class="surface p-2"><div class="font-extrabold text-[13px]">—</div><div style="color:var(--text-mute)">LTV</div></div>
+            <div class="surface p-2"><div class="font-extrabold text-[13px]">—</div><div style="color:var(--text-mute)">orders</div></div>
+            <div class="surface p-2"><div class="font-extrabold text-[13px]">—</div><div style="color:var(--text-mute)">chats</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="surface p-5 text-[12.5px]">
+        <div class="flex items-center gap-2 mb-2">
+          <svg class="w-3.5 h-3.5" style="color:var(--warn)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          <span class="font-bold text-[11px] uppercase tracking-wider" style="color:var(--text-mute)">AI summary</span>
+        </div>
+        <p class="leading-relaxed">The citizen requested <b>${r.service_name || '—'}</b>. All required documents are attached. The request is awaiting processing on the government portal.</p>
+      </div>`;
+  }
+
+  function renderDocs(docs) {
+    document.getElementById('docsPillCount').textContent = docs.length;
+    if (!docs.length) {
+      document.getElementById('docsGrid').innerHTML = `<div class="col-span-full empty">
+        <div class="empty-icon">📄</div>
+        <div class="empty-title">No documents yet</div>
+        <div class="empty-desc">The citizen hasn't uploaded anything for this request.</div>
+      </div>`;
+      return;
+    }
+    document.getElementById('docsGrid').innerHTML = docs.map(d => {
+      const isImg = (d.mime||'').startsWith('image/') || (d.storage_url||'').startsWith('data:image/');
+      const chipClass = d.status === 'verified' ? 'chip-ok' : d.status === 'rejected' ? 'chip-bad' : '';
+      return `
+        <div class="doc">
+          <div style="position:relative">
+            ${isImg
+              ? `<a href="${d.storage_url}" target="_blank"><img src="${d.storage_url}" style="width:100%;height:176px;object-fit:cover"/></a>`
+              : `<a href="${d.storage_url}" target="_blank" style="display:flex;height:176px;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--surface-3),var(--surface-2));color:var(--text-mute);font-size:13px">📄 ${d.mime || 'file'}</a>`}
+            <span class="chip ${chipClass} chip-sm" style="position:absolute;top:10px;right:10px">${d.status}</span>
+          </div>
+          <div class="p-3">
+            <div class="text-[12.5px] font-semibold truncate">${d.label || d.doc_code}</div>
+            <div class="text-[10.5px] mono mt-0.5" style="color:var(--text-mute)">${d.doc_code} · ${d.size_bytes} B</div>
+            <div class="flex gap-1.5 mt-3">
+              <button class="btn btn-secondary flex-1" style="height:28px;font-size:11px;background:rgba(16,185,129,.15);color:rgb(5,120,87)">✓ Verify</button>
+              <button class="btn btn-secondary flex-1" style="height:28px;font-size:11px">✕ Reject</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderTimeline(r, messages) {
+    const events = [];
+    events.push({ t:r.created_at, label:'Request created', icon:'🌱' });
+    if (r.claimed_at) events.push({ t:r.claimed_at, label:'Claimed by officer', icon:'👤' });
+    if (r.completed_at) events.push({ t:r.completed_at, label:'Completed', icon:'✅' });
+    const msgCount = messages.filter(m => m.actor_type === 'citizen').length;
+    events.push({ t:r.last_event_at || r.created_at, label:`${msgCount} citizen messages`, icon:'💬' });
+    document.getElementById('timelineContent').innerHTML = `
+      <div style="position:relative;padding-inline-start:24px;border-inline-start:2px solid var(--line)">
+        ${events.map(e => `
+          <div style="position:relative;padding-bottom:18px">
+            <span class="avatar avatar-sm" style="position:absolute;inset-inline-start:-34px;top:-2px;background:var(--surface);color:var(--text);border:2px solid var(--line);box-shadow:none">${e.icon}</span>
+            <div class="text-[12.5px] font-semibold">${e.label}</div>
+            <div class="text-[10.5px] mono mt-0.5" style="color:var(--text-mute)">${e.t || '—'}</div>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  function renderContext(r, data) {
+    document.getElementById('contextContent').innerHTML = `
+      <div>
+        <div class="text-[10px] font-bold uppercase tracking-wider mb-2" style="color:var(--text-mute)">Citizen</div>
+        <div class="flex items-center gap-3">
+          <div class="avatar avatar-md with-presence" style="background:${avatarGradient(r.citizen_id)}">${(r.citizen_name||'C').charAt(0)}</div>
+          <div class="min-w-0">
+            <div class="font-bold text-[13px] truncate">${r.citizen_name || 'Citizen'}</div>
+            <div class="text-[11px]" style="color:var(--text-mute)">${r.citizen_phone || '—'}</div>
+          </div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--line);padding-top:16px">
+        <div class="text-[10px] font-bold uppercase tracking-wider mb-2" style="color:var(--text-mute)">Documents</div>
+        <div class="space-y-1.5 text-[12px]">
+          ${data.documents.map(d => `
+            <div class="flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full" style="background:${d.status==='verified'?'var(--ok)':d.status==='rejected'?'var(--bad)':'var(--text-mute)'}"></span>
+              <span class="truncate flex-1">${d.label || d.doc_code}</span>
+              <span class="text-[10.5px]" style="color:var(--text-mute)">${d.status}</span>
+            </div>`).join('') || '<div class="text-[11px]" style="color:var(--text-mute);font-style:italic">No docs</div>'}
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--line);padding-top:16px">
+        <div class="text-[10px] font-bold uppercase tracking-wider mb-2" style="color:var(--text-mute)">Quick info</div>
+        <div class="space-y-1.5 text-[12px]">
+          <div class="flex justify-between"><span style="color:var(--text-mute)">Status</span><span class="font-semibold">${r.status}</span></div>
+          <div class="flex justify-between"><span style="color:var(--text-mute)">Created</span><span class="mono text-[11px]">${relativeTime(r.created_at)}</span></div>
+          ${r.claimed_at ? `<div class="flex justify-between"><span style="color:var(--text-mute)">Claimed</span><span class="mono text-[11px]">${relativeTime(r.claimed_at)}</span></div>` : ''}
+          <div class="flex justify-between"><span style="color:var(--text-mute)">Fee</span><span class="font-bold mono">${r.fee_omr} OMR</span></div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--line);padding-top:16px">
+        <button onclick="document.getElementById('toggleChat').click()" class="btn btn-primary w-full justify-center">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-1.9 5.4 8.5 8.5 0 01-14.2-3A8.5 8.5 0 0111 3a8.5 8.5 0 018.1 6"/></svg>
+          Open chat
+          <span class="kbd" style="background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.35);color:white">T</span>
+        </button>
+      </div>`;
+  }
+
+  function renderActions(r) {
+    const host = document.getElementById('detailActions');
+    const btns = [];
+    if (!r.officer_id) btns.push(`<button data-act="claim" class="btn btn-primary">Claim</button>`);
+    else {
+      btns.push(`<button data-act="release" class="btn btn-secondary">Release</button>`);
+      btns.push(`<button data-act="complete" class="btn btn-primary" style="background:linear-gradient(135deg,#10b981,#059669)">✓ Complete</button>`);
+    }
+    host.innerHTML = btns.join('');
+    host.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', async () => {
+      const a = b.getAttribute('data-act');
+      try {
+        if (a === 'claim') { await api('/api/officer/claim/' + r.id, { method:'POST' }); Sanad.toast('Claimed', 'ok'); }
+        if (a === 'release') { await api('/api/officer/request/' + r.id + '/release', { method:'POST' }); Sanad.toast('Released', 'info'); }
+        if (a === 'complete') { await api('/api/officer/request/' + r.id + '/complete', { method:'POST' }); Sanad.toast('Completed ✓', 'ok'); }
+        await openDetail(r.id);
+        await loadInbox();
+      } catch (e) { Sanad.toast(e.message, 'err'); }
+    }));
+  }
+
+  async function openOtpWindow() {
+    if (!currentRequestId) return;
+    await api('/api/officer/request/' + currentRequestId + '/otp-window', { method:'POST' });
+    const el = document.getElementById('otpStatus');
+    el.textContent = '⏱ Waiting for citizen…';
+    Sanad.toast('OTP window opened (60s)', 'info', 2400);
+    const start = Date.now();
+    const h = setInterval(async () => {
+      if (Date.now() - start > 70000 || currentRequestId == null) { clearInterval(h); return; }
+      try {
+        const r = await api('/api/officer/request/' + currentRequestId + '/otp');
+        if (r.otp && r.otp.code && r.otp.consumed_at) {
+          clearInterval(h);
+          el.textContent = '✅ ' + r.otp.code;
+          try { await navigator.clipboard.writeText(r.otp.code); } catch {}
+          Sanad.toast('OTP ' + r.otp.code + ' copied', 'ok', 4000);
+          if (soundOn) Sanad.ping();
+        }
+      } catch {}
+    }, 1500);
+  }
+
+  // ─ Chat drawer ─
+  function openChatDrawer() {
+    if (!currentRequestId) { Sanad.toast('Open a request first', 'info', 1500); return; }
+    chatDrawerOpen = true;
+    const d = document.getElementById('chatDrawer');
+    d.classList.add('open');
+    if (chatExpanded) d.classList.add('expanded');
+    updateChatBadge(0);
+  }
+  function closeChatDrawer() { chatDrawerOpen = false; document.getElementById('chatDrawer').classList.remove('open','expanded'); }
+  function toggleChatDrawer() { chatDrawerOpen ? closeChatDrawer() : openChatDrawer(); }
+  function expandChat() {
+    chatExpanded = !chatExpanded;
+    document.getElementById('chatDrawer').classList.toggle('expanded', chatExpanded);
+  }
+  function updateChatBadge(n) {
+    const el = document.getElementById('chatUnread');
+    if (!n) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden'); el.textContent = n;
+  }
+  function msgBubble(m) {
+    const kind = m.actor_type === 'citizen' ? 'in' : m.actor_type === 'bot' ? 'bot' : m.actor_type === 'officer' ? 'officer' : 'sys';
+    const el = document.createElement('div');
+    el.className = 'bubble bubble-' + kind;
+    if (isAr(m.body_text)) el.setAttribute('dir','rtl');
+    el.textContent = m.body_text || (m.media_url ? '📎 attachment' : '');
+    return el;
+  }
+  function renderChat(messages) {
+    const chat = document.getElementById('chatPane');
+    chat.innerHTML = '';
+    for (const m of messages) {
+      chat.appendChild(msgBubble(m));
+      lastChatMsgId = Math.max(lastChatMsgId, m.id);
+    }
+    chat.scrollTop = chat.scrollHeight;
+  }
+  async function pollChat() {
+    if (!currentRequestId) return;
+    try {
+      const r = await api('/api/officer/request/' + currentRequestId);
+      const chat = document.getElementById('chatPane');
+      for (const m of r.messages) {
+        if (m.id > lastChatMsgId) {
+          chat.appendChild(msgBubble(m));
+          if (m.actor_type === 'citizen' && !chatDrawerOpen) {
+            unreadChats.set(currentRequestId, (unreadChats.get(currentRequestId) || 0) + 1);
+            updateChatBadge(unreadChats.get(currentRequestId));
+            if (soundOn) Sanad.ping();
+          }
+          lastChatMsgId = m.id;
+        }
+      }
+      chat.scrollTop = chat.scrollHeight;
+    } catch {}
+  }
+
+  document.getElementById('officerSend').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!currentRequestId) return;
+    const text = document.getElementById('officerInput').value.trim();
+    if (!text) return;
+    await fetch('/api/officer/request/' + currentRequestId + '/message', {
+      method:'POST',
+      headers:{'content-type':'application/json','x-officer-id':String(officerId)},
+      body: JSON.stringify({ text })
+    });
+    document.getElementById('officerInput').value = '';
+    await pollChat();
+  });
+  document.querySelectorAll('.canned').forEach(b => b.addEventListener('click', () => {
+    document.getElementById('officerInput').value = b.textContent.trim();
+    document.getElementById('officerInput').focus();
+  }));
+  document.getElementById('toggleChat').addEventListener('click', toggleChatDrawer);
+  document.getElementById('closeChat').addEventListener('click', closeChatDrawer);
+  document.getElementById('expandChat').addEventListener('click', expandChat);
+  document.getElementById('closeWorkspace').addEventListener('click', closeDetail);
+  document.getElementById('detailBackdrop').addEventListener('click', closeDetail);
+
+  document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => switchTab(b.getAttribute('data-tab'))));
+
+  // ─ Filters ─
+  document.getElementById('filterInput').addEventListener('input', e => { filterText = e.target.value; selectedCardIdx = 0; loadInbox(); });
+  document.querySelectorAll('[data-filter]').forEach(b => b.addEventListener('click', () => { filterMode = b.getAttribute('data-filter'); selectedCardIdx = 0; loadInbox(); }));
+  document.getElementById('refreshBtn').addEventListener('click', loadInbox);
+  document.getElementById('vmGrid').addEventListener('click', () => setViewMode('grid'));
+  document.getElementById('vmList').addEventListener('click', () => setViewMode('list'));
+  document.getElementById('quickClaim').addEventListener('click', () => {
+    const first = document.querySelector('#inbox [data-claim]');
+    if (first) first.click();
+    else Sanad.toast('Nothing to claim right now', 'info', 1400);
+  });
+
+  // ─ Command palette ─
+  function openCmd() { document.getElementById('cmdOverlay').classList.remove('hidden'); document.getElementById('cmdInput').value=''; document.getElementById('cmdInput').focus(); renderCmd(''); }
+  function closeCmd() { document.getElementById('cmdOverlay').classList.add('hidden'); }
+  const COMMANDS = [
+    { id:'claim_next', label:'Claim next in marketplace', icon:'⚡', run:()=>document.getElementById('quickClaim').click() },
+    { id:'filter_mine', label:'Filter: My claimed', icon:'📌', run:()=>{filterMode='mine';loadInbox();} },
+    { id:'filter_ready', label:'Filter: Marketplace', icon:'🛒', run:()=>{filterMode='ready';loadInbox();} },
+    { id:'filter_waiting', label:'Filter: Waiting on citizen', icon:'⏳', run:()=>{filterMode='waiting';loadInbox();} },
+    { id:'toggle_theme', label:'Toggle dark mode', icon:'🌓', run:()=>document.documentElement.classList.toggle('dark') },
+    { id:'toggle_lang', label:'Toggle language', icon:'🌐', run:()=>I18N.setLang(I18N.lang==='ar'?'en':'ar') },
+    { id:'open_chat', label:'Open citizen chat drawer', icon:'💬', run:()=>openChatDrawer() },
+    { id:'request_otp', label:'Request OTP from citizen', icon:'📲', run:()=>currentRequestId && openOtpWindow() },
+    { id:'open_catalogue', label:'Open service catalogue', icon:'📚', run:()=>window.location.href='/catalogue.html' },
+    { id:'open_chat_tab', label:'Open citizen web chat', icon:'🧪', run:()=>window.open('/chat.html','_blank') },
+    { id:'refresh', label:'Refresh inbox', icon:'↻', run:loadInbox }
+  ];
+  function renderCmd(q) {
+    const query = (q||'').toLowerCase();
+    let items = COMMANDS.filter(c => !query || c.label.toLowerCase().includes(query));
+    if (query) {
+      const all = (allInbox.mine||[]).concat(allInbox.marketplace||[]);
+      const rm = all.filter(r => String(r.id).includes(query) || (r.service_name||'').toLowerCase().includes(query) || (r.entity_en||'').toLowerCase().includes(query)).slice(0,8);
+      items = rm.map(r => ({ id:'req_'+r.id, icon:'🎫', label:`R-${r.id} · ${pickName(r)}`, sub:(r.entity_en||'')+' · '+r.status, run:()=>openDetail(r.id) })).concat(items);
+    }
+    document.getElementById('cmdResults').innerHTML = items.map((c,i) => `
+      <button class="cmd-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-start transition ${i===0?'selected-soft':''}" data-idx="${i}" style="transition:background .1s">
+        <span class="text-[16px]">${c.icon}</span>
+        <div class="flex-1 min-w-0">
+          <div class="text-[13px] font-semibold truncate">${c.label}</div>
+          ${c.sub ? `<div class="text-[11px] truncate" style="color:var(--text-mute)">${c.sub}</div>` : ''}
+        </div>
+        <span class="text-[10px]" style="color:var(--text-mute)">${c.id}</span>
+      </button>`).join('') || '<div class="empty"><div class="empty-title">No matches</div></div>';
+    document.querySelectorAll('.cmd-item').forEach((b,i) => {
+      b.addEventListener('mouseenter', () => { document.querySelectorAll('.cmd-item').forEach(x=>x.classList.remove('selected-soft')); b.classList.add('selected-soft'); });
+      b.addEventListener('click', () => { items[i].run(); closeCmd(); });
+    });
+  }
+  document.getElementById('openCmd').addEventListener('click', openCmd);
+  document.getElementById('cmdInput').addEventListener('input', e => renderCmd(e.target.value));
+  document.getElementById('cmdInput').addEventListener('keydown', e => {
+    if (e.key==='Escape') closeCmd();
+    if (e.key==='Enter') { const first = document.querySelector('.cmd-item'); if (first) first.click(); }
+  });
+  document.getElementById('cmdOverlay').addEventListener('click', e => { if (e.target.id==='cmdOverlay') closeCmd(); });
+
+  // ─ Keyboard ─
+  document.addEventListener('keydown', e => {
+    const inInput = ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName);
+    if ((e.metaKey || e.ctrlKey) && (e.key==='k' || e.key==='K')) { e.preventDefault(); openCmd(); return; }
+    if ((e.metaKey || e.ctrlKey) && (e.key==='d' || e.key==='D')) { e.preventDefault(); document.documentElement.classList.toggle('dark'); return; }
+    if (e.key==='Escape') {
+      if (!document.getElementById('cmdOverlay').classList.contains('hidden')) { closeCmd(); return; }
+      if (!document.getElementById('helpOverlay').classList.contains('hidden')) { document.getElementById('helpOverlay').classList.add('hidden'); return; }
+      if (chatDrawerOpen) { closeChatDrawer(); return; }
+      if (currentRequestId) { closeDetail(); return; }
+    }
+    if (inInput) { if (e.key==='Escape' && document.activeElement.id==='filterInput') document.activeElement.blur(); return; }
+    if (e.key==='/') { e.preventDefault(); document.getElementById('filterInput').focus(); return; }
+    if (e.key==='?') { e.preventDefault(); document.getElementById('helpOverlay').classList.remove('hidden'); return; }
+    if (e.key==='t' || e.key==='T') { toggleChatDrawer(); return; }
+    if (e.key==='c' || e.key==='C') { document.getElementById('quickClaim').click(); return; }
+    if (e.key==='r' || e.key==='R') { loadInbox(); return; }
+    if (e.key==='o' || e.key==='O') { if (currentRequestId) openOtpWindow(); return; }
+    if (e.key==='j' || e.key==='ArrowDown') { const c = document.querySelectorAll('.card'); if (!c.length) return; selectedCardIdx = Math.min(selectedCardIdx+1, c.length-1); highlightSelected(); c[selectedCardIdx].scrollIntoView({block:'nearest'}); }
+    if (e.key==='k' || e.key==='ArrowUp') { const c = document.querySelectorAll('.card'); if (!c.length) return; selectedCardIdx = Math.max(selectedCardIdx-1, 0); highlightSelected(); c[selectedCardIdx].scrollIntoView({block:'nearest'}); }
+    if (e.key==='Enter') { const c = document.querySelectorAll('.card'); if (c[selectedCardIdx]) c[selectedCardIdx].click(); }
+  });
+
+  document.getElementById('helpBtn').addEventListener('click', () => document.getElementById('helpOverlay').classList.remove('hidden'));
+  document.getElementById('closeHelp').addEventListener('click', () => document.getElementById('helpOverlay').classList.add('hidden'));
+  document.getElementById('helpOverlay').addEventListener('click', e => { if (e.target.id==='helpOverlay') e.currentTarget.classList.add('hidden'); });
+
+  document.getElementById('toggleSidebar').addEventListener('click', () => {
+    const sb = document.getElementById('sidebar');
+    sb.style.display = sb.style.display === 'none' ? 'flex' : 'none';
+  });
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    const d = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('sanad.theme', d?'dark':'light');
+  });
+  if (localStorage.getItem('sanad.theme') === 'dark') document.documentElement.classList.add('dark');
+  document.getElementById('soundBtn').addEventListener('click', () => {
+    soundOn = !soundOn; localStorage.setItem('sanad.sound', soundOn?'on':'off');
+    document.getElementById('soundBtn').textContent = soundOn?'🔔':'🔕';
+    Sanad.toast('Sound '+(soundOn?'on':'off'), 'info', 1200);
+  });
+  document.getElementById('soundBtn').textContent = soundOn?'🔔':'🔕';
+  document.getElementById('langBtn').addEventListener('click', () => { I18N.setLang(I18N.lang==='ar'?'en':'ar'); if (currentRequestId) openDetail(currentRequestId); else loadInbox(); });
+
+  function tickTime() {
+    const d = new Date();
+    document.getElementById('tickTime').textContent = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  }
+  setInterval(tickTime, 30000); tickTime();
+
+  async function liveTick() {
+    try {
+      const d = await api('/api/debug/state');
+      const maxId = Math.max(0, ...d.latestMessages.map(m => m.id));
+      if (lastMsgIdSeen > 0) {
+        const fresh = d.latestMessages.filter(m => m.id > lastMsgIdSeen && m.actor_type === 'citizen');
+        if (fresh.length && !currentRequestId && soundOn) Sanad.ping();
+      }
+      lastMsgIdSeen = maxId;
+      document.getElementById('activity').innerHTML = d.latestMessages.slice(0,6).map(m => `
+        <li class="flex items-start gap-2">
+          <span class="w-1 h-1 rounded-full mt-1.5" style="background:currentColor;opacity:.5"></span>
+          <span class="flex-1 min-w-0 truncate"><b style="color:var(--text)">${m.actor_type}</b> · ${(m.body_text||'').slice(0,38)}</span>
+        </li>`).join('');
+    } catch {}
+    if (currentRequestId) pollChat();
+    else loadInbox();
+  }
+  setInterval(liveTick, 4000);
+
+  seedOfficers();
+  applyViewMode();
+  loadInbox();
+})();
+</script>
+</body>
+</html>

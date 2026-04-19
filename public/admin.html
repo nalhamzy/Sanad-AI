@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Sanad · Admin console</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          brand: { 50:'#f0fdfa',100:'#ccfbf1',400:'#2dd4bf',500:'#14b8a6',600:'#0d9488',700:'#0f766e' },
+          ink: { 950:'#020617',900:'#0b1220',800:'#0f172a',700:'#1e293b',600:'#334155',500:'#475569',400:'#64748b',300:'#94a3b8',200:'#cbd5e1',100:'#e2e8f0',50:'#f1f5f9' },
+          good:'#10b981', warn:'#f59e0b', bad:'#ef4444'
+        },
+        fontFamily: { sans:['Inter','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] }
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  pre { white-space: pre-wrap; word-break: break-word; }
+</style>
+</head>
+<body class="bg-ink-50 dark:bg-ink-950 text-ink-900 dark:text-ink-50 antialiased">
+
+<header class="flex items-center gap-3 h-14 px-3 md:px-4 border-b border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900 sticky top-0 z-40">
+  <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-ink-800 to-ink-600 text-white grid place-items-center font-extrabold">A</div>
+  <div class="leading-none">
+    <div class="text-[13px] font-bold">Admin console</div>
+    <div class="text-[10.5px] text-ink-400" id="healthBar">—</div>
+  </div>
+  <div class="ms-auto flex items-center gap-1.5">
+    <a href="/" class="px-2.5 h-8 rounded-lg hover:bg-ink-100 dark:hover:bg-ink-800 text-[12px] font-semibold flex items-center gap-1.5">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9v9a2 2 0 01-2 2h-4v-6H10v6H6a2 2 0 01-2-2v-9z"/></svg>
+      Home
+    </a>
+    <a href="/officer.html" class="px-2.5 h-8 rounded-lg hover:bg-ink-100 dark:hover:bg-ink-800 text-[12px] font-semibold flex items-center gap-1.5">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/></svg>
+      Officer
+    </a>
+    <a href="/chat.html" class="px-2.5 h-8 rounded-lg hover:bg-ink-100 dark:hover:bg-ink-800 text-[12px] font-semibold flex items-center gap-1.5">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-1.9 5.4 8.5 8.5 0 01-14.2-3A8.5 8.5 0 0111 3a8.5 8.5 0 018.1 6"/></svg>
+      Chat
+    </a>
+    <a href="/catalogue.html" class="px-2.5 h-8 rounded-lg hover:bg-ink-100 dark:hover:bg-ink-800 text-[12px] font-semibold flex items-center gap-1.5">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20V3H6.5A2.5 2.5 0 004 5.5v14z"/></svg>
+      Catalogue
+    </a>
+    <div class="w-px h-5 bg-ink-200 dark:bg-ink-700 mx-1"></div>
+    <button id="themeBtn" class="p-2 rounded-lg hover:bg-ink-100 dark:hover:bg-ink-800" title="toggle theme">
+      <svg class="w-4 h-4 dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
+      <svg class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+    </button>
+    <button id="refreshBtn" class="px-3 h-8 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-[12px] font-bold flex items-center gap-1.5 transition">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+      Refresh
+    </button>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto p-4 md:p-6 space-y-5">
+
+  <!-- System health banner -->
+  <div class="rounded-xl border border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900 overflow-hidden">
+    <div class="flex items-center gap-3 px-4 py-3 border-b border-ink-100 dark:border-ink-800">
+      <span class="w-2 h-2 rounded-full bg-good pulse-dot"></span>
+      <div class="text-[12px] font-bold">System health</div>
+      <div class="ms-auto flex items-center gap-3 text-[11px] text-ink-500 dark:text-ink-400">
+        <span id="llmBadge" class="chip bg-ink-100 dark:bg-ink-800 text-ink-700 dark:text-ink-200">LLM —</span>
+        <span id="debugBadge" class="chip bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300">debug —</span>
+        <span class="mono" id="uptime">—</span>
+      </div>
+    </div>
+
+    <!-- KPI tiles -->
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-px bg-ink-100 dark:bg-ink-800" id="kpiGrid"></div>
+  </div>
+
+  <div class="grid lg:grid-cols-3 gap-5">
+
+    <!-- LEFT: Latest requests -->
+    <section class="lg:col-span-2 rounded-xl border border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900 overflow-hidden">
+      <div class="flex items-center gap-2 px-4 py-3 border-b border-ink-100 dark:border-ink-800">
+        <div>
+          <div class="text-[12.5px] font-bold">Latest requests</div>
+          <div class="text-[10.5px] text-ink-400">Most recent 10 across all offices</div>
+        </div>
+        <a href="/officer.html" class="ms-auto text-[11px] text-brand-600 dark:text-brand-400 font-semibold hover:underline">Open officer dashboard →</a>
+      </div>
+      <div class="overflow-x-auto scroll-y">
+        <table class="w-full text-[13px]">
+          <thead class="bg-ink-50 dark:bg-ink-800 text-[10.5px] uppercase tracking-wider text-ink-500 dark:text-ink-400">
+            <tr>
+              <th class="px-4 py-2.5 text-start">#</th>
+              <th class="px-4 py-2.5 text-start">Status</th>
+              <th class="px-4 py-2.5 text-start">Fee</th>
+              <th class="px-4 py-2.5 text-start">Officer</th>
+              <th class="px-4 py-2.5 text-start">Created</th>
+              <th class="px-4 py-2.5"></th>
+            </tr>
+          </thead>
+          <tbody id="requestsTbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- RIGHT: Utilities + activity -->
+    <section class="space-y-5">
+
+      <!-- OTP Simulator -->
+      <div class="rounded-xl border border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900 overflow-hidden">
+        <div class="px-4 py-3 border-b border-ink-100 dark:border-ink-800">
+          <div class="text-[12.5px] font-bold">OTP Simulator</div>
+          <div class="text-[10.5px] text-ink-400 mt-0.5">Inject a fake OTP into an active request (debug only)</div>
+        </div>
+        <div class="p-4 space-y-3">
+          <div class="grid grid-cols-2 gap-2">
+            <label class="block">
+              <div class="text-[10.5px] font-semibold text-ink-500 dark:text-ink-400 mb-1">Request #</div>
+              <input id="simOtpId" class="w-full px-3 h-9 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 text-[13px] focus:ring-2 focus:ring-brand-400 outline-none" placeholder="e.g. 25"/>
+            </label>
+            <label class="block">
+              <div class="text-[10.5px] font-semibold text-ink-500 dark:text-ink-400 mb-1">Code</div>
+              <input id="simOtpCode" class="w-full px-3 h-9 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 text-[13px] mono focus:ring-2 focus:ring-brand-400 outline-none" value="123456"/>
+            </label>
+          </div>
+          <button id="btnSimOtp" class="w-full h-9 rounded-lg bg-ink-900 dark:bg-brand-500 hover:opacity-90 text-white text-[12.5px] font-bold transition flex items-center justify-center gap-2">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+            Inject OTP
+          </button>
+          <div id="simOtpMsg" class="text-[11px] text-ink-500 dark:text-ink-400"></div>
+        </div>
+      </div>
+
+      <!-- Recent messages -->
+      <div class="rounded-xl border border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900 overflow-hidden">
+        <div class="px-4 py-3 border-b border-ink-100 dark:border-ink-800 flex items-center">
+          <div>
+            <div class="text-[12.5px] font-bold">Live messages</div>
+            <div class="text-[10.5px] text-ink-400 mt-0.5">Latest 20 across all sessions</div>
+          </div>
+          <span class="ms-auto w-1.5 h-1.5 rounded-full bg-good pulse-dot"></span>
+        </div>
+        <div class="p-2 max-h-96 overflow-y-auto scroll-y">
+          <ul id="messagesList" class="space-y-1"></ul>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="text-[10.5px] text-ink-400 text-center py-4">
+    Sanad-AI dev console · built on libSQL · <a href="/api/debug/state" class="hover:underline">raw debug state →</a>
+  </footer>
+</main>
+
+<script src="/ui.js"></script>
+<script>
+const KPI_META = {
+  service_catalog: { label:'Services',   icon:'📚', tone:'ink' },
+  request:         { label:'Requests',   icon:'🎫', tone:'brand' },
+  request_document:{ label:'Docs',       icon:'📎', tone:'ink' },
+  message:         { label:'Messages',   icon:'💬', tone:'indigo' },
+  citizen:         { label:'Citizens',   icon:'🧑', tone:'ink' },
+  office:          { label:'Offices',    icon:'🏢', tone:'ink' },
+  officer:         { label:'Officers',   icon:'👤', tone:'ink' },
+  session:         { label:'Sessions',   icon:'🔗', tone:'ink' }
+};
+
+async function load() {
+  try {
+    const health = await fetch('/api/health').then(r => r.json());
+    document.getElementById('healthBar').textContent = 'All systems nominal';
+    const llm = document.getElementById('llmBadge');
+    llm.textContent = health.llm ? 'LLM ON · Qwen 3.5' : 'LLM fallback';
+    llm.className = 'chip ' + (health.llm ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300');
+    const dbg = document.getElementById('debugBadge');
+    dbg.textContent = health.debug ? 'debug on' : 'debug off';
+    dbg.className = 'chip ' + (health.debug ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300' : 'bg-ink-100 text-ink-600 dark:bg-ink-800 dark:text-ink-300');
+
+    const s = await fetch('/api/debug/state').then(r => r.json());
+
+    // KPI grid
+    document.getElementById('kpiGrid').innerHTML = Object.entries(s.counts).map(([k, v]) => {
+      const m = KPI_META[k] || { label: k, icon: '•', tone: 'ink' };
+      return `<div class="bg-white dark:bg-ink-900 p-4 flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-ink-100 dark:bg-ink-800 grid place-items-center text-[18px]">${m.icon}</div>
+        <div class="min-w-0">
+          <div class="text-[10.5px] uppercase tracking-wider text-ink-400 font-bold">${m.label}</div>
+          <div class="text-[18px] font-extrabold mono mt-0.5">${Number(v).toLocaleString()}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Requests table
+    document.getElementById('requestsTbody').innerHTML = s.latestRequests.map(r => {
+      const tone = r.status === 'completed' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                  : r.status === 'ready' ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
+                  : r.status === 'claimed' || r.status === 'in_progress' ? 'bg-brand-50 text-brand-700 dark:bg-brand-700/30 dark:text-brand-300'
+                  : 'bg-ink-100 text-ink-600 dark:bg-ink-800 dark:text-ink-300';
+      return `<tr class="border-t border-ink-100 dark:border-ink-800 hover:bg-ink-50 dark:hover:bg-ink-800/50 transition">
+        <td class="px-4 py-2.5 mono font-bold">R-${r.id}</td>
+        <td class="px-4 py-2.5"><span class="chip ${tone}">${r.status}</span></td>
+        <td class="px-4 py-2.5 mono">${r.fee_omr != null ? r.fee_omr + ' OMR' : '—'}</td>
+        <td class="px-4 py-2.5">${r.officer_id ?? '<span class="text-ink-400">unassigned</span>'}</td>
+        <td class="px-4 py-2.5 text-[11px] text-ink-500 dark:text-ink-400 mono">${r.created_at}</td>
+        <td class="px-4 py-2.5 text-end"><a href="/officer.html" class="text-[11px] text-brand-600 dark:text-brand-400 font-semibold hover:underline">Open →</a></td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="6" class="px-4 py-10 text-center text-ink-400 italic">No requests yet.</td></tr>`;
+
+    // Messages
+    document.getElementById('messagesList').innerHTML = s.latestMessages.map(m => {
+      const tone = m.actor_type === 'citizen' ? 'text-brand-700 dark:text-brand-300' : m.actor_type === 'bot' ? 'text-indigo-700 dark:text-indigo-300' : m.actor_type === 'officer' ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300';
+      return `<li class="px-2 py-1.5 rounded hover:bg-ink-50 dark:hover:bg-ink-800/50 text-[12px] flex items-start gap-2">
+        <span class="chip ${tone} bg-white dark:bg-ink-900 border-ink-200 dark:border-ink-700 text-[9.5px] shrink-0">${m.actor_type}</span>
+        <span class="flex-1 min-w-0 truncate">${(m.body_text || '').slice(0, 90)}</span>
+      </li>`;
+    }).join('') || '<li class="p-4 text-center text-ink-400 italic text-[11px]">no messages</li>';
+  } catch (e) {
+    document.getElementById('healthBar').textContent = 'Error: ' + e.message;
+  }
+}
+
+document.getElementById('refreshBtn').onclick = load;
+document.getElementById('themeBtn').onclick = () => {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('sanad.theme', isDark ? 'dark' : 'light');
+};
+if (localStorage.getItem('sanad.theme') === 'dark') document.documentElement.classList.add('dark');
+
+document.getElementById('btnSimOtp').onclick = async () => {
+  const id = document.getElementById('simOtpId').value.trim();
+  const code = document.getElementById('simOtpCode').value.trim() || '123456';
+  if (!id) { Sanad.toast('Enter a request id', 'warn'); return; }
+  const r = await fetch('/api/debug/simulate-otp/' + id, {
+    method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ code })
+  });
+  const ok = r.ok;
+  document.getElementById('simOtpMsg').textContent = ok ? `✅ Injected ${code} into R-${id}` : '❌ failed';
+  if (ok) Sanad.toast('OTP injected', 'ok'); else Sanad.toast('OTP inject failed', 'err');
+  load();
+};
+
+load();
+setInterval(load, 5000);
+</script>
+</body>
+</html>

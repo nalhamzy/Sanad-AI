@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: sanad-ai
+    env: node
+    plan: starter
+    buildCommand: npm ci
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DEBUG_MODE
+        value: "true"               # set to false after initial smoke-test
+      - key: PORT
+        value: "3030"
+      - key: DB_URL
+        value: file:./data/sanad.db # swap for libsql://… on Turso later
+      - key: QWEN_API_KEY
+        sync: false
+      - key: QWEN_BASE_URL
+        value: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+      - key: QWEN_MODEL
+        value: qwen-plus
+      - key: WHATSAPP_VERIFY_TOKEN
+        sync: false
+      - key: WHATSAPP_ACCESS_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+    disk:
+      name: sanad-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
+    healthCheckPath: /api/health
+    autoDeploy: true

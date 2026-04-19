@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Sanad-AI · WhatsApp web tester</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/theme.css"/>
+<style>
+  html,body{height:100%}
+  body{font-family:'Inter',sans-serif;margin:0}
+  [dir="rtl"] body, html[dir="rtl"] *{font-family:'Noto Kufi Arabic',sans-serif}
+  .wa-dark{background:linear-gradient(135deg,#054640,#075e54);color:#fff}
+  .wa-green{background:linear-gradient(135deg,#14b8a6,#0d9488);color:#fff}
+  .meta{font-size:10px;color:#667781;margin-top:3px;display:flex;gap:4px;justify-content:flex-end;align-items:center}
+  .day{align-self:center;font-size:11px;color:var(--text-mute);background:var(--surface);border:1px solid var(--line);padding:3px 12px;border-radius:999px;margin:10px 0 4px;font-weight:600;box-shadow:var(--shadow-sm)}
+  .typing-dot{width:6px;height:6px;border-radius:50%;background:#94a3b8;display:inline-block;animation:td 1.4s infinite}
+  .typing-dot:nth-child(2){animation-delay:.2s}.typing-dot:nth-child(3){animation-delay:.4s}
+  @keyframes td{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+  .err-banner{position:fixed;top:0;left:0;right:0;background:#991b1b;color:#fff;padding:8px 16px;font-size:12px;z-index:9999;display:none;font-family:monospace}
+  .err-banner.show{display:block}
+</style>
+</head>
+<body>
+
+<!-- runtime error surface so we never get a silently broken page again -->
+<div id="errBanner" class="err-banner"></div>
+
+<div class="flex flex-col md:flex-row w-full h-screen">
+
+  <!-- CHAT PANEL -->
+  <section class="flex flex-col flex-1 min-w-0 h-full overflow-hidden bg-[#efeae2]">
+    <!-- WhatsApp-style header -->
+    <header class="wa-dark flex items-center gap-3 px-4 py-2.5 shrink-0">
+      <div class="w-10 h-10 rounded-full bg-white/20 grid place-items-center font-bold">S</div>
+      <div class="flex-1 min-w-0">
+        <div class="font-semibold leading-tight" data-i18n="app.name">Sanad-AI</div>
+        <div class="text-[11px] text-white/80 leading-tight flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-300"></span>
+          <span id="statusText" data-i18n="chat.online">online</span>
+          <span class="opacity-40 mx-1">·</span>
+          <span id="headerSub">session</span>
+        </div>
+      </div>
+      <button id="newSvcBtn" class="text-xs px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 font-semibold" title="search for a different service">↻ new service</button>
+      <button id="langBtn" class="text-xs px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 font-semibold" data-i18n="lang.toggle">AR</button>
+      <button id="resetBtn" class="text-xs px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 font-semibold" data-i18n="actions.reset">Reset</button>
+    </header>
+
+    <!-- Identity bar -->
+    <div class="flex items-center gap-2 px-3 py-2 border-b border-slate-200 bg-slate-50 text-xs shrink-0">
+      <span class="text-slate-500" data-i18n="chat.phone_label">Your phone</span>
+      <input id="phoneInput" class="px-2 py-1 rounded bg-white border border-slate-200 w-40 focus:outline-none focus:border-teal-400" placeholder="+968..." />
+      <span id="llmMode" class="ms-2 text-[10px] px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-semibold">…</span>
+      <span class="ms-auto text-slate-400"><span data-i18n="chat.request_no">Request</span> <b id="reqNo">—</b></span>
+    </div>
+
+    <!-- LLM-off hint banner (only shows when Qwen key isn't set) -->
+    <div id="llmHint" class="hidden bg-amber-50 border-b border-amber-200 text-amber-800 text-[12px] px-3 py-2 flex items-center gap-2">
+      <span>⚡</span>
+      <span class="flex-1"><b>Fallback mode.</b> Set <code class="bg-white px-1 rounded">QWEN_API_KEY</code> in <code class="bg-white px-1 rounded">.env</code> for LLM-powered responses (reasoning, filtering, natural answers).</span>
+      <button id="llmHintClose" class="text-amber-700 hover:text-amber-900">×</button>
+    </div>
+
+    <!-- Log -->
+    <div id="log" class="chat-bg flex-1 overflow-y-auto p-4 flex flex-col gap-2"></div>
+
+    <!-- Typing -->
+    <div id="typing" class="hidden px-4 py-1 text-xs text-slate-500 bg-white border-t border-slate-100 shrink-0">
+      <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
+      <span class="ms-2" data-i18n="chat.typing">typing…</span>
+    </div>
+
+    <!-- Composer -->
+    <form id="sendForm" class="p-2.5 bg-[#f0f2f5] border-t border-slate-200 flex items-center gap-2 shrink-0">
+      <label class="p-2 rounded-full hover:bg-slate-200 cursor-pointer" title="attach">
+        📎
+        <input id="fileInput" type="file" accept="image/*,application/pdf" class="hidden"/>
+      </label>
+      <span id="filePill" class="hidden items-center gap-1 text-xs px-2 py-1 rounded-full bg-teal-100 text-teal-800 max-w-[180px] truncate"></span>
+      <input id="input" type="text" autocomplete="off"
+             class="flex-1 px-4 py-2.5 rounded-full bg-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-400"
+             placeholder="Type a message…"/>
+      <button type="submit" aria-label="send"
+              class="wa-green w-10 h-10 rounded-full grid place-items-center hover:brightness-110">
+        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </form>
+  </section>
+
+  <!-- DEV SIDEBAR -->
+  <aside class="w-full md:w-[320px] md:h-full overflow-y-auto bg-slate-50 border-s border-slate-200 p-4 space-y-3 shrink-0">
+    <div class="flex items-center justify-between">
+      <div class="text-xs font-bold uppercase tracking-wider text-slate-500" data-i18n="chat.state_title">Session state</div>
+      <a href="/officer.html" target="_blank" class="text-[11px] text-teal-600 underline">officer →</a>
+    </div>
+    <pre id="stateView" class="text-[11px] leading-relaxed bg-white p-2 rounded border border-slate-200 max-h-48 overflow-auto">{}</pre>
+    <div class="text-[11px] text-slate-500"><span data-i18n="chat.llm_mode">LLM</span>: <span id="llmState">—</span></div>
+
+    <div class="pt-3 border-t border-slate-200">
+      <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2" data-i18n="chat.devcmd_title">Dev commands</div>
+      <ul class="text-xs space-y-1 text-slate-600">
+        <li><code class="bg-white px-1 rounded border">/reset</code> start new session</li>
+        <li><code class="bg-white px-1 rounded border">/state</code> dump state</li>
+        <li>📎 upload images to satisfy doc steps</li>
+        <li>Then open <a href="/officer.html" target="_blank" class="text-teal-600 underline">officer dashboard</a> to claim it</li>
+      </ul>
+    </div>
+
+    <div class="pt-3 border-t border-slate-200">
+      <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2" data-i18n="chat.trace_title">Last trace</div>
+      <pre id="traceView" class="text-[10px] leading-relaxed bg-white p-2 rounded border border-slate-200 max-h-56 overflow-auto">—</pre>
+    </div>
+  </aside>
+</div>
+
+<script src="/i18n.js"></script>
+<script src="/ui.js"></script>
+<script>
+// ── Global error surface — nothing silent from here on
+window.addEventListener('error', e => {
+  const b = document.getElementById('errBanner');
+  b.textContent = 'JS error: ' + (e.message || e.error) + (e.filename ? ' @ ' + e.filename + ':' + e.lineno : '');
+  b.classList.add('show');
+  console.error(e);
+});
+window.addEventListener('unhandledrejection', e => {
+  const b = document.getElementById('errBanner');
+  b.textContent = 'Promise error: ' + (e.reason?.message || e.reason);
+  b.classList.add('show');
+  console.error(e);
+});
+
+(function () {
+  'use strict';
+
+  // ── Session ID
+  let sid = localStorage.getItem('sanad.sid');
+  if (!sid) {
+    sid = 'web-' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem('sanad.sid', sid);
+  }
+  document.getElementById('headerSub').textContent = sid;
+
+  // ── Elements
+  const log       = document.getElementById('log');
+  const input     = document.getElementById('input');
+  const phone     = document.getElementById('phoneInput');
+  const stateView = document.getElementById('stateView');
+  const traceView = document.getElementById('traceView');
+  const reqNoEl   = document.getElementById('reqNo');
+  const llmState  = document.getElementById('llmState');
+  const fileInput = document.getElementById('fileInput');
+  const filePill  = document.getElementById('filePill');
+  const typing    = document.getElementById('typing');
+  const form      = document.getElementById('sendForm');
+
+  phone.value = localStorage.getItem('sanad.phone') || '';
+  phone.addEventListener('input', () => localStorage.setItem('sanad.phone', phone.value));
+
+  // ── State
+  let lastMsgId = 0;
+  let currentFile = null;
+  let lastDayKey = '';
+
+  // ── Helpers
+  const isAr = s => /[\u0600-\u06FF]/.test(s || '');
+  const hhmm = (d = new Date()) =>
+    String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+
+  function parseWhen(raw) {
+    if (!raw) return new Date();
+    try {
+      const s = typeof raw === 'string' ? raw.replace(' ', 'T') + (raw.endsWith('Z') ? '' : 'Z') : raw;
+      const d = new Date(s);
+      return isNaN(d.getTime()) ? new Date() : d;
+    } catch { return new Date(); }
+  }
+
+  function daySep(raw) {
+    const d = parseWhen(raw);
+    const key = d.toDateString();
+    if (key === lastDayKey) return;
+    lastDayKey = key;
+    const today = new Date().toDateString();
+    const yest = new Date(Date.now() - 864e5).toDateString();
+    const label = (key === today) ? (I18N.lang === 'ar' ? 'اليوم' : 'Today')
+                : (key === yest)  ? (I18N.lang === 'ar' ? 'أمس'   : 'Yesterday')
+                : d.toLocaleDateString();
+    const el = document.createElement('div');
+    el.className = 'day';
+    el.textContent = label;
+    log.appendChild(el);
+  }
+
+  const singleTick = '<svg width="14" height="10" viewBox="0 0 16 11" fill="none"><path d="M1 6l4 4 10-9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const doubleTick = '<svg style="color:#53bdeb" width="16" height="10" viewBox="0 0 18 11" fill="none"><path d="M1 6l3 3 7-7M7 9l1 1 8-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  function bubble(text, kind, opts = {}) {
+    const el = document.createElement('div');
+    el.className = 'bubble bubble-' + kind;
+    if (isAr(text)) el.setAttribute('dir', 'rtl');
+    const body = document.createElement('div');
+    body.textContent = text;
+    el.appendChild(body);
+    if (opts.time || kind === 'out') {
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      if (opts.time) {
+        const t = document.createElement('span');
+        t.textContent = opts.time;
+        meta.appendChild(t);
+      }
+      if (kind === 'out') {
+        const tick = document.createElement('span');
+        tick.innerHTML = opts.delivered ? doubleTick : singleTick;
+        meta.appendChild(tick);
+      }
+      el.appendChild(meta);
+    }
+    log.appendChild(el);
+    log.scrollTop = log.scrollHeight;
+    return el;
+  }
+
+  function attachmentBubble(url, name) {
+    const el = document.createElement('a');
+    el.href = url; el.target = '_blank';
+    el.className = 'bubble bubble-out text-xs underline';
+    el.textContent = '📎 ' + (name || url.split('/').pop());
+    log.appendChild(el);
+  }
+
+  // ── Fetchers
+  async function loadHealth() {
+    try {
+      const h = await fetch('/api/health').then(r => r.json());
+      llmState.textContent = h.llm ? 'Qwen 3.5' : 'fallback';
+      const mode = document.getElementById('llmMode');
+      const hint = document.getElementById('llmHint');
+      if (h.llm) {
+        mode.textContent = '🧠 Qwen 3.5 · tool-calling';
+        mode.className = 'ms-2 text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold';
+      } else {
+        mode.textContent = '⚡ heuristic (no key)';
+        mode.className = 'ms-2 text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold';
+        if (localStorage.getItem('sanad.hint_dismissed') !== '1') hint.classList.remove('hidden');
+      }
+    } catch (e) { llmState.textContent = 'offline'; }
+  }
+  document.addEventListener('click', e => {
+    if (e.target?.id === 'llmHintClose') {
+      document.getElementById('llmHint').classList.add('hidden');
+      localStorage.setItem('sanad.hint_dismissed', '1');
+    }
+  });
+
+  async function refreshState() {
+    try {
+      const r = await fetch('/api/chat/' + sid + '/state').then(r => r.json());
+      stateView.textContent = JSON.stringify(r.state || {}, null, 2);
+      if (r.state?.request_id) reqNoEl.textContent = '#R-' + r.state.request_id;
+    } catch {}
+  }
+
+  async function loadHistory() {
+    try {
+      const r = await fetch('/api/chat/' + sid + '/history').then(r => r.json());
+      const msgs = r.messages || [];
+      if (msgs.length === 0) {
+        daySep();
+        bubble('🤖 ' + (typeof t === 'function' ? t('chat.welcome') : 'Welcome — tell me what government service you need.'), 'bot', { time: hhmm() });
+      } else {
+        for (const m of msgs) {
+          const kind = m.actor_type === 'citizen' ? 'out'
+                     : m.actor_type === 'bot'     ? 'bot'
+                     : m.actor_type === 'officer' ? 'officer' : 'sys';
+          daySep(m.created_at);
+          const when = parseWhen(m.created_at);
+          if (m.body_text) bubble(m.body_text, kind, { time: hhmm(when), delivered: true });
+          if (m.media_url) attachmentBubble(m.media_url);
+          lastMsgId = Math.max(lastMsgId, m.id);
+        }
+      }
+      await refreshState();
+    } catch (e) {
+      bubble('Failed to load history: ' + (e.message || e), 'sys');
+    }
+  }
+
+  async function send(text, file) {
+    const fd = new FormData();
+    fd.append('text', text || '');
+    if (file) fd.append('file', file);
+    if (phone.value) fd.append('phone', phone.value.trim());
+    typing.classList.remove('hidden');
+    try {
+      const res = await fetch('/api/chat/' + sid + '?debug=true', { method: 'POST', body: fd });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      typing.classList.add('hidden');
+      if (data.reply) bubble(data.reply, 'bot', { time: hhmm() });
+      if (data.request_id) {
+        reqNoEl.textContent = '#R-' + data.request_id;
+        window.Sanad?.toast && Sanad.toast('Request #R-' + data.request_id + ' queued', 'ok', 2200);
+      }
+      if (data.state) stateView.textContent = JSON.stringify(data.state, null, 2);
+      if (data.trace) traceView.textContent = JSON.stringify(data.trace, null, 2);
+    } catch (e) {
+      typing.classList.add('hidden');
+      bubble('⚠ ' + (e.message || e) + ' — retry?', 'sys');
+      window.Sanad?.toast && Sanad.toast('Network error', 'err');
+    }
+  }
+
+  async function poll() {
+    try {
+      const r = await fetch('/api/chat/' + sid + '/poll?after=' + lastMsgId).then(r => r.json());
+      for (const m of (r.messages || [])) {
+        const kind = m.actor_type === 'bot' ? 'bot'
+                   : m.actor_type === 'officer' ? 'officer' : 'sys';
+        daySep(m.created_at);
+        const when = parseWhen(m.created_at);
+        if (m.body_text) {
+          bubble(m.body_text, kind, { time: hhmm(when) });
+          if (kind === 'officer') window.Sanad?.ping && Sanad.ping();
+        }
+        lastMsgId = Math.max(lastMsgId, m.id);
+      }
+      if ((r.messages || []).length) refreshState();
+    } catch {}
+  }
+
+  // ── Wire up handlers (before any async work kicks off)
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text && !currentFile) return;
+    daySep();
+    if (text) bubble(text, 'out', { time: hhmm(), delivered: false });
+    if (currentFile) attachmentBubble(URL.createObjectURL(currentFile), currentFile.name);
+    input.value = '';
+    const f = currentFile; currentFile = null;
+    filePill.classList.add('hidden'); filePill.classList.remove('inline-flex');
+    try { fileInput.value = ''; } catch {}
+    await send(text, f);
+  });
+
+  fileInput.addEventListener('change', () => {
+    currentFile = fileInput.files[0] || null;
+    if (currentFile) {
+      filePill.textContent = '📎 ' + currentFile.name;
+      filePill.classList.remove('hidden');
+      filePill.classList.add('inline-flex');
+    }
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', async () => {
+    if (!confirm('Start a new session?')) return;
+    try { await fetch('/api/debug/reset/' + sid, { method: 'POST' }); } catch {}
+    localStorage.removeItem('sanad.sid');
+    location.reload();
+  });
+
+  // Soft reset — keeps the chat history but pops the bot back to idle
+  document.getElementById('newSvcBtn').addEventListener('click', async () => {
+    input.value = 'new service';
+    form.dispatchEvent(new Event('submit', { cancelable: true }));
+  });
+
+  document.getElementById('langBtn').addEventListener('click', () => {
+    window.I18N && I18N.setLang(I18N.lang === 'ar' ? 'en' : 'ar');
+    input.setAttribute('placeholder', (typeof t === 'function' ? t('chat.input_placeholder') : 'Type a message…'));
+  });
+
+  // ── Kick off
+  setInterval(poll, 2500);
+  loadHealth();
+  loadHistory();
+  // Apply i18n placeholder after init
+  setTimeout(() => input.setAttribute('placeholder', (typeof t === 'function' ? t('chat.input_placeholder') : 'Type a message…')), 50);
+})();
+</script>
+</body>
+</html>
