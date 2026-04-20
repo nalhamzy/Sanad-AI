@@ -89,7 +89,10 @@ officerRouter.get('/request/:id', async (req, res) => {
     return res.status(403).json({ error: 'not_your_request' });
   }
   const { rows: docs } = await db.execute({
-    sql: `SELECT id, doc_code, label, storage_url, mime, size_bytes, status FROM request_document WHERE request_id=? ORDER BY id ASC`,
+    sql: `SELECT id, doc_code, label, storage_url, mime, size_bytes, status,
+                 caption, matched_via, original_name,
+                 verified_by, verified_at, reject_reason, uploaded_at
+            FROM request_document WHERE request_id=? ORDER BY id ASC`,
     args: [id]
   });
   const { rows: messages } = await db.execute({
@@ -149,6 +152,58 @@ officerRouter.post('/request/:id/complete', async (req, res) => {
     args: [id]
   });
   await storeMessage({ session_id: r.session_id, request_id: id, direction: 'out', actor_type: 'bot', body_text: '✅ تم إنجاز معاملتك! شكراً لاستخدامك سند.' });
+  res.json({ ok: true });
+});
+
+// ── Per-document verify / reject ────────────────────────────
+// Officer reviews each uploaded document. Updating the status lets the UI
+// show an at-a-glance grid of verified/rejected files.
+officerRouter.post('/request/:id/document/:docId/verify', async (req, res) => {
+  const me = await officer(ident(req));
+  const id = Number(req.params.id);
+  const docId = Number(req.params.docId);
+  const { rows } = await db.execute({ sql: `SELECT officer_id FROM request WHERE id=?`, args: [id] });
+  if (!rows[0] || rows[0].officer_id !== me.id) return res.status(403).json({ error: 'not_your_request' });
+  const r = await db.execute({
+    sql: `UPDATE request_document
+             SET status='verified', verified_by=?, verified_at=datetime('now'),
+                 reject_reason=NULL
+           WHERE id=? AND request_id=?`,
+    args: [me.id, docId, id]
+  });
+  if (!r.rowsAffected) return res.status(404).json({ error: 'not_found' });
+  res.json({ ok: true });
+});
+
+officerRouter.post('/request/:id/document/:docId/reject', async (req, res) => {
+  const me = await officer(ident(req));
+  const id = Number(req.params.id);
+  const docId = Number(req.params.docId);
+  const reason = (req.body?.reason || '').toString().trim() || 'no reason given';
+  const { rows } = await db.execute({
+    sql: `SELECT officer_id, session_id FROM request WHERE id=?`, args: [id]
+  });
+  if (!rows[0] || rows[0].officer_id !== me.id) return res.status(403).json({ error: 'not_your_request' });
+  const r = await db.execute({
+    sql: `UPDATE request_document
+             SET status='rejected', verified_by=?, verified_at=datetime('now'),
+                 reject_reason=?
+           WHERE id=? AND request_id=?`,
+    args: [me.id, reason, docId, id]
+  });
+  if (!r.rowsAffected) return res.status(404).json({ error: 'not_found' });
+  // Let the citizen know (chat notification; they can re-upload)
+  const { rows: dr } = await db.execute({
+    sql: `SELECT label, doc_code FROM request_document WHERE id=?`, args: [docId]
+  });
+  if (dr[0]) {
+    await storeMessage({
+      session_id: rows[0].session_id, request_id: id,
+      direction: 'out', actor_type: 'officer',
+      body_text: `⚠️ الموظف رفض مستند "${dr[0].label || dr[0].doc_code}" — السبب: ${reason}. برجاء إعادة الإرسال.`,
+      meta: { officer_id: me.id, rejected_doc_id: docId }
+    });
+  }
   res.json({ ok: true });
 });
 

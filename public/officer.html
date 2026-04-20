@@ -1020,26 +1020,105 @@
       return;
     }
     document.getElementById('docsGrid').innerHTML = docs.map(d => {
-      const isImg = (d.mime||'').startsWith('image/') || (d.storage_url||'').startsWith('data:image/');
+      const mime = d.mime || '';
+      const url  = d.storage_url || '';
+      const isImg = mime.startsWith('image/') || url.startsWith('data:image/');
+      const isPdf = mime === 'application/pdf' || /\.pdf($|\?)/i.test(url);
       const chipClass = d.status === 'verified' ? 'chip-ok' : d.status === 'rejected' ? 'chip-bad' : '';
+
+      // Build a nice filename for the Download attribute (forces Save-As).
+      const extFromMime = (mime.split('/')[1] || '').split(';')[0];
+      const origExt = (d.original_name || '').split('.').pop();
+      const ext = (origExt && origExt.length <= 5) ? origExt : (extFromMime || 'bin');
+      const safeLabel = (d.label || d.doc_code || 'document').replace(/[^\w\-]+/g, '_').slice(0, 40);
+      const downloadName = `R-${currentRequestId || 'req'}_${d.doc_code || 'doc'}_${safeLabel}.${ext}`;
+
+      // Preview tile: image or inline PDF (first page) or generic icon
+      const preview = isImg
+        ? `<a href="${url}" target="_blank" rel="noopener"><img src="${url}" style="width:100%;height:176px;object-fit:cover;display:block"/></a>`
+        : isPdf
+          ? `<a href="${url}" target="_blank" rel="noopener" style="display:block;height:176px;position:relative;overflow:hidden;background:#f8fafc">
+               <embed src="${url}#toolbar=0&navpanes=0&view=FitH" type="application/pdf" style="width:100%;height:100%;pointer-events:none;filter:contrast(0.95)"/>
+               <div style="position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;background:linear-gradient(transparent 60%,rgba(0,0,0,.55));color:#fff;font-size:11px;font-weight:600;padding:10px;letter-spacing:.02em">📄 PDF — click to open</div>
+             </a>`
+          : `<a href="${url}" target="_blank" rel="noopener" style="display:flex;height:176px;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--surface-3),var(--surface-2));color:var(--text-mute);font-size:13px;flex-direction:column;gap:6px">
+               <span style="font-size:40px">📎</span>
+               <span style="font-size:11px">${mime || 'file'}</span>
+             </a>`;
+
+      const viaBadge = d.matched_via === 'caption'
+        ? `<span class="chip chip-sm" title="Auto-routed from citizen caption" style="background:rgba(99,102,241,.12);color:#4338ca;margin-inline-start:6px">🧠 caption</span>`
+        : '';
+
+      const captionLine = d.caption
+        ? `<div class="text-[11px] mt-1.5" style="color:var(--text-mute);font-style:italic" title="Citizen caption">💬 "${escapeHtml(d.caption)}"</div>`
+        : '';
+
+      const origLine = d.original_name
+        ? `<div class="text-[10.5px] mono mt-0.5" style="color:var(--text-mute)" title="Original filename">${escapeHtml(d.original_name)}</div>`
+        : '';
+
+      const rejectLine = d.status === 'rejected' && d.reject_reason
+        ? `<div class="text-[11px] mt-1.5" style="color:var(--bad)">✕ ${escapeHtml(d.reject_reason)}</div>`
+        : '';
+
       return `
         <div class="doc">
           <div style="position:relative">
-            ${isImg
-              ? `<a href="${d.storage_url}" target="_blank"><img src="${d.storage_url}" style="width:100%;height:176px;object-fit:cover"/></a>`
-              : `<a href="${d.storage_url}" target="_blank" style="display:flex;height:176px;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--surface-3),var(--surface-2));color:var(--text-mute);font-size:13px">📄 ${d.mime || 'file'}</a>`}
+            ${preview}
             <span class="chip ${chipClass} chip-sm" style="position:absolute;top:10px;right:10px">${d.status}</span>
+            <span class="chip chip-sm" style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.55);color:#fff;backdrop-filter:blur(4px)">${humanSize(d.size_bytes)}</span>
           </div>
           <div class="p-3">
-            <div class="text-[12.5px] font-semibold truncate">${d.label || d.doc_code}</div>
-            <div class="text-[10.5px] mono mt-0.5" style="color:var(--text-mute)">${d.doc_code} · ${d.size_bytes} B</div>
+            <div class="text-[12.5px] font-semibold truncate" title="${escapeHtml(d.label || d.doc_code)}">${escapeHtml(d.label || d.doc_code)}${viaBadge}</div>
+            <div class="text-[10.5px] mono mt-0.5" style="color:var(--text-mute)">${d.doc_code} · ${ext.toUpperCase()}</div>
+            ${origLine}
+            ${captionLine}
+            ${rejectLine}
             <div class="flex gap-1.5 mt-3">
-              <button class="btn btn-secondary flex-1" style="height:28px;font-size:11px;background:rgba(16,185,129,.15);color:rgb(5,120,87)">✓ Verify</button>
-              <button class="btn btn-secondary flex-1" style="height:28px;font-size:11px">✕ Reject</button>
+              <a class="btn btn-primary flex-1" href="${url}" download="${downloadName}" style="height:28px;font-size:11px;display:flex;align-items:center;justify-content:center;gap:4px;text-decoration:none">⬇ Download</a>
+              <a class="btn btn-secondary" href="${url}" target="_blank" rel="noopener" style="height:28px;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 10px;text-decoration:none" title="Open in new tab">↗</a>
+            </div>
+            <div class="flex gap-1.5 mt-1.5">
+              <button class="btn btn-secondary flex-1" onclick="verifyDoc(${d.id})" ${d.status==='verified'?'disabled':''} style="height:26px;font-size:11px;background:rgba(16,185,129,.15);color:rgb(5,120,87)">✓ Verify</button>
+              <button class="btn btn-secondary flex-1" onclick="rejectDoc(${d.id})" ${d.status==='rejected'?'disabled':''} style="height:26px;font-size:11px">✕ Reject</button>
             </div>
           </div>
         </div>`;
     }).join('');
+  }
+
+  // Helpers used by the doc grid
+  function humanSize(n) {
+    if (!n || n < 0) return '—';
+    if (n < 1024) return n + ' B';
+    if (n < 1024*1024) return (n/1024).toFixed(1) + ' KB';
+    return (n/1024/1024).toFixed(2) + ' MB';
+  }
+  function escapeHtml(s) {
+    return String(s||'').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+  async function verifyDoc(docId) {
+    if (!currentRequestId) return;
+    try {
+      await api(`/api/officer/request/${currentRequestId}/document/${docId}/verify`, { method: 'POST' });
+      Sanad.toast('Document verified', 'ok');
+      openRequest(currentRequestId);
+    } catch (e) { Sanad.toast('Verify failed', 'err'); }
+  }
+  async function rejectDoc(docId) {
+    if (!currentRequestId) return;
+    const reason = prompt('Reason for rejection (shown to the citizen):');
+    if (reason === null) return; // cancelled
+    try {
+      await api(`/api/officer/request/${currentRequestId}/document/${docId}/reject`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ reason })
+      });
+      Sanad.toast('Document rejected — citizen notified', 'ok');
+      openRequest(currentRequestId);
+    } catch (e) { Sanad.toast('Reject failed', 'err'); }
   }
 
   function renderTimeline(r, messages) {

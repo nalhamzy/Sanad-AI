@@ -29,10 +29,22 @@ whatsappRouter.post('/webhook', async (req, res) => {
     const from = msg.from;                                 // E.164 phone
     const text = msg.text?.body || msg.button?.text || '';
     const media = msg.image || msg.document || null;
+    // Media captions live on the media object itself. Use filename as a
+    // secondary hint for documents (WhatsApp preserves the original name).
+    const caption = (media?.caption || msg.image?.caption || msg.document?.caption
+                     || msg.document?.filename || '').toString();
 
     let attachment = null;
+    const originalName = msg.document?.filename || null;
     if (media && ACCESS_TOKEN) {
       attachment = await fetchMedia(media.id);
+      if (attachment) {
+        attachment.caption = caption;
+        attachment.name = originalName;
+      }
+    } else if (media) {
+      // Debug / no-token path: still pass a stub so the agent can log it
+      attachment = { url: '', mime: media.mime_type || '', size: 0, caption, name: originalName };
     }
 
     const session_id = `wa:${from}`;

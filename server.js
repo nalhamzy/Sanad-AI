@@ -3,12 +3,13 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import { db, migrate, seedDemoOffices } from './lib/db.js';
+import { db, migrate, seedDemoOffices, seedDemoAnnotators } from './lib/db.js';
 import { chatRouter } from './routes/chat.js';
 import { officerRouter } from './routes/officer.js';
 import { whatsappRouter } from './routes/whatsapp.js';
 import { debugRouter } from './routes/debug.js';
 import { catalogueRouter } from './routes/catalogue.js';
+import { annotatorRouter } from './routes/annotator.js';
 import { LLM_ENABLED } from './lib/llm.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -35,6 +36,7 @@ app.use('/api/officer', officerRouter);
 app.use('/api/whatsapp', whatsappRouter);
 app.use('/api/debug', debugRouter);
 app.use('/api/catalogue', catalogueRouter);
+app.use('/api/annotator', annotatorRouter);
 
 // Health
 app.get('/api/health', (_req, res) => res.json({ ok: true, llm: LLM_ENABLED, debug: DEBUG }));
@@ -49,6 +51,7 @@ export async function prepare() {
   fs.mkdirSync('./data/uploads', { recursive: true });
   await migrate();
   await seedDemoOffices();
+  await seedDemoAnnotators();
   const { rows } = await db.execute(`SELECT COUNT(*) AS n FROM service_catalog`);
   return { catalogueSize: rows[0].n };
 }
@@ -66,6 +69,7 @@ export async function start(port = PORT) {
       }
       console.log(`     • Web chat:   http://localhost:${bound}/chat.html`);
       console.log(`     • Officer:    http://localhost:${bound}/officer.html`);
+      console.log(`     • Annotator:  http://localhost:${bound}/annotator.html`);
       console.log(`     • Admin:      http://localhost:${bound}/admin.html`);
       console.log(`     • Debug:      http://localhost:${bound}/api/debug/state`);
       console.log(`     • LLM mode:   ${LLM_ENABLED ? 'Qwen ON' : 'stub (set QWEN_API_KEY for real replies)'}\n`);

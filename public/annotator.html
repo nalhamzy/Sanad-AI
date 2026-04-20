@@ -1,0 +1,838 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>سند · لوحة المدققين</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          brand: { 50:'#f0fdfa',100:'#ccfbf1',400:'#2dd4bf',500:'#14b8a6',600:'#0d9488',700:'#0f766e' },
+          ink: { 950:'#020617',900:'#0b1220',800:'#0f172a',700:'#1e293b',600:'#334155',500:'#475569',400:'#64748b',300:'#94a3b8',200:'#cbd5e1',100:'#e2e8f0',50:'#f1f5f9' }
+        },
+        fontFamily: { sans:['"Noto Kufi Arabic"','Inter','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] }
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Kufi+Arabic:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  html, body { font-family: 'Noto Kufi Arabic', 'Inter', system-ui, sans-serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; direction: ltr; unicode-bidi: isolate; }
+
+  /* Status pills */
+  .pill { display: inline-flex; align-items: center; gap: .3rem; padding: .18rem .55rem; border-radius: 999px; font-size: .72rem; font-weight: 600; }
+  .pill-validated  { background: rgba(16,185,129,.12); color: #047857; }
+  .pill-needs      { background: rgba(234,179,8,.15);  color: #a16207; }
+  .pill-rejected   { background: rgba(239,68,68,.14);  color: #b91c1c; }
+  .pill-pending    { background: rgba(100,116,139,.12); color: #475569; }
+  html.dark .pill-validated { background: rgba(16,185,129,.22); color: #6ee7b7; }
+  html.dark .pill-needs     { background: rgba(234,179,8,.22);  color: #fde68a; }
+  html.dark .pill-rejected  { background: rgba(239,68,68,.22);  color: #fca5a5; }
+  html.dark .pill-pending   { background: rgba(148,163,184,.22); color: #cbd5e1; }
+
+  /* Modal */
+  #detailBackdrop {
+    position: fixed; inset: 0;
+    background: rgba(15, 23, 42, .42);
+    backdrop-filter: blur(6px) saturate(140%);
+    z-index: 39; cursor: pointer;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  #detailBackdrop.show { opacity: 1; pointer-events: auto; }
+  #detailPane {
+    position: fixed; top: 48px; left: 48px; right: 48px; bottom: 32px;
+    z-index: 40; background: var(--surface); border-radius: 18px;
+    box-shadow: 0 32px 80px -20px rgba(15,23,42,.35), 0 0 0 1px var(--line);
+    transform: translateY(20px); opacity: 0; pointer-events: none;
+    transition: opacity .22s, transform .22s;
+    overflow: hidden; display: flex; flex-direction: column;
+  }
+  #detailPane.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+
+  /* Field inputs */
+  .field {
+    width: 100%; background: var(--surface-2, #f8fafc); color: var(--text);
+    border: 1px solid var(--line); border-radius: 10px;
+    padding: .55rem .75rem; font-size: .87rem; transition: border-color .15s, box-shadow .15s;
+  }
+  .field:focus { outline: none; border-color: #14b8a6; box-shadow: 0 0 0 3px rgba(20,184,166,.15); }
+  html.dark .field { background: rgba(15,23,42,.6); }
+  textarea.field { min-height: 80px; resize: vertical; }
+  .label-sm { font-size: .72rem; font-weight: 700; color: var(--text-mute); letter-spacing: .01em; }
+
+  /* Doc / step row */
+  .row-item {
+    display: grid; grid-template-columns: 140px 1fr 1fr auto; gap: .5rem; align-items: center;
+    padding: .5rem .75rem; border: 1px dashed var(--line); border-radius: 10px;
+  }
+  @media (max-width: 860px) { .row-item { grid-template-columns: 1fr; } }
+
+  /* Table */
+  .svc-row { cursor: pointer; transition: background-color .1s; }
+  .svc-row:hover { background: rgba(20,184,166,.06); }
+  html.dark .svc-row:hover { background: rgba(45,212,191,.10); }
+
+  /* Skeleton loader */
+  .skel { background: linear-gradient(90deg, var(--line) 0%, rgba(20,184,166,.1) 50%, var(--line) 100%);
+          background-size: 200% 100%; animation: skel 1.1s infinite; border-radius: 6px; }
+  @keyframes skel { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  /* Numbers and IDs stay LTR even in RTL document */
+  .ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+</style>
+</head>
+<body class="bg-ink-50 dark:bg-ink-950 text-ink-800 dark:text-ink-100 min-h-screen">
+
+  <!-- Topbar -->
+  <header class="topbar sticky top-0 z-30 border-b border-ink-200 dark:border-ink-700 backdrop-blur-md">
+    <div class="max-w-[1500px] mx-auto px-5 py-3 flex items-center gap-4 flex-wrap">
+      <a href="/" class="flex items-center gap-2 font-bold text-lg">
+        <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 grid place-items-center text-white">س</span>
+        <span>سند · <span class="text-brand-600 dark:text-brand-400">لوحة المدققين</span></span>
+      </a>
+
+      <!-- Stat chips -->
+      <div id="statChips" class="flex items-center gap-2 text-sm mr-4 flex-wrap">
+        <div class="px-3 py-1.5 rounded-lg bg-white/70 dark:bg-ink-800/60 border border-ink-200 dark:border-ink-700">
+          <span class="text-ink-500 dark:text-ink-400 ml-1">الإجمالي</span>
+          <span id="statTotal" class="font-semibold ltr">…</span>
+        </div>
+        <div class="px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300">
+          <span class="ml-1">موثّقة</span>
+          <span id="statValidated" class="font-semibold ltr">…</span>
+        </div>
+        <div class="px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300">
+          <span class="ml-1">تحتاج مراجعة</span>
+          <span id="statNeeds" class="font-semibold ltr">…</span>
+        </div>
+        <div class="px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-ink-800/60 border border-ink-200 dark:border-ink-700 text-ink-600 dark:text-ink-300">
+          <span class="ml-1">قيد الانتظار</span>
+          <span id="statPending" class="font-semibold ltr">…</span>
+        </div>
+      </div>
+
+      <div class="mr-auto flex items-center gap-2">
+        <label class="text-sm text-ink-500 dark:text-ink-400">تعمل باسم</label>
+        <select id="annotatorSelect" class="field !py-1.5 !px-3 !text-sm min-w-[180px]"></select>
+        <button id="newAnnotatorBtn" class="text-sm px-2.5 py-1.5 rounded-lg border border-ink-200 dark:border-ink-700 hover:bg-ink-100 dark:hover:bg-ink-800" title="إضافة مدقق">+</button>
+
+        <button id="newServiceBtn" class="mr-2 text-sm px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-semibold shadow-sm">
+          + خدمة جديدة
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-[1500px] mx-auto px-5 py-5">
+    <!-- Filter bar -->
+    <section class="rounded-2xl bg-white dark:bg-ink-900 border border-ink-200 dark:border-ink-700 p-4 mb-4 shadow-sm">
+      <div class="grid grid-cols-12 gap-3">
+        <div class="col-span-12 md:col-span-5">
+          <label class="label-sm block mb-1">بحث (عربي أو إنجليزي)</label>
+          <input id="q" class="field" placeholder='مثال: "تجديد رخصة", "passport", "سجل تجاري"'/>
+        </div>
+        <div class="col-span-6 md:col-span-3">
+          <label class="label-sm block mb-1">الجهة</label>
+          <select id="entity" class="field"><option value="">كل الجهات</option></select>
+        </div>
+        <div class="col-span-6 md:col-span-2">
+          <label class="label-sm block mb-1">الحالة</label>
+          <select id="status" class="field">
+            <option value="">الكل</option>
+            <option value="pending">قيد الانتظار</option>
+            <option value="validated">موثّقة</option>
+            <option value="needs_review">تحتاج مراجعة</option>
+          </select>
+        </div>
+        <div class="col-span-6 md:col-span-2">
+          <label class="label-sm block mb-1">الترتيب</label>
+          <select id="sort" class="field">
+            <option value="id">حسب المعرّف</option>
+            <option value="name">حسب الاسم</option>
+            <option value="fee">حسب الرسوم (تنازلي)</option>
+            <option value="updated">حسب آخر تعديل</option>
+          </select>
+        </div>
+        <div class="col-span-6 md:col-span-3">
+          <label class="label-sm block mb-1">الرسوم (ريال عماني)</label>
+          <div class="flex gap-2">
+            <input id="feeMin" type="number" step="0.001" placeholder="من" class="field !py-1.5"/>
+            <input id="feeMax" type="number" step="0.001" placeholder="إلى" class="field !py-1.5"/>
+          </div>
+        </div>
+        <div class="col-span-6 md:col-span-3">
+          <label class="label-sm block mb-1">المستندات</label>
+          <select id="hasDocs" class="field">
+            <option value="">أي حالة</option>
+            <option value="yes">بها مستندات مطلوبة</option>
+            <option value="no">بدون مستندات</option>
+          </select>
+        </div>
+        <div class="col-span-6 md:col-span-3">
+          <label class="label-sm block mb-1">الحالة النشطة</label>
+          <select id="active" class="field">
+            <option value="">الكل</option>
+            <option value="yes">النشطة فقط</option>
+            <option value="no">غير النشطة فقط</option>
+          </select>
+        </div>
+        <div class="col-span-6 md:col-span-3 flex items-end gap-2">
+          <button id="resetFiltersBtn" class="field !w-auto !py-2 !px-4 hover:bg-ink-100 dark:hover:bg-ink-800">تصفير المرشّحات</button>
+          <div class="text-sm text-ink-500 dark:text-ink-400 mr-auto" id="resultCount">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results list -->
+    <section class="rounded-2xl bg-white dark:bg-ink-900 border border-ink-200 dark:border-ink-700 shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-ink-50 dark:bg-ink-800/50 border-b border-ink-200 dark:border-ink-700 text-ink-500 dark:text-ink-400 text-xs">
+            <tr>
+              <th class="text-right font-semibold px-4 py-2.5 w-16">المعرّف</th>
+              <th class="text-right font-semibold px-4 py-2.5">الخدمة</th>
+              <th class="text-right font-semibold px-4 py-2.5">الجهة</th>
+              <th class="text-right font-semibold px-4 py-2.5 w-28">الرسوم</th>
+              <th class="text-right font-semibold px-4 py-2.5 w-20">مستندات</th>
+              <th class="text-right font-semibold px-4 py-2.5 w-36">الحالة</th>
+              <th class="text-right font-semibold px-4 py-2.5 w-44">وثّقها</th>
+            </tr>
+          </thead>
+          <tbody id="svcTbody" class="divide-y divide-ink-100 dark:divide-ink-800"></tbody>
+        </table>
+      </div>
+
+      <div class="flex items-center justify-between px-4 py-3 border-t border-ink-200 dark:border-ink-700 text-sm">
+        <div id="pagerInfo" class="text-ink-500 dark:text-ink-400">—</div>
+        <div class="flex gap-2">
+          <button id="prevBtn" class="px-3 py-1.5 rounded-lg border border-ink-200 dark:border-ink-700 hover:bg-ink-100 dark:hover:bg-ink-800 disabled:opacity-40">→ السابق</button>
+          <button id="nextBtn" class="px-3 py-1.5 rounded-lg border border-ink-200 dark:border-ink-700 hover:bg-ink-100 dark:hover:bg-ink-800 disabled:opacity-40">التالي ←</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Detail modal -->
+  <div id="detailBackdrop"></div>
+  <div id="detailPane" role="dialog" aria-modal="true">
+    <!-- Modal header -->
+    <div class="flex items-center gap-3 px-6 py-4 border-b border-ink-200 dark:border-ink-700 bg-gradient-to-l from-ink-50 to-transparent dark:from-ink-800/40">
+      <div class="flex-1 min-w-0">
+        <div class="text-xs text-ink-500 dark:text-ink-400 mono" id="dID">—</div>
+        <div class="font-semibold truncate" id="dTitle">—</div>
+      </div>
+      <span id="dStatus" class="pill pill-pending">قيد الانتظار</span>
+      <button id="closeDetailBtn" class="mr-2 text-ink-500 hover:text-ink-700 dark:hover:text-ink-200 text-2xl leading-none">×</button>
+    </div>
+
+    <!-- Modal body -->
+    <div class="flex-1 overflow-y-auto p-6 grid grid-cols-12 gap-6">
+      <!-- Form -->
+      <div class="col-span-12 lg:col-span-8 space-y-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="label-sm block mb-1">اسم الخدمة (عربي)</label>
+            <input id="fName_ar" class="field" dir="rtl"/>
+          </div>
+          <div>
+            <label class="label-sm block mb-1">اسم الخدمة (إنجليزي)</label>
+            <input id="fName_en" class="field" dir="ltr"/>
+          </div>
+          <div>
+            <label class="label-sm block mb-1">الجهة (عربي)</label>
+            <input id="fEntity_ar" class="field" dir="rtl"/>
+          </div>
+          <div>
+            <label class="label-sm block mb-1">الجهة (إنجليزي)</label>
+            <input id="fEntity_en" class="field" dir="ltr" list="entityOptions"/>
+            <datalist id="entityOptions"></datalist>
+          </div>
+          <div class="md:col-span-2">
+            <label class="label-sm block mb-1">الوصف (عربي)</label>
+            <textarea id="fDescription_ar" class="field" dir="rtl"></textarea>
+          </div>
+          <div class="md:col-span-2">
+            <label class="label-sm block mb-1">الوصف (إنجليزي)</label>
+            <textarea id="fDescription_en" class="field" dir="ltr"></textarea>
+          </div>
+          <div>
+            <label class="label-sm block mb-1">الرسوم (ريال عماني)</label>
+            <input id="fFee_omr" type="number" step="0.001" class="field ltr"/>
+          </div>
+          <div>
+            <label class="label-sm block mb-1">الرسوم (نص حرّ)</label>
+            <input id="fFees_text" class="field" placeholder="مثلاً: '5 ريال + 2 ريال خدمة'"/>
+          </div>
+          <div class="md:col-span-2">
+            <label class="label-sm block mb-1">رابط المصدر</label>
+            <input id="fSource_url" class="field ltr" placeholder="https://…"/>
+          </div>
+          <div class="md:col-span-2 flex items-center gap-3">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input id="fIs_active" type="checkbox" class="w-4 h-4 accent-brand-600"/>
+              <span class="text-sm">نشطة (ظاهرة للمستخدمين)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Required documents -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="label-sm">المستندات المطلوبة</label>
+            <button type="button" id="addDocBtn" class="text-xs text-brand-600 hover:text-brand-700 font-semibold">+ إضافة مستند</button>
+          </div>
+          <div id="docsList" class="space-y-2"></div>
+        </div>
+
+        <!-- Process steps -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="label-sm">خطوات الإجراء</label>
+            <button type="button" id="addStepBtn" class="text-xs text-brand-600 hover:text-brand-700 font-semibold">+ إضافة خطوة</button>
+          </div>
+          <div id="stepsList" class="space-y-2"></div>
+        </div>
+      </div>
+
+      <!-- Sidebar: validation + history -->
+      <aside class="col-span-12 lg:col-span-4 space-y-5">
+        <div class="rounded-xl border border-ink-200 dark:border-ink-700 p-4">
+          <div class="label-sm mb-2">التوثيق</div>
+          <div class="flex gap-2">
+            <button id="validateBtn" class="flex-1 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold">✓ توثيق</button>
+            <button id="needsReviewBtn" class="px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold" title="تحتاج مراجعة">⚠</button>
+            <button id="rejectBtn" class="px-3 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold" title="رفض">✗</button>
+          </div>
+          <textarea id="validationNotes" class="field mt-3" placeholder="ملاحظات (اختياري)"></textarea>
+
+          <div class="mt-4">
+            <div class="label-sm mb-2">سجل التوثيقات</div>
+            <div id="validationHistory" class="space-y-2 text-xs text-ink-500 dark:text-ink-300">—</div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-ink-200 dark:border-ink-700 p-4">
+          <div class="label-sm mb-2">آخر التعديلات</div>
+          <div id="editHistory" class="space-y-2 text-xs text-ink-500 dark:text-ink-300">—</div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Modal footer -->
+    <div class="flex items-center gap-3 px-6 py-3 border-t border-ink-200 dark:border-ink-700 bg-ink-50 dark:bg-ink-800/30">
+      <div id="saveHint" class="text-xs text-ink-500 dark:text-ink-400">—</div>
+      <div class="flex-1"></div>
+      <button id="cancelBtn" class="px-4 py-2 rounded-lg border border-ink-200 dark:border-ink-700 text-sm hover:bg-ink-100 dark:hover:bg-ink-800">إلغاء</button>
+      <button id="saveBtn" class="px-5 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow-sm">حفظ التغييرات</button>
+    </div>
+  </div>
+
+<script>
+// ─── Arabic copy strings ──────────────────────────────────
+const L = {
+  matches: 'نتيجة',
+  showing: (from, to, total) => `عرض ${from}–${to} من ${total.toLocaleString('ar-OM')}`,
+  noMatch: 'لا توجد خدمات تطابق المرشّحات.',
+  loading: 'جار التحميل…',
+  saving: 'جار الحفظ…',
+  unsaved: '• تغييرات غير محفوظة',
+  savedN: (n) => n ? `تم حفظ ${n} حقل` : 'لا توجد تغييرات',
+  lastEdited: (d) => `آخر تعديل: ${d}`,
+  creating: 'إنشاء خدمة جديدة',
+  newBadge: 'جديدة',
+  validations: {
+    validated: '✓ موثّقة',
+    needs_review: '⚠ تحتاج مراجعة',
+    rejected: '✗ مرفوضة',
+    pending: 'قيد الانتظار'
+  },
+  promptName: 'اسم المدقق:',
+  promptEmail: 'البريد الإلكتروني (اختياري):',
+  errSaveFirst: 'احفظ الخدمة أولاً قبل التوثيق.',
+  errValidation: (e) => 'فشل التوثيق: ' + e,
+  emptyDocs: 'لا توجد مستندات بعد. أضف واحدًا بالأعلى.',
+  emptySteps: 'لا توجد خطوات بعد.',
+  emptyValidations: 'لا توجد توثيقات بعد.',
+  emptyEdits: 'لا توجد تعديلات مسجّلة.'
+};
+
+// ─── State ─────────────────────────────────────────────────
+const state = {
+  annotators: [],
+  actingId: Number(localStorage.getItem('sanad_annotator_id') || 0),
+  filters: { q:'', entity:'', status:'', fee_min:'', fee_max:'', has_docs:'', active:'', sort:'id' },
+  offset: 0,
+  limit: 40,
+  total: 0,
+  current: null,
+  currentOriginal: null,
+  creating: false
+};
+
+// ─── Utilities ─────────────────────────────────────────────
+const $ = (id) => document.getElementById(id);
+const debounce = (fn, ms=350) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+
+async function api(path, opts={}) {
+  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  if (state.actingId) headers['X-Annotator-Id'] = String(state.actingId);
+  const res = await fetch('/api/annotator' + path, { ...opts, headers });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`${res.status}: ${text}`);
+  }
+  return res.json();
+}
+
+function statusPillHtml(st) {
+  if (st === 'validated')    return `<span class="pill pill-validated">${L.validations.validated}</span>`;
+  if (st === 'needs_review') return `<span class="pill pill-needs">${L.validations.needs_review}</span>`;
+  if (st === 'rejected')     return `<span class="pill pill-rejected">${L.validations.rejected}</span>`;
+  return `<span class="pill pill-pending">${L.validations.pending}</span>`;
+}
+
+// ─── Boot ──────────────────────────────────────────────────
+async function boot() {
+  await Promise.all([loadAnnotators(), loadEntities(), loadStats()]);
+  await loadServices();
+  wireEvents();
+}
+
+// ─── Annotators ───────────────────────────────────────────
+async function loadAnnotators() {
+  const { annotators } = await api('/annotators');
+  state.annotators = annotators;
+  const sel = $('annotatorSelect');
+  sel.innerHTML = annotators.map(a =>
+    `<option value="${a.id}">${escapeHtml(a.name)}${a.email ? ' · ' + escapeHtml(a.email) : ''} · ${a.validations} ✓</option>`
+  ).join('');
+  if (!state.actingId && annotators[0]) state.actingId = annotators[0].id;
+  sel.value = String(state.actingId);
+  localStorage.setItem('sanad_annotator_id', String(state.actingId));
+}
+
+// ─── Entities ─────────────────────────────────────────────
+async function loadEntities() {
+  const { entities } = await api('/entities');
+  // Prefer Arabic label in dropdown when available
+  const opts = ['<option value="">كل الجهات</option>']
+    .concat(entities.map(e => {
+      const label = e.entity_ar || e.entity_en;
+      return `<option value="${escapeHtml(e.entity_en)}">${escapeHtml(label)} (${e.n})</option>`;
+    }))
+    .join('');
+  $('entity').innerHTML = opts;
+  $('entityOptions').innerHTML = entities.map(e => `<option value="${escapeHtml(e.entity_en)}">`).join('');
+}
+
+// ─── Stats ────────────────────────────────────────────────
+async function loadStats() {
+  const s = await api('/stats');
+  $('statTotal').textContent = s.total_services.toLocaleString('ar-OM');
+  $('statValidated').textContent = s.validated.toLocaleString('ar-OM');
+  $('statNeeds').textContent = s.needs_review.toLocaleString('ar-OM');
+  $('statPending').textContent = s.pending.toLocaleString('ar-OM');
+}
+
+// ─── Services list ────────────────────────────────────────
+async function loadServices() {
+  const f = state.filters;
+  const params = new URLSearchParams();
+  if (f.q) params.set('q', f.q);
+  if (f.entity) params.set('entity', f.entity);
+  if (f.status) params.set('status', f.status);
+  if (f.fee_min !== '') params.set('fee_min', f.fee_min);
+  if (f.fee_max !== '') params.set('fee_max', f.fee_max);
+  if (f.has_docs) params.set('has_docs', f.has_docs);
+  if (f.active)   params.set('active', f.active);
+  if (f.sort)     params.set('sort', f.sort);
+  params.set('limit', String(state.limit));
+  params.set('offset', String(state.offset));
+
+  $('svcTbody').innerHTML = Array.from({length: 10}).map(() =>
+    `<tr><td colspan="7" class="px-4 py-2.5"><div class="skel h-4 w-full"></div></td></tr>`
+  ).join('');
+
+  try {
+    const data = await api('/services?' + params.toString());
+    state.total = data.total;
+    renderServices(data.results);
+    $('resultCount').textContent = `${data.total.toLocaleString('ar-OM')} ${L.matches}`;
+    $('pagerInfo').textContent = L.showing(
+      (state.offset + 1).toLocaleString('ar-OM'),
+      Math.min(state.offset + data.results.length, data.total).toLocaleString('ar-OM'),
+      data.total
+    );
+    $('prevBtn').disabled = state.offset === 0;
+    $('nextBtn').disabled = state.offset + state.limit >= data.total;
+  } catch (e) {
+    $('svcTbody').innerHTML = `<tr><td colspan="7" class="px-4 py-6 text-center text-rose-600">${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+function renderServices(list) {
+  if (!list.length) {
+    $('svcTbody').innerHTML = `<tr><td colspan="7" class="px-4 py-12 text-center text-ink-500">${L.noMatch}</td></tr>`;
+    return;
+  }
+  $('svcTbody').innerHTML = list.map(r => {
+    const nameAr = r.name_ar || '';
+    const nameEn = r.name_en || '';
+    const primary = nameAr || nameEn || '—';
+    const secondary = nameAr && nameEn
+      ? `<div class="text-xs text-ink-500 dark:text-ink-400 truncate" dir="ltr">${escapeHtml(nameEn)}</div>` : '';
+    const fee = r.fee_omr != null
+      ? `<span class="ltr">${(r.fee_omr.toFixed ? r.fee_omr.toFixed(3) : r.fee_omr)}</span> ريال`
+      : (r.fees_text || '—');
+    const entity = r.entity_ar || r.entity_en || '—';
+    const validBy = r.validated_by_name
+      ? `<div class="text-xs"><div class="font-medium">${escapeHtml(r.validated_by_name)}</div><div class="text-ink-500 dark:text-ink-400 mono">${formatDate(r.validated_at)}</div></div>`
+      : '<span class="text-ink-400">—</span>';
+    return `
+      <tr class="svc-row" data-id="${r.id}">
+        <td class="px-4 py-3 mono text-ink-500 dark:text-ink-400"><span class="ltr">${r.id}</span></td>
+        <td class="px-4 py-3">
+          <div class="font-medium truncate max-w-[420px]" dir="rtl">${escapeHtml(primary)}</div>
+          ${secondary}
+        </td>
+        <td class="px-4 py-3 text-ink-600 dark:text-ink-300 truncate max-w-[220px]">${escapeHtml(entity)}</td>
+        <td class="px-4 py-3">${fee}</td>
+        <td class="px-4 py-3">${r.doc_count > 0 ? `<span class="text-brand-600 ltr">${r.doc_count}</span>` : '<span class="text-ink-400 ltr">0</span>'}</td>
+        <td class="px-4 py-3">${statusPillHtml(r.validation_status)}</td>
+        <td class="px-4 py-3">${validBy}</td>
+      </tr>`;
+  }).join('');
+
+  $$('.svc-row', $('svcTbody')).forEach(row => {
+    row.addEventListener('click', () => openDetail(Number(row.dataset.id)));
+  });
+}
+
+// ─── Detail modal ─────────────────────────────────────────
+async function openDetail(id) {
+  state.creating = false;
+  showDetail();
+  $('dID').textContent = '#' + id;
+  $('dTitle').textContent = L.loading;
+  ['fName_en','fName_ar','fEntity_en','fEntity_ar','fDescription_en','fDescription_ar','fFee_omr','fFees_text','fSource_url'].forEach(k => $(k).value = '');
+  $('fIs_active').checked = true;
+  $('docsList').innerHTML = '';
+  $('stepsList').innerHTML = '';
+  $('validationNotes').value = '';
+  $('validationHistory').innerHTML = '—';
+  $('editHistory').innerHTML = '—';
+  $('saveHint').textContent = L.loading;
+
+  try {
+    const { service, validations, edits } = await api('/services/' + id);
+    state.current = { ...service };
+    state.currentOriginal = { ...service };
+    fillForm(service, validations, edits);
+  } catch (e) {
+    $('dTitle').textContent = 'خطأ: ' + e.message;
+  }
+}
+
+function openCreate() {
+  state.creating = true;
+  const blank = {
+    id: null, name_en: '', name_ar: '', entity_en: '', entity_ar: '',
+    description_en: '', description_ar: '',
+    fee_omr: null, fees_text: '', source_url: '',
+    is_active: 1, required_documents: [], process_steps: []
+  };
+  state.current = blank;
+  state.currentOriginal = { ...blank };
+  showDetail();
+  $('dID').textContent = 'جديد';
+  $('dTitle').textContent = L.creating;
+  $('dStatus').outerHTML = `<span id="dStatus" class="pill pill-pending">${L.newBadge}</span>`;
+  $('validationHistory').innerHTML = '<span class="text-ink-400">احفظ أولاً ثم وثّق.</span>';
+  $('editHistory').innerHTML = '—';
+  fillForm(blank, [], []);
+  $('saveHint').textContent = L.creating;
+}
+
+function fillForm(svc, validations, edits) {
+  const latestStatus = validations[0]?.status;
+  $('dStatus').outerHTML = (() => {
+    const html = statusPillHtml(latestStatus);
+    return html.replace('class="pill', 'id="dStatus" class="pill');
+  })();
+  $('dTitle').textContent = svc.name_ar || svc.name_en || '(بدون اسم)';
+  $('fName_en').value = svc.name_en || '';
+  $('fName_ar').value = svc.name_ar || '';
+  $('fEntity_en').value = svc.entity_en || '';
+  $('fEntity_ar').value = svc.entity_ar || '';
+  $('fDescription_en').value = svc.description_en || '';
+  $('fDescription_ar').value = svc.description_ar || '';
+  $('fFee_omr').value = svc.fee_omr != null ? svc.fee_omr : '';
+  $('fFees_text').value = svc.fees_text || '';
+  $('fSource_url').value = svc.source_url || '';
+  $('fIs_active').checked = svc.is_active !== 0;
+
+  const docs = Array.isArray(svc.required_documents) ? svc.required_documents : [];
+  $('docsList').innerHTML = docs.map((d, i) => docRow(d, i)).join('') || emptyListHint(L.emptyDocs);
+
+  const steps = Array.isArray(svc.process_steps) ? svc.process_steps : [];
+  $('stepsList').innerHTML = steps.map((s, i) => stepRow(s, i)).join('') || emptyListHint(L.emptySteps);
+
+  if (validations.length) {
+    $('validationHistory').innerHTML = validations.map(v => `
+      <div class="flex gap-2 items-start">
+        ${statusPillHtml(v.status)}
+        <div class="flex-1">
+          <div><span class="font-medium">${escapeHtml(v.annotator_name || 'غير معروف')}</span></div>
+          <div class="mono text-[11px]">${formatDate(v.created_at)}</div>
+          ${v.notes ? `<div class="italic mt-1 text-ink-600 dark:text-ink-300">"${escapeHtml(v.notes)}"</div>` : ''}
+        </div>
+      </div>`).join('');
+  } else {
+    $('validationHistory').innerHTML = `<span class="text-ink-400">${L.emptyValidations}</span>`;
+  }
+
+  if (edits.length) {
+    $('editHistory').innerHTML = edits.map(e => `
+      <div>
+        <div><span class="font-medium">${escapeHtml(e.annotator_name || 'غير معروف')}</span> · <span class="mono">${escapeHtml(e.action)}</span></div>
+        <div class="mono text-[11px]">${formatDate(e.created_at)}</div>
+      </div>`).join('');
+  } else {
+    $('editHistory').innerHTML = `<span class="text-ink-400">${L.emptyEdits}</span>`;
+  }
+
+  $('saveHint').textContent = svc.updated_at ? L.lastEdited(formatDate(svc.updated_at)) : '—';
+  bindFormEdit();
+}
+
+function emptyListHint(msg) {
+  return `<div class="text-xs text-ink-400 italic px-3 py-2">${msg}</div>`;
+}
+
+function docRow(d, i) {
+  return `
+    <div class="row-item" data-kind="doc" data-i="${i}">
+      <input class="field !py-1.5 ltr" placeholder="الكود (مثل civil_id)" value="${escapeHtml(d.code || '')}" data-k="code"/>
+      <input class="field !py-1.5" placeholder="التسمية (عربي)" value="${escapeHtml(d.label_ar || '')}" data-k="label_ar" dir="rtl"/>
+      <input class="field !py-1.5" placeholder="Label (English)" value="${escapeHtml(d.label_en || '')}" data-k="label_en" dir="ltr"/>
+      <button class="text-rose-500 hover:text-rose-700 text-lg px-2" data-del="doc" data-i="${i}" title="حذف">×</button>
+    </div>`;
+}
+
+function stepRow(s, i) {
+  const en = typeof s === 'string' ? s : (s?.step_en || '');
+  const ar = typeof s === 'string' ? '' : (s?.step_ar || '');
+  return `
+    <div class="row-item" data-kind="step" data-i="${i}">
+      <div class="mono text-xs text-ink-500">الخطوة ${i + 1}</div>
+      <input class="field !py-1.5" placeholder="وصف الخطوة (عربي)" value="${escapeHtml(ar)}" data-k="step_ar" dir="rtl"/>
+      <input class="field !py-1.5" placeholder="Step description (English)" value="${escapeHtml(en)}" data-k="step_en" dir="ltr"/>
+      <button class="text-rose-500 hover:text-rose-700 text-lg px-2" data-del="step" data-i="${i}" title="حذف">×</button>
+    </div>`;
+}
+
+function bindFormEdit() {
+  const bind = (id, key, transform) => {
+    $(id).oninput = () => {
+      const v = transform ? transform($(id).value) : $(id).value;
+      state.current[key] = v;
+      markDirty();
+    };
+  };
+  bind('fName_en', 'name_en'); bind('fName_ar', 'name_ar');
+  bind('fEntity_en', 'entity_en'); bind('fEntity_ar', 'entity_ar');
+  bind('fDescription_en', 'description_en'); bind('fDescription_ar', 'description_ar');
+  bind('fFees_text', 'fees_text'); bind('fSource_url', 'source_url');
+  bind('fFee_omr', 'fee_omr', v => v === '' ? null : Number(v));
+  $('fIs_active').onchange = () => { state.current.is_active = $('fIs_active').checked ? 1 : 0; markDirty(); };
+
+  ['docsList','stepsList'].forEach(listId => {
+    $(listId).oninput = (e) => {
+      const row = e.target.closest('.row-item');
+      if (!row) return;
+      const kind = row.dataset.kind;
+      const i = Number(row.dataset.i);
+      const k = e.target.dataset.k;
+      if (!k) return;
+      const list = kind === 'doc'
+        ? (state.current.required_documents = state.current.required_documents || [])
+        : (state.current.process_steps = state.current.process_steps || []);
+      list[i] = list[i] || (kind === 'doc' ? { code:'', label_en:'', label_ar:'' } : { step_en:'', step_ar:'' });
+      list[i][k] = e.target.value;
+      markDirty();
+    };
+    $(listId).onclick = (e) => {
+      const del = e.target.closest('[data-del]');
+      if (!del) return;
+      const kind = del.dataset.del;
+      const i = Number(del.dataset.i);
+      const list = kind === 'doc' ? state.current.required_documents : state.current.process_steps;
+      list.splice(i, 1);
+      if (kind === 'doc') {
+        $('docsList').innerHTML = list.map((d, j) => docRow(d, j)).join('') || emptyListHint(L.emptyDocs);
+      } else {
+        $('stepsList').innerHTML = list.map((s, j) => stepRow(s, j)).join('') || emptyListHint(L.emptySteps);
+      }
+      markDirty();
+    };
+  });
+}
+
+function markDirty() {
+  $('saveHint').textContent = L.unsaved;
+  $('saveHint').classList.add('text-amber-600', 'font-semibold');
+}
+
+// ─── Save / validate ──────────────────────────────────────
+async function saveService() {
+  const payload = {
+    name_en: state.current.name_en, name_ar: state.current.name_ar,
+    entity_en: state.current.entity_en, entity_ar: state.current.entity_ar,
+    description_en: state.current.description_en, description_ar: state.current.description_ar,
+    fee_omr: state.current.fee_omr, fees_text: state.current.fees_text,
+    source_url: state.current.source_url, is_active: state.current.is_active ? 1 : 0,
+    required_documents: state.current.required_documents || [],
+    process_steps: state.current.process_steps || []
+  };
+  $('saveBtn').disabled = true;
+  $('saveHint').textContent = L.saving;
+  try {
+    if (state.creating) {
+      const r = await api('/services', { method:'POST', body: JSON.stringify(payload) });
+      state.creating = false;
+      await openDetail(r.id);
+      await loadStats(); await loadServices();
+    } else {
+      const r = await api('/services/' + state.current.id, { method:'PATCH', body: JSON.stringify(payload) });
+      $('saveHint').textContent = L.savedN(r.changed);
+      $('saveHint').classList.remove('text-amber-600','font-semibold');
+      await openDetail(state.current.id);
+      await loadServices();
+    }
+  } catch (e) {
+    $('saveHint').textContent = 'خطأ: ' + e.message;
+  } finally {
+    $('saveBtn').disabled = false;
+  }
+}
+
+async function validateService(status) {
+  if (state.creating || !state.current?.id) {
+    alert(L.errSaveFirst);
+    return;
+  }
+  const notes = $('validationNotes').value.trim();
+  try {
+    await api('/services/' + state.current.id + '/validate', {
+      method: 'POST',
+      body: JSON.stringify({ status, notes })
+    });
+    await loadStats();
+    await openDetail(state.current.id);
+    await loadServices();
+    await loadAnnotators();
+  } catch (e) {
+    alert(L.errValidation(e.message));
+  }
+}
+
+// ─── Modal show/hide ──────────────────────────────────────
+function showDetail() {
+  $('detailBackdrop').classList.add('show');
+  $('detailPane').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function hideDetail() {
+  $('detailBackdrop').classList.remove('show');
+  $('detailPane').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+// ─── Events ────────────────────────────────────────────────
+function wireEvents() {
+  $('annotatorSelect').onchange = () => {
+    state.actingId = Number($('annotatorSelect').value);
+    localStorage.setItem('sanad_annotator_id', String(state.actingId));
+  };
+  $('newAnnotatorBtn').onclick = async () => {
+    const name = prompt(L.promptName);
+    if (!name) return;
+    const email = prompt(L.promptEmail) || '';
+    try {
+      const r = await api('/annotators', { method:'POST', body: JSON.stringify({ name, email }) });
+      state.actingId = r.id;
+      await loadAnnotators();
+    } catch (e) { alert(e.message); }
+  };
+  $('newServiceBtn').onclick = openCreate;
+
+  const runFilters = debounce(() => { state.offset = 0; loadServices(); }, 250);
+  $('q').oninput = () => { state.filters.q = $('q').value; runFilters(); };
+  $('entity').onchange = () => { state.filters.entity = $('entity').value; runFilters(); };
+  $('status').onchange = () => { state.filters.status = $('status').value; runFilters(); };
+  $('feeMin').oninput = () => { state.filters.fee_min = $('feeMin').value; runFilters(); };
+  $('feeMax').oninput = () => { state.filters.fee_max = $('feeMax').value; runFilters(); };
+  $('hasDocs').onchange = () => { state.filters.has_docs = $('hasDocs').value; runFilters(); };
+  $('active').onchange = () => { state.filters.active = $('active').value; runFilters(); };
+  $('sort').onchange = () => { state.filters.sort = $('sort').value; runFilters(); };
+  $('resetFiltersBtn').onclick = () => {
+    state.filters = { q:'', entity:'', status:'', fee_min:'', fee_max:'', has_docs:'', active:'', sort:'id' };
+    ['q','entity','status','feeMin','feeMax','hasDocs','active','sort'].forEach(id => {
+      const el = $(id); if (el.tagName === 'SELECT') el.value = ''; else el.value = '';
+    });
+    $('sort').value = 'id';
+    state.offset = 0; loadServices();
+  };
+
+  $('prevBtn').onclick = () => { state.offset = Math.max(0, state.offset - state.limit); loadServices(); window.scrollTo({top:0,behavior:'smooth'}); };
+  $('nextBtn').onclick = () => { state.offset += state.limit; loadServices(); window.scrollTo({top:0,behavior:'smooth'}); };
+
+  $('closeDetailBtn').onclick = hideDetail;
+  $('cancelBtn').onclick = hideDetail;
+  $('detailBackdrop').onclick = hideDetail;
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideDetail(); });
+
+  $('saveBtn').onclick = saveService;
+  $('validateBtn').onclick = () => validateService('validated');
+  $('needsReviewBtn').onclick = () => validateService('needs_review');
+  $('rejectBtn').onclick = () => validateService('rejected');
+
+  $('addDocBtn').onclick = () => {
+    state.current.required_documents = state.current.required_documents || [];
+    state.current.required_documents.push({ code:'', label_en:'', label_ar:'' });
+    $('docsList').innerHTML = state.current.required_documents.map((d, i) => docRow(d, i)).join('');
+    bindFormEdit(); markDirty();
+  };
+  $('addStepBtn').onclick = () => {
+    state.current.process_steps = state.current.process_steps || [];
+    state.current.process_steps.push({ step_en:'', step_ar:'' });
+    $('stepsList').innerHTML = state.current.process_steps.map((s, i) => stepRow(s, i)).join('');
+    bindFormEdit(); markDirty();
+  };
+}
+
+// ─── Helpers ──────────────────────────────────────────────
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function formatDate(iso) {
+  if (!iso) return '—';
+  try {
+    const d = new Date(iso.replace(' ', 'T') + (iso.endsWith('Z') ? '' : 'Z'));
+    return d.toLocaleString('ar-OM', { year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+  } catch { return iso; }
+}
+function $$(sel, root=document) { return Array.from(root.querySelectorAll(sel)); }
+
+// ─── Go ────────────────────────────────────────────────────
+boot().catch(e => console.error('boot failed', e));
+</script>
+</body>
+</html>
