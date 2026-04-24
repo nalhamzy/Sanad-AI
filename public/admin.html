@@ -84,6 +84,128 @@
     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-px bg-ink-100 dark:bg-ink-800" id="kpiGrid"></div>
   </div>
 
+  <!-- Offices review — platform-admin only -->
+  <section id="officesSection" class="rounded-xl border border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900 overflow-hidden hidden">
+    <div class="flex items-center gap-3 px-4 py-3 border-b border-ink-100 dark:border-ink-800">
+      <div>
+        <div class="text-[12.5px] font-bold">Offices review</div>
+        <div class="text-[10.5px] text-ink-400">Approve / reject / suspend offices that signed up for the pilot</div>
+      </div>
+      <div class="ms-auto flex items-center gap-1">
+        <button data-status="pending_review" class="officeTab px-2.5 h-8 rounded-lg text-[11.5px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">Pending <span class="officeCount" data-for="pending_review">—</span></button>
+        <button data-status="active"         class="officeTab px-2.5 h-8 rounded-lg text-[11.5px] font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Active <span class="officeCount" data-for="active">—</span></button>
+        <button data-status="suspended"      class="officeTab px-2.5 h-8 rounded-lg text-[11.5px] font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Suspended <span class="officeCount" data-for="suspended">—</span></button>
+        <button data-status="rejected"       class="officeTab px-2.5 h-8 rounded-lg text-[11.5px] font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Rejected <span class="officeCount" data-for="rejected">—</span></button>
+      </div>
+    </div>
+    <div class="overflow-x-auto scroll-y">
+      <table class="w-full text-[13px]">
+        <thead class="bg-ink-50 dark:bg-ink-800 text-[10.5px] uppercase tracking-wider text-ink-500 dark:text-ink-400">
+          <tr>
+            <th class="px-4 py-2.5 text-start">#</th>
+            <th class="px-4 py-2.5 text-start">Office</th>
+            <th class="px-4 py-2.5 text-start">Governorate</th>
+            <th class="px-4 py-2.5 text-start">CR</th>
+            <th class="px-4 py-2.5 text-start">Email</th>
+            <th class="px-4 py-2.5 text-start">Created</th>
+            <th class="px-4 py-2.5 text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="officesTbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Services catalog — platform-admin only -->
+  <section id="servicesSection" class="rounded-xl border border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900 overflow-hidden hidden">
+    <div class="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-ink-100 dark:border-ink-800">
+      <div>
+        <div class="text-[12.5px] font-bold">Services catalog</div>
+        <div class="text-[10.5px] text-ink-400">Canonical list of government services. Offices can set their own fee on top — government fee comes from here.</div>
+      </div>
+      <div class="ms-auto flex items-center gap-2">
+        <input id="svcSearch" placeholder="Search services…" class="px-3 h-8 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 text-[12px] w-56 focus:ring-2 focus:ring-brand-400 outline-none"/>
+        <button id="svcAddBtn" class="px-3 h-8 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-[12px] font-bold flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          New service
+        </button>
+      </div>
+    </div>
+    <div class="overflow-x-auto scroll-y">
+      <table class="w-full text-[13px]">
+        <thead class="bg-ink-50 dark:bg-ink-800 text-[10.5px] uppercase tracking-wider text-ink-500 dark:text-ink-400">
+          <tr>
+            <th class="px-4 py-2.5 text-start">#</th>
+            <th class="px-4 py-2.5 text-start">Service (AR)</th>
+            <th class="px-4 py-2.5 text-start">Entity</th>
+            <th class="px-4 py-2.5 text-start">Gov fee</th>
+            <th class="px-4 py-2.5 text-start">Active</th>
+            <th class="px-4 py-2.5 text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="servicesTbody"></tbody>
+      </table>
+    </div>
+    <div class="flex items-center justify-between px-4 py-2 border-t border-ink-100 dark:border-ink-800 text-[11px] text-ink-500 dark:text-ink-400">
+      <div id="svcMeta">—</div>
+      <div class="flex gap-1.5">
+        <button id="svcPrev" class="px-2 h-7 rounded-lg hover:bg-ink-100 dark:hover:bg-ink-800 text-[11px] font-semibold">◀ Prev</button>
+        <button id="svcNext" class="px-2 h-7 rounded-lg hover:bg-ink-100 dark:hover:bg-ink-800 text-[11px] font-semibold">Next ▶</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Service editor modal -->
+  <div id="svcModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white dark:bg-ink-900 rounded-xl shadow-2xl max-w-lg w-full border border-ink-100 dark:border-ink-800">
+      <div class="px-5 py-4 border-b border-ink-100 dark:border-ink-800 flex items-center">
+        <div id="svcModalTitle" class="text-[14px] font-bold">New service</div>
+        <button id="svcModalClose" class="ms-auto p-1 rounded hover:bg-ink-100 dark:hover:bg-ink-800">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div class="p-5 space-y-3">
+        <label class="block">
+          <div class="text-[10.5px] font-semibold text-ink-500 dark:text-ink-400 mb-1">Service name (AR) <span class="text-rose-500">*</span></div>
+          <input id="svcNameAr" dir="rtl" class="w-full px-3 h-9 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 text-[13px] focus:ring-2 focus:ring-brand-400 outline-none"/>
+        </label>
+        <label class="block">
+          <div class="text-[10.5px] font-semibold text-ink-500 dark:text-ink-400 mb-1">Service name (EN)</div>
+          <input id="svcNameEn" class="w-full px-3 h-9 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 text-[13px] focus:ring-2 focus:ring-brand-400 outline-none"/>
+        </label>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="block">
+            <div class="text-[10.5px] font-semibold text-ink-500 dark:text-ink-400 mb-1">Entity / ministry (AR)</div>
+            <input id="svcEntityAr" dir="rtl" class="w-full px-3 h-9 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 text-[13px] focus:ring-2 focus:ring-brand-400 outline-none"/>
+          </label>
+          <label class="block">
+            <div class="text-[10.5px] font-semibold text-ink-500 dark:text-ink-400 mb-1">Entity (EN)</div>
+            <input id="svcEntityEn" class="w-full px-3 h-9 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 text-[13px] focus:ring-2 focus:ring-brand-400 outline-none"/>
+          </label>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="block">
+            <div class="text-[10.5px] font-semibold text-ink-500 dark:text-ink-400 mb-1">Government fee (OMR)</div>
+            <input id="svcFee" type="number" step="0.001" min="0" class="w-full px-3 h-9 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 text-[13px] mono focus:ring-2 focus:ring-brand-400 outline-none"/>
+          </label>
+          <label class="block">
+            <div class="text-[10.5px] font-semibold text-ink-500 dark:text-ink-400 mb-1">Fees text (optional)</div>
+            <input id="svcFeesText" class="w-full px-3 h-9 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 text-[13px] focus:ring-2 focus:ring-brand-400 outline-none" placeholder="e.g. 2 OMR + stamp"/>
+          </label>
+        </div>
+        <label class="flex items-center gap-2 text-[12px]">
+          <input id="svcActive" type="checkbox" checked class="w-4 h-4 rounded border-ink-300"/>
+          <span>Active (visible to offices)</span>
+        </label>
+      </div>
+      <div class="px-5 py-3 border-t border-ink-100 dark:border-ink-800 flex items-center gap-2">
+        <button id="svcSaveBtn" class="px-4 h-9 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-[12.5px] font-bold">Save</button>
+        <button id="svcModalCancel" class="px-3 h-9 rounded-lg hover:bg-ink-100 dark:hover:bg-ink-800 text-[12.5px] font-semibold">Cancel</button>
+        <div id="svcModalErr" class="ms-auto text-[11px] text-rose-600 dark:text-rose-400"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="grid lg:grid-cols-3 gap-5">
 
     <!-- LEFT: Latest requests -->
@@ -248,8 +370,245 @@ document.getElementById('btnSimOtp').onclick = async () => {
   load();
 };
 
+// ─── Offices review — only visible to platform admins ─────
+let officeTab = 'pending_review';
+
+async function loadOffices() {
+  // Probe the endpoint; 401/403 means this viewer isn't a platform admin.
+  const r = await fetch('/api/platform-admin/offices?status=' + encodeURIComponent(officeTab), {
+    credentials: 'include'
+  });
+  if (!r.ok) return; // stay hidden
+  const { offices } = await r.json();
+  document.getElementById('officesSection').classList.remove('hidden');
+
+  // Counts in the tab buttons (one call per status — cheap at this scale).
+  try {
+    const s = await fetch('/api/platform-admin/stats', { credentials: 'include' }).then(x => x.json());
+    const by = s.offices_by_status || {};
+    document.querySelectorAll('.officeCount').forEach(el => {
+      const k = el.getAttribute('data-for');
+      el.textContent = by[k] != null ? ` · ${by[k]}` : '';
+    });
+  } catch {}
+
+  const fmt = iso => iso ? new Date(iso.replace(' ','T')+'Z').toLocaleDateString() : '—';
+  document.getElementById('officesTbody').innerHTML = offices.map(o => {
+    const statusTone = o.status === 'active' ? 'bg-emerald-50 text-emerald-700' :
+                       o.status === 'pending_review' ? 'bg-amber-50 text-amber-700' :
+                       o.status === 'suspended' ? 'bg-rose-50 text-rose-700' :
+                       'bg-ink-100 text-ink-600';
+    const actions = [];
+    if (o.status === 'pending_review') {
+      actions.push(`<button data-act="approve" data-id="${o.id}" class="px-2.5 h-7 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold">Approve</button>`);
+      actions.push(`<button data-act="reject"  data-id="${o.id}" class="px-2.5 h-7 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold">Reject</button>`);
+    } else if (o.status === 'active') {
+      actions.push(`<button data-act="suspend" data-id="${o.id}" class="px-2.5 h-7 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold">Suspend</button>`);
+    } else if (o.status === 'suspended' || o.status === 'rejected') {
+      actions.push(`<button data-act="approve" data-id="${o.id}" class="px-2.5 h-7 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold">Reinstate</button>`);
+    }
+    return `<tr class="border-t border-ink-100 dark:border-ink-800 hover:bg-ink-50 dark:hover:bg-ink-800/50 transition">
+      <td class="px-4 py-2.5 mono font-bold">O-${o.id}</td>
+      <td class="px-4 py-2.5">
+        <div class="font-semibold">${o.name_en || o.name_ar || '—'}</div>
+        <div class="text-[10.5px] text-ink-400">${o.name_ar || ''}</div>
+      </td>
+      <td class="px-4 py-2.5">${o.governorate || '—'}${o.wilayat ? ' · ' + o.wilayat : ''}</td>
+      <td class="px-4 py-2.5 mono text-[11.5px]">${o.cr_number || '—'}</td>
+      <td class="px-4 py-2.5 text-[11.5px]">${o.email || '—'}</td>
+      <td class="px-4 py-2.5 text-[11px] text-ink-500 mono">${fmt(o.created_at)}</td>
+      <td class="px-4 py-2.5 text-end"><div class="flex gap-1.5 justify-end">${actions.join('')}</div></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="7" class="px-4 py-10 text-center text-ink-400 italic">No offices in "${officeTab}".</td></tr>`;
+
+  // Wire up the row buttons.
+  document.querySelectorAll('#officesTbody [data-act]').forEach(b => {
+    b.addEventListener('click', async () => {
+      const id = b.getAttribute('data-id');
+      const act = b.getAttribute('data-act');
+      let body = {};
+      if (act === 'reject') {
+        const reason = prompt('Reject reason (shown to the office):');
+        if (!reason) return;
+        body.reason = reason;
+      } else if (act === 'suspend') {
+        const reason = prompt('Suspend reason (optional):') || '';
+        body.reason = reason;
+      }
+      const url = `/api/platform-admin/office/${id}/${act}`;
+      const r = await fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (r.ok) { Sanad.toast(`${act}d office #${id}`, 'ok'); loadOffices(); }
+      else Sanad.toast('Failed: ' + r.status, 'err');
+    });
+  });
+}
+
+document.querySelectorAll('.officeTab').forEach(b => b.addEventListener('click', () => {
+  officeTab = b.getAttribute('data-status');
+  document.querySelectorAll('.officeTab').forEach(t => {
+    t.classList.remove('bg-amber-100','text-amber-800','dark:bg-amber-900/40','dark:text-amber-300');
+    t.classList.add('hover:bg-ink-100','dark:hover:bg-ink-800');
+  });
+  b.classList.remove('hover:bg-ink-100','dark:hover:bg-ink-800');
+  b.classList.add('bg-amber-100','text-amber-800','dark:bg-amber-900/40','dark:text-amber-300');
+  loadOffices();
+}));
+
+// ─── Services catalog — admin CRUD ────────────────────────
+const svcState = { q: '', offset: 0, limit: 50, total: 0, editing: null };
+
+async function loadServices() {
+  const params = new URLSearchParams();
+  if (svcState.q) params.set('q', svcState.q);
+  params.set('limit', svcState.limit);
+  params.set('offset', svcState.offset);
+  const r = await fetch('/api/platform-admin/services?' + params, { credentials: 'include' });
+  if (!r.ok) return; // not a platform admin → stay hidden
+  const { services, total } = await r.json();
+  svcState.total = total || 0;
+  document.getElementById('servicesSection').classList.remove('hidden');
+
+  document.getElementById('servicesTbody').innerHTML = services.map(s => {
+    const fee = s.fee_omr != null ? Number(s.fee_omr).toFixed(3) + ' OMR' : '—';
+    return `<tr class="border-t border-ink-100 dark:border-ink-800 hover:bg-ink-50 dark:hover:bg-ink-800/50 transition" data-svc-id="${s.id}">
+      <td class="px-4 py-2.5 mono text-[11.5px] text-ink-500">#${s.id}</td>
+      <td class="px-4 py-2.5">
+        <div class="font-semibold" dir="rtl">${escapeHtml(s.name_ar || s.name_en || '—')}</div>
+        <div class="text-[10.5px] text-ink-400">${escapeHtml(s.name_en || '')}</div>
+      </td>
+      <td class="px-4 py-2.5 text-[12px]">
+        <div dir="rtl">${escapeHtml(s.entity_ar || '—')}</div>
+        <div class="text-[10.5px] text-ink-400">${escapeHtml(s.entity_en || '')}</div>
+      </td>
+      <td class="px-4 py-2.5 mono">${fee}</td>
+      <td class="px-4 py-2.5">
+        ${s.is_active ? '<span class="chip bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">Active</span>' : '<span class="chip bg-ink-100 text-ink-500 dark:bg-ink-800 dark:text-ink-400">Disabled</span>'}
+      </td>
+      <td class="px-4 py-2.5 text-end">
+        <div class="flex gap-1.5 justify-end">
+          <button data-svc-edit="${s.id}" class="px-2.5 h-7 rounded-lg bg-ink-100 hover:bg-ink-200 dark:bg-ink-800 dark:hover:bg-ink-700 text-[11px] font-bold">Edit</button>
+          ${s.is_active
+            ? `<button data-svc-disable="${s.id}" class="px-2.5 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950 dark:hover:bg-rose-900 dark:text-rose-300 text-[11px] font-bold">Disable</button>`
+            : `<button data-svc-enable="${s.id}" class="px-2.5 h-7 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:hover:bg-emerald-900 dark:text-emerald-300 text-[11px] font-bold">Enable</button>`}
+        </div>
+      </td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="6" class="px-4 py-10 text-center text-ink-400 italic">No services match.</td></tr>`;
+
+  const from = svcState.total === 0 ? 0 : svcState.offset + 1;
+  const to = Math.min(svcState.offset + svcState.limit, svcState.total);
+  document.getElementById('svcMeta').textContent = `Showing ${from}–${to} of ${svcState.total.toLocaleString()}`;
+
+  // Row actions
+  document.querySelectorAll('[data-svc-edit]').forEach(b => b.onclick = () => openSvcEditor(Number(b.dataset.svcEdit), services));
+  document.querySelectorAll('[data-svc-disable]').forEach(b => b.onclick = async () => {
+    if (!confirm('Disable this service? Offices will no longer see it.')) return;
+    const r = await fetch('/api/platform-admin/services/' + b.dataset.svcDisable, { method: 'DELETE', credentials: 'include' });
+    if (r.ok) { Sanad.toast('Service disabled', 'ok'); loadServices(); } else Sanad.toast('Failed', 'err');
+  });
+  document.querySelectorAll('[data-svc-enable]').forEach(b => b.onclick = async () => {
+    const r = await fetch('/api/platform-admin/services/' + b.dataset.svcEnable, {
+      method: 'PATCH', credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ is_active: true })
+    });
+    if (r.ok) { Sanad.toast('Service enabled', 'ok'); loadServices(); } else Sanad.toast('Failed', 'err');
+  });
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function openSvcEditor(id, services) {
+  const svc = id ? services.find(x => x.id === id) : null;
+  svcState.editing = svc ? svc.id : null;
+  document.getElementById('svcModalTitle').textContent = svc ? `Edit service #${svc.id}` : 'New service';
+  document.getElementById('svcNameAr').value   = svc?.name_ar   || '';
+  document.getElementById('svcNameEn').value   = svc?.name_en   || '';
+  document.getElementById('svcEntityAr').value = svc?.entity_ar || '';
+  document.getElementById('svcEntityEn').value = svc?.entity_en || '';
+  document.getElementById('svcFee').value      = svc?.fee_omr != null ? svc.fee_omr : '';
+  document.getElementById('svcFeesText').value = svc?.fees_text || '';
+  document.getElementById('svcActive').checked = svc ? !!svc.is_active : true;
+  document.getElementById('svcModalErr').textContent = '';
+  const m = document.getElementById('svcModal');
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+}
+function closeSvcEditor() {
+  const m = document.getElementById('svcModal');
+  m.classList.add('hidden');
+  m.classList.remove('flex');
+}
+
+document.getElementById('svcAddBtn').onclick = () => openSvcEditor(null, []);
+document.getElementById('svcModalClose').onclick = closeSvcEditor;
+document.getElementById('svcModalCancel').onclick = closeSvcEditor;
+document.getElementById('svcSaveBtn').onclick = async () => {
+  const body = {
+    name_ar: document.getElementById('svcNameAr').value.trim(),
+    name_en: document.getElementById('svcNameEn').value.trim(),
+    entity_ar: document.getElementById('svcEntityAr').value.trim(),
+    entity_en: document.getElementById('svcEntityEn').value.trim(),
+    fees_text: document.getElementById('svcFeesText').value.trim(),
+    fee_omr: document.getElementById('svcFee').value.trim(),
+    is_active: document.getElementById('svcActive').checked
+  };
+  if (!body.name_ar) {
+    document.getElementById('svcModalErr').textContent = 'Arabic name is required.';
+    return;
+  }
+  const url = svcState.editing
+    ? '/api/platform-admin/services/' + svcState.editing
+    : '/api/platform-admin/services';
+  const method = svcState.editing ? 'PATCH' : 'POST';
+  const r = await fetch(url, {
+    method, credentials: 'include',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (r.ok) {
+    Sanad.toast(svcState.editing ? 'Service updated' : 'Service created', 'ok');
+    closeSvcEditor();
+    loadServices();
+  } else {
+    const err = await r.json().catch(() => ({}));
+    document.getElementById('svcModalErr').textContent = 'Error: ' + (err.error || r.status);
+  }
+};
+
+// Debounced search
+let svcSearchTimer = null;
+document.getElementById('svcSearch').addEventListener('input', (e) => {
+  clearTimeout(svcSearchTimer);
+  svcSearchTimer = setTimeout(() => {
+    svcState.q = e.target.value.trim();
+    svcState.offset = 0;
+    loadServices();
+  }, 250);
+});
+document.getElementById('svcPrev').onclick = () => {
+  svcState.offset = Math.max(0, svcState.offset - svcState.limit);
+  loadServices();
+};
+document.getElementById('svcNext').onclick = () => {
+  if (svcState.offset + svcState.limit < svcState.total) {
+    svcState.offset += svcState.limit;
+    loadServices();
+  }
+};
+
 load();
+loadOffices();
+loadServices();
 setInterval(load, 5000);
+setInterval(loadOffices, 12000);
 </script>
 </body>
 </html>

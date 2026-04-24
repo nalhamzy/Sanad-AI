@@ -3,12 +3,14 @@
 One WhatsApp assistant for every Sanad service in Oman. Web-first dev mode, WhatsApp-ready.
 
 This repo implements [SANAD_AI_PLAN_V2.md](SANAD_AI_PLAN_V2.md). It ships:
-- A full citizen agent driven by a state machine + optional Qwen 3.5 LLM (tool-calling).
+- A **unified tool-calling citizen agent (v2)** — every session state (idle → confirming → collecting → reviewing → queued → claimed) is driven by explicit tool calls, not scripted regex branches. Architecture documented in [AGENT.md](AGENT.md). Heuristic v1 kept as graceful fallback when `QWEN_API_KEY` is empty.
+- **Hybrid service search** — FTS5 BM25 + Qwen `text-embedding-v3` (1024-dim) + structured filters, fused via RRF (k=60) with launch/popularity boosts. ~120 ms per turn, warm.
+- Full **3,417-service catalogue** (`oman_services_directory.csv`) imported with all 33 columns: beneficiary, main_service, payment method, channels, working/avg time, process steps parsed to JSON.
 - A **web test chatbot** (`/chat.html`) that talks to the *same backend agent* as WhatsApp will.
 - An **officer dashboard** (`/officer.html`) with marketplace, atomic claim, request detail, chat relay, OTP window, grid/list views, command palette (⌘K).
 - An **admin/debug page** (`/admin.html`) with DB counts, latest requests, OTP simulator.
 - A **WhatsApp Cloud API webhook** stub (`/api/whatsapp/webhook`) that reuses the same agent — just drop in Meta credentials.
-- A **test suite** (37 tests, Node built-in runner) covering unit, catalogue search, agent state machine, and HTTP integration.
+- A **test suite** (70 tests, Node built-in runner) covering unit, catalogue search, hybrid search (deterministic fixture), agent state machine, HTTP integration, auth/offers. Plus an LLM-path suite (`tests/07-agent-v2.test.js`, 5 cases) that runs with a real Qwen key.
 
 ---
 
@@ -17,12 +19,13 @@ This repo implements [SANAD_AI_PLAN_V2.md](SANAD_AI_PLAN_V2.md). It ships:
 **You are likely here because this project was handed off mid-stream.** Read this section first.
 
 - **Source of truth for the product vision:** [SANAD_AI_PLAN_V2.md](SANAD_AI_PLAN_V2.md) (read it first, it's the spec).
+- **Source of truth for the chat agent architecture:** [AGENT.md](AGENT.md) (v2 tool loop, hybrid search, 17-tool surface).
 - **Source of truth for design decisions:** [SANAD_AI_DESIGN.md](SANAD_AI_DESIGN.md).
-- **Verify you haven't broken anything:** `npm test` — must be 37/37 green before you change anything risky.
+- **Verify you haven't broken anything:** `npm test` — must be 70/70 green before you change anything risky.
 - **Never** introduce a new dependency without strong reason — the stack is intentionally small (Express + libSQL + csv-parse + multer + dotenv).
-- **The agent is LLM-first with heuristic fallback.** If `QWEN_API_KEY` is empty, the heuristic path (regex + rule-based tool dispatch) runs — tests rely on this path for determinism.
+- **Two agent paths coexist.** v2 (default when `QWEN_API_KEY` is set and `SANAD_AGENT_V2=true`) is a single Qwen tool-calling loop. v1 (heuristic state machine) runs when the key is empty or the flag is `false`. All pinned tests (`03-agent`, `05-agent-tricky`) target v1 for determinism; v2 has its own LLM-path suite (`tests/07-agent-v2.test.js`).
 - **Arabic matters.** Every user-facing string has an AR + EN variant. `normalize()` in `lib/catalogue.js` handles tashkeel/alef/yaa-variants; use it, don't re-implement.
-- **Don't break the state machine.** See `§ Architecture → Agent state machine` below. Transitions must stay: `idle → confirming → collecting → reviewing → queued → claimed → completed`.
+- **Don't break the state machine.** See [AGENT.md](AGENT.md) for the full diagram. Transitions must stay: `idle → confirming → collecting → reviewing → queued → claimed → in_progress → completed`. v2 enforces transitions via explicit tool returns (`transition: '<new_status>'`).
 
 ---
 
@@ -47,7 +50,22 @@ Open:
 | http://localhost:3030/catalogue.html | Browse the full services catalogue |
 | http://localhost:3030/api/health | JSON health probe |
 
-No API keys required. With `QWEN_API_KEY` empty, the agent falls back to a deterministic heuristic for the 5 launch services (driving licence, civil ID, passport, Mulkiya, CR).
+No API keys required. With `QWEN_API_KEY` empty, the agent falls back to v1 (deterministic heuristic for the 5 launch services: driving licence, civil ID, passport, Mulkiya, CR) and search collapses to FTS-only (no semantic lane).
+
+With a Qwen key set, on first boot the server kicks off a background embed worker that vectorises all 3,417 services in ~90 s (≈$0.20, one-time). The process serves traffic immediately; semantic search activates as the cache warms.
+
+### Environment variables
+
+| Var | Purpose |
+|---|---|
+| `QWEN_API_KEY` | Enables LLM + embeddings. Empty → heuristic-only + FTS-only search. |
+| `QWEN_MODEL` | Default `qwen-plus`. |
+| `QWEN_EMBED_MODEL` | Default `text-embedding-v3`. |
+| `QWEN_EMBED_DIM` | Default `1024`. |
+| `SANAD_AGENT_V2` | `true` (default when key is set) routes every turn through the unified tool-calling loop. `false` forces v1. |
+| `SANAD_SKIP_EMBED` | `1` disables the background embedder (useful in tests / CI without key). |
+| `DB_URL` | Default `file:./data/sanad.db`. Turso: `libsql://...`. |
+| `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` | Meta Cloud API. Empty → webhook is a no-op. |
 
 ## 2 · End-to-end smoke test (manual)
 
@@ -76,9 +94,10 @@ The 5 launch services still win via hand-curated flows in `lib/catalogue.js`; th
 **Always run before committing:** `npm test`
 
 ```bash
-npm test                 # full suite, 37 tests, ~2s (serial to avoid DB clashes)
+npm test                 # full suite, 70 tests, ~3s (serial to avoid DB clashes)
 npm run test:unit        # just normalize + expandQuery (fast, no DB I/O beyond setup)
 npm run test:watch       # re-run on change
+QWEN_API_KEY=sk-… npm run test:llm   # 5 extra agent-v2 LLM-path cases (hits real Qwen)
 ```
 
 **Test files** (`tests/`):
@@ -88,8 +107,12 @@ npm run test:watch       # re-run on change
 | `helpers.js` | Shared harness. Sets `DB_URL=file:./data/sanad-test.db`, forces `QWEN_API_KEY=''` (heuristic mode), exposes `spawnServer()`, `postChat()`, `fetchJSON()`. |
 | `01-unit.test.js` | Pure fns: `normalize()` (tashkeel, alef/yaa/taa-marbuta, typos with `=`), `expandQuery()` synonym heuristics. |
 | `02-catalogue.test.js` | `matchService()` — launch services hit correctly; **regression**: `تح=جديد تصريح سفينة` must NOT match driving licence; dialectal `بطاقة عامل` must surface work-permit / health-card. Seeds 5 deterministic rows (ids 900001–900005). |
-| `03-agent.test.js` | `runTurn()` state machine — greetings, full happy path (`renew driving licence → yes → 3 uploads → confirm → queued`), DB side-effects (request row + 3 doc rows with codes `['civil_id','medical','photo']` + citizen FK), **regression**: greeting must pop out of stuck `confirming`, upload in idle must not dump a service card, `cancel` resets. |
+| `03-agent.test.js` | v1 `runTurn()` state machine — greetings, full happy path (`renew driving licence → yes → 3 uploads → confirm → queued`), DB side-effects (request row + 3 doc rows with codes `['civil_id','medical','photo']` + citizen FK), **regression**: greeting must pop out of stuck `confirming`, upload in idle must not dump a service card, `cancel` resets. |
 | `04-routes.test.js` | HTTP integration against a real Express app on a random port. Pages return 200, `/api/health`, chat + history, officer inbox, **atomic claim** (first wins, second gets 409), officer→citizen messaging, complete transition, catalogue search. |
+| `05-agent-tricky.test.js` | 52 adversarial conversations exercising v1 heuristic edge cases (multi-intent, mid-flow cancels, language switches, spoof tool calls). |
+| `06-auth-offers.test.js` | Auth, sessions, credit ledger, and the anonymized offers / accept-offer flow. |
+| `08-hybrid-search.test.js` | Hybrid-search determinism — seeds a 7-row fixture and asserts FTS ordering, filter pruning (beneficiary, free, max_fee, channel), launch boost over ties, empty-query guard, typo OR-fallback. Runs without LLM key (semantic lane absent → fusion collapses to FTS-only). |
+| `07-agent-v2.test.js` *(test:llm)* | LLM-path coverage: discovery EN + AR, start→confirm→collect transitions via explicit tool calls, cancel intent, tool-loop bound (≤8 calls). Skipped when `QWEN_API_KEY` is missing. |
 
 **Adding a test:**
 - Pure function → `01-unit.test.js`.
@@ -98,7 +121,7 @@ npm run test:watch       # re-run on change
 
 **Server must not auto-listen when imported.** `server.js` checks `SANAD_NO_AUTOSTART` and `isMain` (set by the harness). If you refactor boot, preserve this — otherwise integration tests will hang.
 
-**Deterministic LLM path.** Tests set `QWEN_API_KEY=''` so the heuristic branch runs. If you add new behaviour behind the LLM, also add the heuristic fallback, or your tests become flaky/network-dependent.
+**Deterministic LLM path.** The main `npm test` suite sets `QWEN_API_KEY=''` so the v1 heuristic branch runs. If you add new behaviour behind the LLM, either (a) add a v1 heuristic fallback for the pinned suites, or (b) cover it in `tests/07-agent-v2.test.js` which runs with a real key via `npm run test:llm`.
 
 ---
 
@@ -113,16 +136,28 @@ Browser (chat.html | officer.html | admin.html)
 Express (server.js) ───► routes/{chat,officer,whatsapp,debug,catalogue}.js
      │                                │
      │                                ▼
-     │                       lib/agent.js  (state machine + tool calls)
-     │                          │     │
-     │                          │     └─► lib/llm.js    (Qwen 3.5 / stub)
-     │                          │     └─► lib/catalogue.js (matchService)
-     │                          │     └─► lib/query_rewriter.js (synonym expansion)
-     │                          ▼
-     └──────────► lib/db.js  (libSQL + migrations + demo seed)
-                             │
-                             └─► data/sanad.db (dev) | Turso (prod)
+     │                       lib/agent.js  :: runTurn
+     │                          │
+     │                 AGENT_V2 && QWEN key?
+     │          yes ◄──┴──► no
+     │          │              │
+     │   runAgentV2            runLLMLoop / runHeuristic (v1)
+     │    (unified             (scripted state machine — pinned tests)
+     │     tool loop)
+     │          │
+     │          ▼
+     │   lib/agent_tools.js :: TOOL_IMPL_V2  (17 tools)
+     │          │
+     │          ├─► lib/hybrid_search.js  (FTS5 + semantic + RRF)
+     │          │     └─► lib/embeddings.js  (Float32Array cache, cosineTopK)
+     │          │     └─► lib/llm.js :: embed()
+     │          ├─► lib/llm.js :: chatWithTools()  (Qwen qwen-plus)
+     │          └─► lib/db.js  (libSQL)
+     │                             │
+     └──────────────────────────── └─► data/sanad.db (dev) | Turso (prod)
 ```
+
+See [AGENT.md](AGENT.md) for full tool catalogue, state diagram, and extension guide.
 
 ### Agent state machine (`lib/agent.js`)
 
@@ -158,15 +193,23 @@ idle ─► confirming ─► collecting ─► reviewing ─► queued
 
 The heuristic path (no key) mimics these via regex + rule dispatch in `handleIdle` / `handleConfirming` / `handleCollecting`.
 
-### Search pipeline (`lib/catalogue.js`)
+### Search pipeline
 
-1. `normalize()` — strip tashkeel, unify `إأآٱ→ا`, `ى→ي`, `ة→ه`, lowercase, strip punctuation. Handles user typos with stray `=` (real trace: `تح=جديد`).
-2. **Launch-service match** — hand-curated regex patterns for the 5 priority services. Highest confidence.
-3. **Catalogue AND-match** — tokenize query, run AND across `search_blob`. Best precision.
-4. **LIKE fallback** — OR-style substring match when AND is empty.
-5. **Synonym expansion** (`lib/query_rewriter.js`) — dialectal Arabic → MSA + English. Hardcoded synonym groups + optional LLM expansion.
-6. **Rarity-weighted scoring** — rare tokens (e.g. "سفينة") score higher than common ones ("تجديد").
-7. Optional **LLM rerank** when ambiguous.
+Two pipelines coexist:
+
+**Hybrid search (`lib/hybrid_search.js`, default when Qwen key is set):**
+
+1. **Structured pre-filter** — SQL `WHERE` built from `filters` (entity, beneficiary, payment_method, channel, is_launch, max_fee_omr, free). Returns candidate ID set.
+2. **FTS5 BM25** — `MATCH` with tokenized query, top 50. If FTS returns empty, multi-token `LIKE` fallback.
+3. **Semantic** — `cosineTopK(embed(query), 50, candidateIds)` against the 1024-dim Qwen vector cache (~15 ms on 3,417 rows).
+4. **Reciprocal Rank Fusion** (k=60): `score = Σ 1/(k + rank_i)` + `+0.05` launch boost + `log1p(popularity)/50`.
+5. **Optional LLM rerank** on top 10 (off by default).
+
+**v1 fallback (`lib/catalogue.js`, no key or `SANAD_AGENT_V2=false`):**
+
+1. `normalize()` — strip tashkeel, unify `إأآٱ→ا`, `ى→ي`, `ة→ه`, lowercase, strip punctuation.
+2. Launch-service regex → catalogue AND-match → LIKE fallback.
+3. Synonym expansion via `lib/query_rewriter.js`.
 
 ### Officer authorization
 
@@ -188,16 +231,19 @@ The heuristic path (no key) mimics these via regex + rule dispatch in `handleIdl
 ## 6 · File tree
 
 ```
-server.js              Express app + boot (exports prepare/start/app for tests)
+server.js              Express app + boot (exports prepare/start/app; background embed worker)
 seed.js                CSV → service_catalog importer
 seed-mock.js           Demo citizens/requests for UI testing
 oman_services_directory.csv   3,417-row Sanad services catalogue
 lib/
-  db.js                libSQL client + migrations + demo office seed
-  llm.js               Qwen (OpenAI-compatible) client + stub fallback
-  catalogue.js         5 launch services + normalize() + matchService()
+  db.js                libSQL client + migrations + 33-column CSV import + FTS5 rebuild
+  llm.js               Qwen (OpenAI-compatible) client + chatWithTools() + embed()
+  embeddings.js        Float32Array vector cache + embedPending() + cosineTopK()
+  hybrid_search.js     FTS5 + semantic + structured filters + RRF fusion
+  catalogue.js         Launch services + normalize() + matchService() (v1 fallback)
   query_rewriter.js    Synonym expansion (heuristic + LLM)
-  agent.js             State machine, per-state handlers, tool dispatch
+  agent.js             runTurn() dispatcher + v2 unified tool loop + v1 state machine
+  agent_tools.js       TOOL_SPEC_V2 (17 tools) + TOOL_IMPL_V2 + v1 tool handlers
 routes/
   chat.js              Citizen API (/api/chat)
   officer.js           Officer dashboard API (/api/officer)
@@ -214,15 +260,20 @@ public/
   i18n.js              EN/AR string bundles
   ui.js                Shared UI helpers (toasts, modals, skeletons)
 tests/
-  helpers.js           Test harness (isolated DB, spawnServer, postChat)
-  01-unit.test.js      normalize(), expandQuery()
-  02-catalogue.test.js matchService() regression suite
-  03-agent.test.js     runTurn() state machine
-  04-routes.test.js    HTTP integration
-Dockerfile             Production image
-render.yaml            Render Blueprint
-SANAD_AI_PLAN_V2.md    Product spec (read this)
-SANAD_AI_DESIGN.md     Design decisions log
+  helpers.js                 Test harness (isolated DB, spawnServer, postChat)
+  01-unit.test.js            normalize(), expandQuery()
+  02-catalogue.test.js       matchService() regression suite
+  03-agent.test.js           v1 runTurn() state machine
+  04-routes.test.js          HTTP integration
+  05-agent-tricky.test.js    52 adversarial v1 conversations
+  06-auth-offers.test.js     Auth, sessions, credit ledger, offers flow
+  07-agent-v2.test.js        LLM-path coverage (requires QWEN_API_KEY)
+  08-hybrid-search.test.js   FTS + filters + RRF deterministic fixture
+Dockerfile                   Production image
+render.yaml                  Render Blueprint
+SANAD_AI_PLAN_V2.md          Product spec (read this)
+SANAD_AI_DESIGN.md           Design decisions log
+AGENT.md                     Chat agent architecture (v2 tool loop, hybrid search)
 ```
 
 ---
@@ -236,12 +287,15 @@ SANAD_AI_DESIGN.md     Design decisions log
 3. Run `npm test` — the launch-service tests will exercise your match pattern.
 4. Smoke test in `/chat.html`.
 
-### Add a new LLM tool
+### Add a new LLM tool (agent v2)
 
-1. Declare the tool JSON in `lib/llm.js` (`tools` array) — name, description, parameters schema.
-2. In `lib/agent.js`, add a handler in the tool-dispatch switch. Return `{ reply, state, ... }`.
-3. **Also add a heuristic fallback** for the no-key test path — otherwise tests break.
-4. Add a test in `03-agent.test.js`.
+1. Append the spec to `TOOL_SPEC_V2` in `lib/agent_tools.js` — name, description (LLM reads this to decide when to call), parameters schema.
+2. Add the handler to `TOOL_IMPL_V2`: `async toolName(ctx, args) { return { ok, ... } }` where `ctx = { session_id, state, trace, citizen_phone }`. Mutate `ctx.state` freely — `runAgentV2` persists at turn end.
+3. If the tool changes session state, include `transition: 'new_status'` in the return so `trace` shows it and the LLM knows.
+4. Add a one-liner rule to `SYSTEM_V2` in `lib/agent.js` if the tool unlocks a new flow.
+5. Add a case to `tests/07-agent-v2.test.js` (requires `QWEN_API_KEY`).
+
+See [AGENT.md § Adding a new tool](AGENT.md#adding-a-new-tool) for the full walkthrough.
 
 ### Change the system prompt
 
@@ -330,7 +384,8 @@ Deliberately deferred until after pilot (§19 of the plan):
 
 These are the non-obvious choices an AI assistant resuming the project should know about. Append, don't edit.
 
-- **2026-04-19 · Tests are the safety net.** 37-test suite added (`tests/`). Node built-in runner, runs in ~2s. Heuristic-mode only — deterministic, no network. Run before every commit.
+- **2026-04-24 · Chat agent v2 landed.** Unified Qwen tool-calling loop (17 tools) replaces the v1 state-machine switch for every state, not just `idle`. Hybrid search (FTS5 + semantic embeddings + RRF + structured filters) replaces the 3-stage LIKE. Catalogue expanded to all 33 CSV columns. Background embed worker warms a 14 MB Float32Array cache on first boot. v1 kept intact as graceful fallback (empty `QWEN_API_KEY` or `SANAD_AGENT_V2=false`) so the pinned test suites stay deterministic. See [AGENT.md](AGENT.md).
+- **2026-04-19 · Tests are the safety net.** 37-test suite added (`tests/`). Node built-in runner, runs in ~2s. Heuristic-mode only — deterministic, no network. Run before every commit. (Now 70 tests after agent-v2 landed.)
 - **2026-04-19 · Server refactored to support testing.** `server.js` now exports `prepare()/start()/app` and only auto-listens when run directly (or when `SANAD_NO_AUTOSTART` unset). Integration tests spin up a real Express on a random port.
 - **2026-04-19 · Greeting regex dropped `\b`.** `\b` word boundary is a no-op between two Arabic characters (both non-word in JS regex), so `^مرحب\b` never matched `مرحبا`. Regressed the "pop out of stuck confirming" guard. Fixed in `handleConfirming` + `handleCollecting`.
 - **Earlier · LLM-first with heuristic fallback.** Agent architecture evolved from rigid state machine to tool-calling. Heuristic path is kept as (1) the deterministic test path, and (2) the no-key fallback.
@@ -342,4 +397,4 @@ These are the non-obvious choices an AI assistant resuming the project should kn
 
 ---
 
-2026-04-19 · dev build · 37 tests passing
+2026-04-24 · dev build · 70 tests passing (+ 5 LLM-path tests behind `npm run test:llm`)

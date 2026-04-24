@@ -257,37 +257,49 @@
 
   <!-- TOP BAR -->
   <header class="topbar flex items-center gap-3 h-14 px-3 md:px-5 sticky top-0 z-30" style="border-bottom:1px solid var(--line)">
-    <button id="toggleSidebar" class="icon-btn" data-tip="Toggle sidebar">
+    <button id="toggleSidebar" class="icon-btn" data-i18n-title="officer.topbar.sidebar" title="إظهار/إخفاء القائمة">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
     <div class="flex items-center gap-2.5 me-2">
       <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#14b8a6,#0d9488)"><span class="text-[11px] font-extrabold">S</span></div>
       <div class="hidden sm:block leading-none">
-        <div class="text-[13px] font-bold">Sanad Officer</div>
-        <div class="text-[10.5px] mt-0.5" style="color:var(--text-mute)" id="officerSub">loading…</div>
+        <div class="text-[13px] font-bold" data-i18n="officer.brand">موظف سند</div>
+        <div class="text-[10.5px] mt-0.5" style="color:var(--text-mute)" id="officerSub" data-i18n="officer.loading">جارٍ التحميل…</div>
       </div>
     </div>
     <button id="openCmd" class="hidden md:flex items-center gap-2 h-9 px-3 rounded-xl text-[12px]" style="background:var(--surface-3);color:var(--text-mute)">
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
-      <span>Search or jump to…</span>
+      <span data-i18n="officer.search_placeholder">ابحث أو انتقل…</span>
       <span class="ms-6 kbd">⌘K</span>
     </button>
 
     <div class="ms-auto flex items-center gap-1.5">
       <div class="hidden lg:flex items-center gap-2 px-3 h-9 rounded-xl text-[11px]" style="background:var(--surface-3)">
         <span class="w-1.5 h-1.5 rounded-full pulse-dot" style="background:var(--ok)"></span>
-        <span class="font-semibold">Online</span>
+        <span class="font-semibold" data-i18n="officer.online">متصل</span>
         <span class="mono" id="tickTime" style="color:var(--text-mute)">—</span>
       </div>
-      <select id="officerPick" class="input" style="width:auto;font-size:12px;font-weight:500"></select>
-      <button id="soundBtn" class="icon-btn" data-tip="Sound">🔔</button>
-      <button id="themeBtn" class="icon-btn" data-tip="Theme">
+      <div id="whoami" class="hidden lg:flex items-center gap-2 px-3 h-9 rounded-xl text-[12px]" style="background:var(--surface-3)">
+        <span id="whoami_name" class="font-semibold">—</span>
+        <span id="whoami_role" class="text-[10px] px-1.5 py-0.5 rounded" style="background:var(--brand-soft);color:var(--brand-dark)">—</span>
+      </div>
+      <div id="creditsBadge" class="hidden md:flex items-center gap-2 px-3 h-9 rounded-xl text-[12px]"
+           style="background:var(--surface-3)" data-i18n-title="officer.topbar.credits_tip">
+        <span style="color:var(--text-mute)" data-i18n="credits.label">الرصيد</span>
+        <span id="creditsCount" class="font-extrabold mono">—</span>
+        <span id="subStatus" class="text-[10px] px-1.5 py-0.5 rounded" style="background:var(--brand-soft);color:var(--brand-dark)">—</span>
+      </div>
+      <button id="logoutBtn" class="icon-btn" data-i18n-title="officer.topbar.signout" title="تسجيل الخروج">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      </button>
+      <button id="soundBtn" class="icon-btn" data-i18n-title="officer.topbar.sound" title="الصوت">🔔</button>
+      <button id="themeBtn" class="icon-btn" data-i18n-title="officer.topbar.theme" title="المظهر">
         <svg class="w-4 h-4 dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
         <svg class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
       </button>
-      <button id="langBtn" class="btn btn-secondary" style="height:34px">AR</button>
+      <button id="langBtn" class="btn btn-secondary" style="height:34px" data-i18n="lang.toggle">English</button>
       <div class="w-px h-5 mx-1" style="background:var(--line)"></div>
-      <button id="helpBtn" class="icon-btn" data-tip="Shortcuts">
+      <button id="helpBtn" class="icon-btn" data-i18n-title="officer.topbar.shortcuts" title="اختصارات">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
       </button>
     </div>
@@ -301,43 +313,51 @@
       <div class="sidebar-inner flex-1 flex flex-col overflow-hidden" style="border-right:1px solid var(--line)">
         <!-- Claim next CTA -->
         <div class="px-3 pt-3 pb-2">
-          <button id="quickClaim" class="btn btn-primary w-full justify-center" style="height:38px;font-size:13px">
+          <button id="quickClaim" class="btn btn-primary w-full justify-center" style="height:38px;font-size:13px" data-tip="Send quote for next market request">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></svg>
-            Claim next
+            <span data-i18n="offer.quick_send">إرسال سريع</span>
             <span class="kbd" style="background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.35);color:white">C</span>
+          </button>
+          <a href="/pricing.html" class="btn btn-secondary w-full justify-center mt-2" style="height:34px;font-size:12px;text-decoration:none">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            <span data-i18n="pricing.title">أسعار مكتبي</span>
+          </a>
+          <button id="openSettings" class="btn btn-secondary w-full justify-center mt-2" style="height:34px;font-size:12px">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3h.1a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8v.1a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
+            <span data-i18n="settings.title">إعدادات المكتب</span>
           </button>
         </div>
 
         <nav class="flex-1 overflow-y-auto scroll-y px-2 pb-4">
-          <div class="sh">Queue</div>
+          <div class="sh" data-i18n="officer.sh.queue">القائمة</div>
           <button data-filter="all" class="filter-btn">
             <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="16" width="18" height="4" rx="1"/></svg>
-            <span>All requests</span>
+            <span data-i18n="officer.filter.all">كل الطلبات</span>
             <span class="filter-count" data-count="all">—</span>
           </button>
           <button data-filter="ready" class="filter-btn">
             <span class="w-2 h-2 rounded-full" style="background:var(--warn)"></span>
-            <span>Marketplace</span>
+            <span data-i18n="officer.marketplace">سوق الطلبات</span>
             <span class="filter-count" data-count="ready">—</span>
           </button>
           <button data-filter="mine" class="filter-btn">
             <span class="w-2 h-2 rounded-full" style="background:var(--brand)"></span>
-            <span>Claimed by me</span>
+            <span data-i18n="officer.filter.mine">طلباتي</span>
             <span class="filter-count" data-count="mine">—</span>
           </button>
           <button data-filter="waiting" class="filter-btn">
             <span class="w-2 h-2 rounded-full pulse-dot" style="background:var(--warn)"></span>
-            <span>Waiting citizen</span>
+            <span data-i18n="officer.filter.waiting">بانتظار المواطن</span>
             <span class="filter-count" data-count="waiting">—</span>
           </button>
           <button data-filter="sla" class="filter-btn">
             <span class="w-2 h-2 rounded-full" style="background:var(--bad)"></span>
-            <span>SLA at risk</span>
+            <span data-i18n="officer.filter.sla">قرب انتهاء المهلة</span>
             <span class="filter-count" data-count="sla">—</span>
           </button>
           <button data-filter="done" class="filter-btn">
             <span class="w-2 h-2 rounded-full" style="background:var(--ok)"></span>
-            <span>Completed</span>
+            <span data-i18n="status.completed">مكتمل</span>
             <span class="filter-count" data-count="done">—</span>
           </button>
 
@@ -383,7 +403,7 @@
 
         <!-- Activity feed -->
         <div class="px-3 pt-3 pb-3" style="border-top:1px solid var(--line)">
-          <div class="sh">Live activity</div>
+          <div class="sh" data-i18n="officer.sh.live">النشاط المباشر</div>
           <ul id="activity" class="space-y-1.5 text-[11px]" style="color:var(--text-mute);max-height:120px;overflow-y:auto" class="scroll-y"></ul>
         </div>
       </div>
@@ -395,32 +415,31 @@
       <!-- KPI STRIP -->
       <div id="kpiStrip" class="flex items-center gap-2.5 px-5 py-3 overflow-x-auto scroll-x">
         <div class="kpi">
-          <span class="text-[10px] font-bold uppercase tracking-wider" style="color:var(--text-mute)">Today</span>
           <span class="font-extrabold text-sm mono" id="kpi_claimed">—</span>
-          <span class="text-[11px]" style="color:var(--text-mute)">claimed</span>
+          <span class="text-[11px]" style="color:var(--text-mute)" data-i18n="officer.kpi.claimed_today">المستلم اليوم</span>
         </div>
         <div class="kpi">
           <span class="w-1.5 h-1.5 rounded-full" style="background:var(--ok)"></span>
           <span class="font-extrabold text-sm mono" id="kpi_done">—</span>
-          <span class="text-[11px]" style="color:var(--text-mute)">done</span>
+          <span class="text-[11px]" style="color:var(--text-mute)" data-i18n="officer.kpi.completed">المنجز</span>
         </div>
         <div class="kpi">
           <span class="w-1.5 h-1.5 rounded-full" style="background:var(--brand)"></span>
           <span class="font-extrabold text-sm mono" id="kpi_inflight">—</span>
-          <span class="text-[11px]" style="color:var(--text-mute)">in flight</span>
+          <span class="text-[11px]" style="color:var(--text-mute)" data-i18n="officer.kpi.in_flight">قيد التنفيذ</span>
         </div>
         <div class="kpi">
           <span class="w-1.5 h-1.5 rounded-full" style="background:var(--warn)"></span>
           <span class="font-extrabold text-sm mono" id="kpi_mkt">—</span>
-          <span class="text-[11px]" style="color:var(--text-mute)">marketplace</span>
+          <span class="text-[11px]" style="color:var(--text-mute)" data-i18n="officer.kpi.marketplace">في السوق</span>
         </div>
         <div class="kpi" style="background:linear-gradient(135deg, rgba(20,184,166,.1), rgba(20,184,166,.04));box-shadow:inset 0 0 0 1px rgba(20,184,166,.2)">
           <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24" style="color:var(--brand)"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
           <span class="font-extrabold text-sm mono" style="color:var(--brand-dark)" id="kpi_money">—</span>
-          <span class="text-[11px]" style="color:var(--brand-dark)">OMR today</span>
+          <span class="text-[11px]" style="color:var(--brand-dark)" data-i18n="officer.kpi.earnings">الأرباح (تقدير)</span>
         </div>
         <div class="ms-auto flex items-center gap-1">
-          <button id="refreshBtn" class="icon-btn" data-tip="Refresh (R)">
+          <button id="refreshBtn" class="icon-btn" data-tip="(R)" data-i18n-title="actions.refresh" title="تحديث">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
           </button>
         </div>
@@ -430,22 +449,22 @@
       <div class="flex items-center gap-2 px-5 pb-3 overflow-x-auto scroll-x">
         <div class="relative shrink-0">
           <svg class="w-3.5 h-3.5 absolute" style="top:10px;left:11px;color:var(--text-mute)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
-          <input id="filterInput" class="input" style="width:288px;padding-inline-start:34px" placeholder="Filter by service, citizen, entity…"/>
+          <input id="filterInput" class="input" style="width:288px;padding-inline-start:34px" data-i18n-ph="officer.filter_placeholder" placeholder="ابحث حسب الخدمة، المواطن، الجهة…"/>
           <span class="absolute kbd" style="top:8px;right:10px">/</span>
         </div>
         <button class="chip shrink-0 surface-hover cursor-pointer">
           <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-          Today
+          <span data-i18n="officer.filterbar.today">اليوم</span>
         </button>
         <button class="chip chip-amber shrink-0 cursor-pointer">
           <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
-          VIP
+          <span data-i18n="officer.filterbar.vip">مميّز</span>
         </button>
         <button class="chip chip-bad shrink-0 cursor-pointer">
           <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm0 6v6m0 3v.01"/></svg>
-          Urgent
+          <span data-i18n="officer.filterbar.urgent">عاجل</span>
         </button>
-        <span class="ms-auto hint shrink-0">Sort: <b style="color:var(--text)">Newest</b></span>
+        <span class="ms-auto hint shrink-0"><span data-i18n="officer.filterbar.sort">ترتيب</span>: <b style="color:var(--text)" data-i18n="officer.filterbar.newest">الأحدث</b></span>
       </div>
 
       <!-- Panes -->
@@ -455,15 +474,15 @@
         <section id="inboxHost" class="flex flex-col min-w-0">
           <div class="flex items-center justify-between px-5 py-3">
             <div>
-              <div class="text-[12.5px] font-bold" id="inboxTitle">Marketplace</div>
-              <div class="text-[10.5px]" style="color:var(--text-mute)"><span id="inboxCount">0</span> requests</div>
+              <div class="text-[12.5px] font-bold" id="inboxTitle">سوق الطلبات</div>
+              <div class="text-[10.5px]" style="color:var(--text-mute)"><span id="inboxCount">0</span> <span data-i18n="officer.count.requests">طلب</span></div>
             </div>
             <div class="flex items-center gap-2">
               <div class="viewtoggle">
-                <button id="vmGrid" class="active" data-tip="Grid view">▦ Grid</button>
-                <button id="vmList" data-tip="List view">☰ List</button>
+                <button id="vmGrid" class="active" data-i18n-title="officer.view.grid_tip" title="عرض شبكي">▦ <span data-i18n="officer.view.grid">شبكة</span></button>
+                <button id="vmList" data-i18n-title="officer.view.list_tip" title="عرض قائمة">☰ <span data-i18n="officer.view.list">قائمة</span></button>
               </div>
-              <button class="icon-btn" data-tip="Sort">
+              <button class="icon-btn" data-i18n-title="officer.filterbar.sort" title="ترتيب">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
               </button>
             </div>
@@ -477,8 +496,8 @@
           <div id="emptyState" class="flex-1 grid place-items-center">
             <div class="empty">
               <div class="empty-icon">📭</div>
-              <div class="empty-title">Select a request to begin</div>
-              <div class="empty-desc">Pick one from the left, or press <span class="kbd">C</span> to claim the next in the marketplace.</div>
+              <div class="empty-title" data-i18n="officer.empty.select_title">اختر طلباً للبدء</div>
+              <div class="empty-desc" data-i18n="officer.empty.select_desc">اختر من القائمة جانباً، أو اضغط C لإرسال عرض لأقرب طلب في السوق.</div>
             </div>
           </div>
 
@@ -486,7 +505,7 @@
           <div id="workspace" class="flex-1 flex-col hidden min-h-0">
             <!-- HEADER -->
             <div class="flex items-center gap-3 flex-wrap px-5 py-3" style="border-bottom:1px solid var(--line)">
-              <button id="closeWorkspace" class="icon-btn" data-tip="Close (Esc)">
+              <button id="closeWorkspace" class="icon-btn" data-i18n-title="actions.close" title="إغلاق (Esc)">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
               <div class="min-w-0 flex-1">
@@ -495,7 +514,7 @@
                   <span class="chip" id="detailStatus">—</span>
                   <span class="chip chip-amber" id="detailSla">—</span>
                 </div>
-                <div class="font-bold text-[15px] truncate mt-0.5" id="detailTitle">Request</div>
+                <div class="font-bold text-[15px] truncate mt-0.5" id="detailTitle">—</div>
                 <div class="text-[11.5px]" style="color:var(--text-mute)" id="detailMeta">—</div>
                 <!-- SLA progress bar -->
                 <div class="bar mt-2" style="max-width:260px" id="slaBar"><div class="bar-fill" id="slaFill" style="width:0"></div></div>
@@ -505,12 +524,12 @@
 
             <!-- SHORTCUTS BAR -->
             <div id="shortcutsBar" class="shortcuts-bar px-5 py-2 flex items-center gap-1.5 flex-wrap hidden">
-              <span class="me-2 text-[10px] uppercase tracking-wider font-bold" style="color:rgba(255,255,255,.5)">Shortcuts</span>
-              <button id="sc_portal" class="sbtn">🔗 Portal</button>
-              <button id="sc_otp" class="sbtn primary">📲 Request OTP <span class="kbd" style="background:rgba(0,0,0,.25);color:white;border-color:rgba(255,255,255,.25)">O</span></button>
-              <button id="sc_copyid" class="sbtn">📋 ID</button>
-              <button id="sc_copyphone" class="sbtn">📋 Phone</button>
-              <button id="sc_copyfee" class="sbtn">💰 Fee</button>
+              <span class="me-2 text-[10px] uppercase tracking-wider font-bold" style="color:rgba(255,255,255,.5)" data-i18n="officer.shortcuts_bar.title">اختصارات</span>
+              <button id="sc_portal" class="sbtn">🔗 <span data-i18n="officer.sc.portal_label">البوابة</span></button>
+              <button id="sc_otp" class="sbtn primary">📲 <span data-i18n="officer.sc.otp_label">طلب رمز</span> <span class="kbd" style="background:rgba(0,0,0,.25);color:white;border-color:rgba(255,255,255,.25)">O</span></button>
+              <button id="sc_copyid" class="sbtn">📋 <span data-i18n="officer.sc.id">البطاقة</span></button>
+              <button id="sc_copyphone" class="sbtn">📋 <span data-i18n="officer.sc.phone_label">الهاتف</span></button>
+              <button id="sc_copyfee" class="sbtn">💰 <span data-i18n="officer.sc.fee_label">الرسوم</span></button>
               <span id="otpStatus" class="ms-auto text-[11px] mono" style="color:#6ee7b7"></span>
             </div>
 
@@ -518,15 +537,15 @@
             <div class="flex-1 flex min-h-0">
               <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
                 <div class="flex items-center gap-0 px-3 shrink-0" style="border-bottom:1px solid var(--line)">
-                  <button data-tab="overview" class="tab">Overview</button>
+                  <button data-tab="overview" class="tab"><span data-i18n="officer.tab.overview">نظرة عامة</span></button>
                   <button data-tab="docs" class="tab active">
-                    Documents <span class="ms-1 chip chip-brand chip-sm" id="docsPillCount">0</span>
+                    <span data-i18n="officer.tab.docs">المستندات</span> <span class="ms-1 chip chip-brand chip-sm" id="docsPillCount">0</span>
                   </button>
-                  <button data-tab="timeline" class="tab">Timeline</button>
+                  <button data-tab="timeline" class="tab"><span data-i18n="officer.tab.timeline">المسار الزمني</span></button>
                   <div class="ms-auto me-2">
                     <button id="toggleChat" class="btn btn-secondary" style="height:32px">
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-1.9 5.4 8.5 8.5 0 01-14.2-3A8.5 8.5 0 0111 3a8.5 8.5 0 018.1 6"/></svg>
-                      <span>Chat</span>
+                      <span data-i18n="officer.tab.chat">المحادثة</span>
                       <span id="chatUnread" class="chip chip-bad chip-sm hidden" style="padding:0 6px">0</span>
                       <span class="kbd">T</span>
                     </button>
@@ -556,27 +575,27 @@
         <aside id="chatDrawer" class="drawer shrink-0 flex flex-col">
           <div class="flex items-center gap-2 px-4 h-12 shrink-0" style="border-bottom:1px solid var(--line)">
             <span class="w-1.5 h-1.5 rounded-full pulse-dot" style="background:var(--ok)"></span>
-            <div class="text-[12.5px] font-bold">Chat with citizen</div>
-            <span class="text-[10.5px] mono" style="color:var(--text-mute)">live</span>
+            <div class="text-[12.5px] font-bold" data-i18n="officer.chat.with_citizen">المحادثة مع المواطن</div>
+            <span class="text-[10.5px] mono" style="color:var(--text-mute)" data-i18n="officer.chat.live">مباشر</span>
             <div class="ms-auto flex items-center gap-1">
-              <button id="expandChat" class="icon-btn" data-tip="Expand">
+              <button id="expandChat" class="icon-btn" data-i18n-title="officer.chat.tip_expand" title="توسيع">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
               </button>
-              <button id="closeChat" class="icon-btn" data-tip="Close">
+              <button id="closeChat" class="icon-btn" data-i18n-title="officer.chat.tip_close" title="إغلاق">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             </div>
           </div>
           <div id="chatPane" class="flex-1 overflow-y-auto scroll-y p-4 flex flex-col gap-2 chat-bg"></div>
           <div class="px-3 py-2 flex gap-1.5 overflow-x-auto scroll-x shrink-0" style="border-top:1px solid var(--line)">
-            <button class="canned chip surface-hover cursor-pointer shrink-0">الصورة غير واضحة</button>
-            <button class="canned chip surface-hover cursor-pointer shrink-0">تم استلام الدفع ✅</button>
-            <button class="canned chip surface-hover cursor-pointer shrink-0">سأبدأ معاملتك الآن</button>
-            <button class="canned chip surface-hover cursor-pointer shrink-0">Forward the OTP please</button>
+            <button class="canned chip surface-hover cursor-pointer shrink-0" data-i18n="officer.chat.canned_unclear">الصورة غير واضحة — أعد الإرسال</button>
+            <button class="canned chip surface-hover cursor-pointer shrink-0" data-i18n="officer.chat.canned_paid">تم استلام الدفع ✅</button>
+            <button class="canned chip surface-hover cursor-pointer shrink-0" data-i18n="officer.chat.canned_starting">سأبدأ معاملتك الآن</button>
+            <button class="canned chip surface-hover cursor-pointer shrink-0" data-i18n="officer.chat.canned_otp">أرسل لنا رمز التحقق عند وصوله</button>
           </div>
           <form id="officerSend" class="p-2.5 flex gap-2 shrink-0" style="border-top:1px solid var(--line)">
-            <button type="button" class="icon-btn" data-tip="Attach">📎</button>
-            <input id="officerInput" class="input" style="flex:1;border-radius:999px;height:38px" placeholder="Type a reply…"/>
+            <button type="button" class="icon-btn" data-i18n-title="officer.chat.attach" title="إرفاق">📎</button>
+            <input id="officerInput" class="input" style="flex:1;border-radius:999px;height:38px" data-i18n-ph="officer.chat.reply_placeholder" placeholder="اكتب رداً…"/>
             <button type="submit" class="btn btn-primary" style="width:38px;height:38px;border-radius:999px;padding:0;justify-content:center">
               <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
@@ -595,7 +614,7 @@
   <div class="surface-pop w-full max-w-xl overflow-hidden scale-in" style="background:var(--surface)">
     <div class="flex items-center gap-2 px-4 h-12" style="border-bottom:1px solid var(--line)">
       <svg class="w-4 h-4" style="color:var(--text-mute)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
-      <input id="cmdInput" class="flex-1 bg-transparent outline-none text-[14px]" placeholder="Search a request, claim next, change theme…" autocomplete="off"/>
+      <input id="cmdInput" class="flex-1 bg-transparent outline-none text-[14px]" data-i18n-ph="officer.cmd.placeholder" placeholder="ابحث عن طلب، أرسل عرضاً، غيّر المظهر…" autocomplete="off"/>
       <span class="kbd">Esc</span>
     </div>
     <div id="cmdResults" class="max-h-[50vh] overflow-y-auto scroll-y p-2"></div>
@@ -607,24 +626,45 @@
   </div>
 </div>
 
+<!-- OFFICE SETTINGS -->
+<div id="settingsOverlay" class="hidden fixed inset-0 z-50 overlay grid place-items-center p-4">
+  <div class="surface-pop w-full max-w-md overflow-hidden scale-in">
+    <div class="px-5 py-3 flex items-center" style="border-bottom:1px solid var(--line)">
+      <div class="font-bold text-[14px]" data-i18n="settings.title">إعدادات المكتب</div>
+      <button id="closeSettings" class="icon-btn ms-auto">✕</button>
+    </div>
+    <form id="settingsForm" class="p-5 space-y-4 text-[13px]">
+      <div>
+        <label class="block mb-1 font-semibold" data-i18n="settings.default_fee_label">الرسوم الافتراضية للخدمة (ر.ع)</label>
+        <input id="settingsDefaultFee" type="number" step="0.001" min="0" max="500" class="input w-full" required />
+        <div class="mt-1 text-[11px]" style="color:var(--text-mute)" data-i18n="settings.default_fee_help">تُطبَّق تلقائياً على كل عرض سريع. يمكن تعديلها لكل طلب عند الحاجة.</div>
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button type="button" id="cancelSettings" class="btn btn-secondary" data-i18n="actions.cancel">إلغاء</button>
+        <button type="submit" class="btn btn-primary" data-i18n="settings.save">حفظ الإعدادات</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- HELP -->
 <div id="helpOverlay" class="hidden fixed inset-0 z-50 overlay grid place-items-center p-4">
   <div class="surface-pop w-full max-w-md overflow-hidden scale-in">
     <div class="px-5 py-3 flex items-center" style="border-bottom:1px solid var(--line)">
-      <div class="font-bold text-[14px]">Keyboard shortcuts</div>
+      <div class="font-bold text-[14px]" data-i18n="officer.help.title">اختصارات لوحة المفاتيح</div>
       <button id="closeHelp" class="icon-btn ms-auto">✕</button>
     </div>
     <div class="p-5 grid grid-cols-1 gap-2 text-[12.5px]" id="shortcutsList">
-      <div class="flex justify-between items-center"><span>Command palette</span><span class="kbd">⌘K</span></div>
-      <div class="flex justify-between items-center"><span>Focus filter</span><span class="kbd">/</span></div>
-      <div class="flex justify-between items-center"><span>Claim next</span><span class="kbd">C</span></div>
-      <div class="flex justify-between items-center"><span>Navigate cards</span><span><span class="kbd">J</span> <span class="kbd">K</span></span></div>
-      <div class="flex justify-between items-center"><span>Open selected</span><span class="kbd">Enter</span></div>
-      <div class="flex justify-between items-center"><span>Toggle chat drawer</span><span class="kbd">T</span></div>
-      <div class="flex justify-between items-center"><span>Request OTP</span><span class="kbd">O</span></div>
-      <div class="flex justify-between items-center"><span>Refresh</span><span class="kbd">R</span></div>
-      <div class="flex justify-between items-center"><span>Dark mode</span><span class="kbd">⌘D</span></div>
-      <div class="flex justify-between items-center"><span>Close overlay</span><span class="kbd">Esc</span></div>
+      <div class="flex justify-between items-center"><span data-i18n="officer.help.cmd_palette">لوحة الأوامر</span><span class="kbd">⌘K</span></div>
+      <div class="flex justify-between items-center"><span data-i18n="officer.help.focus_filter">تركيز على البحث</span><span class="kbd">/</span></div>
+      <div class="flex justify-between items-center"><span data-i18n="officer.help.send_next">إرسال عرض للطلب التالي</span><span class="kbd">C</span></div>
+      <div class="flex justify-between items-center"><span data-i18n="officer.help.nav_cards">تنقّل بين الطلبات</span><span><span class="kbd">J</span> <span class="kbd">K</span></span></div>
+      <div class="flex justify-between items-center"><span data-i18n="officer.help.open_selected">فتح المحدد</span><span class="kbd">Enter</span></div>
+      <div class="flex justify-between items-center"><span data-i18n="officer.help.toggle_chat">إظهار/إخفاء المحادثة</span><span class="kbd">T</span></div>
+      <div class="flex justify-between items-center"><span data-i18n="officer.help.request_otp">طلب رمز OTP</span><span class="kbd">O</span></div>
+      <div class="flex justify-between items-center"><span data-i18n="actions.refresh">تحديث</span><span class="kbd">R</span></div>
+      <div class="flex justify-between items-center"><span data-i18n="officer.help.dark">الوضع الداكن</span><span class="kbd">⌘D</span></div>
+      <div class="flex justify-between items-center"><span data-i18n="officer.help.close_overlay">إغلاق النافذة</span><span class="kbd">Esc</span></div>
     </div>
   </div>
 </div>
@@ -634,7 +674,9 @@
 <script>
 (function(){
   // ─ State ─
-  let officerId = Number(localStorage.getItem('sanad.officer') || 1);
+  // Real identity is hydrated from /api/auth/me on boot.
+  let currentOfficer = null;
+  let currentOffice = null;
   let currentRequestId = null;
   let lastChatMsgId = 0;
   let selectedCardIdx = 0;
@@ -649,10 +691,46 @@
   let lastMsgIdSeen = 0;
 
   async function api(path, opts={}) {
-    const headers = Object.assign({ 'x-officer-id': String(officerId), 'content-type':'application/json' }, opts.headers || {});
-    const res = await fetch(path, Object.assign({}, opts, { headers }));
+    const headers = Object.assign({ 'content-type':'application/json' }, opts.headers || {});
+    const res = await fetch(path, Object.assign({ credentials: 'include' }, opts, { headers }));
+    if (res.status === 401) {
+      window.location.href = '/office-login.html?next=' + encodeURIComponent(location.pathname);
+      throw new Error('not_signed_in');
+    }
+    if (res.status === 403) {
+      const body = await res.json().catch(() => ({}));
+      if (body.error === 'office_not_active') {
+        // Redirect to a friendly "pending review" view.
+        showPendingReview(body.office_status);
+        throw new Error('office_' + body.office_status);
+      }
+    }
     if (!res.ok) throw new Error(res.status + ' ' + await res.text().catch(()=>''));
     return res.json();
+  }
+
+  function showPendingReview(status) {
+    const body = document.body;
+    body.innerHTML = `
+      <div style="min-height:100vh;display:grid;place-items:center;padding:40px;font-family:Inter,sans-serif;background:linear-gradient(180deg,#fbf8f3,#f5efe4)">
+        <div style="max-width:520px;background:white;padding:40px;border-radius:20px;box-shadow:0 20px 40px -18px rgba(14,124,134,.3);text-align:center">
+          <div style="font-size:48px;margin-bottom:12px">${status === 'suspended' ? '⛔' : status === 'rejected' ? '❌' : '⏳'}</div>
+          <h1 style="font-size:28px;font-weight:800;margin-bottom:12px">
+            ${status === 'suspended' ? 'Your office is suspended' :
+              status === 'rejected' ? 'Your office application was rejected' :
+              'Pending review'}
+          </h1>
+          <p style="color:#475569;line-height:1.6;margin-bottom:24px">
+            ${status === 'suspended' ? 'Contact the Sanad-AI team to restore access.' :
+              status === 'rejected' ? 'Please contact the Sanad-AI team for details.' :
+              'Your office is under review by the Sanad-AI team. We will email you when approved — usually within 1–2 business days.'}
+          </p>
+          <button onclick="fetch('/api/auth/logout',{method:'POST',credentials:'include'}).then(()=>location.href='/office-login.html')"
+            style="padding:10px 24px;background:linear-gradient(135deg,#0e7c86,#126e3d);color:white;border-radius:10px;font-weight:700;border:0;cursor:pointer">
+            Sign out
+          </button>
+        </div>
+      </div>`;
   }
 
   const isAr = s => /[\u0600-\u06FF]/.test(s || '');
@@ -682,17 +760,39 @@
     return '';
   };
 
-  // ─ Officers picker ─
-  function seedOfficers() {
-    const opts = [
-      { id:1, name:'Khalid Al-Harthy · Al-Nahdha' },
-      { id:2, name:'Noor Al-Amri · Al-Nahdha' },
-      { id:3, name:'Hassan Al-Zadjali · Seeb' }
-    ];
-    const sel = document.getElementById('officerPick');
-    sel.innerHTML = opts.map(o => `<option value="${o.id}" ${o.id===officerId?'selected':''}>${o.name}</option>`).join('');
-    sel.onchange = () => { officerId = Number(sel.value); localStorage.setItem('sanad.officer', officerId); loadInbox(); };
+  // ─ Auth bootstrap ─
+  async function bootAuth() {
+    const r = await fetch('/api/auth/me', { credentials: 'include' });
+    if (!r.ok) {
+      window.location.href = '/office-login.html?next=' + encodeURIComponent(location.pathname);
+      return false;
+    }
+    const { officer } = await r.json();
+    if (!officer) {
+      window.location.href = '/office-login.html?next=' + encodeURIComponent(location.pathname);
+      return false;
+    }
+    currentOfficer = officer;
+    currentOffice = officer.office;
+    const nameEl = document.getElementById('whoami_name');
+    const roleEl = document.getElementById('whoami_role');
+    const whoWrap = document.getElementById('whoami');
+    if (nameEl) nameEl.textContent = `${officer.full_name} · ${officer.office.name_en || ''}`;
+    if (roleEl) roleEl.textContent = officer.role;
+    if (whoWrap) whoWrap.classList.remove('hidden');
+    // Pending-review gate — show friendly screen instead of loading the dashboard.
+    if (officer.office.status && officer.office.status !== 'active') {
+      showPendingReview(officer.office.status);
+      return false;
+    }
+    return true;
   }
+  document.addEventListener('click', e => {
+    if (e.target.closest('#logoutBtn')) {
+      fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+        .finally(() => window.location.href = '/office-login.html');
+    }
+  });
 
   // ─ KPIs / counts ─
   function updateKPIs() {
@@ -716,8 +816,8 @@
 
   function highlightFilter() {
     document.querySelectorAll('[data-filter]').forEach(b => b.classList.toggle('active', b.getAttribute('data-filter') === filterMode));
-    const titles = { all:'All requests', ready:'Marketplace', mine:'Claimed by me', waiting:'Waiting on citizen', sla:'SLA at risk', done:'Completed' };
-    document.getElementById('inboxTitle').textContent = titles[filterMode] || 'Requests';
+    const keys = { all:'officer.title.all', ready:'officer.title.mkt', mine:'officer.title.mine', waiting:'officer.title.waiting', sla:'officer.title.sla', done:'officer.title.done' };
+    document.getElementById('inboxTitle').textContent = t(keys[filterMode] || 'officer.title.all');
   }
 
   function currentList() {
@@ -743,11 +843,29 @@
     const name = pickName(r) || '(service)';
     const ent = r.entity_en || '';
     const claimable = r.status === 'ready';
+    const alreadyQuoted = r.my_offer_status === 'pending';
     const unread = unreadChats.get(r.id) || 0;
     const claimedAt = r.claimed_at ? new Date(r.claimed_at.replace(' ','T')+'Z').getTime() : null;
     const slaMs = claimedAt ? Math.max(0, 2*3600*1000 - (Date.now() - claimedAt)) : null;
     const slaText = slaMs != null ? (slaMs > 0 ? Math.floor(slaMs/60000)+'m SLA' : 'BREACH') : null;
     const slaPct = slaMs != null ? (slaMs/(2*3600*1000))*100 : null;
+
+    // Pricing shown on the card:
+    //   • market (not yet awarded) → show effective office fee + effective gov fee = quote
+    //       ◦ effective office fee = per-service override (office_fee_override) if the
+    //         office saved one on /pricing, else office default (default_office_fee_omr)
+    //       ◦ effective gov fee    = catalog fee (admin-owned), unless the office also
+    //         overrode it locally (government_fee_override) — rare; exposed for safety
+    //   • mine (awarded)           → show the accepted quoted_fee_omr
+    const orgDefault = Number((allInbox?.office?.default_office_fee_omr ?? allInbox?.settings?.default_office_fee_omr) || 0);
+    const officeFee = r.office_fee_override != null ? Number(r.office_fee_override) : orgDefault;
+    const govFee    = r.government_fee_override != null ? Number(r.government_fee_override) : Number(r.catalog_fee_omr || 0);
+    const totalQuote = officeFee + govFee;
+    const displayFee = claimable
+      ? (alreadyQuoted ? Number(r.my_offer_fee || 0) : totalQuote)
+      : Number(r.quoted_fee_omr || r.fee_omr || 0);
+    const hasOverride = r.office_fee_override != null;
+
     return `
       <li class="card" data-req="${r.id}" data-idx="${idx}">
         <div class="flex items-start gap-3">
@@ -755,11 +873,12 @@
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-1.5 flex-wrap">
               <span class="chip ${entChip(ent)} chip-sm">${ent || '—'}</span>
-              ${claimable ? '<span class="chip chip-warn chip-sm">⏱ ready</span>' : ''}
-              ${r.status === 'in_progress' ? '<span class="chip chip-brand chip-sm">on portal</span>' : ''}
-              ${r.status === 'claimed' ? '<span class="chip chip-cyan chip-sm">claimed</span>' : ''}
-              ${r.status === 'completed' ? '<span class="chip chip-ok chip-sm">✓ done</span>' : ''}
-              ${unread ? `<span class="chip chip-bad chip-sm">${unread} new</span>` : ''}
+              ${claimable && !alreadyQuoted ? `<span class="chip chip-warn chip-sm">⏱ ${t('status.ready')}</span>` : ''}
+              ${alreadyQuoted ? `<span class="chip chip-cyan chip-sm">⏳ ${t('offer.waiting_citizen')}</span>` : ''}
+              ${r.status === 'in_progress' ? `<span class="chip chip-brand chip-sm">${t('officer.chip.on_portal')}</span>` : ''}
+              ${r.status === 'claimed' ? `<span class="chip chip-cyan chip-sm">${t('status.claimed')}</span>` : ''}
+              ${r.status === 'completed' ? `<span class="chip chip-ok chip-sm">✓ ${t('status.completed')}</span>` : ''}
+              ${unread ? `<span class="chip chip-bad chip-sm">${unread} ${t('officer.chip.new')}</span>` : ''}
             </div>
             <div class="mt-1 font-semibold text-[13px] truncate" ${isAr(name)?'dir="rtl"':''}>${name}</div>
             <div class="mt-1 flex items-center gap-2 text-[11px]" style="color:var(--text-mute)">
@@ -770,16 +889,37 @@
               <span>${relativeTime(r.created_at)}</span>
             </div>
             <div class="mt-1.5 flex items-center gap-2 flex-wrap">
-              <span class="text-[11.5px] font-semibold mono">${r.fee_omr?.toFixed ? r.fee_omr.toFixed(3) : r.fee_omr} OMR</span>
+              ${claimable && !alreadyQuoted
+                ? `<div class="flex items-center gap-1.5" data-tip="${t('offer.my_price')} + ${t('offer.gov_price')}">
+                     <input type="number" step="0.1" min="0" max="500"
+                            value="${officeFee.toFixed(3)}"
+                            data-office-fee-input="${r.id}"
+                            title="${t('offer.my_price')}"
+                            class="mono text-center"
+                            style="width:56px;height:26px;font-size:11.5px;border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:0 4px"/>
+                     <span class="text-[11px]" style="color:var(--text-mute)">+</span>
+                     <input type="number" step="0.1" min="0" max="500"
+                            value="${govFee.toFixed(3)}"
+                            data-gov-fee-input="${r.id}"
+                            title="${t('offer.gov_price')}"
+                            class="mono text-center"
+                            style="width:56px;height:26px;font-size:11.5px;border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:0 4px"/>
+                     <span class="text-[11.5px] font-semibold mono" data-total-fee="${r.id}">= ${totalQuote.toFixed(3)} ${t('officer.omr')}</span>
+                     ${hasOverride ? `<span class="chip chip-sm" style="background:var(--brand-soft);color:var(--brand-dark)">${t('pricing.custom_badge')}</span>` : ''}
+                   </div>`
+                : `<span class="text-[11.5px] font-semibold mono" data-tip="${t('offer.my_price')}: ${officeFee.toFixed(3)} + ${t('offer.gov_price')}: ${govFee.toFixed(3)}">${displayFee.toFixed ? displayFee.toFixed(3) : displayFee} ${t('officer.omr')}</span>`
+              }
               ${slaText ? `<span class="chip ${slaMs > 600000 ? '' : slaMs > 0 ? 'chip-warn' : 'chip-bad'} chip-sm">${slaText}</span>` : ''}
               <div class="ms-auto flex items-center gap-1">
                 ${claimable
-                  ? `<button data-claim="${r.id}" class="btn btn-primary" style="height:28px;padding:0 11px;font-size:11.5px">⚡ Claim</button>`
+                  ? (alreadyQuoted
+                      ? `<button data-withdraw="${r.id}" class="btn btn-secondary" data-tip="${t('offer.withdraw')}" style="height:28px;padding:0 11px;font-size:11.5px">${t('offer.withdraw')}</button>`
+                      : `<button data-send-quote="${r.id}" class="btn btn-primary" style="height:28px;padding:0 11px;font-size:11.5px">⚡ ${t('offer.send_quote')}</button>`)
                   : r.status === 'completed'
-                    ? `<button data-open="${r.id}" class="btn btn-secondary" style="height:28px;padding:0 11px;font-size:11.5px">View</button>`
-                    : `<button data-complete="${r.id}" class="btn" data-tip="Mark complete" style="height:28px;width:28px;padding:0;justify-content:center;background:rgba(16,185,129,.12);color:rgb(5,120,87)">✓</button>
-                       <button data-release="${r.id}" class="btn btn-secondary" data-tip="Release" style="height:28px;width:28px;padding:0;justify-content:center">↩</button>
-                       <button data-open="${r.id}" class="btn btn-primary" style="height:28px;padding:0 11px;font-size:11.5px">Open →</button>`
+                    ? `<button data-open="${r.id}" class="btn btn-secondary" style="height:28px;padding:0 11px;font-size:11.5px">${t('actions.open')}</button>`
+                    : `<button data-complete="${r.id}" class="btn" data-tip="${t('actions.complete')}" style="height:28px;width:28px;padding:0;justify-content:center;background:rgba(16,185,129,.12);color:rgb(5,120,87)">✓</button>
+                       <button data-release="${r.id}" class="btn btn-secondary" data-tip="${t('actions.release')}" style="height:28px;width:28px;padding:0;justify-content:center">↩</button>
+                       <button data-open="${r.id}" class="btn btn-primary" style="height:28px;padding:0 11px;font-size:11.5px">${t('actions.open')} →</button>`
                 }
               </div>
             </div>
@@ -811,7 +951,24 @@
     try {
       allInbox = await api('/api/officer/inbox');
       document.getElementById('officerSub').textContent = `${allInbox.me.full_name} · ${allInbox.me.role}`;
-    } catch (e) { Sanad.toast('Inbox load failed', 'err'); return; }
+      // Update credits + subscription badge in topbar.
+      const cr = allInbox.credits || {};
+      const cEl = document.getElementById('creditsCount');
+      const sEl = document.getElementById('subStatus');
+      if (cEl) cEl.textContent = String(cr.remaining ?? 0);
+      if (sEl) {
+        const st = cr.subscription_status || 'none';
+        sEl.textContent = st;
+        // Red when no active sub; yellow when low balance; green otherwise.
+        if (st !== 'active') {
+          sEl.style.background = '#fee2e2'; sEl.style.color = '#991b1b';
+        } else if ((cr.remaining || 0) <= 5) {
+          sEl.style.background = '#fef3c7'; sEl.style.color = '#92400e';
+        } else {
+          sEl.style.background = 'var(--brand-soft)'; sEl.style.color = 'var(--brand-dark)';
+        }
+      }
+    } catch (e) { Sanad.toast(I18N.lang === 'ar' ? 'فشل تحميل القائمة' : 'Inbox load failed', 'err'); return; }
 
     updateKPIs();
     highlightFilter();
@@ -822,8 +979,8 @@
     if (!list.length) {
       inbox.innerHTML = `<div class="empty" style="padding:40px 24px">
         <div class="empty-icon">📭</div>
-        <div class="empty-title">Nothing here</div>
-        <div class="empty-desc">Try a different filter, or open the citizen chat to create a test request.</div>
+        <div class="empty-title">${t('officer.empty_title')}</div>
+        <div class="empty-desc">${t('officer.empty_desc')}</div>
       </div>`;
     } else {
       inbox.innerHTML = list.map((r, i) => cardHtml(r, i)).join('');
@@ -832,23 +989,72 @@
     inbox.querySelectorAll('[data-req]').forEach(li => {
       li.addEventListener('click', e => {
         if (e.target.closest('button')) return;   // any button click handles its own action
+        if (e.target.closest('input'))  return;   // inline fee editor — don't open detail
         openDetail(li.getAttribute('data-req'));
       });
     });
 
-    // Quick-action buttons on cards
-    inbox.querySelectorAll('[data-claim]').forEach(b => {
+    // Inline fee editor — recompute the "= total" label live as the officer
+    // tweaks either fee. Stops propagation so the card itself doesn't open.
+    inbox.querySelectorAll('[data-office-fee-input], [data-gov-fee-input]').forEach(inp => {
+      inp.addEventListener('click', e => e.stopPropagation());
+      inp.addEventListener('input', () => {
+        const id = inp.getAttribute('data-office-fee-input') || inp.getAttribute('data-gov-fee-input');
+        const card = inp.closest('[data-req]');
+        if (!card) return;
+        const of = Number(card.querySelector(`[data-office-fee-input="${id}"]`)?.value || 0);
+        const gf = Number(card.querySelector(`[data-gov-fee-input="${id}"]`)?.value || 0);
+        const tot = card.querySelector(`[data-total-fee="${id}"]`);
+        if (tot) tot.textContent = '= ' + (of + gf).toFixed(3) + ' ' + t('officer.omr');
+      });
+    });
+
+    // Quick-action buttons on cards — Send Quote reads from the inline
+    // fee inputs on the same card, so the officer can tweak the margin
+    // before hitting ⚡. Empty / NaN values default to 0.
+    // Posts { office_fee_omr, government_fee_omr } to /api/officer/request/:id/offer.
+    // Offer stays 'pending' until the citizen accepts.
+    inbox.querySelectorAll('[data-send-quote]').forEach(b => {
       b.addEventListener('click', async e => {
         e.stopPropagation();
-        const id = b.getAttribute('data-claim');
-        try {
-          await api('/api/officer/claim/' + id, { method:'POST' });
-          Sanad.toast('✅ Claimed R-' + id, 'ok', 1800);
-          await loadInbox();
-          openDetail(id);
-        } catch (err) {
-          Sanad.toast(err.message.includes('409') ? 'Already claimed by another office' : 'Claim failed', err.message.includes('409') ? 'warn' : 'err');
+        const id = b.getAttribute('data-send-quote');
+        const card = b.closest('[data-req]');
+        const office_fee_omr = Number(card?.querySelector(`[data-office-fee-input="${id}"]`)?.value || 0);
+        const government_fee_omr = Number(card?.querySelector(`[data-gov-fee-input="${id}"]`)?.value || 0);
+        if (!(office_fee_omr + government_fee_omr > 0)) {
+          Sanad.toast(t('offer.default_fee') + ' = 0', 'warn', 1800); return;
         }
+        b.disabled = true; b.style.opacity = '.7';
+        try {
+          await api('/api/officer/request/' + id + '/offer', {
+            method:'POST',
+            body: JSON.stringify({ office_fee_omr, government_fee_omr })
+          });
+          Sanad.toast('✅ ' + t('officer.quote_sent'), 'ok', 2000);
+          await loadInbox();
+        } catch (err) {
+          const msg = err.message || '';
+          if (msg.includes('402')) {
+            Sanad.toast(msg.includes('no_credits') ? t('officer.no_credits') : t('officer.no_subscription'), 'warn', 2400);
+          } else if (msg.includes('409')) {
+            Sanad.toast(t('offer.locked_pending'), 'warn', 2400);
+          } else {
+            Sanad.toast(t('officer.quote_failed'), 'err', 2200);
+          }
+          b.disabled = false; b.style.opacity = '1';
+        }
+      });
+    });
+    // Withdraw a still-pending quote.
+    inbox.querySelectorAll('[data-withdraw]').forEach(b => {
+      b.addEventListener('click', async e => {
+        e.stopPropagation();
+        const id = b.getAttribute('data-withdraw');
+        try {
+          await api('/api/officer/request/' + id + '/offer/withdraw', { method:'POST' });
+          Sanad.toast('↩ ' + t('offer.withdraw'), 'info', 1600);
+          await loadInbox();
+        } catch { Sanad.toast(t('officer.quote_failed'), 'err', 1800); }
       });
     });
     inbox.querySelectorAll('[data-open]').forEach(b => {
@@ -1123,9 +1329,9 @@
 
   function renderTimeline(r, messages) {
     const events = [];
-    events.push({ t:r.created_at, label:'Request created', icon:'🌱' });
-    if (r.claimed_at) events.push({ t:r.claimed_at, label:'Claimed by officer', icon:'👤' });
-    if (r.completed_at) events.push({ t:r.completed_at, label:'Completed', icon:'✅' });
+    events.push({ t:r.created_at, label: I18N.lang === 'ar' ? 'تم إنشاء الطلب' : 'Request created', icon:'🌱' });
+    if (r.claimed_at) events.push({ t:r.claimed_at, label: I18N.lang === 'ar' ? 'تم الاستلام من قِبل المكتب' : 'Claimed by officer', icon:'👤' });
+    if (r.completed_at) events.push({ t:r.completed_at, label:t('status.completed'), icon:'✅' });
     const msgCount = messages.filter(m => m.actor_type === 'citizen').length;
     events.push({ t:r.last_event_at || r.created_at, label:`${msgCount} citizen messages`, icon:'💬' });
     document.getElementById('timelineContent').innerHTML = `
@@ -1140,41 +1346,40 @@
   }
 
   function renderContext(r, data) {
+    const anon = r.anonymized || !r.citizen_name;
     document.getElementById('contextContent').innerHTML = `
       <div>
-        <div class="text-[10px] font-bold uppercase tracking-wider mb-2" style="color:var(--text-mute)">Citizen</div>
+        <div class="text-[10px] font-bold uppercase tracking-wider mb-2" style="color:var(--text-mute)">${t('chat.title').includes('citizen') || t('chat.title').includes('tizen') ? 'Citizen' : 'المواطن'}</div>
         <div class="flex items-center gap-3">
-          <div class="avatar avatar-md with-presence" style="background:${avatarGradient(r.citizen_id)}">${(r.citizen_name||'C').charAt(0)}</div>
+          <div class="avatar avatar-md with-presence" style="background:${avatarGradient(r.citizen_id)}">${(r.citizen_name||'·').charAt(0)}</div>
           <div class="min-w-0">
-            <div class="font-bold text-[13px] truncate">${r.citizen_name || 'Citizen'}</div>
+            <div class="font-bold text-[13px] truncate">${r.citizen_name || (anon ? '—' : 'Citizen')}</div>
             <div class="text-[11px]" style="color:var(--text-mute)">${r.citizen_phone || '—'}</div>
           </div>
         </div>
       </div>
       <div style="border-top:1px solid var(--line);padding-top:16px">
-        <div class="text-[10px] font-bold uppercase tracking-wider mb-2" style="color:var(--text-mute)">Documents</div>
+        <div class="text-[10px] font-bold uppercase tracking-wider mb-2" style="color:var(--text-mute)">${t('officer.tab.docs')}</div>
         <div class="space-y-1.5 text-[12px]">
           ${data.documents.map(d => `
             <div class="flex items-center gap-2">
               <span class="w-1.5 h-1.5 rounded-full" style="background:${d.status==='verified'?'var(--ok)':d.status==='rejected'?'var(--bad)':'var(--text-mute)'}"></span>
               <span class="truncate flex-1">${d.label || d.doc_code}</span>
-              <span class="text-[10.5px]" style="color:var(--text-mute)">${d.status}</span>
-            </div>`).join('') || '<div class="text-[11px]" style="color:var(--text-mute);font-style:italic">No docs</div>'}
+              <span class="text-[10.5px]" style="color:var(--text-mute)">${t('status.'+d.status, d.status)}</span>
+            </div>`).join('') || '<div class="text-[11px]" style="color:var(--text-mute);font-style:italic">—</div>'}
         </div>
       </div>
       <div style="border-top:1px solid var(--line);padding-top:16px">
-        <div class="text-[10px] font-bold uppercase tracking-wider mb-2" style="color:var(--text-mute)">Quick info</div>
         <div class="space-y-1.5 text-[12px]">
-          <div class="flex justify-between"><span style="color:var(--text-mute)">Status</span><span class="font-semibold">${r.status}</span></div>
-          <div class="flex justify-between"><span style="color:var(--text-mute)">Created</span><span class="mono text-[11px]">${relativeTime(r.created_at)}</span></div>
-          ${r.claimed_at ? `<div class="flex justify-between"><span style="color:var(--text-mute)">Claimed</span><span class="mono text-[11px]">${relativeTime(r.claimed_at)}</span></div>` : ''}
-          <div class="flex justify-between"><span style="color:var(--text-mute)">Fee</span><span class="font-bold mono">${r.fee_omr} OMR</span></div>
+          <div class="flex justify-between"><span style="color:var(--text-mute)">${t('status.'+r.status, r.status).length ? t('officer.tab.overview') : ''}</span><span class="font-semibold">${t('status.'+r.status, r.status)}</span></div>
+          ${r.claimed_at ? `<div class="flex justify-between"><span style="color:var(--text-mute)">${t('status.claimed')}</span><span class="mono text-[11px]">${relativeTime(r.claimed_at)}</span></div>` : ''}
+          <div class="flex justify-between"><span style="color:var(--text-mute)">${t('officer.sc.fee_label')}</span><span class="font-bold mono">${r.fee_omr || 0} ${t('officer.omr')}</span></div>
         </div>
       </div>
       <div style="border-top:1px solid var(--line);padding-top:16px">
         <button onclick="document.getElementById('toggleChat').click()" class="btn btn-primary w-full justify-center">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-1.9 5.4 8.5 8.5 0 01-14.2-3A8.5 8.5 0 0111 3a8.5 8.5 0 018.1 6"/></svg>
-          Open chat
+          ${t('officer.open_chat')}
           <span class="kbd" style="background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.35);color:white">T</span>
         </button>
       </div>`;
@@ -1183,18 +1388,65 @@
   function renderActions(r) {
     const host = document.getElementById('detailActions');
     const btns = [];
-    if (!r.officer_id) btns.push(`<button data-act="claim" class="btn btn-primary">Claim</button>`);
-    else {
-      btns.push(`<button data-act="release" class="btn btn-secondary">Release</button>`);
-      btns.push(`<button data-act="complete" class="btn btn-primary" style="background:linear-gradient(135deg,#10b981,#059669)">✓ Complete</button>`);
+    // Anonymized marketplace entry → show Submit Quote (or Update if we already quoted).
+    if (r.anonymized || r.status === 'ready') {
+      const label = r.my_offer
+        ? `${t('offer.update_quote')} (${Number(r.my_offer.quoted_fee_omr).toFixed(3)} ${t('officer.omr')})`
+        : t('offer.send_quote');
+      btns.push(`<button data-act="quote" class="btn btn-primary">${label}</button>`);
+      if (r.my_offer) btns.push(`<button data-act="withdraw" class="btn btn-secondary">${t('offer.withdraw')}</button>`);
+      if (r.my_offer) btns.push(`<span class="text-[11px] px-2 py-1 rounded-lg" style="background:var(--warn-soft, #fef3c7);color:#92400e">⏳ ${t('offer.locked_pending')}</span>`);
+      else btns.push(`<span class="text-[11px] px-2 py-1 rounded-lg" style="background:var(--surface-3);color:var(--text-mute)">ℹ ${t('offer.not_claimed_yet')}</span>`);
+      // Hint: show the government fee from the catalog so the office knows
+      // the default قيمة المعاملة before opening the modal.
+      if (r.catalog_fee_omr != null) {
+        btns.push(`<span class="text-[11px] px-2 py-1 rounded-lg" style="background:var(--surface-3);color:var(--text-mute)">
+          قيمة المعاملة (govt): <b>${Number(r.catalog_fee_omr).toFixed(3)}</b> ر.ع
+        </span>`);
+      }
+    } else {
+      // We won this request → full actions.
+      btns.push(`<button data-act="release" class="btn btn-secondary">${t('actions.release')}</button>`);
+      btns.push(`<button data-act="complete" class="btn btn-primary" style="background:linear-gradient(135deg,#10b981,#059669)">✓ ${t('actions.complete')}</button>`);
     }
     host.innerHTML = btns.join('');
     host.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', async () => {
       const a = b.getAttribute('data-act');
       try {
-        if (a === 'claim') { await api('/api/officer/claim/' + r.id, { method:'POST' }); Sanad.toast('Claimed', 'ok'); }
-        if (a === 'release') { await api('/api/officer/request/' + r.id + '/release', { method:'POST' }); Sanad.toast('Released', 'info'); }
-        if (a === 'complete') { await api('/api/officer/request/' + r.id + '/complete', { method:'POST' }); Sanad.toast('Completed ✓', 'ok'); }
+        if (a === 'quote') {
+          // Two-part pricing:
+          //   office_fee_omr     = the office's margin
+          //   government_fee_omr = قيمة المعاملة (actual gov service fee)
+          // Citizen sees both lines separately so they can compare fairly.
+          const catalogGovFee = r.catalog_fee_omr != null ? Number(r.catalog_fee_omr) : 0;
+          const defaultOfficeFee = Number(allInbox?.office?.default_office_fee_omr ?? 5);
+          const officeStr = prompt(t('offer.my_price') + ' (' + t('officer.omr') + ')',
+            r.my_offer ? String(r.my_offer.office_fee_omr ?? r.my_offer.quoted_fee_omr) : defaultOfficeFee.toFixed(3));
+          if (officeStr === null) return;
+          const officeFee = Number(officeStr);
+          if (!(officeFee >= 0)) return Sanad.toast(t('offer.my_price'), 'err');
+          const govStr = prompt(t('offer.gov_price') + ' (' + t('officer.omr') + ')',
+            r.my_offer ? String(r.my_offer.government_fee_omr ?? 0) : String(catalogGovFee.toFixed(3)));
+          if (govStr === null) return;
+          const govFee = Number(govStr);
+          if (!(govFee >= 0)) return Sanad.toast(t('offer.gov_price'), 'err');
+          if (!(officeFee + govFee > 0)) return Sanad.toast(t('offer.total') + ' > 0', 'err');
+          await api('/api/officer/request/' + r.id + '/offer', {
+            method: 'POST',
+            body: JSON.stringify({
+              office_fee_omr: officeFee,
+              government_fee_omr: govFee
+            })
+          });
+          Sanad.toast(`${t('offer.total')}: ${(officeFee+govFee).toFixed(3)} ${t('officer.omr')}`, 'ok', 2400);
+        }
+        if (a === 'withdraw') {
+          if (!confirm(t('offer.withdraw') + '?')) return;
+          await api('/api/officer/request/' + r.id + '/offer/withdraw', { method:'POST' });
+          Sanad.toast('↩ ' + t('offer.withdraw'), 'info');
+        }
+        if (a === 'release') { await api('/api/officer/request/' + r.id + '/release', { method:'POST' }); Sanad.toast('↩ ' + t('actions.release'), 'info'); }
+        if (a === 'complete') { await api('/api/officer/request/' + r.id + '/complete', { method:'POST' }); Sanad.toast('✓ ' + t('actions.complete'), 'ok'); }
         await openDetail(r.id);
         await loadInbox();
       } catch (e) { Sanad.toast(e.message, 'err'); }
@@ -1287,7 +1539,8 @@
     if (!text) return;
     await fetch('/api/officer/request/' + currentRequestId + '/message', {
       method:'POST',
-      headers:{'content-type':'application/json','x-officer-id':String(officerId)},
+      credentials: 'include',
+      headers:{'content-type':'application/json'},
       body: JSON.stringify({ text })
     });
     document.getElementById('officerInput').value = '';
@@ -1312,14 +1565,55 @@
   document.getElementById('vmGrid').addEventListener('click', () => setViewMode('grid'));
   document.getElementById('vmList').addEventListener('click', () => setViewMode('list'));
   document.getElementById('quickClaim').addEventListener('click', () => {
-    const first = document.querySelector('#inbox [data-claim]');
+    // Find the next marketplace card that we have NOT already quoted on.
+    const first = document.querySelector('#inbox [data-send-quote]');
     if (first) first.click();
-    else Sanad.toast('Nothing to claim right now', 'info', 1400);
+    else Sanad.toast(t('officer.nothing_to_send'), 'info', 1600);
   });
+  document.getElementById('openSettings').addEventListener('click', openSettingsModal);
 
   // ─ Command palette ─
   function openCmd() { document.getElementById('cmdOverlay').classList.remove('hidden'); document.getElementById('cmdInput').value=''; document.getElementById('cmdInput').focus(); renderCmd(''); }
   function closeCmd() { document.getElementById('cmdOverlay').classList.add('hidden'); }
+
+  // ─ Office settings modal ─
+  // Loads current default_office_fee_omr from the last-fetched inbox payload
+  // and saves via PATCH /api/office/settings (owner-only on the server).
+  function openSettingsModal() {
+    const cur = Number(
+      (allInbox?.settings?.default_office_fee_omr) ??
+      (allInbox?.office?.default_office_fee_omr) ?? 5
+    );
+    document.getElementById('settingsDefaultFee').value = cur.toFixed(3);
+    document.getElementById('settingsOverlay').classList.remove('hidden');
+    setTimeout(() => document.getElementById('settingsDefaultFee').focus(), 10);
+  }
+  function closeSettingsModal() {
+    document.getElementById('settingsOverlay').classList.add('hidden');
+  }
+  document.getElementById('closeSettings').addEventListener('click', closeSettingsModal);
+  document.getElementById('cancelSettings').addEventListener('click', closeSettingsModal);
+  document.getElementById('settingsOverlay').addEventListener('click', e => {
+    if (e.target.id === 'settingsOverlay') closeSettingsModal();
+  });
+  document.getElementById('settingsForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const fee = Number(document.getElementById('settingsDefaultFee').value);
+    if (!(fee >= 0) || !(fee <= 500) || !Number.isFinite(fee)) {
+      Sanad.toast('0 – 500', 'warn', 1400); return;
+    }
+    try {
+      await api('/api/office/settings', {
+        method: 'PATCH',
+        body: JSON.stringify({ default_office_fee_omr: fee })
+      });
+      Sanad.toast('✅ ' + t('settings.saved'), 'ok', 1600);
+      closeSettingsModal();
+      await loadInbox();   // refresh so cards re-render with the new default
+    } catch (err) {
+      Sanad.toast(err.message.includes('403') ? 'owner only' : t('officer.quote_failed'), 'err', 1800);
+    }
+  });
   const COMMANDS = [
     { id:'claim_next', label:'Claim next in marketplace', icon:'⚡', run:()=>document.getElementById('quickClaim').click() },
     { id:'filter_mine', label:'Filter: My claimed', icon:'📌', run:()=>{filterMode='mine';loadInbox();} },
@@ -1433,9 +1727,12 @@
   }
   setInterval(liveTick, 4000);
 
-  seedOfficers();
-  applyViewMode();
-  loadInbox();
+  (async () => {
+    const ok = await bootAuth();
+    if (!ok) return;
+    applyViewMode();
+    loadInbox();
+  })();
 })();
 </script>
 </body>

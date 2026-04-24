@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>سند · أسعار مكتبي</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          brand: { 50:'#f0fdfa',100:'#ccfbf1',400:'#2dd4bf',500:'#14b8a6',600:'#0d9488',700:'#0f766e' },
+          ink: { 950:'#020617',900:'#0b1220',800:'#0f172a',700:'#1e293b',600:'#334155',500:'#475569',400:'#64748b',300:'#94a3b8',200:'#cbd5e1',100:'#e2e8f0',50:'#f1f5f9' },
+          good:'#10b981', warn:'#f59e0b', bad:'#ef4444'
+        },
+        fontFamily: { sans:['Inter','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] }
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  /* tiny badge */
+  .chip { display:inline-flex; align-items:center; padding:2px 8px; border-radius:9999px; font-size:10.5px; font-weight:700; }
+  .row-edited input { border-color:#14b8a6; box-shadow:0 0 0 2px rgba(20,184,166,.15); }
+</style>
+</head>
+<body class="bg-ink-50 dark:bg-ink-950 text-ink-900 dark:text-ink-50 antialiased">
+
+<header class="flex items-center gap-3 h-14 px-3 md:px-4 border-b border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900 sticky top-0 z-40">
+  <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white grid place-items-center font-extrabold">﷼</div>
+  <div class="leading-none">
+    <div class="text-[13px] font-bold" data-i18n="pricing.title">أسعار مكتبي</div>
+    <div class="text-[10.5px] text-ink-400" id="subtitle" data-i18n="pricing.subtitle">قيمة المعاملة الحكومية تحدَّد من سند-AI. أنت تتحكم بهامش مكتبك فقط.</div>
+  </div>
+  <div class="ms-auto flex items-center gap-1.5">
+    <a href="/officer.html" class="px-2.5 h-8 rounded-lg hover:bg-ink-100 dark:hover:bg-ink-800 text-[12px] font-semibold flex items-center gap-1.5" data-i18n="pricing.nav.back">العودة للوحة</a>
+    <button id="langBtn" class="px-2.5 h-8 rounded-lg hover:bg-ink-100 dark:hover:bg-ink-800 text-[12px] font-semibold">EN</button>
+    <button id="themeBtn" class="p-2 rounded-lg hover:bg-ink-100 dark:hover:bg-ink-800" title="toggle theme">
+      <svg class="w-4 h-4 dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
+      <svg class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="max-w-5xl mx-auto p-4 md:p-6 space-y-5">
+
+  <!-- Default fee card -->
+  <section class="rounded-xl border border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900 p-4 flex flex-wrap items-end gap-4">
+    <div class="flex-1 min-w-[220px]">
+      <div class="text-[12.5px] font-bold" data-i18n="settings.default_fee_label">الرسوم الافتراضية للخدمة (ر.ع)</div>
+      <div class="text-[10.5px] text-ink-400 mt-0.5" data-i18n="pricing.set_default">تعيين الافتراضي لكل الخدمات</div>
+    </div>
+    <input id="defaultFee" type="number" step="0.1" min="0" max="500"
+           class="px-3 h-10 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 text-[14px] mono w-32 text-center focus:ring-2 focus:ring-brand-400 outline-none"/>
+    <button id="saveDefaultBtn" class="px-4 h-10 rounded-lg bg-ink-900 dark:bg-brand-500 hover:opacity-90 text-white text-[12.5px] font-bold" data-i18n="settings.save">حفظ الإعدادات</button>
+    <div id="defaultMsg" class="text-[11px] text-ink-500 dark:text-ink-400"></div>
+  </section>
+
+  <!-- Services list -->
+  <section class="rounded-xl border border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900 overflow-hidden">
+    <div class="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-ink-100 dark:border-ink-800">
+      <input id="search" data-i18n-ph="pricing.search" placeholder="ابحث عن خدمة…"
+             class="flex-1 min-w-[200px] px-3 h-9 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 text-[13px] focus:ring-2 focus:ring-brand-400 outline-none"/>
+      <div class="text-[11px] text-ink-500" id="listMeta">—</div>
+    </div>
+    <div class="overflow-x-auto scroll-y">
+      <table class="w-full text-[13px]">
+        <thead class="bg-ink-50 dark:bg-ink-800 text-[10.5px] uppercase tracking-wider text-ink-500 dark:text-ink-400">
+          <tr>
+            <th class="px-4 py-2.5 text-start" data-i18n="pricing.col.service">الخدمة</th>
+            <th class="px-4 py-2.5 text-start" data-i18n="pricing.col.entity">الجهة</th>
+            <th class="px-4 py-2.5 text-start" data-i18n="pricing.col.gov_fee">قيمة المعاملة</th>
+            <th class="px-4 py-2.5 text-start" data-i18n="pricing.col.my_fee">رسوم مكتبي</th>
+            <th class="px-4 py-2.5 text-start" data-i18n="pricing.col.total">الإجمالي للمواطن</th>
+            <th class="px-4 py-2.5 text-end"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<div id="toast" class="fixed bottom-5 start-1/2 -translate-x-1/2 px-4 h-10 rounded-full shadow-lg text-white text-[12.5px] font-bold hidden z-50"></div>
+
+<script src="/i18n.js"></script>
+<script>
+(function () {
+  // Theme toggle
+  if (localStorage.getItem('sanad.theme') === 'dark') document.documentElement.classList.add('dark');
+  document.getElementById('themeBtn').onclick = () => {
+    const d = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('sanad.theme', d ? 'dark' : 'light');
+  };
+  // Language toggle (uses window.I18N from i18n.js)
+  document.getElementById('langBtn').onclick = () => {
+    const cur = (window.I18N && window.I18N.lang) || 'ar';
+    const next = cur === 'ar' ? 'en' : 'ar';
+    localStorage.setItem('sanad.lang', next);
+    location.reload();
+  };
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function fmt(n) { return Number(n || 0).toFixed(3); }
+  function toast(msg, ok = true) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'fixed bottom-5 start-1/2 -translate-x-1/2 px-4 h-10 flex items-center rounded-full shadow-lg text-white text-[12.5px] font-bold z-50 ' +
+                  (ok ? 'bg-emerald-600' : 'bg-rose-600');
+    setTimeout(() => { t.className += ' hidden'; }, 2000);
+  }
+
+  let defaultFee = 5;
+
+  async function loadProfile() {
+    const r = await fetch('/api/office/profile', { credentials: 'include' });
+    if (!r.ok) {
+      if (r.status === 401) { location.href = '/office-login.html'; return false; }
+      return false;
+    }
+    const { office } = await r.json();
+    defaultFee = Number(office?.default_office_fee_omr ?? 5);
+    document.getElementById('defaultFee').value = defaultFee;
+    return true;
+  }
+
+  document.getElementById('saveDefaultBtn').onclick = async () => {
+    const v = Number(document.getElementById('defaultFee').value);
+    if (!Number.isFinite(v) || v < 0 || v > 500) {
+      toast('0 – 500', false); return;
+    }
+    const msg = document.getElementById('defaultMsg');
+    msg.textContent = (window.t && window.t('pricing.saving')) || 'Saving…';
+    const r = await fetch('/api/office/settings', {
+      method: 'PATCH', credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ default_office_fee_omr: v })
+    });
+    if (r.ok) {
+      defaultFee = v;
+      msg.textContent = (window.t && window.t('settings.saved')) || 'Saved';
+      setTimeout(() => { msg.textContent = ''; }, 1500);
+      toast((window.t && window.t('pricing.saved')) || 'Saved', true);
+      loadList();
+    } else {
+      msg.textContent = 'Error';
+      toast('Error ' + r.status, false);
+    }
+  };
+
+  let listTimer = null, lastQuery = '';
+  async function loadList(q) {
+    const query = q == null ? document.getElementById('search').value.trim() : q;
+    lastQuery = query;
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    params.set('limit', '300');
+    const r = await fetch('/api/office/pricing?' + params, { credentials: 'include' });
+    if (!r.ok) return;
+    const data = await r.json();
+    defaultFee = Number(data.default_office_fee_omr ?? defaultFee);
+    const lang = (window.I18N && window.I18N.lang) || 'ar';
+
+    const rows = data.items.map(it => {
+      const myFee  = it.office_fee_override != null ? Number(it.office_fee_override) : defaultFee;
+      const gov    = it.catalog_fee_omr != null ? Number(it.catalog_fee_omr) : 0;
+      const isCustom = it.office_fee_override != null;
+      const serviceName = (lang === 'ar' ? (it.name_ar || it.name_en) : (it.name_en || it.name_ar)) || '—';
+      const entityName  = (lang === 'ar' ? (it.entity_ar || it.entity_en) : (it.entity_en || it.entity_ar)) || '—';
+      return `<tr class="border-t border-ink-100 dark:border-ink-800 hover:bg-ink-50 dark:hover:bg-ink-800/50" data-id="${it.service_id}">
+        <td class="px-4 py-2.5">
+          <div class="font-semibold">${escapeHtml(serviceName)}</div>
+          <div class="text-[10.5px] text-ink-400 mono">#${it.service_id}</div>
+        </td>
+        <td class="px-4 py-2.5 text-[12px] text-ink-600 dark:text-ink-300">${escapeHtml(entityName)}</td>
+        <td class="px-4 py-2.5 mono">${fmt(gov)}</td>
+        <td class="px-4 py-2.5">
+          <div class="flex items-center gap-1.5">
+            <input type="number" step="0.1" min="0" max="500"
+                   value="${fmt(myFee)}"
+                   data-original="${fmt(myFee)}"
+                   data-is-custom="${isCustom ? '1' : '0'}"
+                   class="my-fee-input w-24 px-2 h-8 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 text-[13px] mono text-center focus:ring-2 focus:ring-brand-400 outline-none"/>
+            ${isCustom
+              ? `<span class="chip bg-brand-50 text-brand-700 dark:bg-brand-700/30 dark:text-brand-300" data-i18n="pricing.custom_badge">مخصَّص</span>`
+              : `<span class="chip bg-ink-100 text-ink-500 dark:bg-ink-800 dark:text-ink-400" data-i18n="pricing.default_badge">افتراضي</span>`}
+          </div>
+        </td>
+        <td class="px-4 py-2.5 mono font-bold total-cell">${fmt(myFee + gov)}</td>
+        <td class="px-4 py-2.5 text-end">
+          <div class="flex gap-1.5 justify-end">
+            <button data-save class="save-btn hidden px-2.5 h-7 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-[11px] font-bold" data-i18n="pricing.save">حفظ</button>
+            ${isCustom
+              ? `<button data-reset class="px-2.5 h-7 rounded-lg bg-ink-100 hover:bg-ink-200 dark:bg-ink-800 dark:hover:bg-ink-700 text-[11px] font-bold" data-i18n="pricing.reset">استرجاع الافتراضي</button>`
+              : ''}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+    document.getElementById('tbody').innerHTML = rows || `<tr><td colspan="6" class="px-4 py-10 text-center text-ink-400 italic" data-i18n="pricing.empty">لا توجد نتائج مطابقة للبحث.</td></tr>`;
+    document.getElementById('listMeta').textContent = `${data.items.length}`;
+
+    // Re-translate DOM nodes we just injected.
+    if (window.I18N && typeof window.I18N.apply === 'function') window.I18N.apply();
+
+    wireRows();
+  }
+
+  function wireRows() {
+    document.querySelectorAll('#tbody tr[data-id]').forEach(tr => {
+      const id = tr.getAttribute('data-id');
+      const input = tr.querySelector('.my-fee-input');
+      const saveBtn = tr.querySelector('.save-btn');
+      const totalCell = tr.querySelector('.total-cell');
+      const govText = tr.children[2].textContent.trim();
+      const gov = Number(govText);
+
+      input.addEventListener('input', () => {
+        const now = Number(input.value);
+        const was = Number(input.getAttribute('data-original'));
+        const changed = Number.isFinite(now) && Math.abs(now - was) > 0.0001;
+        tr.classList.toggle('row-edited', changed);
+        saveBtn.classList.toggle('hidden', !changed);
+        if (Number.isFinite(now)) totalCell.textContent = fmt(now + gov);
+      });
+
+      saveBtn.addEventListener('click', async () => {
+        const v = Number(input.value);
+        if (!Number.isFinite(v) || v < 0 || v > 500) { toast('0 – 500', false); return; }
+        saveBtn.disabled = true;
+        saveBtn.textContent = (window.t && window.t('pricing.saving')) || 'Saving…';
+        const r = await fetch('/api/office/pricing/' + id, {
+          method: 'PATCH', credentials: 'include',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ office_fee_omr: v, government_fee_omr: null })
+        });
+        saveBtn.disabled = false;
+        if (r.ok) {
+          toast((window.t && window.t('pricing.saved')) || 'Saved', true);
+          loadList(lastQuery);
+        } else {
+          toast('Error ' + r.status, false);
+          saveBtn.textContent = (window.t && window.t('pricing.save')) || 'Save';
+        }
+      });
+
+      const resetBtn = tr.querySelector('[data-reset]');
+      if (resetBtn) resetBtn.addEventListener('click', async () => {
+        const r = await fetch('/api/office/pricing/' + id, { method: 'DELETE', credentials: 'include' });
+        if (r.ok) {
+          toast((window.t && window.t('pricing.saved')) || 'Saved', true);
+          loadList(lastQuery);
+        } else toast('Error ' + r.status, false);
+      });
+    });
+  }
+
+  document.getElementById('search').addEventListener('input', () => {
+    clearTimeout(listTimer);
+    listTimer = setTimeout(() => loadList(), 250);
+  });
+
+  (async () => {
+    const ok = await loadProfile();
+    if (ok) loadList();
+  })();
+})();
+</script>
+</body>
+</html>

@@ -504,9 +504,9 @@ Citizens always pay the gov fee + a fixed platform fee (e.g. 0.5 OMR). Office se
 | Wk | Milestone | Exit criterion |
 |---|---|---|
 | 1 | Repo scaffold: Angular, Node API, Postgres+RLS, Prisma, auth, CI. CSV → `service_catalog` importer. `ChannelAdapter` abstraction stubbed. | `GET /services/:id` returns parsed docs. |
-| 2 | **Web test chatbot** (§11.7) + Qwen 3.5 agent skeleton + 1 service flow (civil ID renewal). | Can drive a full conversation in the browser. |
+| 2 | **Web test chatbot** (§11.7) + Qwen 3.5 agent skeleton + 1 service flow (civil ID renewal). ✅ **Done** — [AGENT.md](AGENT.md) documents the v2 unified tool-calling loop (17 tools) with hybrid FTS5 + semantic embeddings + RRF search across the full 3,417-service catalogue. | Can drive a full conversation in the browser. ✅ |
 | 3 | Meta WhatsApp webhook + outbound sender + media pipeline + message storage. Same agent code now works on both channels. | Phone round-trip identical to web tester. |
-| 4 | Collection flow for **5 launch services**: driver licence, civil ID, CR issuance, passport renewal, vehicle Mulkiya. | Full happy path from phone for all 5. |
+| 4 | Collection flow for **5 launch services**: driver licence, civil ID, CR issuance, passport renewal, vehicle Mulkiya. ✅ **Done** — any slug in the catalogue can now be submitted; the 5 launch codes carry `is_launch=1` and a +0.05 search boost. | Full happy path from phone for all 5. ✅ |
 | 5 | Request marketplace + claim/release + realtime WS kanban + 3-pane request detail + canned replies + shortcuts bar (portal link + OTP relay). | Officer handles a sandbox request end-to-end; two offices race-claim correctly. |
 | 6 | Office onboarding + owner/manager views + wallet skeleton. | A new office self-signs up and goes live. |
 | 7 | AmwalPay integration — subscription + citizen fee + webhooks + wallet ledger. | Real charge and real payout traced end-to-end. |

@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Register your office · Sanad-AI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/theme.css"/>
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  .hero-bg {
+    background:
+      radial-gradient(1000px 500px at 10% -10%, rgba(14,124,134,.35) 0%, transparent 60%),
+      radial-gradient(800px 400px at 110% 10%, rgba(18,110,61,.3) 0%, transparent 55%),
+      linear-gradient(180deg, #fbf8f3, #f5efe4);
+  }
+  .wordmark { background: linear-gradient(135deg, #0e7c86, #126e3d); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  input:focus, select:focus { outline: 2px solid #0e7c86; outline-offset: 1px; }
+</style>
+</head>
+<body class="min-h-screen hero-bg text-slate-900">
+
+<header class="max-w-5xl mx-auto px-6 py-5 flex items-center gap-3">
+  <a href="/" class="flex items-center gap-3">
+    <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-500 to-green-700 text-white grid place-items-center text-xl font-extrabold shadow-md">S</div>
+    <div>
+      <div class="text-lg font-extrabold wordmark">Sanad-AI</div>
+      <div class="text-[11px] text-slate-500">Office registration</div>
+    </div>
+  </a>
+  <nav class="ms-auto text-sm">
+    <a href="/office-login.html" class="px-3 py-1.5 rounded-lg hover:bg-white/70 font-semibold">Already have an account? Log in →</a>
+  </nav>
+</header>
+
+<main class="max-w-3xl mx-auto px-6 pb-16">
+
+  <h1 class="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight mb-3">
+    Register your <span class="wordmark">Sanad office</span>
+  </h1>
+  <p class="text-slate-600 mb-8">
+    Join the pilot. After we verify your CR number you'll appear in the marketplace and
+    can start quoting on citizen requests. Review usually takes 1–2 business days.
+  </p>
+
+  <form id="signupForm" class="bg-white/80 backdrop-blur rounded-2xl shadow-xl p-6 md:p-8 space-y-5 border border-white/60">
+
+    <div class="grid md:grid-cols-2 gap-5">
+      <div>
+        <label class="block text-sm font-semibold mb-1.5">Office name (English) <span class="text-rose-600">*</span></label>
+        <input name="office_name_en" required maxlength="120" class="w-full border border-slate-300 rounded-lg px-3 py-2" placeholder="Al-Nahda Sanad Office"/>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1.5">اسم المكتب (Arabic)</label>
+        <input name="office_name_ar" maxlength="120" class="w-full border border-slate-300 rounded-lg px-3 py-2" placeholder="مكتب سند النهضة" dir="rtl"/>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-5">
+      <div>
+        <label class="block text-sm font-semibold mb-1.5">Governorate <span class="text-rose-600">*</span></label>
+        <select name="governorate" required class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+          <option value="">Select…</option>
+          <option>Muscat</option><option>Dhofar</option><option>Musandam</option>
+          <option>Al Buraimi</option><option>Ad Dakhiliyah</option>
+          <option>Al Batinah North</option><option>Al Batinah South</option>
+          <option>Ash Sharqiyah North</option><option>Ash Sharqiyah South</option>
+          <option>Adh Dhahirah</option><option>Al Wusta</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1.5">Wilayat</label>
+        <input name="wilayat" maxlength="60" class="w-full border border-slate-300 rounded-lg px-3 py-2" placeholder="e.g. Al Khuwair"/>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-5">
+      <div>
+        <label class="block text-sm font-semibold mb-1.5">CR number <span class="text-rose-600">*</span></label>
+        <input name="cr_number" required maxlength="40" class="w-full border border-slate-300 rounded-lg px-3 py-2" placeholder="1234567"/>
+        <p class="text-[11px] text-slate-500 mt-1">We verify against MoCIIP.</p>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1.5">Office phone</label>
+        <input name="phone" maxlength="40" class="w-full border border-slate-300 rounded-lg px-3 py-2" placeholder="+968 …"/>
+      </div>
+    </div>
+
+    <hr class="border-slate-200"/>
+
+    <p class="text-sm font-bold text-teal-800">Your admin account</p>
+
+    <div class="grid md:grid-cols-2 gap-5">
+      <div>
+        <label class="block text-sm font-semibold mb-1.5">Your full name <span class="text-rose-600">*</span></label>
+        <input name="full_name" required maxlength="120" class="w-full border border-slate-300 rounded-lg px-3 py-2"/>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1.5">Work email <span class="text-rose-600">*</span></label>
+        <input name="email" type="email" required class="w-full border border-slate-300 rounded-lg px-3 py-2" placeholder="you@office.om"/>
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold mb-1.5">Password <span class="text-rose-600">*</span></label>
+      <input name="password" type="password" required minlength="8" class="w-full border border-slate-300 rounded-lg px-3 py-2"/>
+      <p class="text-[11px] text-slate-500 mt-1">At least 8 characters. You can invite teammates after approval.</p>
+    </div>
+
+    <label class="flex items-start gap-2 text-sm text-slate-700">
+      <input type="checkbox" id="agree" class="mt-1"/>
+      <span>I agree to the <a href="/terms.html" class="text-teal-700 font-semibold underline">Terms</a> and <a href="/privacy.html" class="text-teal-700 font-semibold underline">Privacy policy</a>. I confirm the CR number above belongs to my office.</span>
+    </label>
+
+    <button type="submit" id="submitBtn"
+      class="w-full py-3 rounded-xl bg-gradient-to-br from-teal-600 to-green-700 text-white font-bold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+      Register office
+    </button>
+
+    <div id="msg" class="hidden text-sm rounded-lg px-3 py-2"></div>
+  </form>
+
+  <p class="text-center text-sm text-slate-500 mt-5">
+    Already registered? <a href="/office-login.html" class="text-teal-700 font-bold">Log in</a>
+  </p>
+</main>
+
+<script>
+const form = document.getElementById('signupForm');
+const msg  = document.getElementById('msg');
+const btn  = document.getElementById('submitBtn');
+
+function showMsg(text, ok = false) {
+  msg.textContent = text;
+  msg.className = `text-sm rounded-lg px-3 py-2 ${ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}`;
+  msg.classList.remove('hidden');
+}
+
+const ERROR_MSG = {
+  email_taken: 'That email is already registered. Try logging in instead.',
+  bad_governorate: 'Please pick a valid governorate.',
+  'password>=8': 'Password must be at least 8 characters.',
+  validation: 'Please fill in all required fields.',
+  signup_failed: 'Something went wrong. Please try again in a moment.'
+};
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!document.getElementById('agree').checked) {
+    return showMsg('Please accept the terms to continue.');
+  }
+  btn.disabled = true; btn.textContent = 'Creating your office…';
+  const body = Object.fromEntries(new FormData(form).entries());
+  try {
+    const r = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+      credentials: 'include'
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      const code = data.error || 'signup_failed';
+      const missing = data.missing ? ` (${data.missing.join(', ')})` : '';
+      showMsg((ERROR_MSG[code] || code) + missing);
+      btn.disabled = false; btn.textContent = 'Register office';
+      return;
+    }
+    showMsg('✓ Registered! Redirecting…', true);
+    setTimeout(() => { window.location.href = '/officer.html'; }, 700);
+  } catch (err) {
+    showMsg('Network error — please check your connection.');
+    btn.disabled = false; btn.textContent = 'Register office';
+  }
+});
+</script>
+</body>
+</html>

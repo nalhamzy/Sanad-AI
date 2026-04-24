@@ -1,15 +1,21 @@
 import 'dotenv/config';
 import express from 'express';
 import path from 'path';
+import cookieParser from 'cookie-parser';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import { db, migrate, seedDemoOffices, seedDemoAnnotators } from './lib/db.js';
+import { db, migrate, seedDemoOffices, seedDemoAnnotators, seedDemoRequests, autoImportCatalog } from './lib/db.js';
 import { chatRouter } from './routes/chat.js';
 import { officerRouter } from './routes/officer.js';
 import { whatsappRouter } from './routes/whatsapp.js';
 import { debugRouter } from './routes/debug.js';
 import { catalogueRouter } from './routes/catalogue.js';
 import { annotatorRouter } from './routes/annotator.js';
+import { authRouter } from './routes/auth.js';
+import { officeRouter } from './routes/office.js';
+import { platformAdminRouter } from './routes/platform_admin.js';
+import { paymentsRouter } from './routes/payments.js';
+import { attachSession } from './lib/auth.js';
 import { LLM_ENABLED } from './lib/llm.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -19,6 +25,10 @@ const DEBUG = process.env.DEBUG_MODE === 'true';
 const app = express();
 app.disable('x-powered-by');
 app.use(express.json({ limit: '2mb' }));
+app.use(cookieParser());
+// Hydrate req.officer/req.office if the caller has a valid session cookie.
+// All downstream route files can rely on req.session / requireOfficer().
+app.use(attachSession);
 
 // Simple request log
 app.use((req, _res, next) => {
@@ -28,9 +38,27 @@ app.use((req, _res, next) => {
 
 // Static UI + upload passthrough
 app.use('/uploads', express.static(path.join(__dirname, 'data', 'uploads')));
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve public assets without aggressive caching — the app is under active
+// development and officers need to see UI changes (i18n strings, new buttons)
+// immediately without a hard refresh. We bypass the browser cache on every
+// HTML / JS / CSS response; uploads are still cached normally above.
+app.use(express.static(path.join(__dirname, 'public'), {
+  etag: false,
+  lastModified: false,
+  setHeaders: (res, filePath) => {
+    if (/\.(html|js|css)$/i.test(filePath)) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 
 // API
+app.use('/api/auth', authRouter);
+app.use('/api/office', officeRouter);
+app.use('/api/platform-admin', platformAdminRouter);
+app.use('/api/payments', paymentsRouter);
 app.use('/api/chat', chatRouter);
 app.use('/api/officer', officerRouter);
 app.use('/api/whatsapp', whatsappRouter);
@@ -50,9 +78,31 @@ app.get(/^\/(?!api|uploads).*/, (_req, res) => {
 export async function prepare() {
   fs.mkdirSync('./data/uploads', { recursive: true });
   await migrate();
+  // Auto-import the ~3.4k-row service directory on first boot so annotator
+  // search has real data to find. Subsequent boots skip (table already full).
+  await autoImportCatalog();
   await seedDemoOffices();
   await seedDemoAnnotators();
+  await seedDemoRequests();  // no-op unless DEBUG_MODE=true
   const { rows } = await db.execute(`SELECT COUNT(*) AS n FROM service_catalog`);
+
+  // Fire-and-forget: embed rows that still lack vectors. Runs in the
+  // background so first boot returns fast; hybrid search falls back to
+  // FTS-only until the cache is warm.
+  if (LLM_ENABLED && !process.env.SANAD_SKIP_EMBED) {
+    setTimeout(async () => {
+      try {
+        const { embedPending } = await import('./lib/embeddings.js');
+        let total = 0, n;
+        do { n = await embedPending(); total += n; }
+        while (n > 0);
+        if (total) console.log(`[embed] catalogue embedded (+${total} rows)`);
+      } catch (e) {
+        console.warn('[embed] background worker error:', e.message);
+      }
+    }, 500);
+  }
+
   return { catalogueSize: rows[0].n };
 }
 

@@ -45,3 +45,54 @@ export async function postChat(origin, sid, text, file) {
   const res = await fetch(`${origin}/api/chat/${sid}`, { method: 'POST', body: fd });
   return res.json();
 }
+
+// ─── Auth helpers ──────────────────────────────────────────
+// Signup + approve a test office. Returns the session cookie string so
+// subsequent requests can be made as this office's owner.
+// Because helpers.js sets DEBUG_MODE='true' and ADMIN_EMAILS isn't set,
+// the platform-admin check treats any signed-in officer as an admin —
+// so we can approve via the real API without extra scaffolding.
+let _counter = 0;
+export async function registerAndApproveOffice(origin, overrides = {}) {
+  _counter += 1;
+  const stamp = Date.now() + '-' + _counter;
+  const payload = {
+    office_name_en: 'Test Office ' + stamp,
+    office_name_ar: 'مكتب اختبار',
+    governorate: 'Muscat',
+    wilayat: 'Bawshar',
+    cr_number: '77' + stamp.slice(-5),
+    phone: '+96890000000',
+    email: `owner-${stamp}@test.om`,
+    full_name: 'Test Owner',
+    password: 'password123',
+    ...overrides
+  };
+  const r = await fetch(origin + '/api/auth/signup', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!r.ok) throw new Error(`signup failed ${r.status}: ${await r.text()}`);
+  const data = await r.json();
+  // Grab the session cookie (httpOnly is fine — fetch can still forward it).
+  const setCookie = r.headers.get('set-cookie') || '';
+  const cookie = setCookie.split(';')[0];
+  // Approve the office (DEBUG_MODE fallback means the owner is also an admin).
+  const approve = await fetch(`${origin}/api/platform-admin/office/${data.officer.office.id}/approve`, {
+    method: 'POST', headers: { cookie }
+  });
+  if (!approve.ok) throw new Error(`approve failed ${approve.status}: ${await approve.text()}`);
+  return { cookie, officer: data.officer, office_id: data.officer.office.id };
+}
+
+// Drive the chat agent to create a 'ready' request and return its id.
+export async function createReadyRequest(origin) {
+  const sid = 'req-' + Math.random().toString(36).slice(2, 10);
+  await postChat(origin, sid, 'renew driving licence');
+  await postChat(origin, sid, 'yes');
+  for (let i = 0; i < 3; i++) await postChat(origin, sid, '', { name: `doc${i}.jpg` });
+  const submit = await postChat(origin, sid, 'confirm');
+  if (!submit.request_id) throw new Error('request not queued');
+  return { sid, request_id: submit.request_id };
+}
