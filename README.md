@@ -58,7 +58,10 @@ With a Qwen key set, on first boot the server kicks off a background embed worke
 
 | Var | Purpose |
 |---|---|
-| `QWEN_API_KEY` | Enables LLM + embeddings. Empty → heuristic-only + FTS-only search. |
+| `LLM_PROVIDER` | `anthropic` or `qwen`. Auto-picks `anthropic` when `ANTHROPIC_API_KEY` is set, else `qwen`. |
+| `ANTHROPIC_API_KEY` | Enables Claude as the chat / tool-calling backend. |
+| `ANTHROPIC_MODEL` | Default `claude-opus-4-5`. |
+| `QWEN_API_KEY` | Required for embeddings (Anthropic has no embedding API). Also enables Qwen as chat provider when `LLM_PROVIDER=qwen`. Empty → FTS-only search. |
 | `QWEN_MODEL` | Default `qwen-plus`. |
 | `QWEN_EMBED_MODEL` | Default `text-embedding-v3`. |
 | `QWEN_EMBED_DIM` | Default `1024`. |

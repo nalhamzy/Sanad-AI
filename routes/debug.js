@@ -1,13 +1,19 @@
 import { Router } from 'express';
 import { db } from '../lib/db.js';
-import { LLM_ENABLED } from '../lib/llm.js';
+import { LLM_ENABLED, LLM_PROVIDER, LLM_MODEL } from '../lib/llm.js';
 
 export const debugRouter = Router();
 
 debugRouter.get('/health', async (_req, res) => {
   try {
     await db.execute('SELECT 1');
-    res.json({ ok: true, llm: LLM_ENABLED, debug: process.env.DEBUG_MODE === 'true' });
+    res.json({
+      ok: true,
+      llm: LLM_ENABLED,
+      provider: LLM_PROVIDER,
+      model: LLM_MODEL,
+      debug: process.env.DEBUG_MODE === 'true'
+    });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }
