@@ -6,6 +6,8 @@ import path from 'path';
 process.env.NODE_ENV = 'test';
 process.env.DB_URL = 'file:./data/sanad-test.db';
 process.env.QWEN_API_KEY = '';          // force heuristic mode for deterministic tests
+process.env.ANTHROPIC_API_KEY = '';     // also stub Anthropic — tests must never hit a real LLM
+process.env.LLM_PROVIDER = '';          // let llm.js auto-detect (will land on 'none')
 process.env.DEBUG_MODE = 'true';
 process.env.SANAD_NO_AUTOSTART = '1';   // prevent server.js from auto-listening
 
