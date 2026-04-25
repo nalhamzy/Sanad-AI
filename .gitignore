@@ -7,3 +7,5 @@ data/uploads/
 .DS_Store
 *.log
 dist/
+eval-report.json
+
