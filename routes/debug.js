@@ -35,6 +35,7 @@ debugRouter.post('/reset/:session_id', async (req, res) => {
 // expose a destructive endpoint in production. Lets the user start clean
 // from WhatsApp without us having to SSH into the box.
 debugRouter.post('/clear-phone', async (req, res) => {
+  try {
   if (process.env.DEBUG_MODE !== 'true') return res.status(403).json({ error: 'debug_only' });
   const phone = (req.body?.phone || req.query?.phone || '').toString().trim();
   if (!phone) return res.status(400).json({ error: 'phone_required' });
@@ -60,7 +61,7 @@ debugRouter.post('/clear-phone', async (req, res) => {
     extraSessions = r.rows.map(x => x.session_id).filter(Boolean);
   }
   const sessions = Array.from(new Set([...waSessions, ...extraSessions]));
-  const counts = { request_documents: 0, offers: 0, requests: 0, messages: 0, sessions: 0, citizens: 0 };
+  const counts = { request_documents: 0, request_offers: 0, otp_windows: 0, credit_ledger: 0, messages: 0, requests: 0, sessions: 0, citizens: 0 };
 
   if (sessions.length) {
     const ph = sessions.map(()=>'?').join(',');
@@ -68,8 +69,16 @@ debugRouter.post('/clear-phone', async (req, res) => {
     const reqIds = reqs.rows.map(r => r.id);
     if (reqIds.length) {
       const rp = reqIds.map(()=>'?').join(',');
+      // Delete in dependency order — every table that REFERENCES request(id)
+      // first, then request itself. Missing any of these triggers
+      // SQLITE_CONSTRAINT_FOREIGNKEY which crashes the worker.
       counts.request_documents = (await db.execute({ sql: `DELETE FROM request_document WHERE request_id IN (${rp})`, args: reqIds })).rowsAffected || 0;
-      try { counts.offers = (await db.execute({ sql: `DELETE FROM offer WHERE request_id IN (${rp})`, args: reqIds })).rowsAffected || 0; } catch {}
+      try { counts.request_offers   = (await db.execute({ sql: `DELETE FROM request_offer WHERE request_id IN (${rp})`, args: reqIds })).rowsAffected || 0; } catch (e) { console.warn('[clear-phone] request_offer delete failed:', e.message); }
+      try { counts.otp_windows      = (await db.execute({ sql: `DELETE FROM otp_window WHERE request_id IN (${rp})`, args: reqIds })).rowsAffected || 0; } catch (e) { console.warn('[clear-phone] otp_window delete failed:', e.message); }
+      try { counts.credit_ledger    = (await db.execute({ sql: `DELETE FROM credit_ledger WHERE request_id IN (${rp})`, args: reqIds })).rowsAffected || 0; } catch (e) { console.warn('[clear-phone] credit_ledger delete failed:', e.message); }
+      // message.request_id is nullable — null it out for any rows we are
+      // about to orphan that live in OTHER sessions (rare, but safe).
+      try { await db.execute({ sql: `UPDATE message SET request_id=NULL WHERE request_id IN (${rp})`, args: reqIds }); } catch {}
       counts.requests = (await db.execute({ sql: `DELETE FROM request WHERE id IN (${rp})`, args: reqIds })).rowsAffected || 0;
     }
     counts.messages = (await db.execute({ sql: `DELETE FROM message WHERE session_id IN (${ph})`, args: sessions })).rowsAffected || 0;
@@ -83,6 +92,10 @@ debugRouter.post('/clear-phone', async (req, res) => {
   }
 
   res.json({ ok: true, phone, variants, sessions, counts });
+  } catch (e) {
+    console.error('[clear-phone] error:', e);
+    res.status(500).json({ ok: false, error: e.message, code: e.code });
+  }
 });
 
 // Inject a fake OTP (simulates the gov portal sending to the citizen's phone)
