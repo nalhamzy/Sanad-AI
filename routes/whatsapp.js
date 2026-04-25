@@ -47,8 +47,15 @@ whatsappRouter.post('/webhook', async (req, res) => {
       attachment = { url: '', mime: media.mime_type || '', size: 0, caption, name: originalName };
     }
 
+    // If the user sent ONLY a media file with a caption (e.g. an image of
+    // their civil ID with the caption "this is my id"), forward the caption
+    // as the user_text too. The agent reads attachment.caption directly,
+    // but seeding user_text means search/intent detection still works for
+    // captions that describe a service rather than a doc.
+    const effectiveText = text || (attachment?.caption || '');
+
     const session_id = `wa:${from}`;
-    const { reply } = await runTurn({ session_id, user_text: text, attachment, citizen_phone: from });
+    const { reply } = await runTurn({ session_id, user_text: effectiveText, attachment, citizen_phone: from });
 
     if (ACCESS_TOKEN && PHONE_NUMBER_ID) {
       await fetch(`https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`, {

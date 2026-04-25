@@ -30,6 +30,61 @@ debugRouter.post('/reset/:session_id', async (req, res) => {
   res.json({ ok: true });
 });
 
+// Wipe ALL data tied to a phone number — sessions, messages, requests,
+// documents, offers, citizen row. Only available in DEBUG_MODE so we don't
+// expose a destructive endpoint in production. Lets the user start clean
+// from WhatsApp without us having to SSH into the box.
+debugRouter.post('/clear-phone', async (req, res) => {
+  if (process.env.DEBUG_MODE !== 'true') return res.status(403).json({ error: 'debug_only' });
+  const phone = (req.body?.phone || req.query?.phone || '').toString().trim();
+  if (!phone) return res.status(400).json({ error: 'phone_required' });
+  const variants = Array.from(new Set([
+    phone,
+    phone.replace(/^\+/, ''),
+    phone.replace(/^\+?968/, ''),
+    phone.startsWith('+') ? phone : `+${phone}`,
+  ].filter(Boolean)));
+
+  const cit = await db.execute({
+    sql: `SELECT id FROM citizen WHERE phone IN (${variants.map(()=>'?').join(',')})`,
+    args: variants
+  });
+  const citIds = cit.rows.map(r => r.id);
+  const waSessions = variants.map(v => `wa:${v}`);
+  let extraSessions = [];
+  if (citIds.length) {
+    const r = await db.execute({
+      sql: `SELECT DISTINCT session_id FROM request WHERE citizen_id IN (${citIds.map(()=>'?').join(',')})`,
+      args: citIds
+    });
+    extraSessions = r.rows.map(x => x.session_id).filter(Boolean);
+  }
+  const sessions = Array.from(new Set([...waSessions, ...extraSessions]));
+  const counts = { request_documents: 0, offers: 0, requests: 0, messages: 0, sessions: 0, citizens: 0 };
+
+  if (sessions.length) {
+    const ph = sessions.map(()=>'?').join(',');
+    const reqs = await db.execute({ sql: `SELECT id FROM request WHERE session_id IN (${ph})`, args: sessions });
+    const reqIds = reqs.rows.map(r => r.id);
+    if (reqIds.length) {
+      const rp = reqIds.map(()=>'?').join(',');
+      counts.request_documents = (await db.execute({ sql: `DELETE FROM request_document WHERE request_id IN (${rp})`, args: reqIds })).rowsAffected || 0;
+      try { counts.offers = (await db.execute({ sql: `DELETE FROM offer WHERE request_id IN (${rp})`, args: reqIds })).rowsAffected || 0; } catch {}
+      counts.requests = (await db.execute({ sql: `DELETE FROM request WHERE id IN (${rp})`, args: reqIds })).rowsAffected || 0;
+    }
+    counts.messages = (await db.execute({ sql: `DELETE FROM message WHERE session_id IN (${ph})`, args: sessions })).rowsAffected || 0;
+    counts.sessions = (await db.execute({ sql: `DELETE FROM session WHERE id IN (${ph})`, args: sessions })).rowsAffected || 0;
+  }
+  if (citIds.length) {
+    counts.citizens = (await db.execute({
+      sql: `DELETE FROM citizen WHERE id IN (${citIds.map(()=>'?').join(',')})`,
+      args: citIds
+    })).rowsAffected || 0;
+  }
+
+  res.json({ ok: true, phone, variants, sessions, counts });
+});
+
 // Inject a fake OTP (simulates the gov portal sending to the citizen's phone)
 debugRouter.post('/simulate-otp/:request_id', async (req, res) => {
   const code = (req.body?.code || '').toString() || '123456';
