@@ -9,7 +9,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: DEBUG_MODE
-        value: "true"               # set to false after initial smoke-test
+        value: "false"              # production default — leaks /api/debug/state when true
       - key: PORT
         value: "3030"
       - key: DB_URL

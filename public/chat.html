@@ -3,9 +3,13 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Sanad-AI · WhatsApp web tester</title>
+<title>Chat with Ahmed · Sanad-AI</title>
+<meta name="description" content="Tell Ahmed what government service you need. He'll prepare your file and dispatch it to a Sanad office."/>
+<meta name="theme-color" content="#075e54"/>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<link rel="apple-touch-icon" href="/favicon.svg"/>
 <script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Kufi+Arabic:wght@400;500;700;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/theme.css"/>
 <style>
   html,body{height:100%}
@@ -20,6 +24,8 @@
   @keyframes td{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
   .err-banner{position:fixed;top:0;left:0;right:0;background:#991b1b;color:#fff;padding:8px 16px;font-size:12px;z-index:9999;display:none;font-family:monospace}
   .err-banner.show{display:block}
+  /* Dev sidebar hidden by default for citizens. Add ?dev=1 to the URL to show. */
+  body:not(.dev-mode) .dev-only { display: none !important; }
 </style>
 </head>
 <body>
@@ -33,14 +39,14 @@
   <section class="flex flex-col flex-1 min-w-0 h-full overflow-hidden bg-[#efeae2]">
     <!-- WhatsApp-style header -->
     <header class="wa-dark flex items-center gap-3 px-4 py-2.5 shrink-0">
-      <div class="w-10 h-10 rounded-full bg-white/20 grid place-items-center font-bold">S</div>
+      <a href="/" class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-green-600 grid place-items-center text-lg font-black shadow-md hover:opacity-90" title="Back to home">س</a>
       <div class="flex-1 min-w-0">
-        <div class="font-semibold leading-tight" data-i18n="app.name">Sanad-AI</div>
+        <div class="font-semibold leading-tight">Ahmed · Sanad-AI</div>
         <div class="text-[11px] text-white/80 leading-tight flex items-center gap-1">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-300"></span>
           <span id="statusText" data-i18n="chat.online">online</span>
-          <span class="opacity-40 mx-1">·</span>
-          <span id="headerSub">session</span>
+          <span class="dev-only opacity-40 mx-1">·</span>
+          <span class="dev-only" id="headerSub">session</span>
         </div>
       </div>
       <button id="newSvcBtn" class="text-xs px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 font-semibold" title="search for a different service">↻ new service</button>
@@ -52,14 +58,14 @@
     <div class="flex items-center gap-2 px-3 py-2 border-b border-slate-200 bg-slate-50 text-xs shrink-0">
       <span class="text-slate-500" data-i18n="chat.phone_label">Your phone</span>
       <input id="phoneInput" class="px-2 py-1 rounded bg-white border border-slate-200 w-40 focus:outline-none focus:border-teal-400" placeholder="+968..." />
-      <span id="llmMode" class="ms-2 text-[10px] px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-semibold">…</span>
+      <span id="llmMode" class="dev-only ms-2 text-[10px] px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-semibold">…</span>
       <span class="ms-auto text-slate-400"><span data-i18n="chat.request_no">Request</span> <b id="reqNo">—</b></span>
     </div>
 
-    <!-- LLM-off hint banner (only shows when Qwen key isn't set) -->
-    <div id="llmHint" class="hidden bg-amber-50 border-b border-amber-200 text-amber-800 text-[12px] px-3 py-2 flex items-center gap-2">
+    <!-- LLM-off hint banner (dev-only — citizens never see env-var names) -->
+    <div id="llmHint" class="dev-only hidden bg-amber-50 border-b border-amber-200 text-amber-800 text-[12px] px-3 py-2 flex items-center gap-2">
       <span>⚡</span>
-      <span class="flex-1"><b>Fallback mode.</b> Set <code class="bg-white px-1 rounded">QWEN_API_KEY</code> in <code class="bg-white px-1 rounded">.env</code> for LLM-powered responses (reasoning, filtering, natural answers).</span>
+      <span class="flex-1"><b>Fallback mode.</b> Set <code class="bg-white px-1 rounded">ANTHROPIC_API_KEY</code> or <code class="bg-white px-1 rounded">QWEN_API_KEY</code> in <code class="bg-white px-1 rounded">.env</code> for LLM-powered responses.</span>
       <button id="llmHintClose" class="text-amber-700 hover:text-amber-900">×</button>
     </div>
 
@@ -89,8 +95,8 @@
     </form>
   </section>
 
-  <!-- DEV SIDEBAR -->
-  <aside class="w-full md:w-[320px] md:h-full overflow-y-auto bg-slate-50 border-s border-slate-200 p-4 space-y-3 shrink-0">
+  <!-- DEV SIDEBAR — hidden from citizens; reveal with ?dev=1 or when /api/health.debug=true -->
+  <aside class="dev-only w-full md:w-[320px] md:h-full overflow-y-auto bg-slate-50 border-s border-slate-200 p-4 space-y-3 shrink-0">
     <div class="flex items-center justify-between">
       <div class="text-xs font-bold uppercase tracking-wider text-slate-500" data-i18n="chat.state_title">Session state</div>
       <a href="/officer.html" target="_blank" class="text-[11px] text-teal-600 underline">officer →</a>
@@ -115,6 +121,20 @@
   </aside>
 </div>
 
+<script>
+// Dev-mode: reveal the dev sidebar + technical chrome when:
+//  • URL has ?dev=1, OR
+//  • /api/health reports debug:true (i.e. server is in DEBUG_MODE)
+// Citizens hitting this page from the homepage's "Or try in your browser →"
+// link see only the WhatsApp-style chat UI.
+(function () {
+  const params = new URLSearchParams(location.search);
+  if (params.get('dev') === '1') document.body.classList.add('dev-mode');
+  else fetch('/api/health').then(r => r.json()).then(h => {
+    if (h && h.debug) document.body.classList.add('dev-mode');
+  }).catch(() => {});
+})();
+</script>
 <script src="/i18n.js"></script>
 <script src="/ui.js"></script>
 <script>

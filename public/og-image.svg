@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fbfaf6"/>
+      <stop offset="1" stop-color="#f5f1e8"/>
+    </linearGradient>
+    <linearGradient id="brand" x1="0" y1="0" x2="640" y2="160" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0d9488"/>
+      <stop offset="1" stop-color="#15803d"/>
+    </linearGradient>
+    <linearGradient id="markGrad" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#14b8a6"/>
+      <stop offset="1" stop-color="#15803d"/>
+    </linearGradient>
+    <radialGradient id="halo1" cx="120" cy="0" r="600" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#14b8a6" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#14b8a6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="halo2" cx="1200" cy="630" r="600" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22c55e" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#22c55e" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#halo1)"/>
+  <rect width="1200" height="630" fill="url(#halo2)"/>
+
+  <!-- Brand mark + wordmark -->
+  <g transform="translate(80,90)">
+    <rect width="96" height="96" rx="22" fill="url(#markGrad)"/>
+    <text x="48" y="58" text-anchor="middle" dominant-baseline="middle"
+          font-family="'Noto Kufi Arabic','Segoe UI',sans-serif" font-weight="900"
+          font-size="56" fill="#ffffff">س</text>
+    <text x="120" y="40" font-family="Inter, 'Segoe UI', sans-serif" font-weight="900" font-size="40" fill="url(#brand)">Sanad-AI</text>
+    <text x="120" y="74" font-family="Inter, 'Segoe UI', sans-serif" font-weight="600" font-size="20" fill="#64748b">Powered by the Sanad offices network</text>
+  </g>
+
+  <!-- Hero copy -->
+  <g transform="translate(80,260)">
+    <text font-family="Inter, 'Segoe UI', sans-serif" font-weight="900" font-size="84" fill="#0f172a" letter-spacing="-2">
+      <tspan x="0" y="0">Government paperwork.</tspan>
+      <tspan x="0" y="100" fill="url(#brand)">Through WhatsApp.</tspan>
+    </text>
+    <text x="0" y="200" font-family="Inter, 'Segoe UI', sans-serif" font-weight="500" font-size="28" fill="#475569">
+      Tell Ahmed what you need. We prepare your file with the right service,
+    </text>
+    <text x="0" y="240" font-family="Inter, 'Segoe UI', sans-serif" font-weight="500" font-size="28" fill="#475569">
+      documents, and fees — then send it to a Sanad office that handles the rest.
+    </text>
+  </g>
+
+  <!-- WhatsApp pill bottom right -->
+  <g transform="translate(720,510)">
+    <rect width="400" height="64" rx="32" fill="#25D366"/>
+    <g transform="translate(28,16)">
+      <path d="M27.472 22.382c-.475-.238-2.812-1.387-3.247-1.546-.435-.158-.752-.237-1.07.237-.318.475-1.227 1.546-1.505 1.862-.277.317-.554.357-1.03.119-.475-.238-2.008-.74-3.823-2.36-1.412-1.26-2.366-2.818-2.643-3.293-.277-.475-.029-.732.208-.97.213-.213.475-.555.713-.832.238-.277.317-.475.475-.792.158-.317.08-.594-.04-.832-.119-.238-1.07-2.578-1.466-3.532-.387-.928-.78-.802-1.071-.817l-.913-.016c-.317 0-.832.119-1.267.594-.435.475-1.664 1.625-1.664 3.965 0 2.34 1.704 4.6 1.942 4.917.238.317 3.353 5.121 8.123 7.18 1.135.49 2.02.782 2.711.999 1.139.362 2.176.31 2.995.188.913-.136 2.812-1.15 3.21-2.26.396-1.111.396-2.063.277-2.26-.118-.198-.435-.317-.91-.555M22.804 35h-.006a15.79 15.79 0 0 1-8.05-2.205l-.578-.343-5.985 1.572 1.597-5.836-.376-.598a15.778 15.778 0 0 1-2.418-8.418C7-3-2.93 26.097 12.74 26.097c4.224 0 8.196 1.648 11.18 4.638a15.72 15.72 0 0 1 4.628 11.19C28.546 25.072 21.452 32.166 12.804 32.166" transform="scale(0.8)" fill="#ffffff"/>
+    </g>
+    <text x="84" y="40" font-family="Inter, 'Segoe UI', sans-serif" font-weight="800" font-size="22" fill="#ffffff">Open in WhatsApp</text>
+  </g>
+</svg>

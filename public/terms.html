@@ -4,31 +4,51 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Terms of Service · Sanad-AI</title>
+<meta name="description" content="The terms governing your use of Sanad-AI, the WhatsApp-first request preparation service for Oman government services."/>
+<meta name="theme-color" content="#0d9488"/>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<link rel="apple-touch-icon" href="/favicon.svg"/>
+<meta property="og:type" content="article"/>
+<meta property="og:title" content="Terms of Service · Sanad-AI"/>
+<meta property="og:description" content="The terms governing your use of Sanad-AI."/>
+<meta property="og:image" content="/og-image.svg"/>
 <script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Kufi+Arabic:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Kufi+Arabic:wght@400;500;700;800;900&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/theme.css"/>
 <style>
-  body { font-family: 'Inter', sans-serif; background: linear-gradient(180deg, #fbf8f3, #f5efe4); }
-  [dir="rtl"] body { font-family: 'Noto Kufi Arabic', sans-serif; }
-  .prose h2 { font-size: 1.2rem; font-weight: 700; margin-top: 1.8rem; margin-bottom: .6rem; color: #0e7c86; }
-  .prose p, .prose li { font-size: 14.5px; line-height: 1.65; color: #1e293b; }
+  body { font-family: 'Inter', sans-serif; }
+  [dir="rtl"] body, html[dir="rtl"] * { font-family: 'Noto Kufi Arabic', sans-serif; }
+  .page-bg {
+    background:
+      radial-gradient(1100px 600px at 8% -10%, rgba(20,184,166,.10) 0%, transparent 55%),
+      radial-gradient(900px 500px at 110% 0%, rgba(34,197,94,.08) 0%, transparent 55%),
+      linear-gradient(180deg, #fbfaf6 0%, #f5f1e8 100%);
+  }
+  .wordmark { background: linear-gradient(135deg, #0d9488 0%, #15803d 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .prose h2 { font-size: 1.25rem; font-weight: 800; margin-top: 2rem; margin-bottom: .6rem; color: #0d9488; }
+  .prose p, .prose li { font-size: 15px; line-height: 1.7; color: #1e293b; }
   .prose ul { list-style: disc; padding-inline-start: 1.4rem; }
-  .prose li { margin-bottom: .3rem; }
+  .prose li { margin-bottom: .35rem; }
   .prose .muted { color: #64748b; font-size: 13px; }
   section[dir="rtl"] { display: none; }
   body.ar section[dir="ltr"] { display: none; }
   body.ar section[dir="rtl"] { display: block; }
 </style>
 </head>
-<body class="min-h-screen">
-<div class="max-w-3xl mx-auto px-5 py-10">
-  <div class="flex items-center justify-between mb-6">
-    <a href="/" class="flex items-center gap-2.5">
-      <div class="w-8 h-8 rounded-xl grid place-items-center text-white font-extrabold" style="background:linear-gradient(135deg,#0e7c86,#126e3d)">S</div>
-      <span class="font-extrabold text-[15px]">Sanad-AI</span>
-    </a>
-    <button id="langBtn" class="btn btn-secondary" style="height:34px">العربية</button>
-  </div>
+<body class="min-h-screen text-slate-900 page-bg">
+
+<header class="max-w-3xl mx-auto px-5 sm:px-6 py-5 flex items-center">
+  <a href="/" class="flex items-center gap-3" aria-label="Sanad-AI home">
+    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-green-700 text-white grid place-items-center text-lg font-black shadow-md">س</div>
+    <div class="leading-tight">
+      <div class="text-base font-extrabold wordmark">Sanad-AI</div>
+      <div class="text-[11px] text-slate-500">Terms of Service</div>
+    </div>
+  </a>
+  <button id="langBtn" class="ms-auto px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-slate-200 font-semibold text-xs shadow-sm">العربية</button>
+</header>
+
+<div class="max-w-3xl mx-auto px-5 sm:px-6 pb-16">
 
   <section dir="ltr" class="prose">
     <h1 class="text-3xl font-extrabold mb-1">Terms of Service</h1>
@@ -162,6 +182,20 @@
     <p class="muted">باستخدامك سند-AI تؤكّد قراءتك وقبولك لهذه الشروط و<a href="/privacy.html" style="color:#0e7c86">سياسة الخصوصية</a>.</p>
   </section>
 </div>
+
+<footer class="border-t border-slate-200/70 bg-white/40 backdrop-blur mt-10">
+  <div class="max-w-3xl mx-auto px-5 sm:px-6 py-6 flex flex-wrap items-center gap-3 text-[12px] text-slate-500">
+    <a href="/" class="flex items-center gap-2">
+      <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-500 to-green-700 text-white grid place-items-center text-[11px] font-black">س</div>
+      <span class="font-extrabold wordmark">Sanad-AI</span>
+    </a>
+    <nav class="ms-auto flex items-center gap-3">
+      <a href="/" class="hover:text-teal-700">Home</a>
+      <a href="/privacy.html" class="hover:text-teal-700">Privacy</a>
+      <a href="/office-login.html" class="hover:text-teal-700">For offices</a>
+    </nav>
+  </div>
+</footer>
 
 <script>
   const btn = document.getElementById('langBtn');
