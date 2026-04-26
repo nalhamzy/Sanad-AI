@@ -8,4 +8,5 @@ data/uploads/
 *.log
 dist/
 eval-report.json
+eval-whatsapp-report.json
 

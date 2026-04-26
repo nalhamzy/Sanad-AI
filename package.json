@@ -12,7 +12,9 @@
     "test": "node --test --test-concurrency=1 --test-reporter=spec tests/01-unit.test.js tests/02-catalogue.test.js tests/03-agent.test.js tests/04-routes.test.js tests/06-auth-offers.test.js tests/08-hybrid-search.test.js",
     "test:llm": "node --test --test-concurrency=1 --test-reporter=spec tests/07-agent-v2.test.js",
     "test:unit": "node --test tests/01-unit.test.js tests/02-catalogue.test.js",
-    "test:watch": "node --test --watch tests/01-unit.test.js tests/02-catalogue.test.js tests/03-agent.test.js tests/04-routes.test.js"
+    "test:watch": "node --test --watch tests/01-unit.test.js tests/02-catalogue.test.js tests/03-agent.test.js tests/04-routes.test.js",
+    "eval": "node scripts/eval_scenarios.mjs",
+    "eval:whatsapp": "node scripts/eval_whatsapp.mjs"
   },
   "engines": {
     "node": ">=18.17.0"
