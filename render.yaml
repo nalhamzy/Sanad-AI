@@ -26,6 +26,14 @@ services:
         sync: false
       - key: WHATSAPP_PHONE_NUMBER_ID
         sync: false
+      - key: WHATSAPP_APP_SECRET   # required to verify X-Hub-Signature-256 on inbound webhooks
+        sync: false
+      - key: ANTHROPIC_API_KEY     # chat / tool-calling backend (Claude)
+        sync: false
+      - key: ANTHROPIC_MODEL
+        value: claude-opus-4-5
+      - key: SANAD_AGENT_V2
+        value: "true"
     disk:
       name: sanad-data
       mountPath: /opt/render/project/src/data

@@ -3,6 +3,7 @@
 // in, the same `runTurn` is used so the agent behaviour is identical to web.
 
 import { Router } from 'express';
+import crypto from 'node:crypto';
 import { runTurn } from '../lib/agent.js';
 
 export const whatsappRouter = Router();
@@ -10,6 +11,35 @@ export const whatsappRouter = Router();
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'dev-verify-token';
 const ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || '';
 const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || '';
+const APP_SECRET = process.env.WHATSAPP_APP_SECRET || '';
+
+let warnedNoSecret = false;
+
+// Validates Meta's X-Hub-Signature-256 (HMAC-SHA256 of raw body). Returns
+// true when the signature is valid, OR when no APP_SECRET is configured
+// (dev / web-only mode). Returns false on a present-but-bad signature.
+function verifySignature(req) {
+  if (!APP_SECRET) {
+    if (!warnedNoSecret) {
+      console.warn('[whatsapp] WHATSAPP_APP_SECRET is empty — signature verification DISABLED. Set it before going live.');
+      warnedNoSecret = true;
+    }
+    return true;
+  }
+  const header = req.get('x-hub-signature-256') || '';
+  if (!header.startsWith('sha256=')) return false;
+  const provided = header.slice('sha256='.length);
+  const expected = crypto
+    .createHmac('sha256', APP_SECRET)
+    .update(req.rawBody || Buffer.alloc(0))
+    .digest('hex');
+  if (provided.length !== expected.length) return false;
+  try {
+    return crypto.timingSafeEqual(Buffer.from(provided, 'hex'), Buffer.from(expected, 'hex'));
+  } catch {
+    return false;
+  }
+}
 
 whatsappRouter.get('/webhook', (req, res) => {
   if (req.query['hub.mode'] === 'subscribe' && req.query['hub.verify_token'] === VERIFY_TOKEN) {
@@ -19,6 +49,10 @@ whatsappRouter.get('/webhook', (req, res) => {
 });
 
 whatsappRouter.post('/webhook', async (req, res) => {
+  if (!verifySignature(req)) {
+    console.warn('[whatsapp] X-Hub-Signature-256 verification failed — rejecting request');
+    return res.sendStatus(403);
+  }
   res.sendStatus(200); // ACK immediately (Meta retries on timeout)
   try {
     const entry = req.body?.entry?.[0];

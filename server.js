@@ -24,7 +24,13 @@ const DEBUG = process.env.DEBUG_MODE === 'true';
 
 const app = express();
 app.disable('x-powered-by');
-app.use(express.json({ limit: '2mb' }));
+// `verify` captures the raw body bytes so signature-validating routes
+// (e.g. WhatsApp webhook X-Hub-Signature-256, payments webhook) can hash
+// the original payload — express.json() consumes the stream otherwise.
+app.use(express.json({
+  limit: '2mb',
+  verify: (req, _res, buf) => { req.rawBody = buf; }
+}));
 app.use(cookieParser());
 // Hydrate req.officer/req.office if the caller has a valid session cookie.
 // All downstream route files can rely on req.session / requireOfficer().

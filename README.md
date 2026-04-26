@@ -327,10 +327,9 @@ Set `QWEN_API_KEY` in `.env` and restart. OpenAI-compatible endpoint (DashScope)
 
 ### WhatsApp
 
-1. Create a Meta App + WhatsApp Cloud API number (verified business).
-2. Set `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN` in `.env`.
-3. Configure the webhook on Meta → `https://<your-domain>/api/whatsapp/webhook` with the same verify token.
-4. Subscribe to `messages` events.
+Full Meta Developer Console walkthrough is in **[docs/FACEBOOK_SETUP.md](docs/FACEBOOK_SETUP.md)** — Render-targeted, covers app creation, credentials, webhook URL + verify token, signature validation (`X-Hub-Signature-256`), test-number setup, and the path to a production system-user token.
+
+Required `.env` keys: `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET`. With any of them empty the webhook stays a no-op (logs only) — useful for local dev.
 
 The agent code is **identical** on both channels — the channel adapter lives in `routes/whatsapp.js` vs `routes/chat.js`.
 
