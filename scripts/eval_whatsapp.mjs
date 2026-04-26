@@ -93,15 +93,30 @@ const SCENARIOS = [
   },
   {
     id: 'wa_long_reply_check',
-    description: 'Info-only Q&A about passport renewal — reply must render cleanly inside WhatsApp (no markdown, reasonable length).',
+    description: 'Info-only Q&A about passport renewal — reply must render cleanly inside WhatsApp AND be terse.',
     expectations: [
       'Answers the citizen\'s question with required documents and fees, citing only what\'s in the catalogue.',
       'Does NOT use markdown that WhatsApp renders as raw asterisks/hashes (no `*bold*`, `# headers`, `|tables|`, ```code fences```).',
-      'Reply length is reasonable for a phone screen — under ~2000 characters; ideally a short list, not a wall of text.',
+      'Service-info reply is tight — under 80 words / under 600 characters. Format: 1 line for service+fee, 1 line per doc, 1 line for time, then ONE follow-up.',
       'Ends with a one-line offer to start the actual request (consistent with the prep+dispatch mission).'
     ],
     turns: [
       { text: { body: 'what documents do I need for passport renewal and how much does it cost?' } }
+    ]
+  },
+  {
+    id: 'wa_no_caption_silent',
+    description: 'Citizen mid-flow uploads an image with NO caption and NO filename. The bot must auto-record it silently and reply with a tight ack — never mentioning that no caption was provided.',
+    expectations: [
+      'Auto-records the image into the next pending required slot (the citizen\'s expired ID card).',
+      'Bot reply does NOT contain any phrase about missing captions: must NOT say "no caption", "without a caption", "since you didn\'t add a description", "you didn\'t tell me what this is", "I notice you sent a file", or any equivalent. The save was silent — keep it that way.',
+      'Reply is short — at most 25 words and at most 3 lines.',
+      'Reply confirms receipt of the doc (mentions the doc name) and either asks the user to submit (if all docs collected) or names the next required doc.'
+    ],
+    turns: [
+      { text: { body: 'I want to renew my civil id' } },
+      { button: { text: 'Yes' } },
+      { image: { mime_type: 'image/jpeg' } }
     ]
   },
   {
@@ -213,10 +228,17 @@ const JUDGE_SYSTEM = `You are an expert evaluator of Sanad-AI on the WhatsApp ch
 You will receive one scenario, the expectations a competent agent should meet on WhatsApp, and the full transcript of one run. Judge strictly but fairly.
 
 WhatsApp-specific quality dimensions (apply across every scenario):
-- Replies must be plaintext-friendly. No \`*bold*\`, no \`# headers\`, no markdown tables (\`|...|\`), no triple-backtick code fences. WhatsApp does not render these — they show as literal characters.
-- Replies should fit comfortably on a phone screen. Anything over ~2000 characters is a problem unless the user explicitly asked for long content.
+- Replies must be plaintext-friendly. No \`**bold**\`, no \`# headers\`, no markdown tables (\`|...|\`), no triple-backtick code fences. WhatsApp does not render these — they show as literal characters.
+- **Replies must be TERSE.** Hard ceilings:
+   • Acknowledgments (file received, action confirmed): ≤ 25 words / ≤ 3 lines.
+   • Service info answers (fees, docs, time): ≤ 80 words / ≤ 600 chars.
+   • Disambiguation questions: ≤ 15 words.
+   • Welcome / first reply: ≤ 40 words. No essay about the marketplace flow on first contact.
+  Exceeding these is a high-severity issue.
+- **Replies must NOT leak metadata about the user's input.** The bot must NEVER say "no caption was provided", "since you didn't add a description", "I notice you sent a file without text", "without a caption I'm assuming…", or any equivalent. If the user sent a file with no caption, the bot just acknowledges what was saved and moves on — silently. This is high-severity.
 - Quick-reply / button taps (turns labelled \`button: "..."\`) must be interpreted as the user's intent, not as raw chat text. E.g. tapping a "Yes" button after a confirmation prompt should advance the state, not produce "I'm not sure what you mean by Yes."
 - Captions on media and document filenames are valid intent signals — the bot should not ignore them.
+- The bot must NEVER repeat content the user already saw on the previous turn (no re-summarising the service every turn).
 
 Output STRICT JSON, nothing else, in this shape:
 {
@@ -281,8 +303,14 @@ Judge this run on the WhatsApp channel. Output JSON only — no markdown fences,
 }
 
 // ── Main ──────────────────────────────────────────────────────────
+// Each scenario runs ~3-5 LLM turns + 1 judge call; spread them out so
+// the Anthropic rate limit (free tier ~60 RPM) doesn't truncate later
+// scenarios into fallback "Let me try again" replies.
+const SCENARIO_GAP_MS = Number(process.env.SANAD_EVAL_GAP_MS || 8000);
 const report = [];
-for (const s of SCENARIOS) {
+for (let i = 0; i < SCENARIOS.length; i++) {
+  const s = SCENARIOS[i];
+  if (i > 0) await new Promise(r => setTimeout(r, SCENARIO_GAP_MS));
   process.stdout.write(`▶ ${s.id} … `);
   const t0 = Date.now();
   const run = await runScenario(s);
