@@ -138,8 +138,12 @@
     <section class="rounded-2xl bg-white dark:bg-ink-900 border border-ink-200 dark:border-ink-700 p-4 mb-4 shadow-sm">
       <div class="grid grid-cols-12 gap-3">
         <div class="col-span-12 md:col-span-5">
-          <label class="label-sm block mb-1">بحث (عربي أو إنجليزي)</label>
-          <input id="q" class="field" placeholder='مثال: "تجديد رخصة", "passport", "سجل تجاري"'/>
+          <div class="flex items-center justify-between mb-1">
+            <label class="label-sm">بحث ذكي (كلمات + معنى + أجزاء)</label>
+            <span id="searchModeBadge" class="text-[10px] px-1.5 py-0.5 rounded-full hidden"></span>
+          </div>
+          <input id="q" class="field" placeholder='ابحث بالعربية أو الإنجليزية — مثال: "تجديد رخصة", "passport renewal", "أبغى أفتح شركة"'/>
+          <div id="searchLanesHint" class="hidden text-[10.5px] text-ink-500 dark:text-ink-400 mt-1.5 mono"></div>
         </div>
         <div class="col-span-6 md:col-span-3">
           <label class="label-sm block mb-1">الجهة</label>
@@ -157,6 +161,7 @@
         <div class="col-span-6 md:col-span-2">
           <label class="label-sm block mb-1">الترتيب</label>
           <select id="sort" class="field">
+            <option value="">حسب الصلة (افتراضي عند البحث)</option>
             <option value="id">حسب المعرّف</option>
             <option value="name">حسب الاسم</option>
             <option value="fee">حسب الرسوم (تنازلي)</option>
@@ -475,6 +480,22 @@ async function loadServices() {
     );
     $('prevBtn').disabled = state.offset === 0;
     $('nextBtn').disabled = state.offset + state.limit >= data.total;
+    // Surface the search-mode badge + per-lane hit counts so annotators
+    // know which signals are firing on their query.
+    const badge = $('searchModeBadge');
+    const hint  = $('searchLanesHint');
+    if (data.search?.mode === 'hybrid' && data.search.lanes) {
+      const L_ = data.search.lanes;
+      badge.textContent = '🧠 بحث ذكي';
+      badge.className = 'text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300';
+      const semOff = !data.search.semantic_available ? ' · معطّل' : '';
+      hint.textContent = `كلمات: ${L_.fts} · معنى: ${L_.semantic}${semOff} · جزئي: ${L_.partial}`;
+      badge.classList.remove('hidden');
+      hint.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+      hint.classList.add('hidden');
+    }
   } catch (e) {
     $('svcTbody').innerHTML = `<tr><td colspan="7" class="px-4 py-6 text-center text-rose-600">${escapeHtml(e.message)}</td></tr>`;
   }
@@ -485,6 +506,14 @@ function renderServices(list) {
     $('svcTbody').innerHTML = `<tr><td colspan="7" class="px-4 py-12 text-center text-ink-500">${L.noMatch}</td></tr>`;
     return;
   }
+  // Per-lane chip showing why a row was found. Only renders when the
+  // search returned a non-trivial subset of the catalogue (i.e. the user
+  // actually queried for something).
+  const LANE_CHIP = {
+    fts:      '<span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 mono" title="Full-text keyword match (BM25)">كلمات</span>',
+    semantic: '<span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 mono" title="Embedding-based semantic match">معنى</span>',
+    partial:  '<span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 mono" title="Substring infix match">جزء</span>'
+  };
   $('svcTbody').innerHTML = list.map(r => {
     const nameAr = r.name_ar || '';
     const nameEn = r.name_en || '';
@@ -498,12 +527,19 @@ function renderServices(list) {
     const validBy = r.validated_by_name
       ? `<div class="text-xs"><div class="font-medium">${escapeHtml(r.validated_by_name)}</div><div class="text-ink-500 dark:text-ink-400 mono">${formatDate(r.validated_at)}</div></div>`
       : '<span class="text-ink-400">—</span>';
+    // matched_by is present only on hybrid-mode responses (i.e. when q is
+    // non-empty). Render the lane chips under the service name so the
+    // annotator can see why this row was surfaced.
+    const lanes = Array.isArray(r.matched_by) && r.matched_by.length
+      ? `<div class="flex gap-1 mt-1">${r.matched_by.map(k => LANE_CHIP[k] || '').join('')}</div>`
+      : '';
     return `
       <tr class="svc-row" data-id="${r.id}">
         <td class="px-4 py-3 mono text-ink-500 dark:text-ink-400"><span class="ltr">${r.id}</span></td>
         <td class="px-4 py-3">
           <div class="font-medium truncate max-w-[420px]" dir="rtl">${escapeHtml(primary)}</div>
           ${secondary}
+          ${lanes}
         </td>
         <td class="px-4 py-3 text-ink-600 dark:text-ink-300 truncate max-w-[220px]">${escapeHtml(entity)}</td>
         <td class="px-4 py-3">${fee}</td>

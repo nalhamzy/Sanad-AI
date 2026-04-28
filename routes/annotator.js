@@ -18,6 +18,8 @@
 
 import { Router } from 'express';
 import { db } from '../lib/db.js';
+import { embedQuery, cosineTopK } from '../lib/embeddings.js';
+import { LLM_ENABLED } from '../lib/llm.js';
 
 export const annotatorRouter = Router();
 
@@ -74,36 +76,28 @@ annotatorRouter.post('/annotators', async (req, res) => {
 });
 
 // ─── Services search ────────────────────────────────────────
+//
+// Hybrid search pipeline (used when ?q= is present):
+//   1. Apply structured filters (entity, fee, has_docs, active, validation
+//      status) → candidate id Set or null=all.
+//   2. Three parallel scoring lanes within the candidate set:
+//        a) FTS5 BM25 — keyword match with prefix wildcards on tokens
+//        b) Substring LIKE — true infix match on name_en/name_ar/search_blob
+//           (catches what FTS prefix-only misses, e.g. "ence" in "licence")
+//        c) Semantic cosine — Qwen embedding of the query against the
+//           pre-computed catalogue embeddings (concept matching, AR↔EN
+//           cross-language)
+//   3. Reciprocal Rank Fusion across the 3 lanes (k=60), with a "matched_by"
+//      tag per row so the UI can show why a row was found.
+//   4. Pagination on the fused result list.
+//
+// When q is empty, fall back to plain SQL with the chosen sort (id / name /
+// fee / updated). Returns the same shape either way.
+const RRF_K = 60;
 
-annotatorRouter.get('/services', async (req, res) => {
-  const q = (req.query.q || '').toString().trim();
-  const entity = (req.query.entity || '').toString().trim();
-  const status = (req.query.status || '').toString().trim(); // validated|pending|needs_review
-  const feeMin = req.query.fee_min != null ? Number(req.query.fee_min) : null;
-  const feeMax = req.query.fee_max != null ? Number(req.query.fee_max) : null;
-  const hasDocs = req.query.has_docs; // 'yes'|'no'|undefined
-  const active = req.query.active; // 'yes'|'no'|undefined
-  const limit = Math.min(Number(req.query.limit || 40), 200);
-  const offset = Math.max(Number(req.query.offset || 0), 0);
-  const sort = (req.query.sort || 'id').toString(); // id|name|fee|updated
-
+function buildFiltersClause({ entity, status, feeMin, feeMax, hasDocs, active }) {
   const where = [];
   const args = [];
-
-  if (q) {
-    // Use FTS when possible; fall back to LIKE on search_blob if FTS term is noise.
-    const ftsQuery = q.replace(/[^\p{L}\p{N}\s]/gu, ' ')
-                      .split(/\s+/).filter(w => w.length >= 2)
-                      .slice(0, 8).map(w => w + '*').join(' OR ');
-    if (ftsQuery) {
-      where.push(`s.id IN (SELECT rowid FROM service_catalog_fts WHERE service_catalog_fts MATCH ?)`);
-      args.push(ftsQuery);
-    } else {
-      where.push(`(s.search_blob LIKE ? OR s.name_en LIKE ? OR s.name_ar LIKE ?)`);
-      const like = `%${q.toLowerCase()}%`;
-      args.push(like, like, like);
-    }
-  }
   if (entity) { where.push(`s.entity_en = ?`); args.push(entity); }
   if (feeMin != null && !Number.isNaN(feeMin)) { where.push(`COALESCE(s.fee_omr, 0) >= ?`); args.push(feeMin); }
   if (feeMax != null && !Number.isNaN(feeMax)) { where.push(`COALESCE(s.fee_omr, 0) <= ?`); args.push(feeMax); }
@@ -114,48 +108,196 @@ annotatorRouter.get('/services', async (req, res) => {
   if (status === 'validated')    where.push(`EXISTS (SELECT 1 FROM service_validation v WHERE v.service_id = s.id AND v.status = 'validated')`);
   if (status === 'pending')      where.push(`NOT EXISTS (SELECT 1 FROM service_validation v WHERE v.service_id = s.id AND v.status = 'validated')`);
   if (status === 'needs_review') where.push(`EXISTS (SELECT 1 FROM service_validation v WHERE v.service_id = s.id AND v.status = 'needs_review')`);
+  return { where, args, clause: where.length ? `WHERE ${where.join(' AND ')}` : '' };
+}
 
-  const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
-  const orderClause = {
-    id: 's.id ASC',
-    name: 'COALESCE(s.name_en, s.name_ar) ASC',
-    fee: 'COALESCE(s.fee_omr, 0) DESC',
-    updated: `COALESCE(s.updated_at, '') DESC, s.id DESC`
-  }[sort] || 's.id ASC';
+const SELECT_COLUMNS = `
+  s.id, s.entity_en, s.entity_ar, s.name_en, s.name_ar,
+  s.fee_omr, s.fees_text, s.is_active, s.version, s.source_url,
+  s.required_documents_json, s.updated_at, s.last_edited_by,
+  (SELECT v.status FROM service_validation v WHERE v.service_id = s.id
+    ORDER BY v.created_at DESC LIMIT 1) AS validation_status,
+  (SELECT v.annotator_id FROM service_validation v WHERE v.service_id = s.id
+    ORDER BY v.created_at DESC LIMIT 1) AS validated_by,
+  (SELECT a.name FROM service_validation v JOIN annotator a ON a.id = v.annotator_id
+    WHERE v.service_id = s.id ORDER BY v.created_at DESC LIMIT 1) AS validated_by_name,
+  (SELECT v.created_at FROM service_validation v WHERE v.service_id = s.id
+    ORDER BY v.created_at DESC LIMIT 1) AS validated_at`;
 
+function shapeRow(r, extras = {}) {
+  let docs = [];
+  try { docs = JSON.parse(r.required_documents_json || '[]'); } catch {}
+  return {
+    ...r,
+    required_documents_json: undefined,
+    doc_count: Array.isArray(docs) ? docs.length : 0,
+    ...extras
+  };
+}
+
+// Pre-filter candidate id set; null = no restriction (faster path).
+async function loadCandidateIds(filterClause, filterArgs) {
+  if (!filterClause) return null;
+  const { rows } = await db.execute({
+    sql: `SELECT s.id FROM service_catalog s ${filterClause}`,
+    args: filterArgs
+  });
+  return new Set(rows.map(r => r.id));
+}
+
+// FTS lane: tokenize, OR-join with prefix wildcards. Returns [{id, rank}].
+async function ftsLane(q, candidateIds, limit = 80) {
+  const tokens = q.replace(/[^\p{L}\p{N}\s]/gu, ' ')
+                  .split(/\s+/).filter(w => w.length >= 2).slice(0, 8);
+  if (!tokens.length) return [];
+  const ftsQuery = tokens.map(w => `"${w}"*`).join(' OR ');
   try {
     const { rows } = await db.execute({
-      sql: `SELECT s.id, s.entity_en, s.entity_ar, s.name_en, s.name_ar,
-                   s.fee_omr, s.fees_text, s.is_active, s.version, s.source_url,
-                   s.required_documents_json, s.updated_at, s.last_edited_by,
-                   (SELECT v.status FROM service_validation v WHERE v.service_id = s.id
-                     ORDER BY v.created_at DESC LIMIT 1) AS validation_status,
-                   (SELECT v.annotator_id FROM service_validation v WHERE v.service_id = s.id
-                     ORDER BY v.created_at DESC LIMIT 1) AS validated_by,
-                   (SELECT a.name FROM service_validation v JOIN annotator a ON a.id = v.annotator_id
-                     WHERE v.service_id = s.id ORDER BY v.created_at DESC LIMIT 1) AS validated_by_name,
-                   (SELECT v.created_at FROM service_validation v WHERE v.service_id = s.id
-                     ORDER BY v.created_at DESC LIMIT 1) AS validated_at
-              FROM service_catalog s
-              ${whereClause}
-             ORDER BY ${orderClause}
-             LIMIT ? OFFSET ?`,
-      args: [...args, limit, offset]
+      sql: `SELECT service_catalog_fts.rowid AS id, bm25(service_catalog_fts) AS rank
+              FROM service_catalog_fts WHERE service_catalog_fts MATCH ?
+             ORDER BY rank ASC LIMIT ?`,
+      args: [ftsQuery, limit]
     });
+    return candidateIds ? rows.filter(r => candidateIds.has(r.id)) : rows;
+  } catch { return []; }
+}
 
-    const totalArgs = args.slice();
-    const { rows: totalRows } = await db.execute({
-      sql: `SELECT COUNT(*) AS n FROM service_catalog s ${whereClause}`,
-      args: totalArgs
+// Substring lane: true infix LIKE. SQLite indexes don't help here so we cap
+// to 80 hits and only fire when q is short enough to be cheap.
+async function substringLane(q, candidateIds, limit = 80) {
+  const term = q.toLowerCase().trim();
+  if (!term || term.length < 2) return [];
+  const like = `%${term}%`;
+  const { rows } = await db.execute({
+    sql: `SELECT s.id FROM service_catalog s
+           WHERE s.is_active = 1
+             AND (LOWER(s.name_en) LIKE ?
+                  OR s.name_ar LIKE ?
+                  OR LOWER(s.search_blob) LIKE ?)
+           LIMIT ?`,
+    args: [like, like, like, limit]
+  });
+  return candidateIds ? rows.filter(r => candidateIds.has(r.id)) : rows;
+}
+
+// Semantic lane: query embedding × catalogue embeddings via cosine top-K.
+async function semanticLane(q, candidateIds, limit = 80) {
+  if (!LLM_ENABLED) return [];
+  const vec = await embedQuery(q);
+  if (!vec) return [];
+  return await cosineTopK(vec, limit, candidateIds);
+}
+
+// RRF fusion of N ranked lists; preserves matched_by tags.
+function rrfFuse(lanes) {
+  const scores = new Map(); // id → { score, matched_by }
+  for (const { name, list } of lanes) {
+    list.forEach((r, i) => {
+      const prev = scores.get(r.id) || { score: 0, matched_by: new Set() };
+      prev.score += 1 / (RRF_K + i + 1);
+      prev.matched_by.add(name);
+      scores.set(r.id, prev);
     });
+  }
+  return [...scores.entries()]
+    .map(([id, s]) => ({ id, score: s.score, matched_by: [...s.matched_by] }))
+    .sort((a, b) => b.score - a.score);
+}
 
-    const results = rows.map(r => {
-      let docs = [];
-      try { docs = JSON.parse(r.required_documents_json || '[]'); } catch {}
-      return { ...r, required_documents_json: undefined, doc_count: Array.isArray(docs) ? docs.length : 0 };
+annotatorRouter.get('/services', async (req, res) => {
+  const q = (req.query.q || '').toString().trim();
+  const entity = (req.query.entity || '').toString().trim();
+  const status = (req.query.status || '').toString().trim();
+  const feeMin = req.query.fee_min != null ? Number(req.query.fee_min) : null;
+  const feeMax = req.query.fee_max != null ? Number(req.query.fee_max) : null;
+  const hasDocs = req.query.has_docs;
+  const active = req.query.active;
+  const limit = Math.min(Number(req.query.limit || 40), 200);
+  const offset = Math.max(Number(req.query.offset || 0), 0);
+  const sort = (req.query.sort || (q ? 'relevance' : 'id')).toString();
+
+  const filters = { entity, status, feeMin, feeMax, hasDocs, active };
+  const { args: filterArgs, clause: filterClause } = buildFiltersClause(filters);
+
+  try {
+    // ─── No query → plain SQL with chosen sort ─────────────────
+    if (!q) {
+      const orderClause = {
+        id: 's.id ASC',
+        name: 'COALESCE(s.name_en, s.name_ar) ASC',
+        fee: 'COALESCE(s.fee_omr, 0) DESC',
+        updated: `COALESCE(s.updated_at, '') DESC, s.id DESC`
+      }[sort] || 's.id ASC';
+      const { rows } = await db.execute({
+        sql: `SELECT ${SELECT_COLUMNS} FROM service_catalog s
+              ${filterClause}
+              ORDER BY ${orderClause}
+              LIMIT ? OFFSET ?`,
+        args: [...filterArgs, limit, offset]
+      });
+      const { rows: totalRows } = await db.execute({
+        sql: `SELECT COUNT(*) AS n FROM service_catalog s ${filterClause}`,
+        args: filterArgs
+      });
+      return res.json({
+        results: rows.map(r => shapeRow(r)),
+        total: totalRows[0].n, limit, offset,
+        search: { mode: 'browse', semantic_available: LLM_ENABLED }
+      });
+    }
+
+    // ─── Hybrid search (q present) ──────────────────────────────
+    const candidateIds = await loadCandidateIds(filterClause, filterArgs);
+    const [fts, sem, sub] = await Promise.all([
+      ftsLane(q, candidateIds, 80),
+      semanticLane(q, candidateIds, 80),
+      substringLane(q, candidateIds, 80)
+    ]);
+
+    const fused = rrfFuse([
+      { name: 'fts', list: fts },
+      { name: 'semantic', list: sem },
+      { name: 'partial', list: sub }
+    ]);
+
+    if (!fused.length) {
+      return res.json({
+        results: [], total: 0, limit, offset,
+        search: { mode: 'hybrid', q, semantic_available: LLM_ENABLED, lanes: { fts: 0, semantic: 0, partial: 0 } }
+      });
+    }
+
+    const total = fused.length;
+    const pageIds = fused.slice(offset, offset + limit).map(x => x.id);
+    if (!pageIds.length) {
+      return res.json({
+        results: [], total, limit, offset,
+        search: { mode: 'hybrid', q, semantic_available: LLM_ENABLED, lanes: { fts: fts.length, semantic: sem.length, partial: sub.length } }
+      });
+    }
+
+    // Hydrate the page slice in one round-trip preserving the fused order.
+    const placeholders = pageIds.map(() => '?').join(',');
+    const { rows } = await db.execute({
+      sql: `SELECT ${SELECT_COLUMNS} FROM service_catalog s WHERE s.id IN (${placeholders})`,
+      args: pageIds
     });
+    const byId = new Map(rows.map(r => [r.id, r]));
+    const results = fused.slice(offset, offset + limit)
+      .map(f => byId.get(f.id) ? shapeRow(byId.get(f.id), {
+        relevance: Math.round(f.score * 1000) / 1000,
+        matched_by: f.matched_by
+      }) : null)
+      .filter(Boolean);
 
-    res.json({ results, total: totalRows[0].n, limit, offset });
+    res.json({
+      results, total, limit, offset,
+      search: {
+        mode: 'hybrid', q,
+        semantic_available: LLM_ENABLED,
+        lanes: { fts: fts.length, semantic: sem.length, partial: sub.length }
+      }
+    });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
