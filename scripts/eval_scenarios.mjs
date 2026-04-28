@@ -25,7 +25,12 @@ process.env.DEBUG_MODE = process.env.DEBUG_MODE || 'false';
 
 // Detect whether we have Anthropic credits or fall through to Qwen.
 // CLI flag --judge=qwen forces Qwen even when Anthropic is set.
-import 'dotenv/config';
+//
+// Use dotenv override so an empty/stale ANTHROPIC_API_KEY in the shell env
+// doesn't shadow the real value in .env (caught earlier when the eval kept
+// running on Qwen despite credits being live).
+import dotenv from 'dotenv';
+dotenv.config({ override: true });
 const forceQwen = process.argv.includes('--judge=qwen') || !process.env.ANTHROPIC_API_KEY;
 if (forceQwen) {
   process.env.LLM_PROVIDER = 'qwen';
