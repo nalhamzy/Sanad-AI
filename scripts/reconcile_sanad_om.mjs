@@ -177,11 +177,11 @@ const report = {
   entities_missing: entitiesMissing.length,
   fee_discrepancies: feeDiscrepancies.length,
   details: {
-    matches: matches.slice(0, 20),
+    matches,
     missing_from_us: missingFromUs,
-    junk_in_us: junkInUs.slice(0, 50),
+    junk_in_us: junkInUs,
     entities_missing: entitiesMissing,
-    fee_discrepancies: feeDiscrepancies.slice(0, 20)
+    fee_discrepancies: feeDiscrepancies
   }
 };
 

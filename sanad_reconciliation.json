@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-28T18:39:49.475Z",
+  "generated_at": "2026-04-28T19:00:47.102Z",
   "source": "./scripts/sanad_om_scrape/sanad_om_pricelist_raw.json",
   "catalogue_rows": 453,
   "sanad_om_services": 253,
@@ -460,6 +460,397 @@
           }
         ],
         "match_method": "fuzzy(0.75)"
+      },
+      {
+        "our_id": 160044,
+        "our_name_ar": "التشجير خارج حدود القطعة",
+        "our_name_en": "تصريح نقل تربة في الأرض الفضاء",
+        "our_fee_omr": null,
+        "our_entity_ar": "بلدية مسقط",
+        "sanad_entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "sanad_service_ar": "طلب خدمات عامة خارج حدود القطعة -دفع",
+        "sanad_actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "fuzzy(0.75)"
+      },
+      {
+        "our_id": 160008,
+        "our_name_ar": "تجديد عقد الإيجار",
+        "our_name_en": "Renewal Rent Contract",
+        "our_fee_omr": null,
+        "our_entity_ar": "بلدية مسقط",
+        "sanad_entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "sanad_service_ar": "تجديد)/عقد الإيجار(جديد",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 160008,
+        "our_name_ar": "تجديد عقد الإيجار",
+        "our_name_en": "Renewal Rent Contract",
+        "our_fee_omr": null,
+        "our_entity_ar": "بلدية مسقط",
+        "sanad_entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "sanad_service_ar": "تجديد)/عقد الإيجار(جديد-دفع",
+        "sanad_actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 160029,
+        "our_name_ar": "إباحة صغرى صيانة أو بناء ملحق أو تعديلات (تجديد)",
+        "our_name_en": "إباحة صغرى صيانة أو بناء ملحق أو تعديلات (تجديد)",
+        "our_fee_omr": null,
+        "our_entity_ar": "بلدية مسقط",
+        "sanad_entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "sanad_service_ar": "طلب إباحة بناء صغرى",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ],
+        "match_method": "fuzzy(0.75)"
+      },
+      {
+        "our_id": 160025,
+        "our_name_ar": "تصريح الشروع في البناء",
+        "our_name_en": "تصريح الشروع في البناء",
+        "our_fee_omr": null,
+        "our_entity_ar": "بلدية مسقط",
+        "sanad_entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "sanad_service_ar": "طلب تصريح الشروع في البناء",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 160025,
+        "our_name_ar": "تصريح الشروع في البناء",
+        "our_name_en": "تصريح الشروع في البناء",
+        "our_fee_omr": null,
+        "our_entity_ar": "بلدية مسقط",
+        "sanad_entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "sanad_service_ar": "طلب تصريح الشروع في البناء -دفع",
+        "sanad_actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 130036,
+        "our_name_ar": "إصدار بدل فاقد شهادة الكفاءة البحرية",
+        "our_name_en": "Issuance Of A Duplicate Maritime Competency Certificate",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_entity_ar": "غرفة عمان للتجارة والصناعة",
+        "sanad_service_ar": "بدل فاقد",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 130040,
+        "our_name_ar": "إصدار بطاقة تشغيل مركبة",
+        "our_name_en": "Issue Vehicle Operation Card",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_service_ar": "إصدار بطاقة تشغيل مركبة جديدة (عدد المركبات 1 الى 5)",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 130040,
+        "our_name_ar": "إصدار بطاقة تشغيل مركبة",
+        "our_name_en": "Issue Vehicle Operation Card",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_service_ar": "إصدار بطاقة تشغيل مركبة جديدة (عدد المركبات 6 الى 10)",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 130040,
+        "our_name_ar": "إصدار بطاقة تشغيل مركبة",
+        "our_name_en": "Issue Vehicle Operation Card",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_service_ar": "إصدار بطاقة تشغيل مركبة جديدة (عدد المركبات 11 الى 15)",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "5 ر.ع",
+            "fee_omr": 5
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 130040,
+        "our_name_ar": "إصدار بطاقة تشغيل مركبة",
+        "our_name_en": "Issue Vehicle Operation Card",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_service_ar": "إصدار بطاقة تشغيل مركبة جديدة (عدد المركبات 16 الى 20)",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "5 ر.ع",
+            "fee_omr": 5
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 130041,
+        "our_name_ar": "تجديد بطاقة تشغيل مركبة",
+        "our_name_en": "Renew Vehicle Operation Card",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_service_ar": "تجديد بطاقة تشغيل مركبة (عدد المركبات 1 الى 5)",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 130041,
+        "our_name_ar": "تجديد بطاقة تشغيل مركبة",
+        "our_name_en": "Renew Vehicle Operation Card",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_service_ar": "تجديد بطاقة تشغيل مركبة (عدد المركبات 6 الى 10)",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 130041,
+        "our_name_ar": "تجديد بطاقة تشغيل مركبة",
+        "our_name_en": "Renew Vehicle Operation Card",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_service_ar": "تجديد بطاقة تشغيل مركبة (عدد المركبات 11 الى 15)",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "5 ر.ع",
+            "fee_omr": 5
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 130041,
+        "our_name_ar": "تجديد بطاقة تشغيل مركبة",
+        "our_name_en": "Renew Vehicle Operation Card",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_service_ar": "تجديد بطاقة تشغيل مركبة (عدد المركبات16 الى 20)",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "5 ر.ع",
+            "fee_omr": 5
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 130040,
+        "our_name_ar": "إصدار بطاقة تشغيل مركبة",
+        "our_name_en": "Issue Vehicle Operation Card",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_service_ar": "تعديل بيانات بطاقة تشغيل مركبة",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ],
+        "match_method": "fuzzy(0.75)"
+      },
+      {
+        "our_id": 130043,
+        "our_name_ar": "إلغاء بطاقة تشغيل مركبة",
+        "our_name_en": "Cancel Vehicle Operation Card",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_service_ar": "إلغاء بطاقة تشغيل مركبة",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ],
+        "match_method": "exact"
+      },
+      {
+        "our_id": 130043,
+        "our_name_ar": "إلغاء بطاقة تشغيل مركبة",
+        "our_name_en": "Cancel Vehicle Operation Card",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_service_ar": "إلغاء بطاقة تشغيل مركبة-دفع",
+        "sanad_actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 130040,
+        "our_name_ar": "إصدار بطاقة تشغيل مركبة",
+        "our_name_en": "Issue Vehicle Operation Card",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_service_ar": "تحويل ملكية بطاقة تشغيل مركبة",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ],
+        "match_method": "fuzzy(0.75)"
+      },
+      {
+        "our_id": 130040,
+        "our_name_ar": "إصدار بطاقة تشغيل مركبة",
+        "our_name_en": "Issue Vehicle Operation Card",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_service_ar": "تحويل ملكية بطاقة تشغيل مركبة-دفع",
+        "sanad_actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "fuzzy(0.75)"
+      },
+      {
+        "our_id": 130040,
+        "our_name_ar": "إصدار بطاقة تشغيل مركبة",
+        "our_name_en": "Issue Vehicle Operation Card",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_service_ar": "إصدار بدل فاقد لبطاقة تشغيل مركبة",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ],
+        "match_method": "fuzzy(0.75)"
+      },
+      {
+        "our_id": 130044,
+        "our_name_ar": "تسجيل لوحة أجرة",
+        "our_name_en": "Register Taxi Plate",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_service_ar": "طلب تسجيل لوحة أجرة",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 130044,
+        "our_name_ar": "تسجيل لوحة أجرة",
+        "our_name_en": "Register Taxi Plate",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "sanad_service_ar": "طلب تسجيل لوحة أجرة-دفع",
+        "sanad_actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "substring"
       }
     ],
     "missing_from_us": [
@@ -3587,6 +3978,90 @@
         "id": 160089,
         "name_en": "Search for Parking Violation",
         "name_ar": "الاستعلام عن مخالفات مواقف المركبات",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 160090,
+        "name_en": "Search for Request Status",
+        "name_ar": "الاستعلام عن حالة الطلب المقدم",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 160091,
+        "name_en": "Search for Parking Permission",
+        "name_ar": "الاستعلام عن تصاريح مواقف المركبات",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 160092,
+        "name_en": "Search for Company Registered",
+        "name_ar": "الاستعلام عن الشركات المسجلة",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 160093,
+        "name_en": "Search for e-Bids",
+        "name_ar": "الاستعلام عن المزايدات",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 160094,
+        "name_en": "Search for Request Status",
+        "name_ar": "الاستعلام عن حالة الطلب المقدم",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 160095,
+        "name_en": "Search for Request Status",
+        "name_ar": "الاستعلام عن حالة الطلب المقدم",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 160096,
+        "name_en": "Search for Request Status",
+        "name_ar": "الاستعلام عن حالة الطلب المقدم",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 160097,
+        "name_en": "Search for Major Building Permit Services (Consulting Offices)",
+        "name_ar": "الاستعلام عن خدمات تراخيص البناء الكبرى (المكاتب الاستشارية)",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 160098,
+        "name_en": "Search for Request Status",
+        "name_ar": "الاستعلام عن حالة الطلب المقدم",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 160100,
+        "name_en": "Search for Request Status",
+        "name_ar": "الاستعلام عن حالة الطلب المقدم",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 160101,
+        "name_en": "Search for Request Status",
+        "name_ar": "الاستعلام عن حالة الطلب المقدم",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 160102,
+        "name_en": "Search for Request Status",
+        "name_ar": "الاستعلام عن حالة الطلب المقدم",
         "beneficiary": "من الحكومة الى الأفراد(G2C)",
         "reason": "pattern_match"
       }

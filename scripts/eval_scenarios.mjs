@@ -133,12 +133,97 @@ const SCENARIOS = [
       { text: 'i need a license' },
       { text: 'driving licence' }
     ]
+  },
+  {
+    id: 'multi_file_batch_upload',
+    description: 'Citizen starts driving-licence renewal then sends 3 files in a row with weak captions; bot should buffer them and ask once for descriptions, NOT ask 3 times.',
+    expectations: [
+      'Bot buffers multiple files and acknowledges them concisely (one ack each, ≤25 words).',
+      'Does NOT ask "is this for civil_id, or extra?" repeatedly per file.',
+      'When the citizen sends a comma-separated description, the bot maps each file to its slot and emits a single consolidated "✅ Saved: X, Y, Z" reply.',
+      'Reply is ≤30 words after the descriptions arrive — short and scannable.',
+      'Eventually transitions to reviewing or asks for the remaining required doc.'
+    ],
+    turns: [
+      { text: 'I want to renew my driving licence' },
+      { text: 'yes' },
+      { text: 'here', attachment: { name: 'doc1.jpg', mime: 'image/jpeg', caption: 'here' } },
+      { text: '', attachment: { name: 'doc2.jpg', mime: 'image/jpeg', caption: '' } },
+      { text: '', attachment: { name: 'doc3.jpg', mime: 'image/jpeg', caption: '' } },
+      { text: 'civil ID, medical fitness form, photo' }
+    ]
+  },
+  {
+    id: 'return_visit_status_query',
+    description: 'Citizen with an in-flight request asks where it is on a return visit. Agent should know about their request from the auto-injected requests block and answer immediately without asking what their request is.',
+    expectations: [
+      'Recognises the citizen has an existing request (from the auto-injected requests block).',
+      'Answers the status without re-asking what the request was.',
+      'If they ask for an update, calls get_request_status — does NOT make up status.',
+      'Stays concise (≤40 words for the status reply).'
+    ],
+    // The runner plants a real request row before this scenario starts so
+    // the auto-injected requests block has something to surface. See the
+    // `plant` field below.
+    plant: {
+      service_name_like: 'driver license renewal',
+      status: 'in_progress',
+      citizen_phone: '+96890000099',
+      office_id: 1
+    },
+    turns: [
+      { text: 'hello, I want to follow up on my driving licence request' },
+      { text: 'whats the status?' }
+    ]
+  },
+  {
+    id: 'short_fast_reply',
+    description: 'Citizen asks a simple status / fee question — bot must answer in ≤2 lines. No essays.',
+    expectations: [
+      'Reply is ≤30 words.',
+      'No bullet lists or markdown headers; plain text only.',
+      'Answers the question directly without preamble like "Sure! Let me look that up…"',
+      'Ends with a single short next-step prompt or no question at all.'
+    ],
+    turns: [
+      { text: 'how much is civil ID issuance?' }
+    ]
   }
 ];
 
 // ── Run a scenario ────────────────────────────────────────────────
 async function runScenario(s) {
   const sid = `eval-${s.id}-${Date.now()}`;
+  // Some scenarios need pre-existing state (e.g. an in-flight request to
+  // test return-visit status queries). Plant before the first turn so the
+  // requests-injection block has real data to surface.
+  if (s.plant) {
+    const { db } = await import('../lib/db.js');
+    try {
+      // Find a service matching the requested name pattern.
+      const { rows: svc } = await db.execute({
+        sql: `SELECT id, fee_omr FROM service_catalog WHERE LOWER(name_en) LIKE ? LIMIT 1`,
+        args: [`%${s.plant.service_name_like}%`]
+      });
+      if (svc[0]) {
+        // Citizen row (idempotent).
+        const phone = s.plant.citizen_phone || `+96890000${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+        const { rows: cExist } = await db.execute({ sql: `SELECT id FROM citizen WHERE phone=?`, args: [phone] });
+        let citizenId;
+        if (cExist[0]) citizenId = cExist[0].id;
+        else {
+          const r = await db.execute({ sql: `INSERT INTO citizen(phone,name) VALUES (?,?)`, args: [phone, 'Eval Citizen'] });
+          citizenId = Number(r.lastInsertRowid);
+        }
+        // Request row.
+        await db.execute({
+          sql: `INSERT INTO request(session_id,citizen_id,service_id,status,office_id,fee_omr,governorate,created_at,claimed_at,last_event_at)
+                VALUES (?,?,?,?,?,?,'Muscat', datetime('now','-2 days'), datetime('now','-1 days'), datetime('now'))`,
+          args: [sid, citizenId, svc[0].id, s.plant.status || 'in_progress', s.plant.office_id || 1, svc[0].fee_omr || 5]
+        });
+      }
+    } catch (e) { /* ignore — scenario will just behave like fresh session */ }
+  }
   const transcript = [];
   for (let i = 0; i < s.turns.length; i++) {
     const t = s.turns[i];

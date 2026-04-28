@@ -53,13 +53,14 @@ async function chat({ system, user, temperature = 0.2, max_tokens = 700 }) {
 }
 
 const MINISTRIES = [
-  { code: 'mm',    dir: 'scripts/mm_scrape',    csv: 'mm_services.csv'    },
-  { code: 'moc',   dir: 'scripts/moc_scrape',   csv: 'moc_services.csv'   },
-  { code: 'moh',   dir: 'scripts/moh_scrape',   csv: 'moh_services.csv'   },
-  { code: 'mohup', dir: 'scripts/mohup_scrape', csv: 'mohup_services.csv' },
-  { code: 'mol',   dir: 'scripts/mol_scrape',   csv: 'mol_services.csv'   },
-  { code: 'mtcit', dir: 'scripts/mtcit_scrape', csv: 'mtcit_services.csv' },
-  { code: 'rop',   dir: 'scripts/rop_scrape',   csv: 'rop_services.csv'   }
+  { code: 'mm',       dir: 'scripts/mm_scrape',       csv: 'mm_services.csv'       },
+  { code: 'moc',      dir: 'scripts/moc_scrape',      csv: 'moc_services.csv'      },
+  { code: 'moh',      dir: 'scripts/moh_scrape',      csv: 'moh_services.csv'      },
+  { code: 'mohup',    dir: 'scripts/mohup_scrape',    csv: 'mohup_services.csv'    },
+  { code: 'mol',      dir: 'scripts/mol_scrape',      csv: 'mol_services.csv'      },
+  { code: 'mtcit',    dir: 'scripts/mtcit_scrape',    csv: 'mtcit_services.csv'    },
+  { code: 'rop',      dir: 'scripts/rop_scrape',      csv: 'rop_services.csv'      },
+  { code: 'sanad_om', dir: 'scripts/sanad_om_scrape', csv: 'sanad_om_services.csv' }
 ];
 
 const HEADERS = [
