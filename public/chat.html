@@ -256,14 +256,17 @@ window.addEventListener('unhandledrejection', e => {
   async function loadHealth() {
     try {
       const h = await fetch('/api/health').then(r => r.json());
-      llmState.textContent = h.llm ? 'Qwen 3.5' : 'fallback';
+      // Use neutral "AI ON / fallback" labels — citizens don't need (or
+      // necessarily want) to know which LLM provider is behind the curtain.
+      // The full subprocessor list is on /privacy.html for those who do.
+      llmState.textContent = h.llm ? (typeof t==='function' ? t('chat.ai_on', 'AI on') : 'AI on') : (typeof t==='function' ? t('chat.ai_fallback', 'fallback') : 'fallback');
       const mode = document.getElementById('llmMode');
       const hint = document.getElementById('llmHint');
       if (h.llm) {
-        mode.textContent = '🧠 Qwen 3.5 · tool-calling';
+        mode.textContent = '🧠 ' + (typeof t==='function' ? t('chat.ai_mode', 'Smart assistant') : 'Smart assistant');
         mode.className = 'ms-2 text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold';
       } else {
-        mode.textContent = '⚡ heuristic (no key)';
+        mode.textContent = '⚡ ' + (typeof t==='function' ? t('chat.ai_basic', 'basic mode') : 'basic mode');
         mode.className = 'ms-2 text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold';
         if (localStorage.getItem('sanad.hint_dismissed') !== '1') hint.classList.remove('hidden');
       }

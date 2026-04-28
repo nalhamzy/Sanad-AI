@@ -127,8 +127,10 @@ export async function start(port = PORT) {
       console.log(`     • Officer:    http://localhost:${bound}/officer.html`);
       console.log(`     • Annotator:  http://localhost:${bound}/annotator.html`);
       console.log(`     • Admin:      http://localhost:${bound}/admin.html`);
-      console.log(`     • Debug:      http://localhost:${bound}/api/debug/state`);
-      console.log(`     • LLM mode:   ${LLM_ENABLED ? 'Qwen ON' : 'stub (set QWEN_API_KEY for real replies)'}\n`);
+      console.log(`     • Debug:      http://localhost:${bound}/api/debug/state\n`);
+      if (!LLM_ENABLED) {
+        console.warn('⚠  No LLM key configured — chat will use canned stub replies. Set ANTHROPIC_API_KEY or QWEN_API_KEY for real replies.');
+      }
       resolve({ server, app, port: bound });
     });
   });

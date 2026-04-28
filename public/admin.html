@@ -304,7 +304,7 @@ async function load() {
     const health = await fetch('/api/health').then(r => r.json());
     document.getElementById('healthBar').textContent = 'All systems nominal';
     const llm = document.getElementById('llmBadge');
-    llm.textContent = health.llm ? 'LLM ON · Qwen 3.5' : 'LLM fallback';
+    llm.textContent = health.llm ? 'LLM ON' : 'LLM fallback';
     llm.className = 'chip ' + (health.llm ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300');
     const dbg = document.getElementById('debugBadge');
     dbg.textContent = health.debug ? 'debug on' : 'debug off';
