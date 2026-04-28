@@ -1,10 +1,11 @@
-// 5-scenario Opus-as-judge evaluation for the Sanad-AI agent.
+// 5-scenario LLM-as-judge evaluation for the Sanad-AI agent.
 //
-//   ANTHROPIC_API_KEY=sk-... node scripts/eval_scenarios.mjs
+//   ANTHROPIC_API_KEY=sk-... node scripts/eval_scenarios.mjs   # judge=Claude
+//   LLM_PROVIDER=qwen QWEN_API_KEY=... node scripts/eval_scenarios.mjs  # judge=Qwen
 //
 // Runs five end-to-end scenarios against the local agent (no HTTP — invokes
 // runTurn directly), captures full transcripts + state snapshots, then asks
-// Claude Opus to judge each one against scenario-specific expectations.
+// the configured LLM to judge each one against scenario-specific expectations.
 // Writes a JSON report to ./eval-report.json and prints a summary.
 
 import fs from 'fs';
@@ -12,11 +13,23 @@ import path from 'path';
 
 // Use a dedicated DB so the eval doesn't pollute dev data, and skip
 // auto-listening because we never need the HTTP server.
-process.env.NODE_ENV = process.env.NODE_ENV || 'eval';
+//
+// Set NODE_ENV=test (not 'eval') so lib/llm.js skips its dotenv.config({override})
+// reload — that lets us pin LLM_PROVIDER from the shell or here without it
+// being clobbered by the .env value.
+process.env.NODE_ENV = 'test';
 process.env.DB_URL = process.env.DB_URL || 'file:./data/sanad-eval.db';
 process.env.SANAD_NO_AUTOSTART = '1';
 process.env.SANAD_AGENT_V2 = process.env.SANAD_AGENT_V2 || 'true';
 process.env.DEBUG_MODE = process.env.DEBUG_MODE || 'false';
+
+// Detect whether we have Anthropic credits or fall through to Qwen.
+// CLI flag --judge=qwen forces Qwen even when Anthropic is set.
+import 'dotenv/config';
+const forceQwen = process.argv.includes('--judge=qwen') || !process.env.ANTHROPIC_API_KEY;
+if (forceQwen) {
+  process.env.LLM_PROVIDER = 'qwen';
+}
 
 // Wipe any prior eval DB so each run starts clean.
 const EVAL_DB = './data/sanad-eval.db';
@@ -28,12 +41,12 @@ const { migrate, seedDemoOffices, autoImportCatalog } = await import('../lib/db.
 const { runTurn } = await import('../lib/agent.js');
 const { LLM_ENABLED, LLM_PROVIDER, LLM_MODEL, chat } = await import('../lib/llm.js');
 
-if (!LLM_ENABLED || LLM_PROVIDER !== 'anthropic') {
-  console.error(`✗ Need LLM_PROVIDER=anthropic and a valid ANTHROPIC_API_KEY (got provider=${LLM_PROVIDER}, enabled=${LLM_ENABLED}).`);
+if (!LLM_ENABLED) {
+  console.error(`✗ No LLM available. Set ANTHROPIC_API_KEY (preferred) or QWEN_API_KEY in .env.`);
   process.exit(1);
 }
 
-console.log(`▶ provider=${LLM_PROVIDER} model=${LLM_MODEL}`);
+console.log(`▶ provider=${LLM_PROVIDER} model=${LLM_MODEL} (used for both agent + judge)`);
 console.log('▶ migrating + seeding catalogue (this can take ~30s on first run)…');
 await migrate();
 await seedDemoOffices();
@@ -161,7 +174,20 @@ async function runScenario(s) {
 // ── Judge with Opus ───────────────────────────────────────────────
 const JUDGE_SYSTEM = `You are an expert evaluator of Sanad-AI, a chatbot whose job is to PREPARE a complete request file (correct service + required documents + fees) and DISPATCH it to the Sanad offices marketplace (human service-bureau offices that process government paperwork on the citizen's behalf). The bot does NOT process requests itself; it does NOT send requests directly to ministries/ROP/police. It is a preparation and dispatch layer.
 
-You will receive a single scenario, the expectations a competent agent should meet, and the full transcript of one run. Judge strictly but fairly.
+CATALOGUE GROUND TRUTH (authoritative for all judging — overrides anything you "know" from training data):
+The current catalogue has 453 services scraped from 7 entities (MM, MOH, MOL, MOHUP, MTCIT, MOC, ROP). It DOES NOT include:
+  • Civil ID renewal — only first-issuance: "Issuing Civil Status Card Service" (id 140018, ROP).
+  • Passport renewal — only first-issuance: "Omani Passport Issuance Service" (id 140020, ROP).
+  • Many other "renewal" or specific services may also be missing.
+
+When a citizen asks for one of these gap services, the CORRECT bot behavior is to:
+  1. Honestly say "this isn't in our catalogue" (do NOT fabricate a renewal flow), AND
+  2. Surface the closest available match by id + name from the actual catalogue, AND
+  3. Mention that fees will be confirmed by the receiving Sanad office (because most scraped rows have null fee_omr).
+
+Do NOT penalize the bot for saying "civil ID renewal isn't in our catalogue" — that's the FACTUALLY CORRECT response for our specific scraped catalogue. Do NOT recommend "fixing" the catalogue to include services that genuinely aren't in it. Judge only the bot's handling of the conversation given what's actually in the catalogue.
+
+You will receive a single scenario, the expectations a competent agent should meet, and the full transcript of one run. Judge strictly but fairly. Many "renewal" expectations should be evaluated against the bot's gap-handling skill, not its ability to invent missing data.
 
 Output STRICT JSON, nothing else, in this shape:
 {

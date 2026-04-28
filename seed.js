@@ -6,7 +6,10 @@ import fs from 'fs';
 import { parse } from 'csv-parse/sync';
 import { db, migrate } from './lib/db.js';
 
-const CSV_PATH = './oman_services_directory.csv';
+// Prefer v2 (master + scraped ministries, built by scripts/merge_catalog.mjs)
+// when it exists. Falls back to the original master CSV.
+const CSV_V1 = './oman_services_directory.csv';
+const CSV_V2 = './oman_services_directory_v2.csv';
 
 function splitDocs(txt) {
   if (!txt) return [];
@@ -29,10 +32,12 @@ function slug(s) {
 }
 
 async function main() {
+  const CSV_PATH = fs.existsSync(CSV_V2) ? CSV_V2 : CSV_V1;
   if (!fs.existsSync(CSV_PATH)) {
     console.error(`CSV not found at ${CSV_PATH}`);
     process.exit(1);
   }
+  console.log(`• reading ${CSV_PATH}`);
   await migrate();
 
   const raw = fs.readFileSync(CSV_PATH, 'utf8');

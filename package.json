@@ -14,7 +14,15 @@
     "test:unit": "node --test tests/01-unit.test.js tests/02-catalogue.test.js",
     "test:watch": "node --test --watch tests/01-unit.test.js tests/02-catalogue.test.js tests/03-agent.test.js tests/04-routes.test.js",
     "eval": "node scripts/eval_scenarios.mjs",
-    "eval:whatsapp": "node scripts/eval_whatsapp.mjs"
+    "eval:whatsapp": "node scripts/eval_whatsapp.mjs",
+    "scrape:mm": "node scripts/mm_scrape/scrape.mjs",
+    "scrape:mtcit": "node scripts/mtcit_scrape/scrape.mjs",
+    "scrape:mohup": "node scripts/mohup_scrape/scrape.mjs",
+    "normalize": "node scripts/normalize_scraped.mjs",
+    "merge:catalog": "node scripts/merge_catalog.mjs",
+    "enrich": "node scripts/enrich_scraped.mjs",
+    "rebuild:catalog": "node scripts/rebuild_catalogue.mjs",
+    "verify:search": "node scripts/verify_search.mjs"
   },
   "engines": {
     "node": ">=18.17.0"
@@ -28,5 +36,8 @@
     "express": "^4.21.1",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.0.1"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.47.0"
   }
 }

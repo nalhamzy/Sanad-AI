@@ -2,6 +2,7 @@ node_modules/
 .env
 data/*.db
 data/*.db-journal
+data/*.db.before-rebuild-*
 data/uploads/
 !data/.gitkeep
 .DS_Store
@@ -9,4 +10,21 @@ data/uploads/
 dist/
 eval-report.json
 eval-whatsapp-report.json
+
+# Claude Code session cache (local-only)
+.claude/
+
+# Legacy 3,417-row master CSV — archived locally for recovery,
+# not shipped (production reads oman_services_directory_v2.csv).
+oman_services_directory.csv.archive
+
+# Per-scrape debug artifacts: raw JSON dumps, downloaded sample HTML,
+# and one-off probe/inspect helpers. The actual scraper.mjs and the
+# normalised *_services.csv outputs ARE committed; these aren't needed
+# for production or re-runs.
+scripts/*_scrape/*_raw.json
+scripts/*_scrape/sample*.html
+scripts/*_scrape/inspect*.mjs
+scripts/*_scrape/probe.mjs
+scripts/*_scrape/urls_*.txt
 
