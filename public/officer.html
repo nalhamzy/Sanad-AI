@@ -1,9 +1,21 @@
 <!doctype html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Sanad · Officer workspace</title>
+<title>سند · لوحة الموظف</title>
+<script>
+  // First-paint locale: read the saved language and set lang/dir BEFORE the
+  // page renders, so Arabic-speaking officers don't see an English flash.
+  // i18n.js will re-affirm this on load and on every setLang() call.
+  (function () {
+    try {
+      var lang = localStorage.getItem('sanad.lang') || 'ar';
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    } catch (_) { /* localStorage unavailable in private mode */ }
+  })();
+</script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
   tailwind.config = {
@@ -378,29 +390,29 @@
             <span class="chip chip-violet chip-sm">Civil Status</span>
           </button>
 
-          <div class="sh mt-4">Views</div>
+          <div class="sh mt-4" data-i18n="officer.sidebar.views">العروض</div>
           <button class="filter-btn" style="color:var(--text-mute);font-style:italic">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-            <span>New saved view</span>
+            <span data-i18n="officer.sidebar.new_view">عرض محفوظ جديد</span>
           </button>
 
-          <div class="sh mt-4">Navigate</div>
+          <div class="sh mt-4" data-i18n="officer.sidebar.navigate">التنقّل</div>
           <a href="/" class="filter-btn">
             <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9v9a2 2 0 01-2 2h-4v-6H10v6H6a2 2 0 01-2-2v-9z"/></svg>
-            <span>Landing</span>
+            <span data-i18n="officer.sidebar.landing">الصفحة الرئيسية</span>
           </a>
           <a href="/chat.html" target="_blank" class="filter-btn">
             <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-1.9 5.4 8.5 8.5 0 01-14.2-3A8.5 8.5 0 0111 3a8.5 8.5 0 018.1 6"/></svg>
-            <span>Citizen chat</span>
+            <span data-i18n="officer.sidebar.citizen_chat">محادثة المواطن</span>
             <span style="margin-inline-start:auto;color:var(--text-mute)">↗</span>
           </a>
           <a href="/catalogue.html" class="filter-btn">
             <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20V3H6.5A2.5 2.5 0 004 5.5v14z"/></svg>
-            <span>Catalogue</span>
+            <span data-i18n="officer.sidebar.catalogue">دليل الخدمات</span>
           </a>
           <a href="/admin.html" class="filter-btn">
             <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18M7 15l3-3 4 4 6-7"/></svg>
-            <span>Admin</span>
+            <span data-i18n="officer.sidebar.admin">الإدارة</span>
           </a>
         </nav>
 
@@ -780,8 +792,13 @@
     const nameEl = document.getElementById('whoami_name');
     const roleEl = document.getElementById('whoami_role');
     const whoWrap = document.getElementById('whoami');
-    if (nameEl) nameEl.textContent = `${officer.full_name} · ${officer.office.name_en || ''}`;
-    if (roleEl) roleEl.textContent = officer.role;
+    // Use the office's Arabic name when the UI is in Arabic, English otherwise,
+    // so the dashboard header reads naturally for the user's locale.
+    const officeName = (I18N.lang === 'ar' && officer.office.name_ar)
+      ? officer.office.name_ar
+      : (officer.office.name_en || officer.office.name_ar || '');
+    if (nameEl) nameEl.textContent = `${officer.full_name} · ${officeName}`;
+    if (roleEl) roleEl.textContent = t('role.' + officer.role, officer.role);
     if (whoWrap) whoWrap.classList.remove('hidden');
     // Pending-review gate — show friendly screen instead of loading the dashboard.
     if (officer.office.status && officer.office.status !== 'active') {
@@ -1133,12 +1150,15 @@
       const r = data.request;
       document.getElementById('detailRef').textContent = '#R-' + r.id;
       const statusEl = document.getElementById('detailStatus');
-      statusEl.textContent = r.status;
+      statusEl.textContent = t('status.' + r.status, r.status);
       statusEl.className = 'chip ' + (r.status==='completed'?'chip-ok':r.status==='ready'?'chip-warn':r.status==='claimed'||r.status==='in_progress'?'chip-brand':'');
       document.getElementById('detailTitle').textContent = pickName(r) || '—';
       const meta = [];
-      if (r.fee_omr != null) meta.push((r.fee_omr.toFixed ? r.fee_omr.toFixed(3) : r.fee_omr) + ' OMR');
-      if (r.entity_en) meta.push(r.entity_en);
+      // Use the user's locale for both the entity name and the OMR label.
+      const isArUI = I18N.lang === 'ar';
+      if (r.fee_omr != null) meta.push((r.fee_omr.toFixed ? r.fee_omr.toFixed(3) : r.fee_omr) + ' ' + t('officer.omr'));
+      const entityName = isArUI ? (r.entity_ar || r.entity_en) : (r.entity_en || r.entity_ar);
+      if (entityName) meta.push(entityName);
       if (r.governorate) meta.push(r.governorate);
       document.getElementById('detailMeta').textContent = meta.join(' · ');
 
@@ -1146,7 +1166,7 @@
       if (claimedAt) {
         const rem = Math.max(0, 2*3600*1000 - (Date.now() - claimedAt));
         const pct = (rem/(2*3600*1000))*100;
-        document.getElementById('detailSla').textContent = '⏱ ' + Math.floor(rem/60000) + 'm SLA';
+        document.getElementById('detailSla').textContent = '⏱ ' + t('officer.sla_minutes', { n: Math.floor(rem/60000) });
         document.getElementById('detailSla').classList.remove('hidden');
         document.getElementById('slaFill').style.width = pct + '%';
         document.getElementById('slaFill').className = 'bar-fill ' + (pct < 25 ? 'bad' : pct < 50 ? 'warn' : '');
@@ -1460,8 +1480,8 @@
     if (!currentRequestId) return;
     await api('/api/officer/request/' + currentRequestId + '/otp-window', { method:'POST' });
     const el = document.getElementById('otpStatus');
-    el.textContent = '⏱ Waiting for citizen…';
-    Sanad.toast('OTP window opened (60s)', 'info', 2400);
+    el.textContent = t('officer.waiting_citizen');
+    Sanad.toast(t('officer.otp_window_opened', 'OTP window opened (60s)'), 'info', 2400);
     const start = Date.now();
     const h = setInterval(async () => {
       if (Date.now() - start > 70000 || currentRequestId == null) { clearInterval(h); return; }
@@ -1503,7 +1523,7 @@
     const el = document.createElement('div');
     el.className = 'bubble bubble-' + kind;
     if (isAr(m.body_text)) el.setAttribute('dir','rtl');
-    el.textContent = m.body_text || (m.media_url ? '📎 attachment' : '');
+    el.textContent = m.body_text || (m.media_url ? t('officer.attachment') : '');
     return el;
   }
   function renderChat(messages) {

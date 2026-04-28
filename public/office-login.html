@@ -1,17 +1,29 @@
 <!doctype html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Log in · Sanad-AI</title>
+<title data-i18n="login.title">تسجيل الدخول · سند للذكاء الاصطناعي</title>
+<script>
+  // First-paint locale: read saved language and set lang/dir BEFORE the page
+  // renders so Arabic-speaking officers don't see an English flash.
+  (function () {
+    try {
+      var lang = localStorage.getItem('sanad.lang') || 'ar';
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    } catch (_) {}
+  })();
+</script>
 <script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Kufi+Arabic:wght@400;500;700;800&display=swap" rel="stylesheet"/>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
 <link rel="apple-touch-icon" href="/favicon.svg"/>
 <meta name="theme-color" content="#0d9488"/>
 <link rel="stylesheet" href="/theme.css"/>
 <style>
   body { font-family: 'Inter', sans-serif; }
+  html[dir="rtl"] body, html[dir="rtl"] * { font-family: 'Noto Kufi Arabic', 'Inter', sans-serif; }
   .hero-bg {
     background:
       radial-gradient(1000px 500px at 10% -10%, rgba(14,124,134,.35) 0%, transparent 60%),
@@ -29,51 +41,59 @@
     <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-500 to-green-700 text-white grid place-items-center text-xl font-extrabold shadow-md">S</div>
     <div>
       <div class="text-lg font-extrabold wordmark">Sanad-AI</div>
-      <div class="text-[11px] text-slate-500">Office portal</div>
+      <div class="text-[11px] text-slate-500" data-i18n="login.brand_sub">بوابة المكتب</div>
     </div>
   </a>
-  <nav class="ms-auto text-sm">
-    <a href="/office-signup.html" class="px-3 py-1.5 rounded-lg hover:bg-white/70 font-semibold">New here? Register →</a>
+  <nav class="ms-auto flex items-center gap-2 text-sm">
+    <button id="langBtn" type="button" class="px-3 py-1.5 rounded-lg hover:bg-white/70 font-semibold text-[12px]" data-i18n="login.lang_toggle">English</button>
+    <a href="/office-signup.html" class="px-3 py-1.5 rounded-lg hover:bg-white/70 font-semibold" data-i18n="login.nav.register">مكتب جديد؟ سجّل ←</a>
   </nav>
 </header>
 
 <main class="max-w-md mx-auto px-6 pt-8 pb-16">
-  <h1 class="text-3xl font-extrabold mb-2">Welcome back</h1>
-  <p class="text-slate-600 mb-6">Sign in to your Sanad office dashboard.</p>
+  <h1 class="text-3xl font-extrabold mb-2" data-i18n="login.welcome">أهلاً بعودتك</h1>
+  <p class="text-slate-600 mb-6" data-i18n="login.subtitle">سجّل الدخول إلى لوحة مكتب سند الخاص بك.</p>
 
   <form id="loginForm" class="bg-white/80 backdrop-blur rounded-2xl shadow-xl p-6 space-y-4 border border-white/60">
     <div>
-      <label class="block text-sm font-semibold mb-1.5">Email</label>
-      <input name="email" type="email" required autocomplete="username" class="w-full border border-slate-300 rounded-lg px-3 py-2"/>
+      <label class="block text-sm font-semibold mb-1.5" data-i18n="login.email">البريد الإلكتروني</label>
+      <input name="email" type="email" required autocomplete="username" class="w-full border border-slate-300 rounded-lg px-3 py-2" dir="ltr"/>
     </div>
     <div>
-      <label class="block text-sm font-semibold mb-1.5">Password</label>
-      <input name="password" type="password" required autocomplete="current-password" class="w-full border border-slate-300 rounded-lg px-3 py-2"/>
+      <label class="block text-sm font-semibold mb-1.5" data-i18n="login.password">كلمة المرور</label>
+      <input name="password" type="password" required autocomplete="current-password" class="w-full border border-slate-300 rounded-lg px-3 py-2" dir="ltr"/>
     </div>
     <button type="submit" id="submitBtn"
-      class="w-full py-2.5 rounded-xl bg-gradient-to-br from-teal-600 to-green-700 text-white font-bold shadow-lg hover:shadow-xl disabled:opacity-50">
-      Log in
+      class="w-full py-2.5 rounded-xl bg-gradient-to-br from-teal-600 to-green-700 text-white font-bold shadow-lg hover:shadow-xl disabled:opacity-50"
+      data-i18n="login.submit">
+      تسجيل الدخول
     </button>
     <div id="msg" class="hidden text-sm rounded-lg px-3 py-2"></div>
   </form>
 
   <p class="text-center text-sm text-slate-500 mt-5">
-    Don't have an account? <a href="/office-signup.html" class="text-teal-700 font-bold">Register your office</a>
+    <span data-i18n="login.no_account">لا تملك حساباً؟</span>
+    <a href="/office-signup.html" class="text-teal-700 font-bold" data-i18n="login.register_link">سجّل مكتبك</a>
   </p>
 
   <div id="demoHint" class="hidden mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
-    <div class="font-bold mb-1">🧪 Debug mode demo account</div>
-    <div>Email: <span class="mono font-bold">khalid@nahdha.om</span></div>
-    <div>Password: <span class="mono font-bold">demo123</span></div>
-    <div class="text-[11px] opacity-75 mt-1">Pre-approved office with 999 credits. No payment required.</div>
-    <button type="button" id="demoFill" class="mt-2 text-[12px] underline font-semibold">Fill form with demo credentials</button>
+    <div class="font-bold mb-1" data-i18n="login.demo.title">🧪 حساب تجريبي (وضع التطوير)</div>
+    <div><span data-i18n="login.demo.email_label">البريد:</span> <span class="mono font-bold" dir="ltr">khalid@nahdha.om</span></div>
+    <div><span data-i18n="login.demo.password_label">كلمة المرور:</span> <span class="mono font-bold" dir="ltr">demo123</span></div>
+    <div class="text-[11px] opacity-75 mt-1" data-i18n="login.demo.note">مكتب جاهز مسبقاً برصيد 999 طلب. لا حاجة للدفع.</div>
+    <button type="button" id="demoFill" class="mt-2 text-[12px] underline font-semibold" data-i18n="login.demo.fill">تعبئة النموذج بالبيانات التجريبية</button>
   </div>
 </main>
 
+<script src="/i18n.js"></script>
 <script>
 const form = document.getElementById('loginForm');
 const msg  = document.getElementById('msg');
 const btn  = document.getElementById('submitBtn');
+
+document.getElementById('langBtn').addEventListener('click', () => {
+  I18N.setLang(I18N.lang === 'ar' ? 'en' : 'ar');
+});
 
 function showMsg(text, ok = false) {
   msg.textContent = text;
@@ -81,15 +101,9 @@ function showMsg(text, ok = false) {
   msg.classList.remove('hidden');
 }
 
-const ERROR_MSG = {
-  invalid_credentials: 'Email or password is incorrect.',
-  account_disabled: 'Your account has been disabled. Contact your office admin.',
-  missing_credentials: 'Please enter your email and password.'
-};
-
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  btn.disabled = true; btn.textContent = 'Signing in…';
+  btn.disabled = true; btn.textContent = t('login.submit_loading');
   const body = Object.fromEntries(new FormData(form).entries());
   try {
     const r = await fetch('/api/auth/login', {
@@ -100,18 +114,17 @@ form.addEventListener('submit', async (e) => {
     });
     const data = await r.json();
     if (!r.ok) {
-      showMsg(ERROR_MSG[data.error] || data.error || 'Login failed');
-      btn.disabled = false; btn.textContent = 'Log in';
+      const errKey = data.error ? 'login.err.' + data.error : 'login.err.failed';
+      showMsg(t(errKey, data.error || t('login.err.failed')));
+      btn.disabled = false; btn.textContent = t('login.submit');
       return;
     }
-    showMsg('✓ Signed in — redirecting…', true);
-    // If this officer is a platform admin, go to admin; else officer dashboard.
-    // The admin check is just email-based — the page itself will re-verify.
+    showMsg(t('login.signed_in_redirect'), true);
     const next = new URLSearchParams(location.search).get('next');
     setTimeout(() => { window.location.href = next || '/officer.html'; }, 500);
   } catch (err) {
-    showMsg('Network error — please try again.');
-    btn.disabled = false; btn.textContent = 'Log in';
+    showMsg(t('login.network_error'));
+    btn.disabled = false; btn.textContent = t('login.submit');
   }
 });
 
@@ -128,8 +141,6 @@ fetch('/api/health').then(r => r.json()).then(h => {
 }).catch(() => {});
 
 // If already signed in, offer an explicit choice instead of silently redirecting.
-// (Silent redirect made it impossible to switch accounts on the same machine.)
-// Bypass this check entirely with ?fresh=1 in the URL.
 var qs = new URLSearchParams(location.search);
 if (!qs.has('fresh')) {
   fetch('/api/auth/me', { credentials: 'include' })
@@ -140,18 +151,18 @@ if (!qs.has('fresh')) {
       banner.className = 'mb-4 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-[13px] text-teal-900';
       var title = document.createElement('div');
       title.className = 'font-bold mb-1';
-      title.textContent = 'Already signed in as ' + data.officer.email;
+      title.textContent = t('login.already.title') + ' ' + data.officer.email;
       var row = document.createElement('div');
       row.className = 'flex gap-2 mt-2';
       var cont = document.createElement('a');
       cont.href = '/officer.html';
       cont.className = 'px-3 py-1.5 rounded-lg bg-teal-700 text-white font-semibold text-[12px]';
-      cont.textContent = 'Continue to dashboard →';
+      cont.textContent = t('login.already.continue');
       var out = document.createElement('button');
       out.type = 'button';
       out.id = 'logoutBtn';
       out.className = 'px-3 py-1.5 rounded-lg border border-teal-300 bg-white font-semibold text-[12px]';
-      out.textContent = 'Log out & switch account';
+      out.textContent = t('login.already.logout');
       row.appendChild(cont);
       row.appendChild(out);
       banner.appendChild(title);

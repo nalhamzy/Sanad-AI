@@ -1,17 +1,29 @@
 <!doctype html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Register your office · Sanad-AI</title>
+<title data-i18n="signup.title">تسجيل مكتب · سند للذكاء الاصطناعي</title>
+<script>
+  // First-paint locale: read saved language and set lang/dir BEFORE the page
+  // renders so Arabic-speaking officers don't see an English flash.
+  (function () {
+    try {
+      var lang = localStorage.getItem('sanad.lang') || 'ar';
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    } catch (_) {}
+  })();
+</script>
 <script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Kufi+Arabic:wght@400;500;700;800&display=swap" rel="stylesheet"/>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
 <link rel="apple-touch-icon" href="/favicon.svg"/>
 <meta name="theme-color" content="#0d9488"/>
 <link rel="stylesheet" href="/theme.css"/>
 <style>
   body { font-family: 'Inter', sans-serif; }
+  html[dir="rtl"] body, html[dir="rtl"] * { font-family: 'Noto Kufi Arabic', 'Inter', sans-serif; }
   .hero-bg {
     background:
       radial-gradient(1000px 500px at 10% -10%, rgba(14,124,134,.35) 0%, transparent 60%),
@@ -29,110 +41,141 @@
     <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-500 to-green-700 text-white grid place-items-center text-xl font-extrabold shadow-md">S</div>
     <div>
       <div class="text-lg font-extrabold wordmark">Sanad-AI</div>
-      <div class="text-[11px] text-slate-500">Office registration</div>
+      <div class="text-[11px] text-slate-500" data-i18n="login.brand_sub">بوابة المكتب</div>
     </div>
   </a>
-  <nav class="ms-auto text-sm">
-    <a href="/office-login.html" class="px-3 py-1.5 rounded-lg hover:bg-white/70 font-semibold">Already have an account? Log in →</a>
+  <nav class="ms-auto flex items-center gap-2 text-sm">
+    <button id="langBtn" type="button" class="px-3 py-1.5 rounded-lg hover:bg-white/70 font-semibold text-[12px]" data-i18n="login.lang_toggle">English</button>
+    <a href="/office-login.html" class="px-3 py-1.5 rounded-lg hover:bg-white/70 font-semibold">
+      <span data-i18n="signup.have_account">تملك حساباً مسبقاً؟</span> <span data-i18n="signup.login_link">تسجيل الدخول</span> ←
+    </a>
   </nav>
 </header>
 
 <main class="max-w-3xl mx-auto px-6 pb-16">
 
   <h1 class="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight mb-3">
-    Register your <span class="wordmark">Sanad office</span>
+    <span data-i18n="signup.heading.before">سجّل</span> <span class="wordmark" data-i18n="signup.heading.after">مكتب سند الخاص بك</span>
   </h1>
-  <p class="text-slate-600 mb-8">
-    Join the pilot. After we verify your CR number you'll appear in the marketplace and
-    can start quoting on citizen requests. Review usually takes 1–2 business days.
-  </p>
+  <p class="text-slate-600 mb-8" data-i18n="signup.subtitle">انضم إلى المرحلة التجريبية. بعد التحقق من السجل التجاري، سيظهر مكتبك في السوق وتستطيع تقديم العروض على طلبات المواطنين. تستغرق المراجعة عادةً 1–2 يوم عمل.</p>
 
   <form id="signupForm" class="bg-white/80 backdrop-blur rounded-2xl shadow-xl p-6 md:p-8 space-y-5 border border-white/60">
 
     <div class="grid md:grid-cols-2 gap-5">
       <div>
-        <label class="block text-sm font-semibold mb-1.5">Office name (English) <span class="text-rose-600">*</span></label>
-        <input name="office_name_en" required maxlength="120" class="w-full border border-slate-300 rounded-lg px-3 py-2" placeholder="Al-Nahda Sanad Office"/>
+        <label class="block text-sm font-semibold mb-1.5">
+          <span data-i18n="signup.office_name_en">اسم المكتب بالإنجليزية</span> <span class="text-rose-600">*</span>
+        </label>
+        <input name="office_name_en" required maxlength="120" class="w-full border border-slate-300 rounded-lg px-3 py-2" placeholder="Al-Nahda Sanad Office" dir="ltr"/>
       </div>
       <div>
-        <label class="block text-sm font-semibold mb-1.5">اسم المكتب (Arabic)</label>
+        <label class="block text-sm font-semibold mb-1.5" data-i18n="signup.office_name_ar">اسم المكتب بالعربية</label>
         <input name="office_name_ar" maxlength="120" class="w-full border border-slate-300 rounded-lg px-3 py-2" placeholder="مكتب سند النهضة" dir="rtl"/>
       </div>
     </div>
 
     <div class="grid md:grid-cols-2 gap-5">
       <div>
-        <label class="block text-sm font-semibold mb-1.5">Governorate <span class="text-rose-600">*</span></label>
+        <label class="block text-sm font-semibold mb-1.5">
+          <span data-i18n="signup.governorate">المحافظة</span> <span class="text-rose-600">*</span>
+        </label>
         <select name="governorate" required class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
-          <option value="">Select…</option>
-          <option>Muscat</option><option>Dhofar</option><option>Musandam</option>
-          <option>Al Buraimi</option><option>Ad Dakhiliyah</option>
-          <option>Al Batinah North</option><option>Al Batinah South</option>
-          <option>Ash Sharqiyah North</option><option>Ash Sharqiyah South</option>
-          <option>Adh Dhahirah</option><option>Al Wusta</option>
+          <option value="" data-i18n="signup.select_placeholder">اختر…</option>
+          <option value="Muscat">مسقط · Muscat</option>
+          <option value="Dhofar">ظفار · Dhofar</option>
+          <option value="Musandam">مسندم · Musandam</option>
+          <option value="Al Buraimi">البريمي · Al Buraimi</option>
+          <option value="Ad Dakhiliyah">الداخلية · Ad Dakhiliyah</option>
+          <option value="Al Batinah North">شمال الباطنة · Al Batinah North</option>
+          <option value="Al Batinah South">جنوب الباطنة · Al Batinah South</option>
+          <option value="Ash Sharqiyah North">شمال الشرقية · Ash Sharqiyah North</option>
+          <option value="Ash Sharqiyah South">جنوب الشرقية · Ash Sharqiyah South</option>
+          <option value="Adh Dhahirah">الظاهرة · Adh Dhahirah</option>
+          <option value="Al Wusta">الوسطى · Al Wusta</option>
         </select>
       </div>
       <div>
-        <label class="block text-sm font-semibold mb-1.5">Wilayat</label>
-        <input name="wilayat" maxlength="60" class="w-full border border-slate-300 rounded-lg px-3 py-2" placeholder="e.g. Al Khuwair"/>
+        <label class="block text-sm font-semibold mb-1.5" data-i18n="signup.wilayat">الولاية</label>
+        <input name="wilayat" maxlength="60" class="w-full border border-slate-300 rounded-lg px-3 py-2" placeholder="الخوير / e.g. Al Khuwair"/>
       </div>
     </div>
 
     <div class="grid md:grid-cols-2 gap-5">
       <div>
-        <label class="block text-sm font-semibold mb-1.5">CR number <span class="text-rose-600">*</span></label>
-        <input name="cr_number" required maxlength="40" class="w-full border border-slate-300 rounded-lg px-3 py-2" placeholder="1234567"/>
-        <p class="text-[11px] text-slate-500 mt-1">We verify against MoCIIP.</p>
+        <label class="block text-sm font-semibold mb-1.5">
+          <span data-i18n="signup.cr">رقم السجل التجاري</span> <span class="text-rose-600">*</span>
+        </label>
+        <input name="cr_number" required maxlength="40" class="w-full border border-slate-300 rounded-lg px-3 py-2" placeholder="1234567" dir="ltr"/>
+        <p class="text-[11px] text-slate-500 mt-1" data-i18n="signup.cr_hint">سيتم التحقق من السجل عبر وزارة التجارة والصناعة وترويج الاستثمار.</p>
       </div>
       <div>
-        <label class="block text-sm font-semibold mb-1.5">Office phone</label>
-        <input name="phone" maxlength="40" class="w-full border border-slate-300 rounded-lg px-3 py-2" placeholder="+968 …"/>
+        <label class="block text-sm font-semibold mb-1.5" data-i18n="signup.phone">هاتف المكتب</label>
+        <input name="phone" maxlength="40" class="w-full border border-slate-300 rounded-lg px-3 py-2" placeholder="+968 …" dir="ltr"/>
       </div>
     </div>
 
     <hr class="border-slate-200"/>
 
-    <p class="text-sm font-bold text-teal-800">Your admin account</p>
+    <p class="text-sm font-bold text-teal-800" data-i18n="signup.admin_section">حساب مدير المكتب</p>
 
     <div class="grid md:grid-cols-2 gap-5">
       <div>
-        <label class="block text-sm font-semibold mb-1.5">Your full name <span class="text-rose-600">*</span></label>
+        <label class="block text-sm font-semibold mb-1.5">
+          <span data-i18n="signup.owner_name">اسم المالك كاملاً</span> <span class="text-rose-600">*</span>
+        </label>
         <input name="full_name" required maxlength="120" class="w-full border border-slate-300 rounded-lg px-3 py-2"/>
       </div>
       <div>
-        <label class="block text-sm font-semibold mb-1.5">Work email <span class="text-rose-600">*</span></label>
-        <input name="email" type="email" required class="w-full border border-slate-300 rounded-lg px-3 py-2" placeholder="you@office.om"/>
+        <label class="block text-sm font-semibold mb-1.5">
+          <span data-i18n="signup.email">بريد المكتب الإلكتروني</span> <span class="text-rose-600">*</span>
+        </label>
+        <input name="email" type="email" required class="w-full border border-slate-300 rounded-lg px-3 py-2" placeholder="you@office.om" dir="ltr"/>
       </div>
     </div>
 
     <div>
-      <label class="block text-sm font-semibold mb-1.5">Password <span class="text-rose-600">*</span></label>
-      <input name="password" type="password" required minlength="8" class="w-full border border-slate-300 rounded-lg px-3 py-2"/>
-      <p class="text-[11px] text-slate-500 mt-1">At least 8 characters. You can invite teammates after approval.</p>
+      <label class="block text-sm font-semibold mb-1.5">
+        <span data-i18n="signup.owner_password">كلمة مرور المالك</span> <span class="text-rose-600">*</span>
+      </label>
+      <input name="password" type="password" required minlength="8" class="w-full border border-slate-300 rounded-lg px-3 py-2" dir="ltr"/>
+      <p class="text-[11px] text-slate-500 mt-1" data-i18n="signup.password_hint">8 أحرف على الأقل؛ ستستخدمها لتسجيل الدخول.</p>
     </div>
 
     <label class="flex items-start gap-2 text-sm text-slate-700">
       <input type="checkbox" id="agree" class="mt-1"/>
-      <span>I agree to the <a href="/terms.html" class="text-teal-700 font-semibold underline">Terms</a> and <a href="/privacy.html" class="text-teal-700 font-semibold underline">Privacy policy</a>. I confirm the CR number above belongs to my office.</span>
+      <span>
+        <span data-i18n="signup.terms.agree">أوافق على</span>
+        <a href="/terms.html" class="text-teal-700 font-semibold underline" data-i18n="signup.terms.terms_link">الشروط</a>
+        <span data-i18n="signup.terms.and">و</span>
+        <a href="/privacy.html" class="text-teal-700 font-semibold underline" data-i18n="signup.terms.privacy_link">سياسة الخصوصية</a>
+        <span data-i18n="signup.terms.cr_confirm">. وأؤكد أن رقم السجل التجاري أعلاه يخص مكتبي.</span>
+      </span>
     </label>
 
     <button type="submit" id="submitBtn"
-      class="w-full py-3 rounded-xl bg-gradient-to-br from-teal-600 to-green-700 text-white font-bold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
-      Register office
+      class="w-full py-3 rounded-xl bg-gradient-to-br from-teal-600 to-green-700 text-white font-bold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+      data-i18n="signup.submit">
+      تسجيل المكتب
     </button>
 
     <div id="msg" class="hidden text-sm rounded-lg px-3 py-2"></div>
   </form>
 
   <p class="text-center text-sm text-slate-500 mt-5">
-    Already registered? <a href="/office-login.html" class="text-teal-700 font-bold">Log in</a>
+    <span data-i18n="signup.have_account">تملك حساباً مسبقاً؟</span>
+    <a href="/office-login.html" class="text-teal-700 font-bold" data-i18n="signup.login_link">تسجيل الدخول</a>
   </p>
 </main>
 
+<script src="/i18n.js"></script>
 <script>
 const form = document.getElementById('signupForm');
 const msg  = document.getElementById('msg');
 const btn  = document.getElementById('submitBtn');
+
+document.getElementById('langBtn').addEventListener('click', () => {
+  I18N.setLang(I18N.lang === 'ar' ? 'en' : 'ar');
+});
 
 function showMsg(text, ok = false) {
   msg.textContent = text;
@@ -140,20 +183,12 @@ function showMsg(text, ok = false) {
   msg.classList.remove('hidden');
 }
 
-const ERROR_MSG = {
-  email_taken: 'That email is already registered. Try logging in instead.',
-  bad_governorate: 'Please pick a valid governorate.',
-  'password>=8': 'Password must be at least 8 characters.',
-  validation: 'Please fill in all required fields.',
-  signup_failed: 'Something went wrong. Please try again in a moment.'
-};
-
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   if (!document.getElementById('agree').checked) {
-    return showMsg('Please accept the terms to continue.');
+    return showMsg(t('signup.err.agree', 'Please accept the terms to continue.'));
   }
-  btn.disabled = true; btn.textContent = 'Creating your office…';
+  btn.disabled = true; btn.textContent = t('signup.submit_loading');
   const body = Object.fromEntries(new FormData(form).entries());
   try {
     const r = await fetch('/api/auth/signup', {
@@ -166,15 +201,15 @@ form.addEventListener('submit', async (e) => {
     if (!r.ok) {
       const code = data.error || 'signup_failed';
       const missing = data.missing ? ` (${data.missing.join(', ')})` : '';
-      showMsg((ERROR_MSG[code] || code) + missing);
-      btn.disabled = false; btn.textContent = 'Register office';
+      showMsg(t('signup.err.' + code, code) + missing);
+      btn.disabled = false; btn.textContent = t('signup.submit');
       return;
     }
-    showMsg('✓ Registered! Redirecting…', true);
+    showMsg(t('signup.success'), true);
     setTimeout(() => { window.location.href = '/officer.html'; }, 700);
   } catch (err) {
-    showMsg('Network error — please check your connection.');
-    btn.disabled = false; btn.textContent = 'Register office';
+    showMsg(t('signup.err.network', 'Network error — please check your connection.'));
+    btn.disabled = false; btn.textContent = t('signup.submit');
   }
 });
 </script>
