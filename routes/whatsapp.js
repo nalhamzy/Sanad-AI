@@ -5,12 +5,12 @@
 import { Router } from 'express';
 import crypto from 'node:crypto';
 import { runTurn } from '../lib/agent.js';
+import { sendWhatsAppText } from '../lib/whatsapp_send.js';
 
 export const whatsappRouter = Router();
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'dev-verify-token';
 const ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || '';
-const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || '';
 const APP_SECRET = process.env.WHATSAPP_APP_SECRET || '';
 
 let warnedNoSecret = false;
@@ -91,22 +91,8 @@ whatsappRouter.post('/webhook', async (req, res) => {
     const session_id = `wa:${from}`;
     const { reply } = await runTurn({ session_id, user_text: effectiveText, attachment, citizen_phone: from });
 
-    if (ACCESS_TOKEN && PHONE_NUMBER_ID) {
-      await fetch(`https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'authorization': `Bearer ${ACCESS_TOKEN}`
-        },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          to: from,
-          text: { body: reply }
-        })
-      });
-    } else {
-      console.log('[whatsapp stub] would reply to', from, ':', reply);
-    }
+    const send = await sendWhatsAppText(from, reply);
+    if (!send.ok) console.warn('[whatsapp] bot reply send failed:', send.error);
   } catch (e) {
     console.error('[whatsapp] error', e);
   }

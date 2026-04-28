@@ -25,6 +25,7 @@ import { Router } from 'express';
 import { db } from '../lib/db.js';
 import { storeMessage } from '../lib/agent.js';
 import { requireOfficer } from '../lib/auth.js';
+import { sendWhatsAppText, isWhatsAppSession } from '../lib/whatsapp_send.js';
 
 export const officerRouter = Router();
 
@@ -365,17 +366,38 @@ officerRouter.post('/request/:id/message', async (req, res) => {
   const id = Number(req.params.id);
   const text = String(req.body?.text || '').trim();
   if (!text) return res.status(400).json({ error: 'empty' });
+  // Pull session_id (for the in-app relay) AND the citizen's phone (for the
+  // WhatsApp push, when the original session came in via WhatsApp).
   const { rows } = await db.execute({
-    sql: `SELECT session_id, office_id FROM request WHERE id=?`, args: [id]
+    sql: `SELECT r.session_id, r.office_id, c.phone AS citizen_phone
+            FROM request r
+            LEFT JOIN citizen c ON c.id = r.citizen_id
+           WHERE r.id=?`,
+    args: [id]
   });
   const r = rows[0];
   if (!r || r.office_id !== req.office.id) return res.status(403).json({ error: 'not_your_request' });
+
+  // Always store in DB so the in-app web chat polls pick it up.
   await storeMessage({
     session_id: r.session_id, request_id: id,
     direction: 'out', actor_type: 'officer',
     body_text: text,
     meta: { officer_id: req.officer.officer_id }
   });
+
+  // Push to WhatsApp when the citizen's session is on WhatsApp. Uses citizen
+  // table phone as the source of truth; falls back to the phone embedded in
+  // session_id ("wa:+96890…") when the citizen row doesn't have one yet.
+  let waResult = { ok: false, channel: 'skipped', skipped: 'not_whatsapp' };
+  if (isWhatsAppSession(r.session_id)) {
+    const phone = r.citizen_phone || r.session_id.replace(/^wa:/, '');
+    waResult = await sendWhatsAppText(phone, text);
+    if (!waResult.ok) {
+      console.warn(`[officer→wa] send failed for request ${id}: ${waResult.error}`);
+    }
+  }
+
   await db.execute({
     sql: `UPDATE request
              SET last_event_at=datetime('now'),
@@ -383,7 +405,15 @@ officerRouter.post('/request/:id/message', async (req, res) => {
            WHERE id=?`,
     args: [id]
   });
-  res.json({ ok: true });
+  res.json({
+    ok: true,
+    delivery: {
+      channel: waResult.channel,
+      whatsapp_ok: waResult.ok,
+      whatsapp_message_id: waResult.message_id || null,
+      whatsapp_error: waResult.error || null
+    }
+  });
 });
 
 // ─── POST /request/:id/otp-window ──────────────────────────
