@@ -1,0 +1,3907 @@
+{
+  "generated_at": "2026-04-28T18:39:49.475Z",
+  "source": "./scripts/sanad_om_scrape/sanad_om_pricelist_raw.json",
+  "catalogue_rows": 453,
+  "sanad_om_services": 253,
+  "sanad_om_entities": 29,
+  "matches": 43,
+  "match_methods": {
+    "exact": 3,
+    "substring": 26,
+    "fuzzy": 14
+  },
+  "missing_from_us": 210,
+  "junk_in_us": 62,
+  "entities_missing": 23,
+  "fee_discrepancies": 9,
+  "details": {
+    "matches": [
+      {
+        "our_id": 110000,
+        "our_name_ar": "خدمة التصديق على التقرير الطبي للعمال قبل الوصول",
+        "our_name_en": "Pre-Arrival Medical Report Attestation Service",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة الصحة",
+        "sanad_entity_ar": "وزارة الصحة",
+        "sanad_service_ar": "خدمة التصديق على التقرير الطبي للعمال قبل الوصول",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ],
+        "match_method": "exact"
+      },
+      {
+        "our_id": 100302,
+        "our_name_ar": "تسجيل عقد عمل للقوى العاملة غير العمانية (المنشآت)",
+        "our_name_en": "Contract Of Work",
+        "our_fee_omr": 1,
+        "our_entity_ar": "وزارة العمل",
+        "sanad_entity_ar": "وزارة العمل",
+        "sanad_service_ar": "عقد عمل",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 110003,
+        "our_name_ar": "شكوى إثبات خطأ طبي",
+        "our_name_en": "Claim of Medical Error",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة الصحة",
+        "sanad_entity_ar": "وزارة العمل",
+        "sanad_service_ar": "شكوى",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 100215,
+        "our_name_ar": "تقديم البلاغات (الأفراد)",
+        "our_name_en": "Claims Submission Individuals",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة العمل",
+        "sanad_entity_ar": "وزارة العمل",
+        "sanad_service_ar": "بلاغات",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 100054,
+        "our_name_ar": "طلب إلغاء بلاغ ترك العمل (الأفراد)",
+        "our_name_en": "Desertion Cancelation Request Individuals",
+        "our_fee_omr": 100,
+        "our_entity_ar": "وزارة العمل",
+        "sanad_entity_ar": "وزارة العمل",
+        "sanad_service_ar": "تسجيل بلاغ ترك العمل",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "fuzzy(0.75)"
+      },
+      {
+        "our_id": 100054,
+        "our_name_ar": "طلب إلغاء بلاغ ترك العمل (الأفراد)",
+        "our_name_en": "Desertion Cancelation Request Individuals",
+        "our_fee_omr": 100,
+        "our_entity_ar": "وزارة العمل",
+        "sanad_entity_ar": "وزارة العمل",
+        "sanad_service_ar": "إلغاء بلاغ ترك العمل",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 100234,
+        "our_name_ar": "استرداد ثمن التذكرة لبلاغ ترك العمل (المنشآت)",
+        "our_name_en": "Ticket Refund Request Of Desertion Report Establishments",
+        "our_fee_omr": 0,
+        "our_entity_ar": "وزارة العمل",
+        "sanad_entity_ar": "وزارة العمل",
+        "sanad_service_ar": "إسترداد ثمن التذكرة",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "تحديث",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 100233,
+        "our_name_ar": "التظلم من بلاغ ترك العمل (الأفراد)",
+        "our_name_en": "Grievance From Desertion Report Individuals",
+        "our_fee_omr": 0,
+        "our_entity_ar": "وزارة العمل",
+        "sanad_entity_ar": "وزارة العمل",
+        "sanad_service_ar": "التظلم من بلاغ ترك العمل",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 100315,
+        "our_name_ar": "طلبات تعديل بيانات القوى العاملة الوطنية",
+        "our_name_en": "National Manpower Data Modify Application",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة العمل",
+        "sanad_entity_ar": "وزارة العمل",
+        "sanad_service_ar": "تعديل مهن القوى العاملة الوطنية",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "قبول",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "رفض",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "fuzzy(0.80)"
+      },
+      {
+        "our_id": 100275,
+        "our_name_ar": "عقد العمل لبعض الوقت (المنشآت)",
+        "our_name_en": "Part Time Contract Establishments",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة العمل",
+        "sanad_entity_ar": "وزارة العمل",
+        "sanad_service_ar": "عقد العمل لبعض الوقت للقوى العاملة الوطنية",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "قبول",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "رفض",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "fuzzy(0.80)"
+      },
+      {
+        "our_id": 100275,
+        "our_name_ar": "عقد العمل لبعض الوقت (المنشآت)",
+        "our_name_en": "Part Time Contract Establishments",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة العمل",
+        "sanad_entity_ar": "وزارة العمل",
+        "sanad_service_ar": "تمديد عقد العمل لبعض الوقت للقوى العاملة الوطنية",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "قبول",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "رفض",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "fuzzy(0.80)"
+      },
+      {
+        "our_id": 100331,
+        "our_name_ar": "الالتزامات المالية (المنشآت)",
+        "our_name_en": "Financial Obligations",
+        "our_fee_omr": null,
+        "our_entity_ar": "وزارة العمل",
+        "sanad_entity_ar": "وزارة العمل",
+        "sanad_service_ar": "التزامات المالية",
+        "sanad_actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 100323,
+        "our_name_ar": "إعلان دعوى قضائية (المنشآت)",
+        "our_name_en": "Declare Court Case Service",
+        "our_fee_omr": 0,
+        "our_entity_ar": "وزارة العمل",
+        "sanad_entity_ar": "وزارة العمل",
+        "sanad_service_ar": "إعلان دعوى قضائية",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "إعادة ارسال",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 100323,
+        "our_name_ar": "إعلان دعوى قضائية (المنشآت)",
+        "our_name_en": "Declare Court Case Service",
+        "our_fee_omr": 0,
+        "our_entity_ar": "وزارة العمل",
+        "sanad_entity_ar": "وزارة العمل",
+        "sanad_service_ar": "سحب إعلان دعوى قضائية",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "إعادة ارسال",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "fuzzy(0.75)"
+      },
+      {
+        "our_id": 120019,
+        "our_name_ar": "إلغاء السجل التجاري",
+        "our_name_en": "Cancel Commercial Registration",
+        "our_fee_omr": 0,
+        "our_entity_ar": "وزارة التجارة والصناعة وترويج الإستثمار",
+        "sanad_entity_ar": "منصة عمان للأعمال",
+        "sanad_service_ar": "إلغاء /تصفیة السجل التجاري",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "5 ر.ع",
+            "fee_omr": 5
+          }
+        ],
+        "match_method": "fuzzy(1.00)"
+      },
+      {
+        "our_id": 120018,
+        "our_name_ar": "تقديم إثبات رأس المال للسجل التجاري",
+        "our_name_en": "Submit CR Capital Payment Proof",
+        "our_fee_omr": 0,
+        "our_entity_ar": "وزارة التجارة والصناعة وترويج الإستثمار",
+        "sanad_entity_ar": "منصة عمان للأعمال",
+        "sanad_service_ar": "إثبات رأس المال",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "5 ر.ع",
+            "fee_omr": 5
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 160008,
+        "our_name_ar": "تجديد عقد الإيجار",
+        "our_name_en": "Renewal Rent Contract",
+        "our_fee_omr": null,
+        "our_entity_ar": "بلدية مسقط",
+        "sanad_entity_ar": "بلدية مسقط",
+        "sanad_service_ar": "تجديد عقد الايجار",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ],
+        "match_method": "exact"
+      },
+      {
+        "our_id": 160008,
+        "our_name_ar": "تجديد عقد الإيجار",
+        "our_name_en": "Renewal Rent Contract",
+        "our_fee_omr": null,
+        "our_entity_ar": "بلدية مسقط",
+        "sanad_entity_ar": "بلدية مسقط",
+        "sanad_service_ar": "تجديد عقد الايجار-دفع",
+        "sanad_actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 160026,
+        "our_name_ar": "طلب الحصول على شهادة إكمال مبنى",
+        "our_name_en": "طلب الحصول على شهادة إكمال مبنى",
+        "our_fee_omr": null,
+        "our_entity_ar": "بلدية مسقط",
+        "sanad_entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "sanad_service_ar": "طلب شهادة إكمال الاعمال",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ],
+        "match_method": "fuzzy(0.75)"
+      },
+      {
+        "our_id": 160044,
+        "our_name_ar": "التشجير خارج حدود القطعة",
+        "our_name_en": "تصريح نقل تربة في الأرض الفضاء",
+        "our_fee_omr": null,
+        "our_entity_ar": "بلدية مسقط",
+        "sanad_entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "sanad_service_ar": "طلب خدمات عامة خارج حدود القطعة",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ],
+        "match_method": "fuzzy(0.75)"
+      }
+    ],
+    "missing_from_us": [
+      {
+        "entity_no": 1,
+        "entity_ar": "وزارة الصحة",
+        "service_ar": "استمارة الفحص الطبي",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 1,
+        "entity_ar": "وزارة الصحة",
+        "service_ar": "اصدار بطاقة مقيم جديدة (غير عامل)",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 1,
+        "entity_ar": "وزارة الصحة",
+        "service_ar": "اصدار بطاقة مقيم وعمل جديد (عامل)",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 1,
+        "entity_ar": "وزارة الصحة",
+        "service_ar": "اصدار بطاقة مقيم وعمل وبطاقة صحية جديدة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 1,
+        "entity_ar": "وزارة الصحة",
+        "service_ar": "تجديد بطاقة مقيم (غير عامل)",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 1,
+        "entity_ar": "وزارة الصحة",
+        "service_ar": "تجديد بطاقة مقيم وعمل (عامل)",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 1,
+        "entity_ar": "وزارة الصحة",
+        "service_ar": "تجديد بطاقة مقيم وعمل وبطاقة صحية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 1,
+        "entity_ar": "وزارة الصحة",
+        "service_ar": "تغيير الكفيل - بطاقة مقيم (غير عامل)",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 1,
+        "entity_ar": "وزارة الصحة",
+        "service_ar": "تغيير الكفيل- بطاقة مقيم وعمل (عامل)",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 1,
+        "entity_ar": "وزارة الصحة",
+        "service_ar": "تغيير الكفيل- بطاقة مقيم وعمل وبطاقة صحية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 1,
+        "entity_ar": "وزارة الصحة",
+        "service_ar": "اصدار / تجديد البطاقة الصحيةفقط",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 1,
+        "entity_ar": "وزارة الصحة",
+        "service_ar": "اصدار تأشيرة للبحارة / الفرق الفنية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 1,
+        "entity_ar": "وزارة الصحة",
+        "service_ar": "تقديم طلب الحصول على الجنسية العمانية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 1,
+        "entity_ar": "وزارة الصحة",
+        "service_ar": "تقديم طلب استرداد الجنسية العمانية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 2,
+        "entity_ar": "شرطة عمان السلطانية",
+        "service_ar": "بطاقة شخصية للعمانيين",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 2,
+        "entity_ar": "شرطة عمان السلطانية",
+        "service_ar": "بطاقة المقيم",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "عقد عمال المنازل",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "الإلتزام المالي لشراء تذكرة ترحيل عامل",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "غرامات في قضايا المخالفات العمالية",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "خطة التعمين",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "5 ر.ع",
+            "fee_omr": 5
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "إعادة ارسال",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "عقد العمل الفردي للقوى العاملة الوطنية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "قبول",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "رفض",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "تمديد عقد العمل الفردي للقوى العاملة الوطنية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "قبول",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "رفض",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "إنهاء الخدمات للقوى العاملة الوطنية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "عقود التدريب الممولة بواسطة أصحاب العمل",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "قبول",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "رفض",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "إنهاء خدمات العاملين لبعض الوقت للقوى العاملة الوطنية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "استقالة جزئية للقوى العاملة الوطنية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "إستمارة حصر العاملين لبعض الوقت للقوى العاملة الوطنية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "قبول",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "رفض",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "الموافقة المبدئية لتصريح العمل - الأفراد",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "إعادة ارسال",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "الموافقة المبدئية لتصريح العمل - تجاري",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "5 ر.ع",
+            "fee_omr": 5
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "قبول",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "إعادة ارسال",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "تحديث الموافقة المبدئية لتصريح العمل",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "إعادة ارسال",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "الموافقة المبدئية لتصريح العمل لبدل المغادر - الافراد",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "إعادة ارسال",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "الموافقة المبدئية لتصريح العمل لبدل المغادر - تجاري",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "إعادة ارسال",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "الموافقة المبدئية لتصريح العمل للمغادرة المبكرة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "إصدار تصريح العمل",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "إعادة ارسال",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "تعديل تصريح العمل",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "إعادة ارسال",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "تجديد تصريح العمل",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "إعادة ارسال",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "نقل الخدمات",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "إعادة ارسال",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "موافقة صاحب العمل السابق على نقل الخدمات",
+        "actions": [
+          {
+            "action": "قبول",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "رفض",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "تغيير حالة تصريح العمل",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 3,
+        "entity_ar": "وزارة العمل",
+        "service_ar": "إلغاء تصريح العمل",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "إعادة ارسال",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 5,
+        "entity_ar": "منصة عمان للأعمال",
+        "service_ar": "استخراج مخرجات الحاسب الآلي للأنشطة التجارية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "200بيسة لكل صفحة ر.ع",
+            "fee_omr": 0.2
+          }
+        ]
+      },
+      {
+        "entity_no": 5,
+        "entity_ar": "منصة عمان للأعمال",
+        "service_ar": "تسجیل مؤسسة جدیدة - المؤسسات الفردیة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "5 ر.ع",
+            "fee_omr": 5
+          }
+        ]
+      },
+      {
+        "entity_no": 5,
+        "entity_ar": "منصة عمان للأعمال",
+        "service_ar": "تسجیل مؤسسة جدیدة - الشركات بأنواعھا",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "10 ر.ع",
+            "fee_omr": 10
+          }
+        ]
+      },
+      {
+        "entity_no": 5,
+        "entity_ar": "منصة عمان للأعمال",
+        "service_ar": "تسجیل مؤسسة جدیدة - الإستثمار الأجنبي",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "30 ر.ع",
+            "fee_omr": 30
+          }
+        ]
+      },
+      {
+        "entity_no": 5,
+        "entity_ar": "منصة عمان للأعمال",
+        "service_ar": "تجدید السجل التجاري",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "5 ر.ع",
+            "fee_omr": 5
+          }
+        ]
+      },
+      {
+        "entity_no": 5,
+        "entity_ar": "منصة عمان للأعمال",
+        "service_ar": "تحدیث بیانات السجل التجاري",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "5 ر.ع",
+            "fee_omr": 5
+          }
+        ]
+      },
+      {
+        "entity_no": 5,
+        "entity_ar": "منصة عمان للأعمال",
+        "service_ar": "الوكالات التجاریة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "5 ر.ع",
+            "fee_omr": 5
+          }
+        ]
+      },
+      {
+        "entity_no": 5,
+        "entity_ar": "منصة عمان للأعمال",
+        "service_ar": "ترخیص/تحدید مكان الأنشطة/إدارة استمارة الترخیص",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "5 ر.ع",
+            "fee_omr": 5
+          }
+        ]
+      },
+      {
+        "entity_no": 5,
+        "entity_ar": "منصة عمان للأعمال",
+        "service_ar": "ارفاق نواقص لطلب ما تم تقديمة من نفس المكتب",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "0 ر.ع",
+            "fee_omr": 0
+          }
+        ]
+      },
+      {
+        "entity_no": 6,
+        "entity_ar": "جريدة عمان",
+        "service_ar": "إعلان مبوب",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 6,
+        "entity_ar": "جريدة عمان",
+        "service_ar": "الخدمات المتعلقة برأس مال الشركة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 6,
+        "entity_ar": "جريدة عمان",
+        "service_ar": "10X8 -إعلان الملكية الفكرية المقاس",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 6,
+        "entity_ar": "جريدة عمان",
+        "service_ar": "15X8 -إعلان الملكية الفكرية المقاس",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 6,
+        "entity_ar": "جريدة عمان",
+        "service_ar": "إستمارة إعلان فقدان سند ملكية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "5 ر.ع",
+            "fee_omr": 5
+          }
+        ]
+      },
+      {
+        "entity_no": 6,
+        "entity_ar": "جريدة عمان",
+        "service_ar": "إستمارة إعلان فقدان جواز سفر",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "6 ر.ع",
+            "fee_omr": 6
+          }
+        ]
+      },
+      {
+        "entity_no": 6,
+        "entity_ar": "جريدة عمان",
+        "service_ar": "7.8Wx10H - إعلان قضائي",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "24 ر.ع",
+            "fee_omr": 24
+          }
+        ]
+      },
+      {
+        "entity_no": 6,
+        "entity_ar": "جريدة عمان",
+        "service_ar": "12Wx10H - إعلان قضائي",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "36 ر.ع",
+            "fee_omr": 36
+          }
+        ]
+      },
+      {
+        "entity_no": 6,
+        "entity_ar": "جريدة عمان",
+        "service_ar": "12Wx15H - إعلان قضائي",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "56 ر.ع",
+            "fee_omr": 56
+          }
+        ]
+      },
+      {
+        "entity_no": 7,
+        "entity_ar": "جريدة الرؤية",
+        "service_ar": "إستمارة إعلان فقدان سند ملكية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "8 ر.ع",
+            "fee_omr": 8
+          }
+        ]
+      },
+      {
+        "entity_no": 7,
+        "entity_ar": "جريدة الرؤية",
+        "service_ar": "إستمارة إعلان فقدان جواز سفر",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "8 ر.ع",
+            "fee_omr": 8
+          }
+        ]
+      },
+      {
+        "entity_no": 7,
+        "entity_ar": "جريدة الرؤية",
+        "service_ar": "7.8Wx10H - إعلان قضائي",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "19 ر.ع",
+            "fee_omr": 19
+          }
+        ]
+      },
+      {
+        "entity_no": 7,
+        "entity_ar": "جريدة الرؤية",
+        "service_ar": "12Wx10H - إعلان قضائي",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "24 ر.ع",
+            "fee_omr": 24
+          }
+        ]
+      },
+      {
+        "entity_no": 7,
+        "entity_ar": "جريدة الرؤية",
+        "service_ar": "12Wx15H - إعلان قضائي",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "28 ر.ع",
+            "fee_omr": 28
+          }
+        ]
+      },
+      {
+        "entity_no": 7,
+        "entity_ar": "جريدة الرؤية",
+        "service_ar": "7.8WX10H - إعلان",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "13 ر.ع",
+            "fee_omr": 13
+          }
+        ]
+      },
+      {
+        "entity_no": 8,
+        "entity_ar": "وزارة الأوقاف و الشؤون الدينية",
+        "service_ar": "تسجيل طلب حـج جديد",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 8,
+        "entity_ar": "وزارة الأوقاف و الشؤون الدينية",
+        "service_ar": "تسجيل مقاول الحج",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 8,
+        "entity_ar": "وزارة الأوقاف و الشؤون الدينية",
+        "service_ar": "حالة اختيار المركز الصحي",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          }
+        ]
+      },
+      {
+        "entity_no": 9,
+        "entity_ar": "خدمات مركز سند",
+        "service_ar": "استمارة طلب تنازل عن مركز سند",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 9,
+        "entity_ar": "خدمات مركز سند",
+        "service_ar": "استمارة التحول إلى الهوية الجديدة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 9,
+        "entity_ar": "خدمات مركز سند",
+        "service_ar": "خدمات بطاقة مندوب و الانظمة و الترخيص",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 9,
+        "entity_ar": "خدمات مركز سند",
+        "service_ar": "أستمارة نقل موقع مركز سند",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 9,
+        "entity_ar": "خدمات مركز سند",
+        "service_ar": "إستمارة إلغاء مركز سند",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 9,
+        "entity_ar": "خدمات مركز سند",
+        "service_ar": "استمارة طلب الحصول على ترخيص جديد لمركز سند للخدمات",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 9,
+        "entity_ar": "خدمات مركز سند",
+        "service_ar": "استمارة طلب تدريب لمركز سند للخدمات",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 9,
+        "entity_ar": "خدمات مركز سند",
+        "service_ar": "إلغاء تنازل عن مركز سند للخدمات",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 9,
+        "entity_ar": "خدمات مركز سند",
+        "service_ar": "إلغاء نقل موقع مركز سند للخدمات",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 9,
+        "entity_ar": "خدمات مركز سند",
+        "service_ar": "إعادة تنشيط المستخدم الذي تم إلغاء تنشيطه تلقائيًا",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 9,
+        "entity_ar": "خدمات مركز سند",
+        "service_ar": "إعادة تنشيط المالك المعطل تلقائيًا",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 9,
+        "entity_ar": "خدمات مركز سند",
+        "service_ar": "إضافة شريك جديد",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 9,
+        "entity_ar": "خدمات مركز سند",
+        "service_ar": "إلغاء الشريك",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 9,
+        "entity_ar": "خدمات مركز سند",
+        "service_ar": "طلب إيقاف النظام مؤقتاً",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 9,
+        "entity_ar": "خدمات مركز سند",
+        "service_ar": "طلب تفعيل النظام الموقوف مؤقتاً",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 9,
+        "entity_ar": "خدمات مركز سند",
+        "service_ar": "طلب السماح لممارسة الأنشطة التجارية الأخرى",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 9,
+        "entity_ar": "خدمات مركز سند",
+        "service_ar": "طلب تمديد الإيقاف المؤقت",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 10,
+        "entity_ar": "كهرباء مزون",
+        "service_ar": "طلب قطع التوصيل",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 10,
+        "entity_ar": "كهرباء مزون",
+        "service_ar": "طلب اعادة توصيل",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 10,
+        "entity_ar": "كهرباء مزون",
+        "service_ar": "طلب تغيير التعرفة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 10,
+        "entity_ar": "كهرباء مزون",
+        "service_ar": "تحديث معلومات العميل",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 10,
+        "entity_ar": "كهرباء مزون",
+        "service_ar": "استمارة البيانات الأولية لتوصيل التيار الكهربائي",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 10,
+        "entity_ar": "كهرباء مزون",
+        "service_ar": "طلب توصيل جديد",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 10,
+        "entity_ar": "كهرباء مزون",
+        "service_ar": "طلب أحمال اضافية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 12,
+        "entity_ar": "صندوق الحماية الإجتماعية",
+        "service_ar": "تسجيل مؤمن عليه عامل لحسابه الخاص",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 12,
+        "entity_ar": "صندوق الحماية الإجتماعية",
+        "service_ar": "استقالة مؤمن عليه عامل لحسابه الخاص",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 12,
+        "entity_ar": "صندوق الحماية الإجتماعية",
+        "service_ar": "تحديث متغير اجر مؤمن عليه عامل لحسابه الخاص",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 12,
+        "entity_ar": "صندوق الحماية الإجتماعية",
+        "service_ar": "إصدار رسالة الإحالة للشهادة الطبية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 12,
+        "entity_ar": "صندوق الحماية الإجتماعية",
+        "service_ar": "طلب مطالبة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "5 ر.ع",
+            "fee_omr": 5
+          }
+        ]
+      },
+      {
+        "entity_no": 12,
+        "entity_ar": "صندوق الحماية الإجتماعية",
+        "service_ar": "الأمان الوظيفي",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 12,
+        "entity_ar": "صندوق الحماية الإجتماعية",
+        "service_ar": "موعد طبي",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 12,
+        "entity_ar": "صندوق الحماية الإجتماعية",
+        "service_ar": "تحرير تفاصيل البنك",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 14,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "جديد رخصة الصيد",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 14,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "جديد رخصة الصيد -دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 14,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "تجديد رخصة الصيد",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 14,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "تجديد رخصة الصيد-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 14,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "تعديل بيانات رخصة الصيد",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 14,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "تعديل بيانات رخصة الصيد-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 14,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "إلغاء رخصة الصيد-دفع",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 14,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "تسجيل عيادة بيطرية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 14,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "تسجيل عيادة بيطرية-دفع",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 14,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "تسجيل حيوان",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 14,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "نقل حيوان",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 14,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "تجديد ترخيص العيادة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "طلب تصريح بئر",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "توصيل خدمات ثانوية مؤقتة-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "طلب تصريح حفر",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "طلب تصريح حفر -دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "اتصال خدمات الحفر المؤقتة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "اتصال خدمات الحفر المؤقتة-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "طلب شهادة إكمال الاعمال -دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "طلب توصيل خدمات لمبنى قائم",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "طلب توصيل خدمات لمبنى قائم -دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "طلب شهادة وصف مبنى قائم",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "طلب شهادة وصف مبنى قائم -دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "إلغاء عقد الإيجار",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "إلغاء عقد الإيجار-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "ترخيص البلدية(جديد/تجديد)",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "ترخيص البلدية(جديد/تجديد)-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "إلغاء عقد البلدية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "إلغاء عقد البلدية-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "تقديم طلب لخدمات البلدية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "تقديم طلب لخدمات البلدية-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "بطاقة صحية (جديد/تجديد)",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "بطاقة صحية (جديد/تجديد)-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "بطاقة صحية(إلغاء/تحديث)",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "بطاقة صحية(إلغاء/تحديث)-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "شهادة عدم ممانعة للمركبات (جديد/تجديد)",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "شهادة عدم ممانعة للمركبات (جديد/تجديد)-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "ترخيص الإعلان (جديد/تجديد)",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "ترخيص الإعلان (جديد/تجديد)-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "إلغاء ترخيص الإعلان",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "إلغاء ترخيص الإعلان-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "اللوحة الرئيسية (جديد/تجديد/تحديث/إلغاء)",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "اللوحة الرئيسية (جديد/تجديد/تحديث/إلغاء)-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "طلب تصريح بئر -دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "طلبات الحصر والتسجيل",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "طلبات الحصر والتسجيل -دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "طلبات دراسات الوضع المائي والمعلومات الهيودرومترية و المسوحات الفنية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "طلبات دراسات الوضع المائي والمعلومات الهيودرومترية و المسوحات الفنية -دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "طلب مقاول حفر ابار المياه",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "طلب مقاول حفر ابار المياه -دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "طلب ،طلبات مياه الأفلاج",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "طلب ،طلبات مياه الأفلاج -دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "طلبات السدود",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "طلبات السدود -دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "طلب للحصول على مشاريع التنمية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "service_ar": "طلب للحصول على مشاريع التنمية -دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "طلب إباحة بناء صغرى-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "وزارة الداخلية ( الخدمات البلدية)",
+        "service_ar": "توصيل خدمات ثانوية مؤقتة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 16,
+        "entity_ar": "الادعاء العام العماني",
+        "service_ar": "طلب خدمة العملاء",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 16,
+        "entity_ar": "الادعاء العام العماني",
+        "service_ar": "دفع الغرامة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 19,
+        "entity_ar": "غرفة عمان للتجارة والصناعة",
+        "service_ar": "تسجيل عضوية جديدة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 19,
+        "entity_ar": "غرفة عمان للتجارة والصناعة",
+        "service_ar": "تجديد العضوية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 19,
+        "entity_ar": "غرفة عمان للتجارة والصناعة",
+        "service_ar": "تغيير الاسم",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 19,
+        "entity_ar": "غرفة عمان للتجارة والصناعة",
+        "service_ar": "تغيير الدرجة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 20,
+        "entity_ar": "شركة مسقط لتوزيع الكهرباء",
+        "service_ar": "تسجيل العملاء",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 20,
+        "entity_ar": "شركة مسقط لتوزيع الكهرباء",
+        "service_ar": "توصيل أولي",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 20,
+        "entity_ar": "شركة مسقط لتوزيع الكهرباء",
+        "service_ar": "توصيل أولي-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 20,
+        "entity_ar": "شركة مسقط لتوزيع الكهرباء",
+        "service_ar": "تحويل مبالغ من حساب إلى آخر /إسترجاع مبالغ",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 20,
+        "entity_ar": "شركة مسقط لتوزيع الكهرباء",
+        "service_ar": "تحويل مبالغ من حساب إلى آخر /إسترجاع مبالغ-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 20,
+        "entity_ar": "شركة مسقط لتوزيع الكهرباء",
+        "service_ar": "تغيير التعرفة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 20,
+        "entity_ar": "شركة مسقط لتوزيع الكهرباء",
+        "service_ar": "تغيير التعرفة-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 20,
+        "entity_ar": "شركة مسقط لتوزيع الكهرباء",
+        "service_ar": "فحص العداد",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 20,
+        "entity_ar": "شركة مسقط لتوزيع الكهرباء",
+        "service_ar": "فحص العداد-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 20,
+        "entity_ar": "شركة مسقط لتوزيع الكهرباء",
+        "service_ar": "قطع / إعادة الخدمة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 20,
+        "entity_ar": "شركة مسقط لتوزيع الكهرباء",
+        "service_ar": "قطع / إعادة الخدمة-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 20,
+        "entity_ar": "شركة مسقط لتوزيع الكهرباء",
+        "service_ar": "نقل عداد",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 20,
+        "entity_ar": "شركة مسقط لتوزيع الكهرباء",
+        "service_ar": "نقل عداد-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 20,
+        "entity_ar": "شركة مسقط لتوزيع الكهرباء",
+        "service_ar": "البلاغات المتعلقة بالفوترة والتحصيل",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 20,
+        "entity_ar": "شركة مسقط لتوزيع الكهرباء",
+        "service_ar": "البلاغات المتعلقة بالفوترة والتحصيل-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 20,
+        "entity_ar": "شركة مسقط لتوزيع الكهرباء",
+        "service_ar": "طلب الشبكة / تصريح الحفر",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 20,
+        "entity_ar": "شركة مسقط لتوزيع الكهرباء",
+        "service_ar": "طلب الشبكة / تصريح الحفر-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 21,
+        "entity_ar": "مسقط للتخليص والإيداع",
+        "service_ar": "تسجيل المستثمر",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 22,
+        "entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "service_ar": "إصدار تصاريح خاصة للمركبات",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "5 ر.ع",
+            "fee_omr": 5
+          }
+        ]
+      },
+      {
+        "entity_no": 22,
+        "entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "service_ar": "إصدار تصاريح خاصة للمركبات-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 22,
+        "entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "service_ar": "دفع الغرامات",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 22,
+        "entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "service_ar": "طلب التنازل عن لوحة أجرة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 22,
+        "entity_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+        "service_ar": "طلب التنازل عن لوحة أجرة-دفع",
+        "actions": [
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ]
+      },
+      {
+        "entity_no": 24,
+        "entity_ar": "وزارة المالية",
+        "service_ar": "تسجيل رقم مستفيد",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 24,
+        "entity_ar": "وزارة المالية",
+        "service_ar": "تجديد رقم مستفيد",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 24,
+        "entity_ar": "وزارة المالية",
+        "service_ar": "تعديل رقم الحساب البنكى",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 24,
+        "entity_ar": "وزارة المالية",
+        "service_ar": "ربط رقم المستفيد برقم الحساب البنكي",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 24,
+        "entity_ar": "وزارة المالية",
+        "service_ar": "تسجيل بيانات مؤسسة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 24,
+        "entity_ar": "وزارة المالية",
+        "service_ar": "استكمال الدفع",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 24,
+        "entity_ar": "وزارة المالية",
+        "service_ar": "رسالة الزام",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 25,
+        "entity_ar": "الشركة الوطنية العمانية للهندسة والإستثمار",
+        "service_ar": "الفاتورة و الدفع",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "0 ر.ع",
+            "fee_omr": 0
+          }
+        ]
+      },
+      {
+        "entity_no": 28,
+        "entity_ar": "ظفار للتأمين",
+        "service_ar": "تأمين الحياة ضد الحوادث الشخصية",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3.5 ر.ع",
+            "fee_omr": 3.5
+          }
+        ]
+      },
+      {
+        "entity_no": 29,
+        "entity_ar": "جودوبا",
+        "service_ar": "خدمة حجز تذاكر الطائرة",
+        "actions": [
+          {
+            "action": "شراء التذاكر",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 30,
+        "entity_ar": "ملاءة",
+        "service_ar": "تقرير ملاءة الائتماني للأفراد",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ]
+      },
+      {
+        "entity_no": 31,
+        "entity_ar": "بنك التنمية",
+        "service_ar": "نموذج طلب صغير",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "5.000 ر.ع",
+            "fee_omr": 5
+          }
+        ]
+      },
+      {
+        "entity_no": 32,
+        "entity_ar": "المدينة تكافل",
+        "service_ar": "تأمين السيارات",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4.000 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 32,
+        "entity_ar": "المدينة تكافل",
+        "service_ar": "تأمين طبي",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4.000 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 35,
+        "entity_ar": "وزارة الإسكان والتخطيط العمراني",
+        "service_ar": "Browsing property",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3.500 ر.ع",
+            "fee_omr": 3.5
+          }
+        ]
+      },
+      {
+        "entity_no": 36,
+        "entity_ar": "بنك ظفار",
+        "service_ar": "خدمة فتح الحساب",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3.500 ر.ع",
+            "fee_omr": 3.5
+          }
+        ]
+      },
+      {
+        "entity_no": 37,
+        "entity_ar": "الشركة المتحدة للتمويل",
+        "service_ar": "قرض المستهلك",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "5 ر.ع",
+            "fee_omr": 5
+          }
+        ]
+      },
+      {
+        "entity_no": 38,
+        "entity_ar": "صفقات",
+        "service_ar": "تسجيل المنظمة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4.000 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 38,
+        "entity_ar": "صفقات",
+        "service_ar": "إنشاء مناقصة عامة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 38,
+        "entity_ar": "صفقات",
+        "service_ar": "تسجيل الموردين",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3.500 ر.ع",
+            "fee_omr": 3.5
+          }
+        ]
+      },
+      {
+        "entity_no": 38,
+        "entity_ar": "صفقات",
+        "service_ar": "إنشاء تعيين مباشر",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 38,
+        "entity_ar": "صفقات",
+        "service_ar": "إنشاء مناقصة محدودة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 38,
+        "entity_ar": "صفقات",
+        "service_ar": "عرض جميع العطاءات المدرجة",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      },
+      {
+        "entity_no": 38,
+        "entity_ar": "صفقات",
+        "service_ar": "عرض عروضي",
+        "actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          },
+          {
+            "action": "تقديم",
+            "fee_raw": "4 ر.ع",
+            "fee_omr": 4
+          }
+        ]
+      }
+    ],
+    "junk_in_us": [
+      {
+        "id": 100339,
+        "name_en": "Training For Employment Support Applications",
+        "name_ar": "طلبات دعم التدريب المقرون بالتشغيل",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 100340,
+        "name_en": "Submit Training Contract Applications",
+        "name_ar": "خدمة طلبات عقود التدريب(على رأس العمل والمقرون بالتشغيل)",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 100345,
+        "name_en": "Acceptance Training Contract Applications",
+        "name_ar": "قبول طلب عقد التدريب ( التدريب على رأس العمل - التدريب المقرون بالتشغيل )",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 110060,
+        "name_en": "Ajyal System",
+        "name_ar": "نظام أجيال",
+        "beneficiary": "من الحكومة الى موظف الحكومة(G2E)",
+        "reason": "g2e_internal"
+      },
+      {
+        "id": 110061,
+        "name_en": "Ministry of Health Email",
+        "name_ar": "الإيميل الخاص بوزارة الصحة",
+        "beneficiary": "من الحكومة الى موظف الحكومة(G2E)",
+        "reason": "g2e_internal"
+      },
+      {
+        "id": 110062,
+        "name_en": "Albarwa System",
+        "name_ar": "نظام البروة",
+        "beneficiary": "من الحكومة الى موظف الحكومة(G2E)",
+        "reason": "g2e_internal"
+      },
+      {
+        "id": 110063,
+        "name_en": "Ejada System",
+        "name_ar": "نظام إجادة",
+        "beneficiary": "من الحكومة الى موظف الحكومة(G2E)",
+        "reason": "g2e_internal"
+      },
+      {
+        "id": 110064,
+        "name_en": "Human Resource Management System (Mawrd)",
+        "name_ar": "نظام إدارة الموارد البشرية (مورد)",
+        "beneficiary": "من الحكومة الى موظف الحكومة(G2E)",
+        "reason": "g2e_internal"
+      },
+      {
+        "id": 110065,
+        "name_en": "Treatment Abroad Request",
+        "name_ar": "الحصول على العلاج بالخارج",
+        "beneficiary": "من الحكومة الى موظف الحكومة(G2E)",
+        "reason": "g2e_internal"
+      },
+      {
+        "id": 110066,
+        "name_en": "Registering innovative initiatives and ideas",
+        "name_ar": "تسجيل المبادرات والأفكار الابتكارية",
+        "beneficiary": "من الحكومة الى موظف الحكومة(G2E)",
+        "reason": "g2e_internal"
+      },
+      {
+        "id": 110067,
+        "name_en": "Rassed system",
+        "name_ar": "نظام راصد",
+        "beneficiary": "من الحكومة الى موظف الحكومة(G2E)",
+        "reason": "g2e_internal"
+      },
+      {
+        "id": 110068,
+        "name_en": "Periodic Audit",
+        "name_ar": "التفتيش الدوري للمؤسسات الصحية الخاصة",
+        "beneficiary": "من الحكومة الى موظف الحكومة(G2E)",
+        "reason": "g2e_internal"
+      },
+      {
+        "id": 120000,
+        "name_en": "View application Status",
+        "name_ar": "عرض حالة الطلب",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B),من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120001,
+        "name_en": "Search Commercial Registrations",
+        "name_ar": "بحث في السجلات التجارية",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B),من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120002,
+        "name_en": "Search Public Announcements",
+        "name_ar": "بحث في الإعلانات العامة",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B),من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120005,
+        "name_en": "Search Obligations List",
+        "name_ar": "بحث في الالتزامات",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B),من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120009,
+        "name_en": "My CR",
+        "name_ar": "سجلي التجاري",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B),من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120010,
+        "name_en": "My Applications",
+        "name_ar": "طلباتي",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120011,
+        "name_en": "My CR Applications",
+        "name_ar": "طلبات سجلي التجاري",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B),من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120012,
+        "name_en": "My Tasks",
+        "name_ar": "مهامي",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120013,
+        "name_en": "My CR Delegation Rights",
+        "name_ar": "صلاحيات التفويض لسجلي التجاري",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B),من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120014,
+        "name_en": "My CR Labor Information",
+        "name_ar": "بيانات القوى العاملة لسجلي التجاري",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B),من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120015,
+        "name_en": "My Notifications",
+        "name_ar": "إشعاراتي",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120016,
+        "name_en": "My CR Notifications",
+        "name_ar": "إشعارات سجلي التجاري",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B),من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120021,
+        "name_en": "My Certificates of Origin",
+        "name_ar": "شهادات المنشأ الخاصة بي",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120022,
+        "name_en": "Page Not Found",
+        "name_ar": "404 صفحة",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120023,
+        "name_en": "My Public Announcements",
+        "name_ar": "إعلاناتي العامة",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120024,
+        "name_en": "My CR Public Announcements",
+        "name_ar": "الإعلانات العامة لسجلي التجاري",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B),من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120026,
+        "name_en": "My CR Calendar",
+        "name_ar": "تقويم سجلي التجاري",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B),من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120027,
+        "name_en": "My CR Commercial Agencies",
+        "name_ar": "الوكالات التجارية لسجلي التجاري",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B),من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120028,
+        "name_en": "My CR Obligations",
+        "name_ar": "التزامات سجلي التجاري",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B),من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120029,
+        "name_en": "My CR Licenses",
+        "name_ar": "تراخيص سجلي التجاري",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B),من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120030,
+        "name_en": "My CR Licenses applications",
+        "name_ar": "طلبات التراخيص لسجلي التجاري",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B),من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120031,
+        "name_en": "My CR Permits",
+        "name_ar": "تصاريح سجلي التجاري",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120032,
+        "name_en": "My CR Places of Activities",
+        "name_ar": "أماكن ممارسة الأنشطة لسجلي التجاري",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B),من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 120037,
+        "name_en": "My CR Tasks",
+        "name_ar": "مهام سجلي التجاري",
+        "beneficiary": "من الحكومة إلى قطاع الأعمال(G2B),من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 140005,
+        "name_en": "SMS Services",
+        "name_ar": "خدمة الرسائل القصيرة",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 140012,
+        "name_en": "To know the types of visas, please choose the visa you want to know.",
+        "name_ar": "لمعرفة أنواع التأشيرات يرجى اختيار التأشيرة المطلوب معرفتها..",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 140022,
+        "name_en": "FAQs",
+        "name_ar": "سؤال وجواب",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 140023,
+        "name_en": "ROP SMS Services and Mobile Apps",
+        "name_ar": "تطبيق الشرطة على الهواتف الذكية",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 140026,
+        "name_en": "ROP Headquarters",
+        "name_ar": "القيادات الجغرافية",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 140029,
+        "name_en": "Find all police phone numbers.",
+        "name_ar": "لمعرفة جميع أرقام الهواتف في الشرطة ..",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 160081,
+        "name_en": "Search for Request Status",
+        "name_ar": "الاستعلام عن حالة الطلب المقدم",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 160082,
+        "name_en": "Search for Rent Contract applied by (Real Estate owners/Seanad Offices/Real Estate management offices)",
+        "name_ar": "الاستعلام عن عقود الايجار المسجلة (أصحاب العقارات/مكاتب سند/المكاتب العقارية)",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 160083,
+        "name_en": "Search for Request Status",
+        "name_ar": "الاستعلام عن حالة الطلب المقدم",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 160085,
+        "name_en": "Search for Vehicle License Details",
+        "name_ar": "الاستعلام عن تراخيص المركبات",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 160086,
+        "name_en": "Search for Minor Permit",
+        "name_ar": "الاستعلام عن تراخيص البناء الصغرى",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 160087,
+        "name_en": "Search for Request Status",
+        "name_ar": "الاستعلام عن حالة الطلب المقدم",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 160088,
+        "name_en": "Search for Construction Permits",
+        "name_ar": "الاستعلام عن تصاريح الشروع في البناء",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      },
+      {
+        "id": 160089,
+        "name_en": "Search for Parking Violation",
+        "name_ar": "الاستعلام عن مخالفات مواقف المركبات",
+        "beneficiary": "من الحكومة الى الأفراد(G2C)",
+        "reason": "pattern_match"
+      }
+    ],
+    "entities_missing": [
+      {
+        "entity_no": 5,
+        "entity_ar": "منصة عمان للأعمال",
+        "count": 11
+      },
+      {
+        "entity_no": 6,
+        "entity_ar": "جريدة عمان",
+        "count": 9
+      },
+      {
+        "entity_no": 7,
+        "entity_ar": "جريدة الرؤية",
+        "count": 6
+      },
+      {
+        "entity_no": 8,
+        "entity_ar": "وزارة الأوقاف و الشؤون الدينية",
+        "count": 3
+      },
+      {
+        "entity_no": 9,
+        "entity_ar": "خدمات مركز سند",
+        "count": 17
+      },
+      {
+        "entity_no": 10,
+        "entity_ar": "كهرباء مزون",
+        "count": 7
+      },
+      {
+        "entity_no": 12,
+        "entity_ar": "صندوق الحماية الإجتماعية",
+        "count": 8
+      },
+      {
+        "entity_no": 14,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "count": 12
+      },
+      {
+        "entity_no": 15,
+        "entity_ar": "زارة الثروة الزراعية و السمكية وموارد المياه",
+        "count": 54
+      },
+      {
+        "entity_no": 16,
+        "entity_ar": "الادعاء العام العماني",
+        "count": 2
+      },
+      {
+        "entity_no": 19,
+        "entity_ar": "غرفة عمان للتجارة والصناعة",
+        "count": 5
+      },
+      {
+        "entity_no": 20,
+        "entity_ar": "شركة مسقط لتوزيع الكهرباء",
+        "count": 17
+      },
+      {
+        "entity_no": 21,
+        "entity_ar": "مسقط للتخليص والإيداع",
+        "count": 1
+      },
+      {
+        "entity_no": 24,
+        "entity_ar": "وزارة المالية",
+        "count": 7
+      },
+      {
+        "entity_no": 25,
+        "entity_ar": "الشركة الوطنية العمانية للهندسة والإستثمار",
+        "count": 1
+      },
+      {
+        "entity_no": 28,
+        "entity_ar": "ظفار للتأمين",
+        "count": 1
+      },
+      {
+        "entity_no": 29,
+        "entity_ar": "جودوبا",
+        "count": 1
+      },
+      {
+        "entity_no": 30,
+        "entity_ar": "ملاءة",
+        "count": 1
+      },
+      {
+        "entity_no": 31,
+        "entity_ar": "بنك التنمية",
+        "count": 1
+      },
+      {
+        "entity_no": 32,
+        "entity_ar": "المدينة تكافل",
+        "count": 2
+      },
+      {
+        "entity_no": 36,
+        "entity_ar": "بنك ظفار",
+        "count": 1
+      },
+      {
+        "entity_no": 37,
+        "entity_ar": "الشركة المتحدة للتمويل",
+        "count": 1
+      },
+      {
+        "entity_no": 38,
+        "entity_ar": "صفقات",
+        "count": 8
+      }
+    ],
+    "fee_discrepancies": [
+      {
+        "our_id": 100302,
+        "our_name_ar": "تسجيل عقد عمل للقوى العاملة غير العمانية (المنشآت)",
+        "our_name_en": "Contract Of Work",
+        "our_fee_omr": 1,
+        "our_entity_ar": "وزارة العمل",
+        "sanad_entity_ar": "وزارة العمل",
+        "sanad_service_ar": "عقد عمل",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 100054,
+        "our_name_ar": "طلب إلغاء بلاغ ترك العمل (الأفراد)",
+        "our_name_en": "Desertion Cancelation Request Individuals",
+        "our_fee_omr": 100,
+        "our_entity_ar": "وزارة العمل",
+        "sanad_entity_ar": "وزارة العمل",
+        "sanad_service_ar": "تسجيل بلاغ ترك العمل",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "إلغاء",
+            "fee_raw": "1 ر.ع",
+            "fee_omr": 1
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "fuzzy(0.75)"
+      },
+      {
+        "our_id": 100054,
+        "our_name_ar": "طلب إلغاء بلاغ ترك العمل (الأفراد)",
+        "our_name_en": "Desertion Cancelation Request Individuals",
+        "our_fee_omr": 100,
+        "our_entity_ar": "وزارة العمل",
+        "sanad_entity_ar": "وزارة العمل",
+        "sanad_service_ar": "إلغاء بلاغ ترك العمل",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 100234,
+        "our_name_ar": "استرداد ثمن التذكرة لبلاغ ترك العمل (المنشآت)",
+        "our_name_en": "Ticket Refund Request Of Desertion Report Establishments",
+        "our_fee_omr": 0,
+        "our_entity_ar": "وزارة العمل",
+        "sanad_entity_ar": "وزارة العمل",
+        "sanad_service_ar": "إسترداد ثمن التذكرة",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "تحديث",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 100233,
+        "our_name_ar": "التظلم من بلاغ ترك العمل (الأفراد)",
+        "our_name_en": "Grievance From Desertion Report Individuals",
+        "our_fee_omr": 0,
+        "our_entity_ar": "وزارة العمل",
+        "sanad_entity_ar": "وزارة العمل",
+        "sanad_service_ar": "التظلم من بلاغ ترك العمل",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 100323,
+        "our_name_ar": "إعلان دعوى قضائية (المنشآت)",
+        "our_name_en": "Declare Court Case Service",
+        "our_fee_omr": 0,
+        "our_entity_ar": "وزارة العمل",
+        "sanad_entity_ar": "وزارة العمل",
+        "sanad_service_ar": "إعلان دعوى قضائية",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "3 ر.ع",
+            "fee_omr": 3
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "إعادة ارسال",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "substring"
+      },
+      {
+        "our_id": 100323,
+        "our_name_ar": "إعلان دعوى قضائية (المنشآت)",
+        "our_name_en": "Declare Court Case Service",
+        "our_fee_omr": 0,
+        "our_entity_ar": "وزارة العمل",
+        "sanad_entity_ar": "وزارة العمل",
+        "sanad_service_ar": "سحب إعلان دعوى قضائية",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "دفع",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          },
+          {
+            "action": "إعادة ارسال",
+            "fee_raw": "2 ر.ع",
+            "fee_omr": 2
+          }
+        ],
+        "match_method": "fuzzy(0.75)"
+      },
+      {
+        "our_id": 120019,
+        "our_name_ar": "إلغاء السجل التجاري",
+        "our_name_en": "Cancel Commercial Registration",
+        "our_fee_omr": 0,
+        "our_entity_ar": "وزارة التجارة والصناعة وترويج الإستثمار",
+        "sanad_entity_ar": "منصة عمان للأعمال",
+        "sanad_service_ar": "إلغاء /تصفیة السجل التجاري",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "5 ر.ع",
+            "fee_omr": 5
+          }
+        ],
+        "match_method": "fuzzy(1.00)"
+      },
+      {
+        "our_id": 120018,
+        "our_name_ar": "تقديم إثبات رأس المال للسجل التجاري",
+        "our_name_en": "Submit CR Capital Payment Proof",
+        "our_fee_omr": 0,
+        "our_entity_ar": "وزارة التجارة والصناعة وترويج الإستثمار",
+        "sanad_entity_ar": "منصة عمان للأعمال",
+        "sanad_service_ar": "إثبات رأس المال",
+        "sanad_actions": [
+          {
+            "action": "تقديم",
+            "fee_raw": "5 ر.ع",
+            "fee_omr": 5
+          }
+        ],
+        "match_method": "substring"
+      }
+    ]
+  }
+}
