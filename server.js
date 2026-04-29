@@ -15,7 +15,8 @@ import { authRouter } from './routes/auth.js';
 import { officeRouter } from './routes/office.js';
 import { platformAdminRouter } from './routes/platform_admin.js';
 import { paymentsRouter } from './routes/payments.js';
-import { attachSession } from './lib/auth.js';
+import { citizenAuthRouter } from './routes/citizen_auth.js';
+import { attachSession, attachCitizenSession } from './lib/auth.js';
 import { LLM_ENABLED } from './lib/llm.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -35,6 +36,9 @@ app.use(cookieParser());
 // Hydrate req.officer/req.office if the caller has a valid session cookie.
 // All downstream route files can rely on req.session / requireOfficer().
 app.use(attachSession);
+// Hydrate req.citizen if the caller has a valid citizen-cookie. Independent
+// of attachSession — both can populate the same request.
+app.use(attachCitizenSession);
 
 // Simple request log
 app.use((req, _res, next) => {
@@ -62,6 +66,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
 
 // API
 app.use('/api/auth', authRouter);
+app.use('/api/citizen-auth', citizenAuthRouter);
 app.use('/api/office', officeRouter);
 app.use('/api/platform-admin', platformAdminRouter);
 app.use('/api/payments', paymentsRouter);

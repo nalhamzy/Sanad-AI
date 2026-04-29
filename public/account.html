@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Sanad-AI — My account · حسابي</title>
+<meta name="theme-color" content="#0d9488"/>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Kufi+Arabic:wght@400;500;700;800;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/theme.css"/>
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  [dir="rtl"] body, html[dir="rtl"] * { font-family: 'Noto Kufi Arabic', sans-serif; }
+  .page-bg {
+    background:
+      radial-gradient(900px 480px at 12% -10%, rgba(20,184,166,.08) 0%, transparent 55%),
+      linear-gradient(180deg, #fbfaf6 0%, #f5f1e8 100%);
+  }
+  .wordmark { background: linear-gradient(135deg, #0d9488 0%, #15803d 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .svc-card { transition: all .18s; }
+  .svc-card:hover { transform: translateY(-2px); box-shadow: 0 14px 28px -16px rgba(15,23,42,.18); border-color: rgba(20,184,166,.45); }
+  .status-chip { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; letter-spacing: .02em; text-transform: uppercase; }
+  .chip-collecting   { background: #fef3c7; color: #92400e; }
+  .chip-ready        { background: #dbeafe; color: #1e40af; }
+  .chip-claimed      { background: #ede9fe; color: #5b21b6; }
+  .chip-awaiting     { background: #fee2e2; color: #991b1b; }
+  .chip-in_progress  { background: #d1fae5; color: #065f46; }
+  .chip-completed    { background: #e2e8f0; color: #334155; }
+  .chip-cancelled    { background: #f1f5f9; color: #64748b; }
+  /* Search results dropdown */
+  .results-pop { box-shadow: 0 18px 36px -12px rgba(15,23,42,.18); }
+</style>
+</head>
+<body class="min-h-screen text-slate-900 page-bg">
+
+<!-- ─────────── HEADER ─────────── -->
+<header class="max-w-6xl mx-auto px-5 sm:px-6 py-5 flex items-center">
+  <a href="/" class="flex items-center gap-3" aria-label="Sanad-AI home">
+    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-green-700 text-white grid place-items-center text-lg font-black shadow-md">س</div>
+    <div class="leading-tight">
+      <div class="text-base font-extrabold wordmark" data-i18n="app.name"></div>
+      <div class="text-[11px] text-slate-500" data-i18n="home.footer.tagline"></div>
+    </div>
+  </a>
+  <div class="ms-auto flex items-center gap-2">
+    <button id="langBtn" class="px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-slate-200 font-semibold text-xs shadow-sm" data-i18n="lang.toggle"></button>
+    <button id="logoutBtn" class="px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-slate-200 font-semibold text-xs shadow-sm text-slate-700" data-i18n="auth.logout"></button>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-5 sm:px-6 pb-16">
+
+  <!-- ─── Greeting + identity card ─── -->
+  <section class="mt-4 sm:mt-6 rounded-3xl bg-white border border-slate-200 shadow-sm p-6 sm:p-7 flex flex-col sm:flex-row sm:items-center gap-5">
+    <img id="avatar" class="w-16 h-16 rounded-full bg-slate-100 object-cover border border-slate-200" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'><path d='M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2c-3.3 0-9.8 1.6-9.8 4.9V22h19.6v-3.1C21.8 15.6 15.3 14 12 14z'/></svg>" alt=""/>
+    <div class="flex-1 min-w-0">
+      <div class="text-xs font-bold text-teal-600 uppercase tracking-wider" data-i18n="account.welcome"></div>
+      <div class="text-2xl sm:text-3xl font-black tracking-tight mt-0.5" id="hello">…</div>
+      <div class="mt-1 text-sm text-slate-500" id="contactSub">…</div>
+    </div>
+  </section>
+
+  <!-- ─── Phone-required banner (Google-only users) ─── -->
+  <section id="phoneBanner" class="hidden mt-5 rounded-2xl bg-amber-50 border border-amber-200 p-5 sm:p-6">
+    <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+      <div class="w-11 h-11 rounded-xl bg-amber-100 grid place-items-center shrink-0">
+        <svg viewBox="0 0 24 24" class="w-6 h-6 text-amber-700" fill="currentColor"><path d="M19.5 15.6l-2.4-1c-.3-.1-.7 0-.9.2l-1 1c-1.6-.8-3-2.2-3.8-3.8l1-1c.2-.2.3-.6.2-.9l-1-2.4C11.4 7.3 11 7 10.6 7H7.4C6.9 7 6.5 7.4 6.5 7.9c0 8.1 6.5 14.6 14.6 14.6.5 0 .9-.4.9-.9v-3.2c0-.4-.3-.8-.6-1z"/></svg>
+      </div>
+      <div class="flex-1">
+        <div class="text-sm font-bold text-amber-900" data-i18n="account.phone_banner.title"></div>
+        <div class="text-xs text-amber-800 mt-0.5" data-i18n="account.phone_banner.sub"></div>
+      </div>
+      <button id="addPhoneBtn" class="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm shadow-md whitespace-nowrap" data-i18n="account.phone_banner.cta"></button>
+    </div>
+    <div id="addPhoneForm" class="hidden mt-4 pt-4 border-t border-amber-200">
+      <div class="flex items-stretch gap-2 max-w-md" dir="ltr">
+        <div class="px-3 grid place-items-center bg-white rounded-xl border border-amber-300 text-sm font-bold text-amber-700">+968</div>
+        <input id="addPhoneInput" type="tel" inputmode="numeric"
+               class="flex-1 px-4 py-2.5 rounded-xl border border-amber-300 bg-white outline-none text-sm font-semibold"
+               placeholder="9094 4196" maxlength="11" />
+        <button id="addPhoneSendBtn" class="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm">→</button>
+      </div>
+      <div id="addPhoneOtpRow" class="hidden mt-3 flex items-stretch gap-2 max-w-md" dir="ltr">
+        <input id="addPhoneCode" type="tel" inputmode="numeric" maxlength="6"
+               class="flex-1 px-4 py-2.5 rounded-xl border border-amber-300 bg-white outline-none text-base font-bold tracking-[0.4em] text-center"
+               placeholder="000000"/>
+        <button id="addPhoneVerifyBtn" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm" data-i18n="auth.verify"></button>
+      </div>
+      <p id="addPhoneMsg" class="mt-2 text-xs text-amber-800"></p>
+    </div>
+  </section>
+
+  <!-- ─── Search bar (services) ─── -->
+  <section class="mt-7 sm:mt-8">
+    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider" data-i18n="account.search.label"></label>
+    <div class="relative">
+      <div class="flex items-center gap-2 bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-3.5 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
+        <svg viewBox="0 0 24 24" class="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="searchInput" class="flex-1 bg-transparent outline-none text-base"
+               placeholder="" data-i18n-placeholder="account.search.placeholder" autocomplete="off"/>
+        <button id="searchClear" class="hidden w-7 h-7 grid place-items-center rounded-lg hover:bg-slate-100 text-slate-400" aria-label="Clear">×</button>
+      </div>
+      <div id="searchResults" class="hidden absolute left-0 right-0 mt-2 bg-white rounded-2xl border border-slate-200 results-pop max-h-[440px] overflow-auto z-30"></div>
+    </div>
+    <div class="mt-3 flex flex-wrap gap-2">
+      <button class="quick-chip px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-semibold hover:border-teal-300" data-q="passport">🛂 <span data-i18n="home.services.passport"></span></button>
+      <button class="quick-chip px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-semibold hover:border-teal-300" data-q="civil id">🆔 <span data-i18n="home.services.civil_id"></span></button>
+      <button class="quick-chip px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-semibold hover:border-teal-300" data-q="driving">🚗 <span data-i18n="home.services.driving"></span></button>
+      <button class="quick-chip px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-semibold hover:border-teal-300" data-q="mulkiya">🚙 <span data-i18n="home.services.mulkiya"></span></button>
+      <button class="quick-chip px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-semibold hover:border-teal-300" data-q="commercial">🏢 <span data-i18n="home.services.cr"></span></button>
+    </div>
+  </section>
+
+  <!-- ─── My active requests ─── -->
+  <section class="mt-9 sm:mt-10">
+    <div class="flex items-end justify-between mb-3">
+      <h2 class="text-xl sm:text-2xl font-black tracking-tight" data-i18n="account.requests.h2"></h2>
+      <a href="/chat.html" class="text-sm font-semibold text-teal-700 hover:text-teal-800" data-i18n="account.requests.start_new"></a>
+    </div>
+    <div id="reqList" class="space-y-3">
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 text-sm text-slate-500 italic" data-i18n="account.requests.loading"></div>
+    </div>
+  </section>
+
+  <!-- ─── Quick categories grid ─── -->
+  <section class="mt-10 sm:mt-12">
+    <h2 class="text-xl sm:text-2xl font-black tracking-tight mb-3" data-i18n="account.categories.h2"></h2>
+    <div id="categoryGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+  </section>
+
+</main>
+
+<footer class="border-t border-slate-200/70 bg-white/40 backdrop-blur mt-10">
+  <div class="max-w-6xl mx-auto px-5 sm:px-6 py-5 text-[11px] text-slate-500 flex justify-between">
+    <div>© 2026 Sanad-AI</div>
+    <div><a href="/privacy.html" class="hover:text-teal-700">Privacy · الخصوصية</a></div>
+  </div>
+</footer>
+
+<script src="/i18n.js"></script>
+<script>
+(async function () {
+  const $ = s => document.querySelector(s);
+  document.getElementById('langBtn').onclick = () => I18N.setLang(I18N.lang === 'ar' ? 'en' : 'ar');
+
+  // ── 1) Authentication gate ─────────────────────────────
+  let me = null;
+  try {
+    const r = await fetch('/api/citizen-auth/me');
+    if (!r.ok) {
+      window.location.href = '/login.html';
+      return;
+    }
+    const d = await r.json();
+    me = d.citizen;
+    if (d.needs_phone) document.getElementById('phoneBanner').classList.remove('hidden');
+  } catch {
+    window.location.href = '/login.html';
+    return;
+  }
+
+  // Header card
+  const helloName = me.name || me.email || me.phone || 'مرحباً';
+  $('#hello').textContent = (I18N.t('account.hello_prefix') || '') + helloName;
+  $('#contactSub').textContent = me.phone || me.email || '';
+  if (me.avatar_url) $('#avatar').src = me.avatar_url;
+
+  $('#logoutBtn').onclick = async () => {
+    await fetch('/api/citizen-auth/logout', { method: 'POST' });
+    window.location.href = '/';
+  };
+
+  // ── 2) Phone-attach flow ───────────────────────────────
+  $('#addPhoneBtn').onclick = () => $('#addPhoneForm').classList.toggle('hidden');
+  $('#addPhoneSendBtn').onclick = async () => {
+    const phone = $('#addPhoneInput').value.trim();
+    if (!phone) return;
+    const r = await fetch('/api/citizen-auth/attach-phone', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ phone })
+    });
+    const d = await r.json();
+    if (!r.ok) {
+      $('#addPhoneMsg').textContent = I18N.t('auth.err.' + d.error) || I18N.t('auth.err.generic');
+      return;
+    }
+    $('#addPhoneOtpRow').classList.remove('hidden');
+    $('#addPhoneMsg').textContent = d.debug_code ? `DEBUG: ${d.debug_code}` : I18N.t('auth.otp.sub');
+    $('#addPhoneCode').focus();
+  };
+  $('#addPhoneVerifyBtn').onclick = async () => {
+    const phone = $('#addPhoneInput').value.trim();
+    const code = $('#addPhoneCode').value.trim();
+    const r = await fetch('/api/citizen-auth/verify-phone', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ phone, code })
+    });
+    const d = await r.json();
+    if (!r.ok) {
+      $('#addPhoneMsg').textContent = I18N.t('auth.err.' + d.error) || I18N.t('auth.err.generic');
+      return;
+    }
+    location.reload();
+  };
+
+  // ── 3) Search ──────────────────────────────────────────
+  const searchInput = $('#searchInput');
+  const resultsBox = $('#searchResults');
+  const searchClear = $('#searchClear');
+  let searchSeq = 0;
+  function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+  async function runSearch(q) {
+    const seq = ++searchSeq;
+    if (!q.trim()) { resultsBox.classList.add('hidden'); resultsBox.innerHTML = ''; return; }
+    const r = await fetch(`/api/catalogue/search?q=${encodeURIComponent(q)}&limit=8`);
+    const d = await r.json();
+    if (seq !== searchSeq) return; // a newer search already started
+    const lang = I18N.lang;
+    const rows = (d.results || []).map(x => {
+      const name = (lang === 'ar' && x.name_ar) ? x.name_ar : (x.name_en || x.name_ar || '—');
+      const entity = (lang === 'ar' && x.entity_ar) ? x.entity_ar : (x.entity_en || '');
+      const fee = x.fee_omr != null ? `${x.fee_omr.toFixed(3)} OMR` : (x.fees_text || '');
+      return `<a href="/chat.html?service=${x.id}" class="block px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-b-0">
+        <div class="font-semibold text-slate-800 text-sm">${escapeHtml(name)}</div>
+        <div class="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
+          <span>${escapeHtml(entity)}</span>${fee ? `<span>·</span><span class="font-semibold text-teal-700">${escapeHtml(fee)}</span>` : ''}
+        </div>
+      </a>`;
+    }).join('');
+    resultsBox.innerHTML = rows ||
+      `<div class="px-4 py-6 text-center text-sm text-slate-500">${I18N.t('account.search.empty')}</div>`;
+    resultsBox.classList.remove('hidden');
+  }
+
+  searchInput.addEventListener('input', debounce(e => {
+    const v = e.target.value.trim();
+    searchClear.classList.toggle('hidden', !v);
+    runSearch(v);
+  }, 200));
+  searchClear.onclick = () => { searchInput.value = ''; searchClear.classList.add('hidden'); resultsBox.classList.add('hidden'); searchInput.focus(); };
+  document.addEventListener('click', e => {
+    if (!resultsBox.contains(e.target) && e.target !== searchInput) resultsBox.classList.add('hidden');
+  });
+  document.querySelectorAll('.quick-chip').forEach(b => {
+    b.onclick = () => { searchInput.value = b.dataset.q; searchInput.dispatchEvent(new Event('input')); };
+  });
+
+  // ── 4) Active requests (citizen view of /api/chat history per session) ──
+  // For now we filter on the server by citizen.phone — uses an existing
+  // chat-side endpoint. (Pre-cookie sessions are still keyed by phone.)
+  async function loadRequests() {
+    if (!me.phone) {
+      $('#reqList').innerHTML = `<div class="bg-white rounded-2xl border border-slate-200 p-5 text-sm text-slate-500 italic">${I18N.t('account.requests.no_phone')}</div>`;
+      return;
+    }
+    try {
+      const r = await fetch(`/api/chat/my-requests`);
+      const d = r.ok ? await r.json() : { requests: [] };
+      const reqs = d.requests || [];
+      if (!reqs.length) {
+        $('#reqList').innerHTML = `<div class="bg-white rounded-2xl border border-slate-200 p-5 text-sm text-slate-500 italic">${I18N.t('account.requests.empty')}</div>`;
+        return;
+      }
+      $('#reqList').innerHTML = reqs.map(req => {
+        const lang = I18N.lang;
+        const name = (lang === 'ar' && req.service_name_ar) ? req.service_name_ar : (req.service_name || '—');
+        const status = (req.status || '').replace(/[^a-z_]/g, '');
+        const chip = `chip-${status.split('_')[0]}`;
+        const payChip = req.payment_status === 'awaiting'
+          ? `<span class="status-chip chip-awaiting">${I18N.t('account.req.awaiting_payment')}</span>` : '';
+        const paid = req.payment_status === 'paid' ? '✓' : '';
+        return `<a href="/chat.html?request=${req.id}" class="block bg-white rounded-2xl border border-slate-200 p-5 hover:border-teal-300 transition">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <div class="text-base font-bold text-slate-800 truncate">${escapeHtml(name)}</div>
+              <div class="mt-1 text-xs text-slate-500">${I18N.t('account.req.id')} #${req.id} · ${escapeHtml(req.created_at?.split(' ')[0] || '')}</div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              ${payChip}
+              <span class="status-chip ${chip}">${I18N.t('account.status.' + status) || status}</span>
+            </div>
+          </div>
+          ${req.payment_status === 'awaiting' && req.payment_link ? `
+            <div class="mt-3 flex items-center gap-2">
+              <span class="text-sm font-bold text-rose-600">${(req.payment_amount_omr || 0).toFixed(3)} OMR</span>
+              <span class="text-xs text-slate-400">·</span>
+              <span class="text-sm font-semibold text-teal-700 underline">${I18N.t('account.req.pay_now')} →</span>
+            </div>` : ''}
+        </a>`;
+      }).join('');
+    } catch (e) {
+      $('#reqList').innerHTML = `<div class="bg-white rounded-2xl border border-rose-200 p-5 text-sm text-rose-600">${I18N.t('account.requests.error')}</div>`;
+    }
+  }
+  loadRequests();
+
+  // ── 5) Categories grid (top entities) ──────────────────
+  try {
+    const r = await fetch('/api/catalogue/entities');
+    const d = await r.json();
+    const top = (d.entities || []).slice(0, 12);
+    const lang = I18N.lang;
+    $('#categoryGrid').innerHTML = top.map(e => {
+      const name = (lang === 'ar' && e.entity_ar) ? e.entity_ar : (e.entity_en || '—');
+      return `<a href="/catalogue.html?entity=${encodeURIComponent(e.entity_en)}" class="svc-card bg-white rounded-2xl border border-slate-200 p-4 text-center">
+        <div class="text-2xl mb-1.5">🏛️</div>
+        <div class="text-sm font-bold text-slate-800 leading-snug">${escapeHtml(name)}</div>
+        <div class="mt-1 text-[11px] text-slate-500">${e.n} ${I18N.t('account.categories.services_count')}</div>
+      </a>`;
+    }).join('');
+  } catch {}
+
+  function escapeHtml(s) {
+    return String(s || '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+})();
+</script>
+</body>
+</html>

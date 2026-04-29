@@ -100,6 +100,9 @@
     </div>
   </a>
   <div class="ms-auto flex items-center gap-2">
+    <a id="navSignIn" href="/login.html" class="px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-slate-200 font-semibold text-xs shadow-sm text-slate-700 hidden sm:inline-flex" data-i18n="auth.sign_in"></a>
+    <a id="navSignUp" href="/signup.html" class="px-3 py-1.5 rounded-lg bg-gradient-to-br from-teal-500 to-green-700 text-white border border-teal-600 font-semibold text-xs shadow-sm" data-i18n="auth.sign_up"></a>
+    <a id="navAccount" href="/account.html" class="hidden px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-slate-200 font-semibold text-xs shadow-sm text-slate-700" data-i18n="auth.account"></a>
     <button id="langBtn" class="px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-slate-200 font-semibold text-xs shadow-sm" data-i18n="lang.toggle"></button>
   </div>
 </header>
@@ -283,7 +286,7 @@
 
 <!-- ─────────── FOOTER ─────────── -->
 <footer class="border-t border-slate-200/70 bg-white/40 backdrop-blur">
-  <div class="max-w-6xl mx-auto px-5 sm:px-6 py-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+  <div class="max-w-6xl mx-auto px-5 sm:px-6 py-10 grid sm:grid-cols-2 gap-8">
     <div>
       <div class="flex items-center gap-3 mb-2">
         <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-teal-500 to-green-700 text-white grid place-items-center text-sm font-black">س</div>
@@ -291,19 +294,11 @@
       </div>
       <div class="text-xs text-slate-500" data-i18n="home.footer.tagline"></div>
     </div>
-    <div>
+    <div class="sm:text-end">
       <div class="text-xs uppercase tracking-wider text-slate-400 font-bold mb-3" data-i18n="home.footer.legal"></div>
       <ul class="space-y-1.5 text-sm">
         <li><a href="/privacy.html" class="text-slate-600 hover:text-teal-700">Privacy · الخصوصية</a></li>
         <li><a href="/terms.html" class="text-slate-600 hover:text-teal-700">Terms · الشروط</a></li>
-      </ul>
-    </div>
-    <div>
-      <div class="text-xs uppercase tracking-wider text-slate-400 font-bold mb-3" data-i18n="home.footer.offices_h"></div>
-      <ul class="space-y-1.5 text-sm">
-        <li><a href="/office-login.html" class="text-slate-600 hover:text-teal-700" data-i18n="home.footer.office_login"></a></li>
-        <li><a href="/office-signup.html" class="text-slate-600 hover:text-teal-700" data-i18n="home.footer.office_register"></a></li>
-        <li><a href="/officer.html" class="text-slate-600 hover:text-teal-700" data-i18n="nav.officer"></a></li>
       </ul>
     </div>
   </div>
@@ -339,6 +334,18 @@
     const el = document.getElementById('systemStatus');
     if (h.ok && h.llm) { el.textContent = '● operational'; el.className = 'font-semibold text-emerald-600'; }
     else if (h.ok)     { el.textContent = '● limited (no LLM)'; el.className = 'font-semibold text-amber-600'; }
+  } catch {}
+
+  // Nav: if the citizen is already signed in, swap Sign-in/Sign-up for "My
+  // account". Silent-fail: an unauthenticated /me returns 401 and we keep
+  // the default CTAs.
+  try {
+    const r = await fetch('/api/citizen-auth/me');
+    if (r.ok) {
+      document.getElementById('navSignIn')?.classList.add('hidden');
+      document.getElementById('navSignUp')?.classList.add('hidden');
+      document.getElementById('navAccount')?.classList.remove('hidden');
+    }
   } catch {}
 
   // Live trust counts — pull from existing endpoints

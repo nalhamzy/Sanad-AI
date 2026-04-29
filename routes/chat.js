@@ -86,6 +86,37 @@ chatRouter.get('/:session_id/state', async (req, res) => {
   res.json({ state });
 });
 
+// ─── GET /my-requests — list a signed-in citizen's requests ───
+// Used by /account.html dashboard. Resolves the citizen via
+// attachCitizenSession (req.citizen). Falls back to phone-only matching for
+// legacy WhatsApp citizens that haven't yet been linked to a citizen_id row.
+// Returns at most 50 most-recent.
+chatRouter.get('/my-requests', async (req, res) => {
+  if (!req.citizen) return res.status(401).json({ error: 'not_signed_in' });
+  const c = req.citizen;
+  // Match by citizen.id (the right way) OR by phone (for legacy rows whose
+  // request.citizen_id was never set). Either way, never leak another
+  // citizen's data.
+  const { rows } = await db.execute({
+    sql: `
+      SELECT r.id, r.status, r.created_at, r.last_event_at,
+             r.payment_status, r.payment_amount_omr, r.payment_link, r.paid_at,
+             r.quoted_fee_omr, r.office_fee_omr, r.government_fee_omr,
+             s.name_en AS service_name, s.name_ar AS service_name_ar,
+             s.entity_en, s.entity_ar,
+             off.name_en AS office_name_en, off.name_ar AS office_name_ar
+        FROM request r
+        LEFT JOIN service_catalog s ON s.id = r.service_id
+        LEFT JOIN office off        ON off.id = r.office_id
+       WHERE r.citizen_id = ?
+          OR (? IS NOT NULL AND r.session_id = ?)
+       ORDER BY r.last_event_at DESC, r.id DESC
+       LIMIT 50`,
+    args: [c.id, c.phone, c.phone ? `wa:${c.phone}` : null]
+  });
+  res.json({ requests: rows });
+});
+
 // ─── Citizen-side offer marketplace ────────────────────────
 // The citizen sees anonymized-to-them offers: quoted fee, estimated hours,
 // the office's public stats (name, governorate, rating, completed count).
