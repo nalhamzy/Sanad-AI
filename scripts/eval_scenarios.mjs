@@ -154,6 +154,65 @@ const SCENARIOS = [
     ]
   },
   {
+    id: 'multi_per_slot_burst',
+    description: 'Citizen sends 5 photos meant for 2 slots: 4 are angles of the passport, 1 is the civil ID. Bot should save the first passport photo into the passport slot and the rest as extras tagged "passport (additional)", and put the civil ID into its slot. Reply must show the per-slot grouping with counts so the citizen can see the mapping at a glance.',
+    expectations: [
+      'Bot stays silent during the burst (files 2-5).',
+      'On the description turn ("4 photos passport, 1 civil ID"), bot saves 1 passport into the slot, 3 as extras tagged passport, 1 civil ID into its slot.',
+      'Consolidated reply shows counts: e.g. "✅ Passport: 1 + 3 extras, Civil ID: 1" — multi-per-slot must be visible.',
+      'Reply does NOT ask "is this correct?" as a yes/no confirmation.',
+      'Reply ends with either a "still need: X" prompt for missing required docs, or a "submit?" prompt if the file is complete.'
+    ],
+    turns: [
+      { text: 'i want to renew my driving licence' },
+      { text: 'yes' },
+      { text: '', attachment: { name: 'P_front.jpg', mime: 'image/jpeg', caption: '' } },
+      { text: '', attachment: { name: 'P_back.jpg', mime: 'image/jpeg', caption: '' } },
+      { text: '', attachment: { name: 'P_signature.jpg', mime: 'image/jpeg', caption: '' } },
+      { text: '', attachment: { name: 'P_photo_page.jpg', mime: 'image/jpeg', caption: '' } },
+      { text: '', attachment: { name: 'civil_id.jpg', mime: 'image/jpeg', caption: '' } },
+      { text: 'passport, passport, passport, passport, civil id' }
+    ]
+  },
+  {
+    id: 'unmatched_extras_in_description',
+    description: 'Citizen drops 4 photos and describes them with one item that does NOT match any required slot ("payment receipt"). Bot should save the matched 3 into their slots and the 4th as an extra, NOT silently drop it.',
+    expectations: [
+      'Bot saves the 3 matched files into their required slots.',
+      'Bot records the 4th ("payment receipt") as an extra, not lost.',
+      'Consolidated reply EXPLICITLY mentions the extra so the citizen knows it was kept.',
+      'Reply lists what is still missing from the required-doc list (if anything).'
+    ],
+    turns: [
+      { text: 'i want to renew my driving licence' },
+      { text: 'yes' },
+      { text: '', attachment: { name: 'a.jpg', mime: 'image/jpeg', caption: '' } },
+      { text: '', attachment: { name: 'b.jpg', mime: 'image/jpeg', caption: '' } },
+      { text: '', attachment: { name: 'c.jpg', mime: 'image/jpeg', caption: '' } },
+      { text: '', attachment: { name: 'd.jpg', mime: 'image/jpeg', caption: '' } },
+      { text: 'civil id, photo, medical form, payment receipt' }
+    ]
+  },
+  {
+    id: 'mid_flow_correction',
+    description: 'Citizen describes 3 buffered files, bot saves them, then citizen says "wait, file 2 was actually current licence". Bot should re-map by calling record_document on the new slot — replacing the prior mapping for file 2.',
+    expectations: [
+      'On the correction turn, bot recognizes the citizen wants to re-assign a previously-saved file.',
+      'Bot calls record_document with the corrected slot (not just acknowledging in text).',
+      'Reply confirms the correction tersely. e.g. "✅ Updated file 2 to current licence. Photo slot is now empty."',
+      'Bot lists what is still needed after the correction.'
+    ],
+    turns: [
+      { text: 'i want to renew my driving licence' },
+      { text: 'yes' },
+      { text: '', attachment: { name: 'f1.jpg', mime: 'image/jpeg', caption: '' } },
+      { text: '', attachment: { name: 'f2.jpg', mime: 'image/jpeg', caption: '' } },
+      { text: '', attachment: { name: 'f3.jpg', mime: 'image/jpeg', caption: '' } },
+      { text: 'civil id, photo, medical form' },
+      { text: 'wait, file 2 was actually my current licence not photo' }
+    ]
+  },
+  {
     id: 'whatsapp_5_image_burst',
     description: 'Real WhatsApp pattern: citizen drops 5 photos in rapid succession with NO captions, then describes them all at once. The bot must NOT ack 5 times "is this for X?" — it should stay silent for files 2-5 and only speak once at the start (or when the citizen describes), then commit everything in a single consolidated reply.',
     expectations: [
