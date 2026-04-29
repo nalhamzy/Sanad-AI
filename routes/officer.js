@@ -26,6 +26,7 @@ import { db } from '../lib/db.js';
 import { storeMessage } from '../lib/agent.js';
 import { requireOfficer } from '../lib/auth.js';
 import { sendWhatsAppText, isWhatsAppSession } from '../lib/whatsapp_send.js';
+import { createPaymentLink, newMerchantRef, AMWAL_ENABLED } from '../lib/amwal.js';
 
 export const officerRouter = Router();
 
@@ -90,21 +91,37 @@ officerRouter.get('/inbox', async (req, res) => {
     args: [office_id, office_id]
   });
 
-  // My board: requests my office has won (accepted_offer_id belongs to me).
-  // Full detail — but still no unnecessary fields, clients fetch the per-id
-  // endpoint for drilldowns.
+  // My board: requests my office has claimed. Now grouped by lifecycle stage:
+  //   • reviewing — claimed, no payment link yet
+  //   • awaiting_payment — link sent, citizen hasn't paid
+  //   • in_progress — paid, chat unlocked, work in flight
+  //   • on_hold / needs_more_info — paused
+  // Each row carries paid_at + payment_status + payment_link so the UI can
+  // render the right action button per row without a second round-trip.
   const { rows: mine } = await db.execute({
     sql: `
-      SELECT r.id, r.status, r.quoted_fee_omr, r.claimed_at, r.created_at,
+      SELECT r.id, r.status, r.quoted_fee_omr, r.office_fee_omr, r.government_fee_omr,
+             r.claimed_at, r.created_at, r.last_event_at,
+             r.payment_status, r.payment_link, r.payment_amount_omr, r.paid_at,
+             r.claim_review_started_at,
              s.name_en AS service_name, s.name_ar AS service_name_ar
         FROM request r
         LEFT JOIN service_catalog s ON s.id = r.service_id
        WHERE r.office_id = ?
          AND r.status NOT IN ('completed','cancelled_by_citizen','cancelled_by_office')
        ORDER BY r.last_event_at DESC
-       LIMIT 50`,
+       LIMIT 100`,
     args: [office_id]
   });
+
+  // Bucket the rows by lifecycle stage for cleaner client rendering.
+  const buckets = { reviewing: [], awaiting_payment: [], in_progress: [], on_hold: [] };
+  for (const r of mine) {
+    if (r.status === 'claimed') buckets.reviewing.push(r);
+    else if (r.status === 'awaiting_payment') buckets.awaiting_payment.push(r);
+    else if (r.status === 'in_progress') buckets.in_progress.push(r);
+    else buckets.on_hold.push(r);
+  }
 
   // Offers I've submitted that are still pending decision.
   const { rows: myOffers } = await db.execute({
@@ -142,7 +159,8 @@ officerRouter.get('/inbox', async (req, res) => {
     },
     marketplace,
     my_offers: myOffers,
-    mine
+    mine,
+    lifecycle: buckets
   });
 });
 
@@ -196,10 +214,14 @@ officerRouter.get('/request/:id', async (req, res) => {
     });
   }
 
-  // Full detail — my office won.
-  // IMPORTANT: even after winning, the office NEVER sees the citizen's phone
+  // Full detail — my office claimed it.
+  // IMPORTANT: even after claiming, the office NEVER sees the citizen's phone
   // number. All communication runs through the relayed chat (this app) or
   // WhatsApp via the bot. Only docs, service info, and messages are exposed.
+  //
+  // CHAT GATE: pre-payment (paid_at IS NULL) the office sees only the
+  // documents — NO message history. The office cannot influence the citizen
+  // until payment is committed. After paid_at, the full thread unlocks.
   const { rows: docs } = await db.execute({
     sql: `SELECT id, doc_code, label, storage_url, mime, size_bytes, status,
                  caption, matched_via, original_name,
@@ -207,13 +229,16 @@ officerRouter.get('/request/:id', async (req, res) => {
             FROM request_document WHERE request_id=? ORDER BY id ASC`,
     args: [id]
   });
-  const { rows: messages } = await db.execute({
-    sql: `SELECT id, direction, actor_type, body_text, media_url, created_at
-            FROM message
-           WHERE request_id=? OR session_id=?
-           ORDER BY id ASC`,
-    args: [id, r.session_id]
-  });
+  const chatUnlocked = !!r.paid_at;
+  const messages = chatUnlocked
+    ? (await db.execute({
+        sql: `SELECT id, direction, actor_type, body_text, media_url, created_at
+                FROM message
+               WHERE request_id=? OR session_id=?
+               ORDER BY id ASC`,
+        args: [id, r.session_id]
+      })).rows
+    : [];
   // Strip citizen_id / session_id from the response — they aren't needed on
   // the client and leaking session_id would let an office forge citizen-side
   // accept calls.
@@ -221,7 +246,8 @@ officerRouter.get('/request/:id', async (req, res) => {
   res.json({
     request: safeReq,
     documents: docs,
-    messages
+    messages,
+    chat_unlocked: chatUnlocked
   });
 });
 
@@ -361,15 +387,16 @@ officerRouter.post(
 );
 
 // ─── POST /request/:id/message ─────────────────────────────
-// Officer → citizen chat. Winner only.
+// Officer → citizen chat. Owner-office only AND only after payment.
+// The citizen's chat thread is sealed pre-payment so the office cannot
+// influence the citizen until they've actually committed money.
 officerRouter.post('/request/:id/message', async (req, res) => {
   const id = Number(req.params.id);
   const text = String(req.body?.text || '').trim();
   if (!text) return res.status(400).json({ error: 'empty' });
-  // Pull session_id (for the in-app relay) AND the citizen's phone (for the
-  // WhatsApp push, when the original session came in via WhatsApp).
   const { rows } = await db.execute({
-    sql: `SELECT r.session_id, r.office_id, c.phone AS citizen_phone
+    sql: `SELECT r.session_id, r.office_id, r.paid_at, r.status,
+                 c.phone AS citizen_phone
             FROM request r
             LEFT JOIN citizen c ON c.id = r.citizen_id
            WHERE r.id=?`,
@@ -377,6 +404,12 @@ officerRouter.post('/request/:id/message', async (req, res) => {
   });
   const r = rows[0];
   if (!r || r.office_id !== req.office.id) return res.status(403).json({ error: 'not_your_request' });
+  if (!r.paid_at) {
+    return res.status(403).json({
+      error: 'chat_locked_until_paid',
+      hint: 'Send the payment link first; chat unlocks automatically when the citizen pays.'
+    });
+  }
 
   // Always store in DB so the in-app web chat polls pick it up.
   await storeMessage({
@@ -543,36 +576,42 @@ officerRouter.post('/request/:id/document/:docId/reject', async (req, res) => {
 });
 
 // ─── POST /request/:id/release ─────────────────────────────
-// Office voluntarily releases a won request back to the marketplace.
-// (Rare — used when the office realizes they can't fulfil.) Bumps
-// offers_abandoned to keep scoring honest.
+// Office voluntarily releases a request back to the marketplace.
+// In the single-claim model this is the standard "I changed my mind" exit:
+// • from 'claimed' (review phase, no payment yet) — clean release, no penalty
+// • from 'awaiting_payment' (payment link sent, citizen hasn't paid) — same
+// • from 'in_progress' (citizen already paid) — refund-required path; this
+//   route still releases but flags the request as needing manual refund. We
+//   don't wipe paid_at so a finance review can reconcile.
 officerRouter.post('/request/:id/release',
   requireOfficer({ roles: ['owner', 'manager'] }),
   async (req, res) => {
     const id = Number(req.params.id);
-    // Guard on BOTH ownership AND a non-terminal status. Previously the WHERE
-    // only matched office_id, which allowed an office to release a completed
-    // or cancelled request — quietly resurrecting it back to 'ready' and
-    // losing the completed_at / office_id / fee state. That's a data loss bug.
-    const r = await db.execute({
+    const { rows: cur } = await db.execute({
+      sql: `SELECT status, office_id, paid_at FROM request WHERE id=?`, args: [id]
+    });
+    if (!cur[0]) return res.status(404).json({ error: 'not_found' });
+    if (cur[0].office_id !== req.office.id) return res.status(403).json({ error: 'not_your_request' });
+    const releasable = ['claimed','awaiting_payment','in_progress','needs_more_info','on_hold'];
+    if (!releasable.includes(cur[0].status)) return res.status(409).json({ error: 'bad_state', status: cur[0].status });
+
+    // Wipe office assignment + payment fields. Keep paid_at if money already
+    // moved — a follow-up refund flow handles reimbursement. Also clear the
+    // legacy offer columns and re-open any accepted offer to 'pending' so
+    // legacy data stays sane.
+    const wipePay = !cur[0].paid_at;
+    await db.execute({
       sql: `UPDATE request
                SET status='ready', officer_id=NULL, office_id=NULL,
                    accepted_offer_id=NULL, quoted_fee_omr=NULL,
-                   claimed_at=NULL, last_event_at=datetime('now')
-             WHERE id=? AND office_id=?
-               AND status IN ('claimed','in_progress','needs_more_info','on_hold')`,
-      args: [id, req.office.id]
+                   office_fee_omr=NULL, government_fee_omr=NULL,
+                   claimed_at=NULL, claim_review_started_at=NULL,
+                   ${wipePay ? "payment_status='none', payment_link=NULL, payment_ref=NULL, payment_amount_omr=NULL," : ""}
+                   released_count = COALESCE(released_count,0) + 1,
+                   last_event_at=datetime('now')
+             WHERE id=?`,
+      args: [id]
     });
-    if (!r.rowsAffected) {
-      // Distinguish "not yours" from "terminal state" for the client.
-      const { rows: cur } = await db.execute({
-        sql: `SELECT status, office_id FROM request WHERE id=?`, args: [id]
-      });
-      if (!cur[0]) return res.status(404).json({ error: 'not_found' });
-      if (cur[0].office_id !== req.office.id) return res.status(403).json({ error: 'not_your_request' });
-      return res.status(409).json({ error: 'bad_state', status: cur[0].status });
-    }
-    // Re-open all of that request's offers (they may re-quote).
     await db.execute({
       sql: `UPDATE request_offer SET status='pending', updated_at=datetime('now')
              WHERE request_id=? AND status='accepted'`,
@@ -582,6 +621,213 @@ officerRouter.post('/request/:id/release',
       sql: `UPDATE office SET offers_abandoned=COALESCE(offers_abandoned,0)+1 WHERE id=?`,
       args: [req.office.id]
     });
-    res.json({ ok: true });
+    await db.execute({
+      sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
+            VALUES ('officer', ?, 'request_release', 'request', ?, ?)`,
+      args: [req.officer.officer_id, id, JSON.stringify({ from_status: cur[0].status, paid_at: cur[0].paid_at })]
+    });
+    res.json({ ok: true, refund_required: !wipePay });
+  }
+);
+
+// ─── POST /request/:id/claim ───────────────────────────────
+// Atomic single-office claim. WHERE office_id IS NULL AND status='ready'
+// guarantees only ONE office can lock a given request — concurrent claim
+// races resolve cleanly: the first UPDATE that flips office_id wins, the
+// rest get rowsAffected=0 and return 409.
+//
+// Office fee + government fee are PRE-DEFINED (no bidding):
+//   • office_fee = office_service_price.office_fee_omr (per-service override)
+//                  → office.default_office_fee_omr (office-wide default)
+//                  → 5.0 OMR (system default)
+//   • government_fee = office_service_price.government_fee_omr (per-service)
+//                       → service_catalog.fee_omr (catalogue default)
+//
+// Status flow: ready → claimed (review docs, decide). Citizen is notified.
+// To begin work, the office calls /payment/start which transitions to
+// 'awaiting_payment'.
+officerRouter.post('/request/:id/claim',
+  requireOfficer({ roles: ['owner', 'manager', 'officer'] }),
+  async (req, res) => {
+    const id = Number(req.params.id);
+    const office_id = req.office.id;
+    const officer_id = req.officer.officer_id;
+
+    // Resolve the predefined pricing in one read so we have it for the audit
+    // entry and the citizen-facing notification.
+    const { rows: priceRows } = await db.execute({
+      sql: `SELECT r.session_id, r.service_id, r.status, r.office_id,
+                   c.phone AS citizen_phone, c.language_pref,
+                   s.fee_omr AS catalog_gov_fee, s.name_en AS service_name, s.name_ar AS service_name_ar,
+                   COALESCE(osp.office_fee_omr, off.default_office_fee_omr, 5.0) AS office_fee,
+                   COALESCE(osp.government_fee_omr, s.fee_omr, 0) AS gov_fee
+              FROM request r
+              LEFT JOIN service_catalog s ON s.id = r.service_id
+              LEFT JOIN office off        ON off.id = ?
+              LEFT JOIN office_service_price osp
+                     ON osp.office_id = ? AND osp.service_id = r.service_id
+              LEFT JOIN citizen c         ON c.id = r.citizen_id
+             WHERE r.id = ?`,
+      args: [office_id, office_id, id]
+    });
+    const r = priceRows[0];
+    if (!r) return res.status(404).json({ error: 'not_found' });
+    if (r.status !== 'ready') {
+      return res.status(409).json({
+        error: r.office_id ? 'already_claimed' : 'bad_state',
+        status: r.status
+      });
+    }
+
+    const office_fee = Number(r.office_fee) || 0;
+    const gov_fee    = Number(r.gov_fee) || 0;
+    const total      = office_fee + gov_fee;
+
+    // ATOMIC: only the first concurrent caller wins. Note WHERE office_id IS NULL.
+    const upd = await db.execute({
+      sql: `UPDATE request
+               SET status='claimed', office_id=?, officer_id=?,
+                   office_fee_omr=?, government_fee_omr=?, quoted_fee_omr=?,
+                   claimed_at=datetime('now'),
+                   claim_review_started_at=datetime('now'),
+                   last_event_at=datetime('now')
+             WHERE id=? AND status='ready' AND office_id IS NULL`,
+      args: [office_id, officer_id, office_fee, gov_fee, total, id]
+    });
+    if (!upd.rowsAffected) {
+      // Lost the race — re-read to give the loser a precise reason.
+      const { rows: rd } = await db.execute({
+        sql: `SELECT status, office_id FROM request WHERE id=?`, args: [id]
+      });
+      return res.status(409).json({ error: 'already_claimed', status: rd[0]?.status, office_id: rd[0]?.office_id });
+    }
+
+    await db.execute({
+      sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
+            VALUES ('officer', ?, 'request_claim', 'request', ?, ?)`,
+      args: [officer_id, id, JSON.stringify({ office_fee, gov_fee, total })]
+    });
+
+    // Notify the citizen. Use the bot voice via the chat relay so the message
+    // shows up on web AND WhatsApp. Pre-payment: citizen sees "an office picked
+    // up your request" but does NOT see the office's chat yet — chat unlocks
+    // after payment.
+    const lang = (r.language_pref || 'ar') === 'en' ? 'en' : 'ar';
+    const sname = (lang === 'ar' && r.service_name_ar) ? r.service_name_ar : (r.service_name || '');
+    const claimMsg = lang === 'ar'
+      ? `📥 تم استلام طلبك "${sname}" من قِبَل أحد مكاتب سند المرخّصة. يراجع الموظف مستنداتك الآن وسيرسل لك رابط الدفع قريباً.`
+      : `📥 Your request "${sname}" was picked up by a licensed Sanad office. The officer is reviewing your documents and will send you a payment link shortly.`;
+    await storeMessage({
+      session_id: r.session_id, request_id: id,
+      direction: 'out', actor_type: 'bot',
+      body_text: claimMsg
+    });
+    if (isWhatsAppSession(r.session_id)) {
+      const phone = r.citizen_phone || r.session_id.replace(/^wa:/, '');
+      sendWhatsAppText(phone, claimMsg).catch(() => {});
+    }
+
+    res.json({ ok: true, request_id: id, status: 'claimed', pricing: { office_fee, government_fee: gov_fee, total } });
+  }
+);
+
+// ─── POST /request/:id/payment/start ──────────────────────
+// After review, the office triggers payment. We:
+//   1. Generate an Amwal payment link (or a stub link in dev)
+//   2. Flip status='awaiting_payment', payment_status='awaiting',
+//      payment_link, payment_amount_omr, payment_ref
+//   3. Send the citizen a WhatsApp template + relayed bot message with the link
+//
+// Idempotent: re-calling on the same request returns the existing link.
+officerRouter.post('/request/:id/payment/start',
+  requireOfficer({ roles: ['owner', 'manager', 'officer'] }),
+  async (req, res) => {
+    const id = Number(req.params.id);
+    const office_id = req.office.id;
+    const { rows } = await db.execute({
+      sql: `SELECT r.id, r.status, r.office_id, r.session_id, r.payment_status,
+                   r.payment_link, r.payment_amount_omr, r.payment_ref,
+                   r.office_fee_omr, r.government_fee_omr,
+                   c.phone AS citizen_phone, c.email AS citizen_email, c.language_pref,
+                   s.name_en AS service_name, s.name_ar AS service_name_ar
+              FROM request r
+              LEFT JOIN citizen c        ON c.id = r.citizen_id
+              LEFT JOIN service_catalog s ON s.id = r.service_id
+             WHERE r.id = ?`,
+      args: [id]
+    });
+    const r = rows[0];
+    if (!r) return res.status(404).json({ error: 'not_found' });
+    if (r.office_id !== office_id) return res.status(403).json({ error: 'not_your_request' });
+    if (!['claimed','awaiting_payment'].includes(r.status))
+      return res.status(409).json({ error: 'bad_state', status: r.status });
+    if (r.payment_status === 'paid')
+      return res.status(409).json({ error: 'already_paid' });
+
+    // Idempotent: reuse the existing link if we already minted one for this
+    // request and it hasn't been paid yet.
+    if (r.payment_status === 'awaiting' && r.payment_link) {
+      return res.json({
+        ok: true, reused: true,
+        payment_link: r.payment_link,
+        amount_omr: r.payment_amount_omr,
+        merchant_ref: r.payment_ref
+      });
+    }
+
+    const total = Number(r.payment_amount_omr) || (Number(r.office_fee_omr) || 0) + (Number(r.government_fee_omr) || 0);
+    if (!(total > 0)) return res.status(400).json({ error: 'bad_amount' });
+
+    const merchantRef = newMerchantRef(`req${id}`);
+    const link = await createPaymentLink({
+      amountOmr: total,
+      merchantReference: merchantRef,
+      customerEmail: r.citizen_email || `citizen-${id}@saned.local`,
+      description: `Saned · ${r.service_name || r.service_name_ar || 'Sanad request'} (req #${id})`
+    });
+
+    await db.execute({
+      sql: `UPDATE request
+               SET status='awaiting_payment',
+                   payment_status='awaiting',
+                   payment_link=?,
+                   payment_ref=?,
+                   payment_amount_omr=?,
+                   last_event_at=datetime('now')
+             WHERE id=?`,
+      args: [link.url, merchantRef, total, id]
+    });
+    await db.execute({
+      sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
+            VALUES ('officer', ?, 'payment_start', 'request', ?, ?)`,
+      args: [req.officer.officer_id, id, JSON.stringify({ amount_omr: total, merchant_ref: merchantRef, stubbed: !AMWAL_ENABLED })]
+    });
+
+    // Notify the citizen (web + WhatsApp). Same bot voice — preserves the
+    // single-thread illusion until payment unlocks the office.
+    const lang = (r.language_pref || 'ar') === 'en' ? 'en' : 'ar';
+    const sname = (lang === 'ar' && r.service_name_ar) ? r.service_name_ar : (r.service_name || '');
+    const payMsg = lang === 'ar'
+      ? `💳 طلبك "${sname}" جاهز للبدء.\nالمبلغ الإجمالي: ${total.toFixed(3)} OMR\nادفع الآن من هذا الرابط لنبدأ التنفيذ:\n${link.url}`
+      : `💳 Your request "${sname}" is ready to start.\nTotal: ${total.toFixed(3)} OMR\nPay here to begin:\n${link.url}`;
+    await storeMessage({
+      session_id: r.session_id, request_id: id,
+      direction: 'out', actor_type: 'bot',
+      body_text: payMsg,
+      meta: { payment_link: link.url, amount_omr: total }
+    });
+    if (isWhatsAppSession(r.session_id)) {
+      const phone = r.citizen_phone || r.session_id.replace(/^wa:/, '');
+      sendWhatsAppText(phone, payMsg).catch(() => {});
+    }
+
+    res.json({
+      ok: true,
+      reused: false,
+      payment_link: link.url,
+      amount_omr: total,
+      merchant_ref: merchantRef,
+      stubbed: !AMWAL_ENABLED
+    });
   }
 );

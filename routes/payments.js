@@ -19,8 +19,99 @@ import { Router } from 'express';
 import { db } from '../lib/db.js';
 import { requireOfficer } from '../lib/auth.js';
 import { createPaymentLink, verifyWebhookSignature, newMerchantRef, AMWAL_ENABLED } from '../lib/amwal.js';
+import { storeMessage } from '../lib/agent.js';
+import { sendWhatsAppText, isWhatsAppSession } from '../lib/whatsapp_send.js';
 
 export const paymentsRouter = Router();
+
+// ════════════════════════════════════════════════════════════
+// REQUEST payments — citizen pays the office for a specific service
+// request. Distinct from the office subscription flow above. Status
+// transitions: awaiting_payment → in_progress (with paid_at set), which
+// unlocks the officer ↔ citizen chat.
+// ════════════════════════════════════════════════════════════
+
+// Idempotent: marking a request paid more than once is a no-op. Returns
+// { alreadyPaid:true } in that case so the webhook + stub agree.
+async function markRequestPaid(requestId, source = 'webhook') {
+  const { rows } = await db.execute({
+    sql: `SELECT id, session_id, office_id, status, payment_status, paid_at,
+                 payment_amount_omr, payment_ref,
+                 (SELECT phone FROM citizen WHERE citizen.id = request.citizen_id) AS citizen_phone,
+                 (SELECT language_pref FROM citizen WHERE citizen.id = request.citizen_id) AS lang_pref,
+                 (SELECT name_en FROM service_catalog WHERE service_catalog.id = request.service_id) AS service_name,
+                 (SELECT name_ar FROM service_catalog WHERE service_catalog.id = request.service_id) AS service_name_ar
+            FROM request WHERE id=?`,
+    args: [requestId]
+  });
+  const r = rows[0];
+  if (!r) return { error: 'not_found' };
+  if (r.payment_status === 'paid' || r.paid_at) {
+    return { alreadyPaid: true, request_id: r.id };
+  }
+  // Atomic flip — guard on payment_status='awaiting' to avoid resurrecting
+  // a refunded or cancelled request.
+  const upd = await db.execute({
+    sql: `UPDATE request
+             SET payment_status='paid',
+                 paid_at=datetime('now'),
+                 status=CASE WHEN status='awaiting_payment' THEN 'in_progress' ELSE status END,
+                 last_event_at=datetime('now')
+           WHERE id=? AND payment_status='awaiting'`,
+    args: [requestId]
+  });
+  if (!upd.rowsAffected) return { error: 'bad_state' };
+
+  await db.execute({
+    sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
+          VALUES ('system', NULL, 'request_paid', 'request', ?, ?)`,
+    args: [requestId, JSON.stringify({ source, amount_omr: r.payment_amount_omr, ref: r.payment_ref })]
+  });
+
+  // Notify the citizen — chat is now unlocked.
+  const lang = (r.lang_pref || 'ar') === 'en' ? 'en' : 'ar';
+  const sname = (lang === 'ar' && r.service_name_ar) ? r.service_name_ar : (r.service_name || '');
+  const paidMsg = lang === 'ar'
+    ? `✅ تم استلام دفعتك. مكتب سند الذي يتولى طلبك "${sname}" بدأ المعالجة الآن. ستصلك التحديثات عبر هذه المحادثة.`
+    : `✅ Payment received. The Sanad office handling your "${sname}" request has started processing. You'll get updates here.`;
+  await storeMessage({
+    session_id: r.session_id, request_id: requestId,
+    direction: 'out', actor_type: 'bot',
+    body_text: paidMsg
+  });
+  if (isWhatsAppSession(r.session_id) && r.citizen_phone) {
+    sendWhatsAppText(r.citizen_phone, paidMsg).catch(() => {});
+  }
+
+  return { ok: true, request_id: requestId, office_id: r.office_id };
+}
+
+// Citizen confirms payment (used by /request.html if the gateway redirects
+// back without a webhook in dev). DEBUG-mode shortcut — production trusts the
+// webhook only. Returns 403 outside DEBUG_MODE.
+paymentsRouter.post('/request/:id/confirm-stub', async (req, res) => {
+  if (process.env.DEBUG_MODE !== 'true') return res.status(403).json({ error: 'debug_only' });
+  const id = Number(req.params.id);
+  const result = await markRequestPaid(id, 'stub-confirm');
+  res.json(result);
+});
+
+// Dev-only: the stub payment URL from createPaymentLink() lands here for
+// REQUEST payments (prefix req…). It marks the request paid + redirects to
+// the citizen's tracking page. Distinct from /_stub/pay which handles the
+// office-subscription stub.
+paymentsRouter.get('/_stub/request_pay', async (req, res) => {
+  if (AMWAL_ENABLED && process.env.DEBUG_MODE !== 'true')
+    return res.status(404).end();
+  const ref = String(req.query.ref || '');
+  const { rows } = await db.execute({
+    sql: `SELECT id FROM request WHERE payment_ref=? LIMIT 1`,
+    args: [ref]
+  });
+  if (!rows[0]) return res.status(404).send('unknown ref');
+  const result = await markRequestPaid(rows[0].id, 'stub-link');
+  res.redirect(`/request.html?id=${rows[0].id}${result.alreadyPaid ? '&already=1' : '&paid=1'}`);
+});
 
 const PACK = {
   code: 'starter-70',
@@ -169,6 +260,34 @@ paymentsRouter.post('/webhook', async (req, res) => {
     const ref = body.merchantReference || body.MerchantReference;
     if (!ref) return res.status(400).json({ error: 'missing_reference' });
 
+    const status = String(body.status || body.Status || '').toLowerCase();
+    const isPaid   = status === 'paid' || status === 'success' || status === 'succeeded';
+    const isFailed = status === 'failed' || status === 'cancelled' || status === 'canceled';
+
+    // Request-payment route: refs minted in officer.js look like `req<ID>-…`.
+    // Try the request table first; if no match, fall back to subscription.
+    const { rows: reqMatch } = await db.execute({
+      sql: `SELECT id FROM request WHERE payment_ref=? LIMIT 1`,
+      args: [ref]
+    });
+    if (reqMatch[0]) {
+      if (isPaid) {
+        const result = await markRequestPaid(reqMatch[0].id, 'webhook');
+        return res.json({ ok: true, request_id: reqMatch[0].id, ...result });
+      }
+      if (isFailed) {
+        await db.execute({
+          sql: `UPDATE request
+                   SET payment_status='failed',
+                       last_event_at=datetime('now')
+                 WHERE id=? AND payment_status='awaiting'`,
+          args: [reqMatch[0].id]
+        });
+        return res.json({ ok: true, request_id: reqMatch[0].id, failed: true });
+      }
+      return res.json({ ok: true, ignored: status });
+    }
+
     const { rows } = await db.execute({
       sql: `SELECT * FROM office_subscription WHERE amwal_merchant_ref=? LIMIT 1`,
       args: [ref]
@@ -176,12 +295,11 @@ paymentsRouter.post('/webhook', async (req, res) => {
     const sub = rows[0];
     if (!sub) return res.status(404).json({ error: 'unknown_ref' });
 
-    const status = String(body.status || body.Status || '').toLowerCase();
-    if (status === 'paid' || status === 'success' || status === 'succeeded') {
+    if (isPaid) {
       await activateSubscription(sub, body);
       return res.json({ ok: true });
     }
-    if (status === 'failed' || status === 'cancelled' || status === 'canceled') {
+    if (isFailed) {
       await db.execute({
         sql: `UPDATE office_subscription
                  SET payment_status='failed', raw_webhook_json=?

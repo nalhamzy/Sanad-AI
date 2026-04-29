@@ -1029,43 +1029,40 @@
       });
     });
 
-    // Quick-action buttons on cards — Send Quote reads from the inline
-    // fee inputs on the same card, so the officer can tweak the margin
-    // before hitting ⚡. Empty / NaN values default to 0.
-    // Posts { office_fee_omr, government_fee_omr } to /api/officer/request/:id/offer.
-    // Offer stays 'pending' until the citizen accepts.
-    inbox.querySelectorAll('[data-send-quote]').forEach(b => {
+    // Single-claim flow: clicking ⚡ on a marketplace card atomically locks
+    // the request to this office. Pricing is predefined (office default fee
+    // + government fee from catalogue) — no quoting / bidding. After claim,
+    // the office reviews the docs, then triggers payment from the detail
+    // view.
+    //
+    // Backwards-compat: this handler responds to BOTH data-send-quote and
+    // data-claim attributes so existing card markup keeps working until the
+    // template is fully migrated.
+    inbox.querySelectorAll('[data-send-quote], [data-claim]').forEach(b => {
       b.addEventListener('click', async e => {
         e.stopPropagation();
-        const id = b.getAttribute('data-send-quote');
-        const card = b.closest('[data-req]');
-        const office_fee_omr = Number(card?.querySelector(`[data-office-fee-input="${id}"]`)?.value || 0);
-        const government_fee_omr = Number(card?.querySelector(`[data-gov-fee-input="${id}"]`)?.value || 0);
-        if (!(office_fee_omr + government_fee_omr > 0)) {
-          Sanad.toast(t('offer.default_fee') + ' = 0', 'warn', 1800); return;
-        }
+        const id = b.getAttribute('data-claim') || b.getAttribute('data-send-quote');
         b.disabled = true; b.style.opacity = '.7';
         try {
-          await api('/api/officer/request/' + id + '/offer', {
-            method:'POST',
-            body: JSON.stringify({ office_fee_omr, government_fee_omr })
-          });
-          Sanad.toast('✅ ' + t('officer.quote_sent'), 'ok', 2000);
+          const resp = await api('/api/officer/request/' + id + '/claim', { method: 'POST' });
+          const total = (resp.pricing?.total ?? 0).toFixed(3);
+          Sanad.toast('✅ ' + t('officer.claimed_ok', `Claimed R-${id} · ${total} OMR`), 'ok', 2200);
           await loadInbox();
+          // Auto-open the detail view so the officer can review docs + send payment.
+          openDetail(id);
         } catch (err) {
           const msg = err.message || '';
-          if (msg.includes('402')) {
-            Sanad.toast(msg.includes('no_credits') ? t('officer.no_credits') : t('officer.no_subscription'), 'warn', 2400);
-          } else if (msg.includes('409')) {
-            Sanad.toast(t('offer.locked_pending'), 'warn', 2400);
+          if (msg.includes('409')) {
+            Sanad.toast(t('officer.already_claimed', 'Another office got there first'), 'warn', 2400);
           } else {
-            Sanad.toast(t('officer.quote_failed'), 'err', 2200);
+            Sanad.toast(t('officer.claim_failed', 'Claim failed'), 'err', 2200);
           }
           b.disabled = false; b.style.opacity = '1';
         }
       });
     });
-    // Withdraw a still-pending quote.
+    // Withdraw a still-pending quote (legacy multi-office offers, kept for
+    // backward-compat with seeded data).
     inbox.querySelectorAll('[data-withdraw]').forEach(b => {
       b.addEventListener('click', async e => {
         e.stopPropagation();
@@ -1189,7 +1186,7 @@
       document.getElementById('sc_portal').onclick = () => window.open('https://www.rop.gov.om', '_blank');
       document.getElementById('sc_otp').onclick = openOtpWindow;
 
-      renderChat(data.messages);
+      renderChat(data.messages, data.chat_unlocked !== false);
       switchTab('docs');
     } catch (e) {
       Sanad.toast('Open failed', 'err');
@@ -1411,24 +1408,35 @@
   function renderActions(r) {
     const host = document.getElementById('detailActions');
     const btns = [];
-    // Anonymized marketplace entry → show Submit Quote (or Update if we already quoted).
+    const fee = (n) => `${Number(n||0).toFixed(3)} ${t('officer.omr')}`;
+
+    // ── State machine in a single place ─────────────────────
+    // ready       → Claim atomically (locks request to this office)
+    // claimed     → Send Payment Link · Release
+    // awaiting_payment → Resend Payment Link · Release · payment-pending hint
+    // in_progress (paid)→ Complete · Release (refund-required hint)
     if (r.anonymized || r.status === 'ready') {
-      const label = r.my_offer
-        ? `${t('offer.update_quote')} (${Number(r.my_offer.quoted_fee_omr).toFixed(3)} ${t('officer.omr')})`
-        : t('offer.send_quote');
-      btns.push(`<button data-act="quote" class="btn btn-primary">${label}</button>`);
-      if (r.my_offer) btns.push(`<button data-act="withdraw" class="btn btn-secondary">${t('offer.withdraw')}</button>`);
-      if (r.my_offer) btns.push(`<span class="text-[11px] px-2 py-1 rounded-lg" style="background:var(--warn-soft, #fef3c7);color:#92400e">⏳ ${t('offer.locked_pending')}</span>`);
-      else btns.push(`<span class="text-[11px] px-2 py-1 rounded-lg" style="background:var(--surface-3);color:var(--text-mute)">ℹ ${t('offer.not_claimed_yet')}</span>`);
-      // Hint: show the government fee from the catalog so the office knows
-      // the default قيمة المعاملة before opening the modal.
+      btns.push(`<button data-act="claim" class="btn btn-primary">⚡ ${t('actions.claim','Claim')}</button>`);
+      // Show pre-defined pricing the office is locking-in if the citizen pays.
       if (r.catalog_fee_omr != null) {
+        const officeFee = (allInbox?.office?.default_office_fee_omr ?? 5);
         btns.push(`<span class="text-[11px] px-2 py-1 rounded-lg" style="background:var(--surface-3);color:var(--text-mute)">
-          قيمة المعاملة (govt): <b>${Number(r.catalog_fee_omr).toFixed(3)}</b> ر.ع
+          ${t('officer.gov_fee','Govt')}: <b>${fee(r.catalog_fee_omr)}</b> + ${t('officer.office_fee','Office')}: <b>${fee(officeFee)}</b>
         </span>`);
       }
+    } else if (r.status === 'claimed') {
+      btns.push(`<button data-act="send-payment" class="btn btn-primary" style="background:linear-gradient(135deg,#0d9488,#15803d)">💳 ${t('officer.send_payment','Send payment link')}</button>`);
+      btns.push(`<button data-act="release" class="btn btn-secondary">${t('actions.release')}</button>`);
+      const total = (r.office_fee_omr || 0) + (r.government_fee_omr || 0);
+      btns.push(`<span class="text-[11px] px-2 py-1 rounded-lg" style="background:var(--surface-3);color:var(--text-mute)">
+        ${t('officer.locked_total','Locked total')}: <b>${fee(total)}</b>
+      </span>`);
+    } else if (r.status === 'awaiting_payment') {
+      btns.push(`<button data-act="send-payment" class="btn btn-secondary">↻ ${t('officer.resend_payment','Resend link')}</button>`);
+      btns.push(`<button data-act="release" class="btn btn-secondary">${t('actions.release')}</button>`);
+      btns.push(`<span class="text-[11px] px-2 py-1 rounded-lg" style="background:#fee2e2;color:#991b1b">⏳ ${t('officer.awaiting_pay_hint','Waiting for citizen payment')}</span>`);
     } else {
-      // We won this request → full actions.
+      // in_progress / on_hold / etc. — paid_at is set, full actions available.
       btns.push(`<button data-act="release" class="btn btn-secondary">${t('actions.release')}</button>`);
       btns.push(`<button data-act="complete" class="btn btn-primary" style="background:linear-gradient(135deg,#10b981,#059669)">✓ ${t('actions.complete')}</button>`);
     }
@@ -1436,39 +1444,30 @@
     host.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', async () => {
       const a = b.getAttribute('data-act');
       try {
-        if (a === 'quote') {
-          // Two-part pricing:
-          //   office_fee_omr     = the office's margin
-          //   government_fee_omr = قيمة المعاملة (actual gov service fee)
-          // Citizen sees both lines separately so they can compare fairly.
-          const catalogGovFee = r.catalog_fee_omr != null ? Number(r.catalog_fee_omr) : 0;
-          const defaultOfficeFee = Number(allInbox?.office?.default_office_fee_omr ?? 5);
-          const officeStr = prompt(t('offer.my_price') + ' (' + t('officer.omr') + ')',
-            r.my_offer ? String(r.my_offer.office_fee_omr ?? r.my_offer.quoted_fee_omr) : defaultOfficeFee.toFixed(3));
-          if (officeStr === null) return;
-          const officeFee = Number(officeStr);
-          if (!(officeFee >= 0)) return Sanad.toast(t('offer.my_price'), 'err');
-          const govStr = prompt(t('offer.gov_price') + ' (' + t('officer.omr') + ')',
-            r.my_offer ? String(r.my_offer.government_fee_omr ?? 0) : String(catalogGovFee.toFixed(3)));
-          if (govStr === null) return;
-          const govFee = Number(govStr);
-          if (!(govFee >= 0)) return Sanad.toast(t('offer.gov_price'), 'err');
-          if (!(officeFee + govFee > 0)) return Sanad.toast(t('offer.total') + ' > 0', 'err');
-          await api('/api/officer/request/' + r.id + '/offer', {
-            method: 'POST',
-            body: JSON.stringify({
-              office_fee_omr: officeFee,
-              government_fee_omr: govFee
-            })
-          });
-          Sanad.toast(`${t('offer.total')}: ${(officeFee+govFee).toFixed(3)} ${t('officer.omr')}`, 'ok', 2400);
+        if (a === 'claim') {
+          const resp = await api('/api/officer/request/' + r.id + '/claim', { method: 'POST' });
+          Sanad.toast(`✅ ${t('officer.claimed_ok','Claimed')} · ${fee(resp.pricing?.total)}`, 'ok', 2400);
         }
-        if (a === 'withdraw') {
-          if (!confirm(t('offer.withdraw') + '?')) return;
-          await api('/api/officer/request/' + r.id + '/offer/withdraw', { method:'POST' });
-          Sanad.toast('↩ ' + t('offer.withdraw'), 'info');
+        if (a === 'send-payment') {
+          const resp = await api('/api/officer/request/' + r.id + '/payment/start', { method: 'POST' });
+          const msg = resp.reused
+            ? `${t('officer.payment_resent','Payment link resent')} · ${fee(resp.amount_omr)}`
+            : `💳 ${t('officer.payment_sent','Payment link sent to citizen')} · ${fee(resp.amount_omr)}`;
+          Sanad.toast(msg, 'ok', 2600);
+          // Surface the link in the action area so the office can copy it
+          // (e.g. for SMS or follow-up email).
+          if (resp.payment_link) {
+            try { await navigator.clipboard.writeText(resp.payment_link); Sanad.toast(t('officer.link_copied','Payment link copied to clipboard'), 'info', 1800); } catch {}
+          }
         }
-        if (a === 'release') { await api('/api/officer/request/' + r.id + '/release', { method:'POST' }); Sanad.toast('↩ ' + t('actions.release'), 'info'); }
+        if (a === 'release') {
+          const resp = await api('/api/officer/request/' + r.id + '/release', { method:'POST' });
+          if (resp.refund_required) {
+            Sanad.toast('⚠ ' + t('officer.refund_required','Released — refund required, finance team notified'), 'warn', 3000);
+          } else {
+            Sanad.toast('↩ ' + t('actions.release'), 'info');
+          }
+        }
         if (a === 'complete') { await api('/api/officer/request/' + r.id + '/complete', { method:'POST' }); Sanad.toast('✓ ' + t('actions.complete'), 'ok'); }
         await openDetail(r.id);
         await loadInbox();
@@ -1526,9 +1525,31 @@
     el.textContent = m.body_text || (m.media_url ? t('officer.attachment') : '');
     return el;
   }
-  function renderChat(messages) {
+  function renderChat(messages, chatUnlocked) {
     const chat = document.getElementById('chatPane');
     chat.innerHTML = '';
+    // Pre-payment lock banner. The server already returns an empty messages
+    // array when chat_unlocked is false, but we surface the WHY explicitly
+    // so the officer doesn't think the chat is empty by accident.
+    if (chatUnlocked === false) {
+      const banner = document.createElement('div');
+      banner.className = 'p-4 m-2 rounded-xl text-center';
+      banner.style.cssText = 'background:#fef3c7;border:1px solid #fcd34d;color:#92400e;font-size:13px';
+      banner.innerHTML = `🔒 <b>${t('officer.chat_locked','Chat locked until payment')}</b><br/>
+        <span style="font-weight:500">${t('officer.chat_locked_hint','Send the payment link first. The citizen\\'s chat history unlocks automatically once they pay.')}</span>`;
+      chat.appendChild(banner);
+      // Disable the input area too.
+      const input = document.getElementById('chatInput');
+      const sendBtn = document.getElementById('chatSend');
+      if (input) { input.disabled = true; input.placeholder = t('officer.chat_locked','Chat locked until payment'); }
+      if (sendBtn) { sendBtn.disabled = true; sendBtn.style.opacity = '.5'; }
+      return;
+    }
+    // Re-enable input when unlocked.
+    const input = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('chatSend');
+    if (input) { input.disabled = false; input.placeholder = t('officer.chat_placeholder','Type a message…'); }
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = '1'; }
     for (const m of messages) {
       chat.appendChild(msgBubble(m));
       lastChatMsgId = Math.max(lastChatMsgId, m.id);
