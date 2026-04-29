@@ -6,10 +6,11 @@ import fs from 'fs';
 import { parse } from 'csv-parse/sync';
 import { db, migrate } from './lib/db.js';
 
-// Prefer v2 (master + scraped ministries, built by scripts/merge_catalog.mjs)
-// when it exists. Falls back to the original master CSV.
+// CSV preference: v3 (post-sanad.om reconciliation, 601 rows) > v2 (scraped
+// only, 453) > v1 (legacy master). v3 is the current canonical list.
 const CSV_V1 = './oman_services_directory.csv';
 const CSV_V2 = './oman_services_directory_v2.csv';
+const CSV_V3 = './oman_services_directory_v3.csv';
 
 function splitDocs(txt) {
   if (!txt) return [];
@@ -32,7 +33,9 @@ function slug(s) {
 }
 
 async function main() {
-  const CSV_PATH = fs.existsSync(CSV_V2) ? CSV_V2 : CSV_V1;
+  const CSV_PATH = fs.existsSync(CSV_V3) ? CSV_V3
+                 : fs.existsSync(CSV_V2) ? CSV_V2
+                 : CSV_V1;
   if (!fs.existsSync(CSV_PATH)) {
     console.error(`CSV not found at ${CSV_PATH}`);
     process.exit(1);

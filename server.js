@@ -84,9 +84,36 @@ app.get(/^\/(?!api|uploads).*/, (_req, res) => {
 export async function prepare() {
   fs.mkdirSync('./data/uploads', { recursive: true });
   await migrate();
-  // Auto-import the ~3.4k-row service directory on first boot so annotator
-  // search has real data to find. Subsequent boots skip (table already full).
-  await autoImportCatalog();
+
+  // SANAD_FORCE_RELOAD_CATALOGUE=true triggers a one-shot wipe + re-import
+  // from the canonical CSV. Used to migrate existing deployments after a
+  // catalogue rebuild (e.g. sanad.om reconciliation): the persistent disk
+  // would otherwise keep the OLD rows because autoImportCatalog skips when
+  // the table is non-empty. Set the env var, redeploy, watch the boot log
+  // confirm "[migrate] wiped N rows" and "imported M from oman_services_directory_v3.csv",
+  // then UNSET the var on the next deploy so the migration doesn't re-run.
+  if (process.env.SANAD_FORCE_RELOAD_CATALOGUE === 'true') {
+    const { rows: before } = await db.execute(`SELECT COUNT(*) AS n FROM service_catalog`);
+    console.log(`[migrate] SANAD_FORCE_RELOAD_CATALOGUE=true — wiping ${before[0].n} existing service_catalog rows…`);
+    await db.execute(`PRAGMA foreign_keys = OFF`);
+    try {
+      // Cascade: blow away dependent message/request_document/request rows
+      // that pointed at the old IDs so the new catalogue isn't carrying
+      // dangling FKs. Citizens / officers / offices are preserved.
+      await db.execute(`DELETE FROM message WHERE request_id IN (SELECT id FROM request)`);
+      await db.execute(`DELETE FROM request_document`);
+      await db.execute(`DELETE FROM request`);
+      await db.execute(`DELETE FROM service_catalog`);
+      try { await db.execute(`INSERT INTO service_catalog_fts(service_catalog_fts) VALUES('rebuild')`); } catch {}
+    } finally {
+      await db.execute(`PRAGMA foreign_keys = ON`);
+    }
+    const r = await autoImportCatalog({ force: true });
+    console.log(`[migrate] reload complete — imported ${r.imported} rows. UNSET SANAD_FORCE_RELOAD_CATALOGUE on next deploy.`);
+  } else {
+    // Normal boot: import only when the table is empty. Idempotent.
+    await autoImportCatalog();
+  }
   await seedDemoOffices();
   await seedDemoAnnotators();
   await seedDemoRequests();  // no-op unless DEBUG_MODE=true
