@@ -736,9 +736,9 @@
               'Pending review'}
           </h1>
           <p style="color:#475569;line-height:1.6;margin-bottom:24px">
-            ${status === 'suspended' ? 'Contact the Sanad-AI team to restore access.' :
-              status === 'rejected' ? 'Please contact the Sanad-AI team for details.' :
-              'Your office is under review by the Sanad-AI team. We will email you when approved — usually within 1–2 business days.'}
+            ${status === 'suspended' ? 'Contact the Saned team to restore access.' :
+              status === 'rejected' ? 'Please contact the Saned team for details.' :
+              'Your office is under review by the Saned team. We will email you when approved — usually within 1–2 business days.'}
           </p>
           <button onclick="fetch('/api/auth/logout',{method:'POST',credentials:'include'}).then(()=>location.href='/office-login.html')"
             style="padding:10px 24px;background:linear-gradient(135deg,#0e7c86,#126e3d);color:white;border-radius:10px;font-weight:700;border:0;cursor:pointer">

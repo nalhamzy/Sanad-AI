@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ساند · Saned — Request</title>
+<meta name="theme-color" content="#0d9488"/>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<script>
+  (function () {
+    try {
+      const saved = localStorage.getItem('sanad.lang');
+      const lang = saved || 'ar';
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    } catch {}
+  })();
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Kufi+Arabic:wght@400;500;700;800;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/theme.css"/>
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  [dir="rtl"] body, html[dir="rtl"] * { font-family: 'Noto Kufi Arabic', sans-serif; }
+  .page-bg {
+    background:
+      radial-gradient(900px 480px at 12% -10%, rgba(20,184,166,.08) 0%, transparent 55%),
+      linear-gradient(180deg, #fbfaf6 0%, #f5f1e8 100%);
+  }
+  .wordmark { background: linear-gradient(135deg, #0d9488 0%, #15803d 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .status-chip { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 9999px; letter-spacing: .03em; }
+  .chip-collecting   { background: #fef3c7; color: #92400e; }
+  .chip-ready        { background: #dbeafe; color: #1e40af; }
+  .chip-claimed      { background: #ede9fe; color: #5b21b6; }
+  .chip-awaiting_payment { background: #fee2e2; color: #991b1b; }
+  .chip-in_progress  { background: #d1fae5; color: #065f46; }
+  .chip-completed    { background: #e2e8f0; color: #334155; }
+  .chip-cancelled    { background: #f1f5f9; color: #64748b; }
+  .timeline-step {
+    position: relative;
+    padding-inline-start: 2.25rem;
+    padding-bottom: 1.25rem;
+  }
+  .timeline-step::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0.6875rem;
+    top: 1.5rem;
+    bottom: -0.25rem;
+    width: 2px;
+    background: #e2e8f0;
+  }
+  .timeline-step:last-child::before { display: none; }
+  .timeline-dot {
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0.25rem;
+    width: 1.5rem; height: 1.5rem;
+    border-radius: 9999px;
+    border: 2px solid #e2e8f0;
+    background: white;
+    display: grid; place-items: center;
+    font-size: 12px; font-weight: 800;
+    color: #94a3b8;
+  }
+  .timeline-step.done .timeline-dot { background: #14b8a6; border-color: #14b8a6; color: white; }
+  .timeline-step.done::before { background: #14b8a6; }
+  .timeline-step.current .timeline-dot { background: white; border-color: #0d9488; color: #0d9488; box-shadow: 0 0 0 4px rgba(13,148,136,.15); }
+  .doc-card { transition: all .15s; }
+  .doc-card:hover { transform: translateY(-1px); border-color: rgba(20,184,166,.5); }
+  .msg-mine { background: #d1fae5; color: #065f46; align-self: flex-end; border-radius: 16px 16px 4px 16px; }
+  .msg-theirs { background: white; align-self: flex-start; border: 1px solid #e2e8f0; border-radius: 16px 16px 16px 4px; }
+  .msg-bot { background: #f1f5f9; color: #475569; align-self: flex-start; border-radius: 16px 16px 16px 4px; }
+  .msg-system { background: #fef3c7; color: #92400e; align-self: center; font-style: italic; font-size: 12px; padding: 4px 10px; border-radius: 9999px; }
+</style>
+</head>
+<body class="min-h-screen text-slate-900 page-bg">
+
+<header class="max-w-4xl mx-auto px-5 sm:px-6 py-5 flex items-center">
+  <a href="/account.html" class="flex items-center gap-3" aria-label="back to account">
+    <svg viewBox="0 0 24 24" class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" id="backArrow"><polyline points="15 18 9 12 15 6"/></svg>
+    <div class="leading-tight">
+      <div class="text-xs text-slate-500" data-i18n="req.back_to_account"></div>
+      <div class="text-base font-extrabold wordmark" data-i18n="app.name"></div>
+    </div>
+  </a>
+  <div class="ms-auto flex items-center gap-2">
+    <button id="langBtn" class="px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-slate-200 font-semibold text-xs shadow-sm" data-i18n="lang.toggle"></button>
+  </div>
+</header>
+
+<main class="max-w-4xl mx-auto px-5 sm:px-6 pb-20">
+
+  <div id="loadingBox" class="rounded-2xl bg-white border border-slate-200 p-8 text-center text-sm text-slate-500" data-i18n="req.loading"></div>
+
+  <div id="content" class="hidden">
+    <!-- Service header -->
+    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7">
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div class="min-w-0 flex-1">
+          <div class="text-xs text-slate-500 font-semibold mb-1.5" id="entityLabel">—</div>
+          <h1 class="text-xl sm:text-2xl font-black tracking-tight" id="serviceName">—</h1>
+          <div class="mt-1 text-xs text-slate-500" id="reqMeta">—</div>
+        </div>
+        <div class="flex flex-col items-end gap-2 shrink-0">
+          <span id="statusChip" class="status-chip chip-collecting">…</span>
+          <span id="paymentChip" class="hidden status-chip">—</span>
+        </div>
+      </div>
+
+      <!-- Pay-now CTA -->
+      <div id="paymentBlock" class="hidden mt-5 p-5 rounded-2xl bg-gradient-to-br from-rose-50 to-amber-50 border border-rose-200">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div class="flex-1">
+            <div class="text-sm font-bold text-rose-900" data-i18n="req.pay.title"></div>
+            <div class="text-xs text-rose-800 mt-0.5" data-i18n="req.pay.sub"></div>
+            <div class="mt-2 text-2xl font-black text-rose-700" id="payAmount">—</div>
+            <div class="text-[11px] text-rose-700 font-semibold" id="payBreakdown">—</div>
+          </div>
+          <a id="payNowBtn" href="#" target="_blank" rel="noopener"
+             class="px-5 py-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-md whitespace-nowrap" data-i18n="req.pay.cta"></a>
+        </div>
+      </div>
+
+      <!-- Office assignment -->
+      <div id="officeBlock" class="hidden mt-5 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-500 to-green-700 grid place-items-center text-white font-black">س</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[11px] uppercase tracking-wider text-slate-500 font-bold" data-i18n="req.handled_by"></div>
+            <div class="text-sm font-bold text-slate-800 truncate" id="officeName">—</div>
+            <div class="text-xs text-slate-500" id="officeMeta">—</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Status timeline -->
+    <section class="mt-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7">
+      <h2 class="text-base font-extrabold mb-4" data-i18n="req.timeline.h2"></h2>
+      <div id="timeline" class="space-y-1"></div>
+    </section>
+
+    <!-- Documents -->
+    <section class="mt-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-extrabold" data-i18n="req.docs.h2"></h2>
+        <span class="text-xs text-slate-500" id="docCount">—</span>
+      </div>
+      <div id="docList" class="grid sm:grid-cols-2 gap-3"></div>
+    </section>
+
+    <!-- Messages thread -->
+    <section class="mt-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-extrabold" data-i18n="req.thread.h2"></h2>
+        <span id="threadGate" class="hidden text-[11px] font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full" data-i18n="req.thread.gated"></span>
+      </div>
+      <div id="thread" class="flex flex-col gap-2 max-h-[460px] overflow-auto px-1"></div>
+      <p id="threadEmpty" class="hidden text-sm text-slate-500 italic text-center py-6" data-i18n="req.thread.empty"></p>
+    </section>
+  </div>
+
+  <p id="errBox" class="hidden mt-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm"></p>
+</main>
+
+<script src="/i18n.js"></script>
+<script>
+(async function () {
+  const $ = s => document.querySelector(s);
+  const I18N = window.I18N;
+  document.getElementById('langBtn').onclick = () => I18N.setLang(I18N.lang === 'ar' ? 'en' : 'ar');
+
+  function escapeHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  function showErr(m) { $('#errBox').textContent = m; $('#errBox').classList.remove('hidden'); }
+
+  // ── Auth gate ──────────────────────────────────────────
+  let me = null;
+  try {
+    const r = await fetch('/api/citizen-auth/me');
+    if (!r.ok) { window.location.href = '/login.html'; return; }
+    me = (await r.json()).citizen;
+  } catch { window.location.href = '/login.html'; return; }
+
+  // ── Load request ───────────────────────────────────────
+  const params = new URLSearchParams(location.search);
+  const reqId = Number(params.get('id'));
+  if (!reqId) { showErr(I18N.t('req.err.no_id')); return; }
+
+  let data;
+  try {
+    const r = await fetch(`/api/chat/my-request/${reqId}`);
+    if (!r.ok) {
+      if (r.status === 404) { showErr(I18N.t('req.err.not_found')); return; }
+      if (r.status === 401) { window.location.href = '/login.html'; return; }
+      const d = await r.json();
+      showErr(d.error || I18N.t('req.err.generic'));
+      return;
+    }
+    data = await r.json();
+  } catch (e) {
+    showErr(I18N.t('req.err.network'));
+    return;
+  }
+
+  $('#loadingBox').classList.add('hidden');
+  $('#content').classList.remove('hidden');
+
+  const req = data.request;
+  const lang = I18N.lang;
+
+  // Service header
+  $('#entityLabel').textContent = (lang === 'ar' && req.entity_ar) ? req.entity_ar : (req.entity_en || '');
+  $('#serviceName').textContent = (lang === 'ar' && req.service_name_ar) ? req.service_name_ar : (req.service_name || '—');
+  $('#reqMeta').textContent =
+    `${I18N.t('account.req.id')} #${req.id} · ${I18N.t('req.created')} ${(req.created_at || '').split(' ')[0]}`;
+
+  // Status chip
+  const statusKey = (req.status || '').replace(/[^a-z_]/g, '');
+  const statusChip = $('#statusChip');
+  statusChip.className = `status-chip chip-${statusKey.split('_')[0]}`;
+  statusChip.textContent = I18N.t('account.status.' + statusKey) || statusKey;
+
+  // Payment chip
+  if (req.payment_status && req.payment_status !== 'none') {
+    const payChip = $('#paymentChip');
+    payChip.classList.remove('hidden');
+    payChip.className = `status-chip chip-${req.payment_status === 'paid' ? 'in_progress' : 'awaiting_payment'}`;
+    payChip.textContent = req.payment_status === 'paid' ? I18N.t('req.pay.paid_chip') : I18N.t('req.pay.awaiting_chip');
+  }
+
+  // Pay-now CTA — only when awaiting
+  if (req.payment_status === 'awaiting' && req.payment_link) {
+    $('#paymentBlock').classList.remove('hidden');
+    const total = req.payment_amount_omr || (req.office_fee_omr || 0) + (req.government_fee_omr || req.catalog_fee_omr || 0);
+    $('#payAmount').textContent = `${(total).toFixed(3)} OMR`;
+    $('#payBreakdown').textContent =
+      `${I18N.t('req.pay.gov')} ${(req.government_fee_omr || req.catalog_fee_omr || 0).toFixed(3)} · ${I18N.t('req.pay.office')} ${(req.office_fee_omr || 0).toFixed(3)}`;
+    $('#payNowBtn').href = req.payment_link;
+  }
+
+  // Office (if claimed)
+  if (req.office_name_en || req.office_name_ar) {
+    $('#officeBlock').classList.remove('hidden');
+    $('#officeName').textContent = (lang === 'ar' && req.office_name_ar) ? req.office_name_ar : (req.office_name_en || '—');
+    const meta = [];
+    if (req.office_gov) meta.push(req.office_gov);
+    if (req.office_rating) meta.push(`★ ${req.office_rating.toFixed(1)}`);
+    if (req.office_completed) meta.push(`${req.office_completed} ${I18N.t('req.office.completed')}`);
+    $('#officeMeta').textContent = meta.join(' · ');
+  }
+
+  // Timeline
+  // Map status → ordered step list with done/current state.
+  const STEPS = [
+    { key: 'collecting', label: I18N.t('req.step.collecting'), at: req.created_at },
+    { key: 'ready', label: I18N.t('req.step.ready'), at: req.last_event_at },
+    { key: 'claimed', label: I18N.t('req.step.claimed'), at: req.claimed_at },
+    { key: 'awaiting_payment', label: I18N.t('req.step.awaiting_payment'), at: req.payment_status === 'awaiting' ? req.last_event_at : null },
+    { key: 'in_progress', label: I18N.t('req.step.in_progress'), at: req.paid_at },
+    { key: 'completed', label: I18N.t('req.step.completed'), at: req.completed_at }
+  ];
+  const order = ['collecting','ready','claimed','awaiting_payment','in_progress','completed'];
+  const cancelled = ['cancelled_by_citizen','cancelled_by_office'].includes(req.status);
+  const currentIdx = cancelled ? -1 : order.indexOf(req.status);
+  $('#timeline').innerHTML = STEPS.map((s, i) => {
+    const isDone = !cancelled && (i < currentIdx || (i === currentIdx && req.completed_at));
+    const isCurrent = !cancelled && i === currentIdx && !req.completed_at;
+    const cls = isDone ? 'done' : isCurrent ? 'current' : '';
+    const icon = isDone ? '✓' : isCurrent ? '•' : (i + 1);
+    const at = s.at ? `<div class="text-[11px] text-slate-400 mt-0.5">${escapeHtml(s.at.split(' ')[0])}</div>` : '';
+    return `<div class="timeline-step ${cls}">
+      <div class="timeline-dot">${icon}</div>
+      <div class="text-sm font-bold ${isDone || isCurrent ? 'text-slate-800' : 'text-slate-400'}">${escapeHtml(s.label)}</div>
+      ${at}
+    </div>`;
+  }).join('');
+  if (cancelled) {
+    $('#timeline').innerHTML += `<div class="mt-2 p-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-600">
+      ${I18N.t('req.cancelled.text')} ${req.cancel_reason ? '· ' + escapeHtml(req.cancel_reason) : ''}
+    </div>`;
+  }
+
+  // Documents
+  const docs = data.documents || [];
+  $('#docCount').textContent = `${docs.length} ${I18N.t('req.docs.count_label')}`;
+  $('#docList').innerHTML = docs.length ? docs.map(d => {
+    const statusBadge = d.status === 'verified' ? `<span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">✓ ${I18N.t('status.verified')}</span>`
+                     : d.status === 'rejected' ? `<span class="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full">✗ ${I18N.t('status.rejected')}</span>`
+                     : `<span class="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">${I18N.t('status.pending')}</span>`;
+    const isImage = (d.mime || '').startsWith('image/');
+    const icon = isImage ? '🖼️' : (d.mime?.includes('pdf') ? '📄' : '📎');
+    const reject = d.status === 'rejected' && d.reject_reason ?
+      `<div class="mt-2 text-[11px] text-rose-700 bg-rose-50 px-2.5 py-1.5 rounded-lg"><b>${I18N.t('req.docs.rejected')}:</b> ${escapeHtml(d.reject_reason)}</div>` : '';
+    return `<div class="doc-card border border-slate-200 rounded-xl p-3 flex items-start gap-3">
+      <div class="text-2xl shrink-0">${icon}</div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-start justify-between gap-2">
+          <div class="font-semibold text-sm text-slate-800 truncate">${escapeHtml(d.label || d.original_name || d.doc_code || '—')}</div>
+          ${statusBadge}
+        </div>
+        <div class="mt-0.5 text-[11px] text-slate-500">
+          ${d.size_bytes ? Math.round(d.size_bytes / 1024) + ' KB · ' : ''}${escapeHtml((d.uploaded_at || '').split(' ')[0])}
+          ${d.is_extra ? ' · <span class="text-violet-600 font-semibold">' + I18N.t('req.docs.extra') + '</span>' : ''}
+        </div>
+        ${d.caption ? `<div class="mt-1 text-xs text-slate-600 italic">"${escapeHtml(d.caption)}"</div>` : ''}
+        ${reject}
+      </div>
+    </div>`;
+  }).join('') : `<div class="text-sm text-slate-500 italic col-span-2">${I18N.t('req.docs.empty')}</div>`;
+
+  // Messages thread
+  const msgs = data.messages || [];
+  if (!data.chat_unlocked_for_office) $('#threadGate').classList.remove('hidden');
+  if (!msgs.length) $('#threadEmpty').classList.remove('hidden');
+  $('#thread').innerHTML = msgs.map(m => {
+    const own = m.actor_type === 'citizen';
+    const bot = m.actor_type === 'bot';
+    const sys = m.actor_type === 'system';
+    const cls = sys ? 'msg-system' : own ? 'msg-mine' : bot ? 'msg-bot' : 'msg-theirs';
+    const ts = m.created_at ? `<div class="text-[10px] opacity-60 mt-1">${escapeHtml(m.created_at.split(' ')[1] || '')}</div>` : '';
+    const body = escapeHtml(m.body_text || '').replace(/\n/g, '<br/>');
+    if (sys) return `<div class="${cls}">${body}</div>`;
+    return `<div class="px-3.5 py-2 max-w-[80%] ${cls}">
+      <div class="text-sm leading-relaxed">${body}</div>
+      ${ts}
+    </div>`;
+  }).join('');
+  // Auto-scroll to latest
+  $('#thread').scrollTop = $('#thread').scrollHeight;
+})();
+</script>
+</body>
+</html>

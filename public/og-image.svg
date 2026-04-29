@@ -32,8 +32,8 @@
     <text x="48" y="58" text-anchor="middle" dominant-baseline="middle"
           font-family="'Noto Kufi Arabic','Segoe UI',sans-serif" font-weight="900"
           font-size="56" fill="#ffffff">س</text>
-    <text x="120" y="40" font-family="Inter, 'Segoe UI', sans-serif" font-weight="900" font-size="40" fill="url(#brand)">Sanad-AI</text>
-    <text x="120" y="74" font-family="Inter, 'Segoe UI', sans-serif" font-weight="600" font-size="20" fill="#64748b">Powered by the Sanad offices network</text>
+    <text x="120" y="40" font-family="Inter, 'Segoe UI', sans-serif" font-weight="900" font-size="40" fill="url(#brand)">Saned · ساند</text>
+    <text x="120" y="74" font-family="Inter, 'Segoe UI', sans-serif" font-weight="600" font-size="20" fill="#64748b">Skip the queue. WhatsApp Saned.</text>
   </g>
 
   <!-- Hero copy -->

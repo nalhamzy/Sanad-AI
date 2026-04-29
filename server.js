@@ -149,7 +149,7 @@ export async function start(port = PORT) {
   return new Promise((resolve) => {
     const server = app.listen(port, () => {
       const bound = server.address().port;
-      console.log(`\n  🇴🇲  Sanad-AI listening on http://localhost:${bound}`);
+      console.log(`\n  🇴🇲  Saned · ساند listening on http://localhost:${bound}`);
       if (info.catalogueSize === 0) {
         console.warn('⚠  service_catalog is empty — run `npm run seed` to import the CSV (optional in debug mode).');
       } else {

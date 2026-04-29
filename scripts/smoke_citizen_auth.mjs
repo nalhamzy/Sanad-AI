@@ -59,11 +59,13 @@ try {
   d = await r.json();
   ok('rapid resend hits cooldown', r.status === 429 && d.error === 'cooldown', JSON.stringify(d));
 
-  // 2) verify-otp with WRONG code first
+  // 2) verify-otp with a definitely-wrong code (not the magic 000000, not the
+  //    real debug_code). Bias to a code that cannot collide.
+  const bogus = (debugCode === '999999') ? '888888' : '999999';
   r = await fetch(`${base}/api/citizen-auth/verify-otp`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ phone, code: '000000' })
+    body: JSON.stringify({ phone, code: bogus })
   });
   d = await r.json();
   ok('wrong code returns 401', r.status === 401 && d.error === 'wrong_code', JSON.stringify(d));
@@ -100,18 +102,54 @@ try {
   r = await fetch(`${base}/api/citizen-auth/logout`, { method: 'POST', headers: { cookie } });
   ok('logout returns 200', r.status === 200);
 
+  // 4b) Magic OTP — DEBUG_MODE bypass with 000000 + a fresh phone (no slot)
+  const magicPhone = '+96890999777';
+  r = await fetch(`${base}/api/citizen-auth/verify-otp`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ phone: magicPhone, code: '000000' })
+  });
+  d = await r.json();
+  ok('magic OTP 000000 works in DEBUG_MODE', r.status === 200 && d.ok, JSON.stringify(d));
+  ok('magic OTP creates citizen + verifies phone', d.citizen?.phone === magicPhone && d.citizen?.phone_verified === true);
+
   // 5) Static pages exist
-  for (const p of ['/signup.html', '/login.html', '/account.html', '/auth-client.js', '/config.js', '/i18n.js']) {
+  for (const p of ['/signup.html', '/login.html', '/account.html', '/request.html', '/auth-client.js', '/config.js', '/i18n.js']) {
     const sr = await fetch(`${base}${p}`);
     ok(`${p} serves 200`, sr.status === 200, `status=${sr.status}`);
   }
 
-  // 6) Index no longer carries the office partner block
+  // 6) Brand & landing structure
   const idx = await fetch(`${base}/`).then(r => r.text());
-  ok('index.html no longer mentions Register your office in footer',
+  ok('index.html does not advertise office signup in footer',
      !idx.includes('home.footer.office_register'));
-  ok('index.html still has the Sign-up CTA',
+  ok('index.html has the Sign-up CTA',
      idx.includes('navSignUp'));
+  ok('index.html no longer says Sanad-AI in titles', !idx.includes('Sanad-AI</title>'));
+  ok('index.html says Saned somewhere', idx.includes('Saned'));
+  ok('index.html has live hybrid search UI', idx.includes('heroSearch') && idx.includes('/api/catalogue/hybrid'));
+  ok('index.html has why-Saned section', idx.includes('home.why.h2'));
+  ok('index.html has voices section', idx.includes('home.voices.h2'));
+
+  // 7) Hybrid search
+  r = await fetch(`${base}/api/catalogue/hybrid?q=passport&limit=5`);
+  d = await r.json();
+  ok('/hybrid returns 200', r.status === 200);
+  ok('/hybrid returns matched_by tags', Array.isArray(d.results) && (d.results[0]?.matched_by !== undefined || d.results.length === 0));
+  ok('/hybrid returns lane counts in search.lanes', d.search?.mode === 'hybrid' && !!d.search.lanes);
+
+  // 7b) Hybrid arabic query also works
+  r = await fetch(`${base}/api/catalogue/hybrid?q=${encodeURIComponent('جواز')}&limit=3`);
+  d = await r.json();
+  ok('/hybrid handles Arabic query', r.status === 200);
+
+  // 8) my-request/:id 404 for non-existent id
+  r = await fetch(`${base}/api/chat/my-request/999999`, { headers: { cookie } });
+  ok('/my-request/999999 returns 404', r.status === 404);
+
+  // 8b) my-request without cookie → 401
+  r = await fetch(`${base}/api/chat/my-request/1`);
+  ok('/my-request without cookie is 401', r.status === 401);
 
   // 7) Schema spot-check: citizen has the new columns
   const { db } = await import('../lib/db.js');

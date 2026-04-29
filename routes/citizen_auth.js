@@ -46,6 +46,28 @@ const OTP_TEMPLATE_LANG = process.env.WHATSAPP_OTP_TEMPLATE_LANG || 'en';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const DEBUG = process.env.DEBUG_MODE === 'true';
 
+// Test-only "magic" OTP codes that always work — gated behind DEBUG_MODE so
+// production NEVER honours them. Two patterns:
+//   • Universal magic code (any phone) — set TEST_MAGIC_OTP=000000 (default)
+//   • Per-phone fixed codes — set TEST_MAGIC_OTP_MAP="+96890000099:111111,..."
+// Both let testers and the LLM judge sign in without a real WhatsApp delivery.
+const MAGIC_OTP = DEBUG ? (process.env.TEST_MAGIC_OTP || '000000') : '';
+const MAGIC_OTP_MAP = (() => {
+  if (!DEBUG) return new Map();
+  const raw = process.env.TEST_MAGIC_OTP_MAP || '';
+  const m = new Map();
+  raw.split(',').map(s => s.trim()).filter(Boolean).forEach(pair => {
+    const [phone, code] = pair.split(':');
+    if (phone && code) m.set(phone.trim(), code.trim());
+  });
+  return m;
+})();
+function isMagicCode(phone, code) {
+  if (!DEBUG || !code) return false;
+  if (MAGIC_OTP && code === MAGIC_OTP) return true;
+  return MAGIC_OTP_MAP.get(phone) === code;
+}
+
 // ─── Helpers ──────────────────────────────────────────────
 // Strict E.164: optional '+', 8–15 digits. Strips spaces / hyphens.
 function normPhone(raw) {
@@ -192,6 +214,10 @@ citizenAuthRouter.post('/verify-otp', async (req, res) => {
   const code = String(req.body?.code || '').replace(/\D/g, '').slice(0, 6);
   if (!phone || code.length !== 6) return res.status(400).json({ error: 'invalid_input' });
 
+  // Magic-code shortcut for DEBUG_MODE testing. We still want the citizen row
+  // created / promoted, just skip the bcrypt verify + slot lookup.
+  const magic = isMagicCode(phone, code);
+
   // Pull the latest unconsumed slot for this phone.
   const { rows } = await db.execute({
     sql: `SELECT id, code_hash, expires_at, attempts, citizen_id, purpose
@@ -201,33 +227,38 @@ citizenAuthRouter.post('/verify-otp', async (req, res) => {
     args: [phone]
   });
   const slot = rows[0];
-  if (!slot) return res.status(400).json({ error: 'no_active_otp' });
+  if (!slot && !magic) return res.status(400).json({ error: 'no_active_otp' });
 
-  // Expiry check
-  const expired = new Date(slot.expires_at + 'Z').getTime() < Date.now();
-  if (expired) {
+  if (slot && !magic) {
+    // Expiry check
+    const expired = new Date(slot.expires_at + 'Z').getTime() < Date.now();
+    if (expired) {
+      await db.execute({ sql: `UPDATE citizen_otp SET consumed_at = datetime('now') WHERE id = ?`, args: [slot.id] });
+      return res.status(400).json({ error: 'expired' });
+    }
+    if (slot.attempts >= OTP_MAX_ATTEMPTS) {
+      return res.status(429).json({ error: 'too_many_attempts' });
+    }
+
+    const ok = await verifyOtpHash(code, slot.code_hash);
+    if (!ok) {
+      await db.execute({
+        sql: `UPDATE citizen_otp SET attempts = attempts + 1 WHERE id = ?`,
+        args: [slot.id]
+      });
+      return res.status(401).json({ error: 'wrong_code', attempts_left: Math.max(0, OTP_MAX_ATTEMPTS - slot.attempts - 1) });
+    }
+  }
+
+  // Mark slot consumed (atomic with cookie issuance below). Magic-mode with
+  // no slot just skips this — there's nothing to mark.
+  if (slot) {
     await db.execute({ sql: `UPDATE citizen_otp SET consumed_at = datetime('now') WHERE id = ?`, args: [slot.id] });
-    return res.status(400).json({ error: 'expired' });
   }
-  if (slot.attempts >= OTP_MAX_ATTEMPTS) {
-    return res.status(429).json({ error: 'too_many_attempts' });
-  }
-
-  const ok = await verifyOtpHash(code, slot.code_hash);
-  if (!ok) {
-    await db.execute({
-      sql: `UPDATE citizen_otp SET attempts = attempts + 1 WHERE id = ?`,
-      args: [slot.id]
-    });
-    return res.status(401).json({ error: 'wrong_code', attempts_left: Math.max(0, OTP_MAX_ATTEMPTS - slot.attempts - 1) });
-  }
-
-  // Mark slot consumed (atomic with cookie issuance below).
-  await db.execute({ sql: `UPDATE citizen_otp SET consumed_at = datetime('now') WHERE id = ?`, args: [slot.id] });
 
   // Resolve / create the citizen.
   let citizenId;
-  if (slot.citizen_id) {
+  if (slot && slot.citizen_id) {
     // attach-phone path — the slot is bound to an existing (Google-only) citizen.
     citizenId = slot.citizen_id;
     await db.execute({

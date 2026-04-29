@@ -1,31 +1,44 @@
 <!doctype html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Sanad-AI — Government paperwork through WhatsApp</title>
-<meta name="description" content="Tell Ahmed what you need on WhatsApp. We prepare your file with the right service, documents, and fees, then a Sanad office finishes the paperwork on your behalf."/>
+<title>ساند · Saned — بدون طوابير، واتساب ساند لأي معاملة حكومية</title>
+<meta name="description" content="ساند يجمع لك المستندات الصحيحة، يثبّت الرسوم الرسمية، ويُنجز معاملتك عبر مكتب سند مرخّص — غالباً في نفس اليوم. WhatsApp ساند for any Oman government service."/>
 <meta name="theme-color" content="#0d9488"/>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
 <link rel="apple-touch-icon" href="/favicon.svg"/>
 
-<!-- Open Graph (Facebook, WhatsApp, LinkedIn) -->
+<!-- Open Graph -->
 <meta property="og:type" content="website"/>
-<meta property="og:site_name" content="Sanad-AI"/>
-<meta property="og:title" content="Sanad-AI — Government paperwork through WhatsApp"/>
-<meta property="og:description" content="Tell Ahmed what you need on WhatsApp. We prepare your file with the right service, documents, and fees, then a Sanad office handles the rest."/>
+<meta property="og:site_name" content="Saned · ساند"/>
+<meta property="og:title" content="ساند · Saned — بدون طوابير لمعاملات سند"/>
+<meta property="og:description" content="كلّم ساند على واتساب. نتولى الأوراق نيابةً عنك. الرسم الحكومي + رسم بسيط للمكتب — كلاهما واضح مسبقاً."/>
 <meta property="og:image" content="/og-image.svg"/>
 <meta property="og:image:type" content="image/svg+xml"/>
 <meta property="og:image:width" content="1200"/>
 <meta property="og:image:height" content="630"/>
-<meta property="og:locale" content="en_US"/>
-<meta property="og:locale:alternate" content="ar_OM"/>
+<meta property="og:locale" content="ar_OM"/>
+<meta property="og:locale:alternate" content="en_US"/>
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image"/>
-<meta name="twitter:title" content="Sanad-AI — Government paperwork through WhatsApp"/>
-<meta name="twitter:description" content="Tell Ahmed what you need on WhatsApp. We prepare your file and dispatch it to a Sanad office that handles the rest."/>
+<meta name="twitter:title" content="ساند · Saned — بدون طوابير لمعاملات سند"/>
+<meta name="twitter:description" content="كلّم ساند على واتساب — نحن نتولى الأوراق."/>
 <meta name="twitter:image" content="/og-image.svg"/>
+
+<!-- First-paint locale: respect saved language so Arabic-speaking users don't
+     see an English flash. i18n.js re-affirms on load. -->
+<script>
+  (function () {
+    try {
+      const saved = localStorage.getItem('sanad.lang');
+      const lang = saved || 'ar';
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    } catch {}
+  })();
+</script>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
@@ -35,64 +48,57 @@
   body { font-family: 'Inter', sans-serif; }
   [dir="rtl"] body, html[dir="rtl"] * { font-family: 'Noto Kufi Arabic', sans-serif; }
 
-  /* ── Page background — soft, warm, oman-flag adjacent ── */
   .page-bg {
     background:
-      radial-gradient(1100px 600px at 8% -10%, rgba(20,184,166,.10) 0%, transparent 55%),
-      radial-gradient(900px 500px at 110% 0%, rgba(34,197,94,.08) 0%, transparent 55%),
+      radial-gradient(1200px 700px at 8% -8%, rgba(20,184,166,.13) 0%, transparent 55%),
+      radial-gradient(900px 600px at 110% 0%, rgba(34,197,94,.10) 0%, transparent 55%),
+      radial-gradient(700px 600px at 50% 110%, rgba(20,184,166,.06) 0%, transparent 60%),
       linear-gradient(180deg, #fbfaf6 0%, #f5f1e8 100%);
   }
-  /* ── Wordmark (subtle, not gradient-shouty) ── */
   .wordmark {
     background: linear-gradient(135deg, #0d9488 0%, #15803d 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
-  /* ── WhatsApp brand button ── */
-  .wa-btn {
-    background: #25D366;
-    box-shadow: 0 8px 20px -8px rgba(37,211,102,.6), 0 0 0 1px rgba(0,0,0,.04);
-    transition: all .15s;
-  }
+  .wa-btn { background: #25D366; box-shadow: 0 8px 20px -8px rgba(37,211,102,.6), 0 0 0 1px rgba(0,0,0,.04); transition: all .15s; }
   .wa-btn:hover { background: #1eb858; transform: translateY(-1px); box-shadow: 0 14px 28px -10px rgba(37,211,102,.55); }
   .wa-btn:active { transform: translateY(0); }
-  /* ── Step number ── */
-  .step-num {
-    background: linear-gradient(135deg, #0d9488, #15803d);
-    color: white;
-    box-shadow: 0 8px 16px -8px rgba(13,148,136,.55);
-  }
-  /* ── Service card hover ── */
-  .svc-card {
-    transition: all .2s;
-    will-change: transform;
-  }
-  .svc-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 18px 36px -16px rgba(15,23,42,.18);
-    border-color: rgba(20,184,166,.4);
-  }
-  /* ── FAQ summary marker ── */
+  .primary-btn { background: linear-gradient(135deg, #0d9488 0%, #15803d 100%); box-shadow: 0 10px 24px -10px rgba(13,148,136,.55), 0 0 0 1px rgba(0,0,0,.03); transition: all .15s; }
+  .primary-btn:hover { transform: translateY(-1px); box-shadow: 0 16px 32px -12px rgba(13,148,136,.55); }
+  .step-num { background: linear-gradient(135deg, #0d9488, #15803d); color: white; box-shadow: 0 8px 16px -8px rgba(13,148,136,.55); }
+  .why-card { transition: all .2s; will-change: transform; }
+  .why-card:hover { transform: translateY(-3px); box-shadow: 0 22px 44px -22px rgba(15,23,42,.18); }
+  .svc-card { transition: all .2s; will-change: transform; }
+  .svc-card:hover { transform: translateY(-3px); box-shadow: 0 18px 36px -16px rgba(15,23,42,.18); border-color: rgba(20,184,166,.5); }
+  .voice-card { transition: all .2s; }
+  .voice-card:hover { transform: translateY(-2px); box-shadow: 0 18px 36px -18px rgba(15,23,42,.18); }
   details > summary { list-style: none; cursor: pointer; }
   details > summary::-webkit-details-marker { display: none; }
   details[open] .faq-chev { transform: rotate(180deg); }
   .faq-chev { transition: transform .2s; }
-  /* ── Hide scrollbar in QR card ── */
   .qr-card svg, .qr-card canvas { display: block; max-width: 100%; height: auto; }
+  .dots { background-image: radial-gradient(rgba(15,23,42,.06) 1.2px, transparent 1.2px); background-size: 24px 24px; }
 
-  /* ── Subtle decorative dots ── */
-  .dots {
-    background-image: radial-gradient(rgba(15,23,42,.06) 1.2px, transparent 1.2px);
-    background-size: 24px 24px;
+  /* Hero search box pop-out */
+  .hero-search-pop {
+    box-shadow: 0 24px 48px -16px rgba(15,23,42,.20), 0 0 0 1px rgba(15,23,42,.04);
   }
+  .matched-chip { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 9999px; letter-spacing: .04em; text-transform: uppercase; }
+  .matched-fts { background: #ccfbf1; color: #0f766e; }
+  .matched-semantic { background: #ede9fe; color: #6d28d9; }
+  .matched-partial { background: #fee2e2; color: #b91c1c; }
+
+  /* Pulse ring on the WhatsApp CTA */
+  @keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(37,211,102,.5); } 70% { box-shadow: 0 0 0 12px rgba(37,211,102,0); } 100% { box-shadow: 0 0 0 0 rgba(37,211,102,0); } }
+  .wa-pulse { animation: pulseRing 2.4s infinite; }
 </style>
 </head>
 <body class="min-h-screen text-slate-900 page-bg">
 
 <!-- ─────────── HEADER ─────────── -->
 <header class="max-w-6xl mx-auto px-5 sm:px-6 py-5 flex items-center">
-  <a href="/" class="flex items-center gap-3" aria-label="Sanad-AI home">
+  <a href="/" class="flex items-center gap-3" aria-label="Saned home">
     <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-green-700 text-white grid place-items-center text-lg font-black shadow-md">س</div>
     <div class="leading-tight">
       <div class="text-base font-extrabold wordmark" data-i18n="app.name"></div>
@@ -101,16 +107,16 @@
   </a>
   <div class="ms-auto flex items-center gap-2">
     <a id="navSignIn" href="/login.html" class="px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-slate-200 font-semibold text-xs shadow-sm text-slate-700 hidden sm:inline-flex" data-i18n="auth.sign_in"></a>
-    <a id="navSignUp" href="/signup.html" class="px-3 py-1.5 rounded-lg bg-gradient-to-br from-teal-500 to-green-700 text-white border border-teal-600 font-semibold text-xs shadow-sm" data-i18n="auth.sign_up"></a>
+    <a id="navSignUp" href="/signup.html" class="px-3 py-1.5 rounded-lg primary-btn text-white font-semibold text-xs shadow-sm" data-i18n="auth.sign_up"></a>
     <a id="navAccount" href="/account.html" class="hidden px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-slate-200 font-semibold text-xs shadow-sm text-slate-700" data-i18n="auth.account"></a>
     <button id="langBtn" class="px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-slate-200 font-semibold text-xs shadow-sm" data-i18n="lang.toggle"></button>
   </div>
 </header>
 
-<main class="max-w-6xl mx-auto px-5 sm:px-6 pb-16">
+<main class="max-w-6xl mx-auto px-5 sm:px-6 pb-20">
 
   <!-- ─────────── HERO ─────────── -->
-  <section class="pt-8 sm:pt-12 pb-12 md:pb-16 grid md:grid-cols-[1.2fr_1fr] gap-10 md:gap-14 items-center">
+  <section class="pt-6 sm:pt-10 pb-12 md:pb-14 grid md:grid-cols-[1.25fr_1fr] gap-10 md:gap-14 items-center">
     <!-- Copy -->
     <div>
       <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 border border-slate-200 text-[11px] sm:text-xs font-semibold text-slate-700 mb-5 shadow-sm">
@@ -122,19 +128,34 @@
         <span class="wordmark" data-i18n="home.h1.line2"></span>
       </h1>
       <p class="mt-5 text-base sm:text-lg text-slate-600 max-w-xl leading-relaxed" data-i18n="home.subhead"></p>
+
+      <!-- Live service search — anchor of the hero -->
+      <div class="mt-6 relative">
+        <div class="flex items-center gap-2 bg-white rounded-2xl border border-slate-200 shadow-md px-4 py-3.5 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
+          <svg viewBox="0 0 24 24" class="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input id="heroSearch" class="flex-1 bg-transparent outline-none text-base"
+                 data-i18n-placeholder="home.search.placeholder" autocomplete="off"/>
+          <button id="heroSearchClear" class="hidden w-7 h-7 grid place-items-center rounded-lg hover:bg-slate-100 text-slate-400" aria-label="Clear">×</button>
+        </div>
+        <div id="heroResults" class="hidden absolute left-0 right-0 mt-2 bg-white rounded-2xl border border-slate-200 hero-search-pop max-h-[440px] overflow-auto z-30"></div>
+      </div>
+
       <div class="mt-7 flex items-center gap-3 flex-wrap">
         <a id="waBtnPrimary" href="https://wa.me/96890944196" target="_blank" rel="noopener"
-           class="wa-btn inline-flex items-center gap-2 px-5 py-3.5 rounded-xl text-white font-bold text-base">
+           class="wa-btn wa-pulse inline-flex items-center gap-2 px-5 py-3.5 rounded-xl text-white font-bold text-base">
           <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.768.967-.941 1.164-.173.198-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413"/></svg>
           <span data-i18n="home.cta.whatsapp"></span>
+        </a>
+        <a href="/signup.html" class="primary-btn inline-flex items-center gap-2 px-5 py-3.5 rounded-xl text-white font-bold text-base">
+          <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          <span data-i18n="home.cta.signup"></span>
         </a>
         <a href="/chat.html" class="text-sm font-semibold text-teal-700 hover:text-teal-800 underline-offset-4 hover:underline" data-i18n="home.cta.browser"></a>
       </div>
     </div>
 
-    <!-- QR + Number card -->
+    <!-- QR + number card -->
     <div class="relative">
-      <!-- decorative dot pattern behind -->
       <div class="absolute inset-0 dots rounded-3xl -z-10 opacity-60" aria-hidden="true"></div>
       <div class="qr-card bg-white rounded-3xl p-6 sm:p-7 shadow-xl border border-slate-100 mx-auto max-w-sm">
         <div class="flex items-center gap-2.5 mb-4">
@@ -155,7 +176,7 @@
   </section>
 
   <!-- ─────────── TRUST STRIP ─────────── -->
-  <section class="rounded-2xl bg-white/80 backdrop-blur border border-slate-200 px-5 py-5 grid grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-2">
+  <section class="rounded-2xl bg-white/85 backdrop-blur border border-slate-200 px-5 py-5 grid grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-2">
     <div class="text-center">
       <div class="text-2xl sm:text-3xl font-black text-slate-800" id="stat_services">—</div>
       <div class="text-[11px] sm:text-xs text-slate-500 font-semibold mt-1" data-i18n="home.trust.services"></div>
@@ -171,6 +192,44 @@
     <div class="text-center">
       <div class="text-2xl sm:text-3xl font-black text-slate-800" data-i18n="home.trust.always"></div>
       <div class="text-[11px] sm:text-xs text-slate-500 font-semibold mt-1" data-i18n="home.trust.always_sub"></div>
+    </div>
+  </section>
+
+  <!-- ─────────── WHY ساند ─────────── -->
+  <section class="mt-20 sm:mt-24">
+    <div class="text-center max-w-2xl mx-auto mb-10 sm:mb-12">
+      <h2 class="text-3xl sm:text-4xl font-black tracking-tight" data-i18n="home.why.h2"></h2>
+      <p class="mt-3 text-slate-500 text-base sm:text-lg" data-i18n="home.why.sub"></p>
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+      <div class="why-card bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <div class="w-11 h-11 rounded-xl bg-teal-50 grid place-items-center mb-4 text-teal-600">
+          <svg viewBox="0 0 24 24" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h3 class="text-lg font-extrabold mb-2" data-i18n="home.why.1.t"></h3>
+        <p class="text-slate-600 leading-relaxed text-sm" data-i18n="home.why.1.b"></p>
+      </div>
+      <div class="why-card bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <div class="w-11 h-11 rounded-xl bg-emerald-50 grid place-items-center mb-4 text-emerald-600">
+          <svg viewBox="0 0 24 24" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 13"/></svg>
+        </div>
+        <h3 class="text-lg font-extrabold mb-2" data-i18n="home.why.2.t"></h3>
+        <p class="text-slate-600 leading-relaxed text-sm" data-i18n="home.why.2.b"></p>
+      </div>
+      <div class="why-card bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <div class="w-11 h-11 rounded-xl bg-amber-50 grid place-items-center mb-4 text-amber-600">
+          <svg viewBox="0 0 24 24" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <h3 class="text-lg font-extrabold mb-2" data-i18n="home.why.3.t"></h3>
+        <p class="text-slate-600 leading-relaxed text-sm" data-i18n="home.why.3.b"></p>
+      </div>
+      <div class="why-card bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <div class="w-11 h-11 rounded-xl bg-violet-50 grid place-items-center mb-4 text-violet-600">
+          <svg viewBox="0 0 24 24" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3z" transform="translate(-9 -3)"/><path d="M12 22s-8-4-8-12V5l8-3 8 3v5c0 8-8 12-8 12z"/></svg>
+        </div>
+        <h3 class="text-lg font-extrabold mb-2" data-i18n="home.why.4.t"></h3>
+        <p class="text-slate-600 leading-relaxed text-sm" data-i18n="home.why.4.b"></p>
+      </div>
     </div>
   </section>
 
@@ -205,30 +264,61 @@
       <h2 class="text-3xl sm:text-4xl font-black tracking-tight" data-i18n="home.services.h2"></h2>
       <p class="mt-3 text-slate-500 text-base sm:text-lg" data-i18n="home.services.sub"></p>
     </div>
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-      <a href="/chat.html" class="svc-card group bg-white rounded-2xl p-5 border border-slate-200 text-center">
+    <div id="serviceGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+      <!-- Pre-rendered cards (queries hybrid endpoint to enrich with prices) -->
+      <a href="/chat.html?q=civil+id" class="svc-card group bg-white rounded-2xl p-5 border border-slate-200 text-center" data-q="civil id">
         <div class="text-3xl mb-2.5">🆔</div>
         <div class="text-sm sm:text-[15px] font-bold text-slate-800 leading-snug" data-i18n="home.services.civil_id"></div>
+        <div class="mt-2 text-[11px] font-semibold text-teal-700 service-fee">—</div>
       </a>
-      <a href="/chat.html" class="svc-card group bg-white rounded-2xl p-5 border border-slate-200 text-center">
+      <a href="/chat.html?q=driving+licence" class="svc-card group bg-white rounded-2xl p-5 border border-slate-200 text-center" data-q="driving licence">
         <div class="text-3xl mb-2.5">🚗</div>
         <div class="text-sm sm:text-[15px] font-bold text-slate-800 leading-snug" data-i18n="home.services.driving"></div>
+        <div class="mt-2 text-[11px] font-semibold text-teal-700 service-fee">—</div>
       </a>
-      <a href="/chat.html" class="svc-card group bg-white rounded-2xl p-5 border border-slate-200 text-center">
+      <a href="/chat.html?q=passport" class="svc-card group bg-white rounded-2xl p-5 border border-slate-200 text-center" data-q="passport">
         <div class="text-3xl mb-2.5">🛂</div>
         <div class="text-sm sm:text-[15px] font-bold text-slate-800 leading-snug" data-i18n="home.services.passport"></div>
+        <div class="mt-2 text-[11px] font-semibold text-teal-700 service-fee">—</div>
       </a>
-      <a href="/chat.html" class="svc-card group bg-white rounded-2xl p-5 border border-slate-200 text-center">
+      <a href="/chat.html?q=mulkiya" class="svc-card group bg-white rounded-2xl p-5 border border-slate-200 text-center" data-q="mulkiya vehicle">
         <div class="text-3xl mb-2.5">🚙</div>
         <div class="text-sm sm:text-[15px] font-bold text-slate-800 leading-snug" data-i18n="home.services.mulkiya"></div>
+        <div class="mt-2 text-[11px] font-semibold text-teal-700 service-fee">—</div>
       </a>
-      <a href="/chat.html" class="svc-card group bg-white rounded-2xl p-5 border border-slate-200 text-center">
+      <a href="/chat.html?q=commercial+registration" class="svc-card group bg-white rounded-2xl p-5 border border-slate-200 text-center" data-q="commercial registration">
         <div class="text-3xl mb-2.5">🏢</div>
         <div class="text-sm sm:text-[15px] font-bold text-slate-800 leading-snug" data-i18n="home.services.cr"></div>
+        <div class="mt-2 text-[11px] font-semibold text-teal-700 service-fee">—</div>
       </a>
     </div>
     <div class="mt-6 text-center">
       <a href="/catalogue.html" class="inline-flex items-center gap-1 text-sm font-semibold text-teal-700 hover:text-teal-800" data-i18n="home.services.browse"></a>
+    </div>
+  </section>
+
+  <!-- ─────────── VOICES ─────────── -->
+  <section class="mt-20 sm:mt-24">
+    <div class="text-center max-w-2xl mx-auto mb-10 sm:mb-12">
+      <h2 class="text-3xl sm:text-4xl font-black tracking-tight" data-i18n="home.voices.h2"></h2>
+      <p class="mt-3 text-slate-500 text-base sm:text-lg" data-i18n="home.voices.sub"></p>
+    </div>
+    <div class="grid md:grid-cols-3 gap-5">
+      <figure class="voice-card bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <div class="text-5xl text-teal-100 leading-none mb-2">"</div>
+        <blockquote class="text-slate-700 leading-relaxed text-sm sm:text-base -mt-4" data-i18n="home.voices.1.q"></blockquote>
+        <figcaption class="mt-4 text-xs font-semibold text-slate-500" data-i18n="home.voices.1.n"></figcaption>
+      </figure>
+      <figure class="voice-card bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <div class="text-5xl text-teal-100 leading-none mb-2">"</div>
+        <blockquote class="text-slate-700 leading-relaxed text-sm sm:text-base -mt-4" data-i18n="home.voices.2.q"></blockquote>
+        <figcaption class="mt-4 text-xs font-semibold text-slate-500" data-i18n="home.voices.2.n"></figcaption>
+      </figure>
+      <figure class="voice-card bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <div class="text-5xl text-teal-100 leading-none mb-2">"</div>
+        <blockquote class="text-slate-700 leading-relaxed text-sm sm:text-base -mt-4" data-i18n="home.voices.3.q"></blockquote>
+        <figcaption class="mt-4 text-xs font-semibold text-slate-500" data-i18n="home.voices.3.n"></figcaption>
+      </figure>
     </div>
   </section>
 
@@ -239,28 +329,28 @@
       <details class="bg-white rounded-xl border border-slate-200 group">
         <summary class="flex items-center justify-between p-5 font-bold text-slate-800 text-base sm:text-lg">
           <span data-i18n="home.faq.q1"></span>
-          <svg class="w-5 h-5 text-slate-400 faq-chev shrink-0 ms-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 011.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+          <svg class="w-5 h-5 text-slate-400 faq-chev shrink-0 ms-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 011.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
         </summary>
         <div class="px-5 pb-5 text-slate-600 leading-relaxed text-sm sm:text-base" data-i18n="home.faq.a1"></div>
       </details>
       <details class="bg-white rounded-xl border border-slate-200 group">
         <summary class="flex items-center justify-between p-5 font-bold text-slate-800 text-base sm:text-lg">
           <span data-i18n="home.faq.q2"></span>
-          <svg class="w-5 h-5 text-slate-400 faq-chev shrink-0 ms-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 011.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+          <svg class="w-5 h-5 text-slate-400 faq-chev shrink-0 ms-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 011.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
         </summary>
         <div class="px-5 pb-5 text-slate-600 leading-relaxed text-sm sm:text-base" data-i18n="home.faq.a2"></div>
       </details>
       <details class="bg-white rounded-xl border border-slate-200 group">
         <summary class="flex items-center justify-between p-5 font-bold text-slate-800 text-base sm:text-lg">
           <span data-i18n="home.faq.q3"></span>
-          <svg class="w-5 h-5 text-slate-400 faq-chev shrink-0 ms-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 011.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+          <svg class="w-5 h-5 text-slate-400 faq-chev shrink-0 ms-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 011.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
         </summary>
         <div class="px-5 pb-5 text-slate-600 leading-relaxed text-sm sm:text-base" data-i18n="home.faq.a3"></div>
       </details>
       <details class="bg-white rounded-xl border border-slate-200 group">
         <summary class="flex items-center justify-between p-5 font-bold text-slate-800 text-base sm:text-lg">
           <span data-i18n="home.faq.q4"></span>
-          <svg class="w-5 h-5 text-slate-400 faq-chev shrink-0 ms-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 011.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+          <svg class="w-5 h-5 text-slate-400 faq-chev shrink-0 ms-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 011.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
         </summary>
         <div class="px-5 pb-5 text-slate-600 leading-relaxed text-sm sm:text-base" data-i18n="home.faq.a4"></div>
       </details>
@@ -273,11 +363,16 @@
     <div class="relative">
       <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight max-w-xl mx-auto leading-tight" data-i18n="home.h1.line1"></h2>
       <p class="mt-3 sm:mt-4 text-teal-100 max-w-md mx-auto text-base" data-i18n="home.subhead"></p>
-      <a href="https://wa.me/96890944196" target="_blank" rel="noopener"
-         class="wa-btn mt-7 inline-flex items-center gap-2 px-6 py-4 rounded-xl text-white font-bold text-base">
-        <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.768.967-.941 1.164-.173.198-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413"/></svg>
-        <span data-i18n="home.cta.whatsapp"></span>
-      </a>
+      <div class="mt-7 flex items-center justify-center gap-3 flex-wrap">
+        <a href="https://wa.me/96890944196" target="_blank" rel="noopener"
+           class="wa-btn inline-flex items-center gap-2 px-6 py-4 rounded-xl text-white font-bold text-base">
+          <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.768.967-.941 1.164-.173.198-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413"/></svg>
+          <span data-i18n="home.cta.whatsapp"></span>
+        </a>
+        <a href="/signup.html" class="bg-white hover:bg-slate-50 text-teal-700 inline-flex items-center gap-2 px-6 py-4 rounded-xl font-bold text-base">
+          <span data-i18n="home.cta.signup"></span>
+        </a>
+      </div>
       <div class="mt-3 text-sm font-semibold text-teal-100" dir="ltr">+968 9094 4196</div>
     </div>
   </section>
@@ -299,36 +394,33 @@
       <ul class="space-y-1.5 text-sm">
         <li><a href="/privacy.html" class="text-slate-600 hover:text-teal-700">Privacy · الخصوصية</a></li>
         <li><a href="/terms.html" class="text-slate-600 hover:text-teal-700">Terms · الشروط</a></li>
+        <li><a href="/office-login.html" class="text-slate-400 hover:text-teal-700 text-xs" data-i18n="home.footer.office_link"></a></li>
       </ul>
     </div>
   </div>
   <div class="border-t border-slate-200/60">
     <div class="max-w-6xl mx-auto px-5 sm:px-6 py-4 flex items-center justify-between text-[11px] text-slate-500">
-      <div>© 2026 Sanad-AI</div>
+      <div>© 2026 Saned · ساند</div>
       <div id="systemStatus" class="font-semibold">—</div>
     </div>
   </div>
 </footer>
 
 <script src="/i18n.js"></script>
-<script src="/ui.js"></script>
 <script>
 (async function () {
-  // Language toggle
+  const $ = s => document.querySelector(s);
+  const I18N = window.I18N;
   document.getElementById('langBtn').onclick = () => I18N.setLang(I18N.lang === 'ar' ? 'en' : 'ar');
 
-  // Render the WhatsApp QR (canvas, brand teal-on-white)
+  // ── QR ─────────────────────────────────────────────────
   try {
     await QRCode.toCanvas(document.getElementById('waQR'), 'https://wa.me/96890944196', {
-      width: 200,
-      margin: 1,
-      color: { dark: '#0d9488', light: '#ffffff' }
+      width: 200, margin: 1, color: { dark: '#0d9488', light: '#ffffff' }
     });
-  } catch (e) {
-    console.warn('QR render failed', e);
-  }
+  } catch (e) {}
 
-  // System status (small footer note)
+  // ── Health pill ────────────────────────────────────────
   try {
     const h = await fetch('/api/health').then(r => r.json());
     const el = document.getElementById('systemStatus');
@@ -336,9 +428,95 @@
     else if (h.ok)     { el.textContent = '● limited (no LLM)'; el.className = 'font-semibold text-amber-600'; }
   } catch {}
 
-  // Nav: if the citizen is already signed in, swap Sign-in/Sign-up for "My
-  // account". Silent-fail: an unauthenticated /me returns 401 and we keep
-  // the default CTAs.
+  // ── Trust counts ───────────────────────────────────────
+  try {
+    const [entities, totalR] = await Promise.all([
+      fetch('/api/catalogue/entities').then(r => r.json()),
+      fetch('/api/catalogue/search?q=&limit=1').then(r => r.json())
+    ]);
+    document.getElementById('stat_services').textContent = (totalR.total || 0).toLocaleString();
+    document.getElementById('stat_entities').textContent = (entities.entities?.length || 0);
+  } catch {
+    document.getElementById('stat_services').textContent = '600+';
+    document.getElementById('stat_entities').textContent = '50+';
+  }
+  try {
+    const state = await fetch('/api/debug/state').then(r => r.json());
+    document.getElementById('stat_offices').textContent = (state.counts?.office || '—');
+  } catch {
+    document.getElementById('stat_offices').textContent = '—';
+  }
+
+  // ── Service-card price enrichment ──────────────────────
+  // Hit hybrid for each canonical card and pick top-1's fee_omr.
+  document.querySelectorAll('.svc-card[data-q]').forEach(async card => {
+    try {
+      const q = card.dataset.q;
+      const r = await fetch(`/api/catalogue/hybrid?q=${encodeURIComponent(q)}&limit=1`);
+      const d = await r.json();
+      const top = d.results?.[0];
+      const feeEl = card.querySelector('.service-fee');
+      if (top && top.fee_omr != null && feeEl) {
+        feeEl.textContent = `${I18N.t('home.services.from')} ${top.fee_omr.toFixed(3)} OMR`;
+      } else if (feeEl) {
+        feeEl.textContent = '';
+      }
+    } catch {}
+  });
+
+  // ── Hero live search ───────────────────────────────────
+  const heroSearch = $('#heroSearch');
+  const heroResults = $('#heroResults');
+  const heroClear = $('#heroSearchClear');
+  let searchSeq = 0;
+  function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+  function escapeHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+  async function runHero(q) {
+    const seq = ++searchSeq;
+    if (!q.trim()) { heroResults.classList.add('hidden'); heroResults.innerHTML = ''; return; }
+    const r = await fetch(`/api/catalogue/hybrid?q=${encodeURIComponent(q)}&limit=8`);
+    const d = await r.json();
+    if (seq !== searchSeq) return;
+    const lang = I18N.lang;
+    const rows = (d.results || []).map(x => {
+      const name = (lang === 'ar' && x.name_ar) ? x.name_ar : (x.name_en || x.name_ar || '—');
+      const entity = (lang === 'ar' && x.entity_ar) ? x.entity_ar : (x.entity_en || '');
+      const fee = x.fee_omr != null ? `${x.fee_omr.toFixed(3)} OMR` : (x.fees_text || '');
+      const time = (lang === 'ar' && x.avg_time_ar) ? x.avg_time_ar : (x.avg_time_en || '');
+      const tags = (x.matched_by || []).map(t => `<span class="matched-chip matched-${t}">${t}</span>`).join('');
+      return `<a href="/chat.html?q=${encodeURIComponent(name)}" class="block px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-b-0">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <div class="font-semibold text-slate-800 text-sm truncate">${escapeHtml(name)}</div>
+            <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              <span>${escapeHtml(entity)}</span>
+              ${fee ? `<span>·</span><span class="font-semibold text-teal-700">${escapeHtml(fee)}</span>` : ''}
+              ${time ? `<span>·</span><span>${escapeHtml(time)}</span>` : ''}
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-1 shrink-0">${tags}</div>
+        </div>
+      </a>`;
+    }).join('');
+    heroResults.innerHTML = rows ||
+      `<div class="px-4 py-6 text-center text-sm text-slate-500">${I18N.t('account.search.empty')}</div>`;
+    heroResults.classList.remove('hidden');
+  }
+  heroSearch.addEventListener('input', debounce(e => {
+    const v = e.target.value.trim();
+    heroClear.classList.toggle('hidden', !v);
+    runHero(v);
+  }, 200));
+  heroClear.onclick = () => { heroSearch.value = ''; heroClear.classList.add('hidden'); heroResults.classList.add('hidden'); heroSearch.focus(); };
+  document.addEventListener('click', e => {
+    if (!heroResults.contains(e.target) && e.target !== heroSearch) heroResults.classList.add('hidden');
+  });
+  heroSearch.addEventListener('focus', () => {
+    if (heroSearch.value.trim()) heroResults.classList.remove('hidden');
+  });
+
+  // ── Nav state ──────────────────────────────────────────
   try {
     const r = await fetch('/api/citizen-auth/me');
     if (r.ok) {
@@ -347,23 +525,6 @@
       document.getElementById('navAccount')?.classList.remove('hidden');
     }
   } catch {}
-
-  // Live trust counts — pull from existing endpoints
-  try {
-    const [state, entities, totalR] = await Promise.all([
-      fetch('/api/debug/state').then(r=>r.json()),
-      fetch('/api/catalogue/entities').then(r=>r.json()),
-      fetch('/api/catalogue/search?q=&limit=1').then(r=>r.json())
-    ]);
-    document.getElementById('stat_services').textContent = (totalR.total || 0).toLocaleString();
-    document.getElementById('stat_entities').textContent = (entities.entities?.length || 0);
-    document.getElementById('stat_offices').textContent = (state.counts?.office || 0);
-  } catch {
-    // /api/debug/state is gated behind DEBUG_MODE in prod — silently fall back to static numbers
-    document.getElementById('stat_services').textContent = '3,400+';
-    document.getElementById('stat_entities').textContent = '50+';
-    document.getElementById('stat_offices').textContent = '—';
-  }
 })();
 </script>
 </body>

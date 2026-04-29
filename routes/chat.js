@@ -117,6 +117,79 @@ chatRouter.get('/my-requests', async (req, res) => {
   res.json({ requests: rows });
 });
 
+// ─── GET /my-request/:id — full citizen view of a single request ─
+// Status timeline, uploaded documents, message thread (citizen ↔ bot ↔
+// office). Officer-private notes never reach the citizen — we only return
+// rows where actor_type IS NULL or IN ('citizen','officer','bot','system').
+chatRouter.get('/my-request/:id', async (req, res) => {
+  if (!req.citizen) return res.status(401).json({ error: 'not_signed_in' });
+  const c = req.citizen;
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: 'bad_id' });
+
+  // Ownership: must be this citizen's request (by citizen_id OR matching
+  // wa:<phone> session).
+  const { rows } = await db.execute({
+    sql: `
+      SELECT r.id, r.status, r.created_at, r.last_event_at, r.session_id,
+             r.payment_status, r.payment_amount_omr, r.payment_link, r.paid_at,
+             r.quoted_fee_omr, r.office_fee_omr, r.government_fee_omr,
+             r.claimed_at, r.completed_at, r.cancelled_at, r.cancel_reason,
+             r.governorate,
+             s.id AS service_id, s.name_en AS service_name, s.name_ar AS service_name_ar,
+             s.entity_en, s.entity_ar, s.fee_omr AS catalog_fee_omr,
+             s.avg_time_en, s.avg_time_ar, s.fees_text,
+             off.name_en AS office_name_en, off.name_ar AS office_name_ar,
+             off.governorate AS office_gov, off.rating AS office_rating,
+             off.total_completed AS office_completed
+        FROM request r
+        LEFT JOIN service_catalog s ON s.id = r.service_id
+        LEFT JOIN office off        ON off.id = r.office_id
+       WHERE r.id = ?
+         AND (r.citizen_id = ? OR (? IS NOT NULL AND r.session_id = ?))
+       LIMIT 1`,
+    args: [id, c.id, c.phone, c.phone ? `wa:${c.phone}` : null]
+  });
+  const r = rows[0];
+  if (!r) return res.status(404).json({ error: 'not_found' });
+
+  // Documents
+  const { rows: docs } = await db.execute({
+    sql: `SELECT id, doc_code, label, mime, size_bytes, status,
+                 caption, original_name, is_extra, note,
+                 verified_by, verified_at, reject_reason, uploaded_at
+            FROM request_document
+           WHERE request_id = ?
+           ORDER BY id ASC`,
+    args: [id]
+  });
+
+  // Messages — citizen-visible only. Officer messages ARE visible AFTER
+  // payment (the officer-side chat unlocks at paid_at). Pre-payment we still
+  // surface bot/system notices so the citizen sees what's happening.
+  const includeOfficerMsgs = !!r.paid_at;
+  const { rows: messages } = await db.execute({
+    sql: `SELECT id, direction, actor_type, body_text, media_url, created_at
+            FROM message
+           WHERE (request_id = ? OR session_id = ?)
+             AND (actor_type IN ('citizen','bot','system')
+                  ${includeOfficerMsgs ? "OR actor_type = 'officer'" : ''})
+           ORDER BY id ASC
+           LIMIT 500`,
+    args: [id, r.session_id]
+  });
+
+  // Strip raw session_id from response (don't let the citizen-side JS leak
+  // it onto the URL).
+  const { session_id, ...safeReq } = r;
+  res.json({
+    request: safeReq,
+    documents: docs,
+    messages,
+    chat_unlocked_for_office: !!r.paid_at
+  });
+});
+
 // ─── Citizen-side offer marketplace ────────────────────────
 // The citizen sees anonymized-to-them offers: quoted fee, estimated hours,
 // the office's public stats (name, governorate, rating, completed count).
