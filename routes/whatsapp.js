@@ -91,8 +91,14 @@ whatsappRouter.post('/webhook', async (req, res) => {
     const session_id = `wa:${from}`;
     const { reply } = await runTurn({ session_id, user_text: effectiveText, attachment, citizen_phone: from });
 
-    const send = await sendWhatsAppText(from, reply);
-    if (!send.ok) console.warn('[whatsapp] bot reply send failed:', send.error);
+    // Empty reply = agent intentionally stayed silent (e.g. burst-continuation
+    // file 2+ of a multi-upload batch). Skip the WhatsApp send so the citizen
+    // doesn't get a flood of identical "got N files" acks while they're still
+    // in the middle of dropping photos.
+    if (reply && String(reply).trim()) {
+      const send = await sendWhatsAppText(from, reply);
+      if (!send.ok) console.warn('[whatsapp] bot reply send failed:', send.error);
+    }
   } catch (e) {
     console.error('[whatsapp] error', e);
   }

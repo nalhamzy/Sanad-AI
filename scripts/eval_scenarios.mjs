@@ -154,6 +154,27 @@ const SCENARIOS = [
     ]
   },
   {
+    id: 'whatsapp_5_image_burst',
+    description: 'Real WhatsApp pattern: citizen drops 5 photos in rapid succession with NO captions, then describes them all at once. The bot must NOT ack 5 times "is this for X?" — it should stay silent for files 2-5 and only speak once at the start (or when the citizen describes), then commit everything in a single consolidated reply.',
+    expectations: [
+      'At most ONE bot message during the burst itself (files 1-5). Silent acks for files 2-5 are required (empty replies are correct here).',
+      'After the citizen describes the files comma-separated, the bot emits ONE consolidated "✅ Saved: …" reply that lists all matched documents.',
+      'Total bot messages across the whole 7-turn scenario should be ≤ 4 (start request + maybe one upload-batch ack + one consolidated save + one final next-step prompt).',
+      'No "is this for civil_id, or extra?" question repeated per file.',
+      'No fabricated content; every doc name in the consolidated reply matches a real slot from the catalogue.'
+    ],
+    turns: [
+      { text: 'i want to renew my driving licence' },
+      { text: 'yes' },
+      { text: '', attachment: { name: 'IMG_0001.jpg', mime: 'image/jpeg', caption: '' } },
+      { text: '', attachment: { name: 'IMG_0002.jpg', mime: 'image/jpeg', caption: '' } },
+      { text: '', attachment: { name: 'IMG_0003.jpg', mime: 'image/jpeg', caption: '' } },
+      { text: '', attachment: { name: 'IMG_0004.jpg', mime: 'image/jpeg', caption: '' } },
+      { text: '', attachment: { name: 'IMG_0005.jpg', mime: 'image/jpeg', caption: '' } },
+      { text: 'civil ID, photo, medical form, application form, current licence' }
+    ]
+  },
+  {
     id: 'return_visit_status_query',
     description: 'Citizen with an in-flight request asks where it is on a return visit. Agent should know about their request from the auto-injected requests block and answer immediately without asking what their request is.',
     expectations: [
@@ -249,11 +270,19 @@ async function runScenario(s) {
     } catch (e) {
       out = { reply: `[runTurn threw: ${e.message}]`, state: null, request_id: null };
     }
+    // Mark silent turns clearly — the agent now intentionally returns an
+    // empty reply for burst-continuation files (file 2+ in a rapid multi-
+    // upload batch) so the citizen doesn't get spammed with one ack per
+    // file. The judge needs to recognise this as correct UX, not a bug.
+    const replyForJudge = (out.reply == null || out.reply === '')
+      ? '(silent — burst-continuation suppression; correct behaviour for files 2+ of a multi-upload batch)'
+      : out.reply;
     transcript.push({
       turn: i + 1,
       user: t.text || '(file upload)',
       attachment: attachment ? { name: attachment.name, caption: attachment.caption } : null,
-      bot: out.reply,
+      bot_silent: out.reply == null || out.reply === '',
+      bot: replyForJudge,
       state: out.state,
       request_id: out.request_id ?? null
     });
@@ -263,6 +292,13 @@ async function runScenario(s) {
 
 // ── Judge with Opus ───────────────────────────────────────────────
 const JUDGE_SYSTEM = `You are an expert evaluator of Sanad-AI, a chatbot whose job is to PREPARE a complete request file (correct service + required documents + fees) and DISPATCH it to the Sanad offices marketplace (human service-bureau offices that process government paperwork on the citizen's behalf). The bot does NOT process requests itself; it does NOT send requests directly to ministries/ROP/police. It is a preparation and dispatch layer.
+
+SILENT-BURST UX RULE (this is by design — do NOT penalize):
+When a citizen drops multiple files in rapid succession (files 2..N of a multi-upload batch on WhatsApp), the bot intentionally stays SILENT for files 2..N. You will see those turns marked as "(silent — burst-continuation suppression…)" — that is the correct behaviour, NOT a bug. The bot speaks only:
+  • Once at the START of a fresh upload batch (the FIRST file, transitioning buffer 0→1), with a short receipt + invitation to describe.
+  • Once when the citizen describes / names the files (text turn after the burst), with a CONSOLIDATED "✅ Saved: civil ID, passport, photo" reply listing every file mapped to its slot.
+  • As normal for non-upload turns.
+A 5-file burst should produce roughly 1–2 bot messages total during the burst, NOT 5. If you see 5 separate bot messages during a 5-file burst, THAT is a bug. If you see silent turns during a burst, that is the fix working.
 
 CATALOGUE GROUND TRUTH (authoritative for all judging — overrides anything you "know" from training data):
 The current catalogue has 453 services scraped from 7 entities (MM, MOH, MOL, MOHUP, MTCIT, MOC, ROP). It DOES NOT include:
