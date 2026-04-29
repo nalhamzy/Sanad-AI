@@ -88,6 +88,16 @@
         <button id="addPhoneVerifyBtn" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm" data-i18n="auth.verify"></button>
       </div>
       <p id="addPhoneMsg" class="mt-2 text-xs text-amber-800"></p>
+      <!-- Debug-only auto-fill shortcut — rendered if /api/health.debug=true -->
+      <div id="dbgAttachShortcut" class="hidden mt-3 pt-3 border-t border-amber-200 flex flex-wrap gap-2">
+        <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 bg-amber-200 px-2 py-0.5 rounded self-center">DEBUG</span>
+        <button id="dbgAttachAutoBtn" class="text-xs font-bold text-amber-900 bg-white hover:bg-amber-100 border border-amber-300 px-3 py-1 rounded-lg">
+          🔑 Auto-fill OTP
+        </button>
+        <button id="dbgAttachMagicBtn" class="text-xs font-bold text-amber-900 bg-white hover:bg-amber-100 border border-amber-300 px-3 py-1 rounded-lg">
+          ⚡ Skip with 000000
+        </button>
+      </div>
     </div>
   </section>
 
@@ -203,6 +213,40 @@
     }
     location.reload();
   };
+
+  // Debug shortcuts on the phone-attach panel
+  try {
+    const h = await fetch('/api/health').then(r => r.json());
+    if (h.debug) {
+      $('#dbgAttachShortcut').classList.remove('hidden');
+      $('#dbgAttachAutoBtn').onclick = async () => {
+        const phone = $('#addPhoneInput').value.trim() || '+96890999222';
+        $('#addPhoneInput').value = phone;
+        $('#addPhoneMsg').textContent = '… requesting code';
+        const r = await fetch('/api/citizen-auth/attach-phone', {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ phone })
+        });
+        const d = await r.json();
+        if (!r.ok || !d.debug_code) {
+          $('#addPhoneMsg').textContent = `✗ ${d.error || 'no_debug_code'}`;
+          return;
+        }
+        $('#addPhoneOtpRow').classList.remove('hidden');
+        $('#addPhoneCode').value = d.debug_code;
+        $('#addPhoneMsg').textContent = `✓ code = ${d.debug_code} — verifying…`;
+        setTimeout(() => $('#addPhoneVerifyBtn').click(), 300);
+      };
+      $('#dbgAttachMagicBtn').onclick = async () => {
+        const phone = $('#addPhoneInput').value.trim() || '+96890999333';
+        $('#addPhoneInput').value = phone;
+        $('#addPhoneOtpRow').classList.remove('hidden');
+        $('#addPhoneCode').value = '000000';
+        $('#addPhoneMsg').textContent = `⚡ magic 000000 for ${phone} — verifying…`;
+        setTimeout(() => $('#addPhoneVerifyBtn').click(), 200);
+      };
+    }
+  } catch {}
 
   // ── 3) Search ──────────────────────────────────────────
   const searchInput = $('#searchInput');

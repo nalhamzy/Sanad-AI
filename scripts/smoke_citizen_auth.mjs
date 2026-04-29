@@ -113,11 +113,42 @@ try {
   ok('magic OTP 000000 works in DEBUG_MODE', r.status === 200 && d.ok, JSON.stringify(d));
   ok('magic OTP creates citizen + verifies phone', d.citizen?.phone === magicPhone && d.citizen?.phone_verified === true);
 
+  // 4c) Auto-fill flow simulation — what the "🔑 Generate OTP & auto-fill"
+  // button does when clicked: start-otp → read debug_code → verify-otp.
+  // Validates that the round-trip works end-to-end with a fresh phone.
+  const autofillPhone = '+96890999555';
+  r = await fetch(`${base}/api/citizen-auth/start-otp`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ phone: autofillPhone })
+  });
+  d = await r.json();
+  ok('auto-fill: start-otp returns debug_code', r.status === 200 && /^\d{6}$/.test(d.debug_code || ''), JSON.stringify(d));
+  const fetchedCode = d.debug_code;
+  r = await fetch(`${base}/api/citizen-auth/verify-otp`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ phone: autofillPhone, code: fetchedCode })
+  });
+  d = await r.json();
+  ok('auto-fill: verify-otp accepts the fetched debug_code', r.status === 200 && d.ok === true, JSON.stringify(d));
+
+  // 4d) /api/health exposes the debug flag the client uses to gate the UI
+  r = await fetch(`${base}/api/health`);
+  d = await r.json();
+  ok('/api/health exposes debug:true in DEBUG_MODE', d.debug === true, JSON.stringify(d));
+
   // 5) Static pages exist
   for (const p of ['/signup.html', '/login.html', '/account.html', '/request.html', '/auth-client.js', '/config.js', '/i18n.js']) {
     const sr = await fetch(`${base}${p}`);
     ok(`${p} serves 200`, sr.status === 200, `status=${sr.status}`);
   }
+
+  // 5b) auth-client.js carries the debug shortcut wiring
+  const ac = await fetch(`${base}/auth-client.js`).then(r => r.text());
+  ok('auth-client.js gates debug UI on /api/health', ac.includes('/api/health') && ac.includes('debug'));
+  ok('auth-client.js wires Generate-OTP button', ac.includes('dbgAutoFillBtn'));
+  ok('auth-client.js wires Magic-000000 button', ac.includes('dbgMagicBtn'));
 
   // 6) Brand & landing structure
   const idx = await fetch(`${base}/`).then(r => r.text());

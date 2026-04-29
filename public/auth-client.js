@@ -194,4 +194,103 @@
       text: 'continue_with', logo_alignment: 'center'
     });
   })();
+
+  // ── Debug-mode quick-sign-in shortcut ────────────────────────
+  // When DEBUG_MODE=true on the server (/api/health → {debug:true}), drop a
+  // small "Skip OTP (test)" button under the phone form. Click → uses a
+  // canned test phone if the input is empty, calls /start-otp to mint a
+  // code, reads the debug_code from the response, fills the 6 OTP boxes,
+  // and submits verify-otp. Lands on /account.html in ~400 ms with no
+  // real WhatsApp round-trip.
+  //
+  // Production-safe: the /api/health check returns debug:false, so the
+  // button never renders.
+  (async () => {
+    let isDebug = false;
+    try {
+      const h = await fetch('/api/health').then(r => r.json());
+      isDebug = !!h.debug;
+    } catch {}
+    if (!isDebug || !stepPhone) return;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'mt-4 p-3 rounded-xl border border-amber-200 bg-amber-50';
+    wrap.innerHTML = `
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 bg-amber-200 px-2 py-0.5 rounded">DEBUG</span>
+        <span class="text-[11px] font-semibold text-amber-800">Test shortcuts (hidden in production)</span>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" id="dbgAutoFillBtn"
+          class="text-xs font-bold text-amber-900 bg-white hover:bg-amber-100 border border-amber-300 px-3 py-1.5 rounded-lg shadow-sm">
+          🔑 Generate OTP &amp; auto-fill
+        </button>
+        <button type="button" id="dbgMagicBtn"
+          class="text-xs font-bold text-amber-900 bg-white hover:bg-amber-100 border border-amber-300 px-3 py-1.5 rounded-lg shadow-sm">
+          ⚡ Skip with magic 000000
+        </button>
+      </div>
+      <p id="dbgMsg" class="mt-2 text-[11px] text-amber-700 hidden font-mono"></p>
+    `;
+    stepPhone.appendChild(wrap);
+
+    const dbgMsg = wrap.querySelector('#dbgMsg');
+    const flash = (s) => { dbgMsg.textContent = s; dbgMsg.classList.remove('hidden'); };
+
+    function fillOtpInputs(code) {
+      otpInputs.forEach((inp, i) => {
+        inp.value = code[i] || '';
+        inp.classList.toggle('has-value', !!inp.value);
+      });
+    }
+
+    // Helper: derive the phone we'll use. Prefer what the user typed; fall
+    // back to a fixed test number so the button works on a totally fresh form.
+    function pickPhone() {
+      const raw = (phoneInput?.value || '').trim();
+      if (raw) return raw;
+      const TEST = '+96890999111';
+      phoneInput.value = TEST;
+      return TEST;
+    }
+
+    // Path A — generate a real OTP, read debug_code, fill, verify.
+    wrap.querySelector('#dbgAutoFillBtn').addEventListener('click', async () => {
+      flash('Generating code…');
+      const phone = pickPhone();
+      try {
+        const r = await fetch('/api/citizen-auth/start-otp', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ phone })
+        });
+        const d = await r.json();
+        if (!r.ok || !d.debug_code) {
+          flash(`✗ ${d.error || 'no_debug_code'} — try wait or change phone`);
+          return;
+        }
+        // Move to OTP step + show what we did so testers see the trace.
+        phoneE164 = previewE164(phone);
+        if (phoneEcho) phoneEcho.textContent = phoneE164;
+        setStep('otp');
+        fillOtpInputs(d.debug_code);
+        flash(`✓ Code = ${d.debug_code} · auto-verifying…`);
+        // Submit verify after a tiny delay so the user sees the digits land.
+        setTimeout(() => verifyOtp(), 350);
+      } catch (e) {
+        flash(`✗ network: ${e.message}`);
+      }
+    });
+
+    // Path B — use the universal magic code 000000 (no DB write of an OTP slot).
+    wrap.querySelector('#dbgMagicBtn').addEventListener('click', async () => {
+      const phone = pickPhone();
+      phoneE164 = previewE164(phone);
+      if (phoneEcho) phoneEcho.textContent = phoneE164;
+      setStep('otp');
+      fillOtpInputs('000000');
+      flash(`⚡ Using magic 000000 for ${phoneE164} · verifying…`);
+      setTimeout(() => verifyOtp(), 200);
+    });
+  })();
 })();
