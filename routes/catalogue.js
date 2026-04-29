@@ -71,27 +71,94 @@ function rrfFuse(lanes) {
     .sort((a, b) => b.score - a.score);
 }
 
-// GET /api/catalogue/hybrid?q=…&limit=10
-// Public — no auth, used by the citizen homepage live-search box +
-// account.html dashboard.
+// Build the WHERE clause + args for the citizen-side filter set. Designed
+// to be ANDed with whatever id-filter the search lanes produce (or used
+// alone in browse-mode).
+function buildFilterClause({ entity, beneficiary, feeMin, feeMax, hasDocs }) {
+  const where = ['s.is_active = 1'];
+  const args = [];
+  if (entity) { where.push(`s.entity_en = ?`); args.push(entity); }
+  if (beneficiary) { where.push(`COALESCE(s.beneficiary,'') = ?`); args.push(beneficiary); }
+  // Important: don't COALESCE NULL fees to 0 here. A NULL fee means "unknown
+  // / TBD by the office" — it should NOT match the "Free" filter (fee=0).
+  // Without COALESCE, NULL comparisons return UNKNOWN → filtered out, which
+  // is what we want for any explicit fee bucket.
+  if (feeMin != null && !Number.isNaN(feeMin)) { where.push(`s.fee_omr >= ?`); args.push(feeMin); }
+  if (feeMax != null && !Number.isNaN(feeMax)) { where.push(`s.fee_omr <= ?`); args.push(feeMax); }
+  if (hasDocs === 'yes') where.push(`COALESCE(s.required_documents_json,'') NOT IN ('','[]','null')`);
+  if (hasDocs === 'no')  where.push(`COALESCE(s.required_documents_json,'') IN ('','[]','null')`);
+  return { clause: `WHERE ${where.join(' AND ')}`, args };
+}
+
+const HYBRID_SELECT = `
+  s.id, s.entity_en, s.entity_ar, s.name_en, s.name_ar,
+  s.description_en, s.description_ar,
+  s.fee_omr, s.fees_text, s.avg_time_en, s.avg_time_ar,
+  s.beneficiary, s.required_documents_json`;
+
+function shapeRow(r, extras = {}) {
+  let docs = [];
+  try { docs = JSON.parse(r.required_documents_json || '[]'); } catch {}
+  return {
+    ...r,
+    required_documents_json: undefined,
+    doc_count: Array.isArray(docs) ? docs.length : 0,
+    ...extras
+  };
+}
+
+// GET /api/catalogue/hybrid?q=…&entity=…&beneficiary=…&fee_min=&fee_max=&has_docs=&limit=&offset=
+// Public — no auth. Used by:
+//   • homepage live-search dropdown
+//   • account.html dashboard search
+//   • catalogue.html browse + filter
+// When q is empty, returns paginated browse with the same filters applied.
 catalogueRouter.get('/hybrid', async (req, res) => {
-  const q = (req.query.q || '').toString().trim();
-  const entity = (req.query.entity || '').toString().trim();
-  const limit = Math.min(Number(req.query.limit || 10), 30);
+  const q          = (req.query.q || '').toString().trim();
+  const entity     = (req.query.entity || '').toString().trim();
+  const beneficiary= (req.query.beneficiary || '').toString().trim();
+  const feeMin     = req.query.fee_min != null && req.query.fee_min !== '' ? Number(req.query.fee_min) : null;
+  const feeMax     = req.query.fee_max != null && req.query.fee_max !== '' ? Number(req.query.fee_max) : null;
+  const hasDocs    = (req.query.has_docs || '').toString();
+  const limit      = Math.min(Number(req.query.limit || 20), 60);
+  const offset     = Math.max(Number(req.query.offset || 0), 0);
+  const sort       = (req.query.sort || (q ? 'relevance' : 'name')).toString();
+
+  const filters = { entity, beneficiary, feeMin, feeMax, hasDocs };
+  const { clause: filterClause, args: filterArgs } = buildFilterClause(filters);
 
   try {
+    // ── Browse mode: no query, paginated SQL with chosen sort ──
     if (!q) {
-      // No query — return empty so the UI shows the empty state.
+      const orderClause = {
+        name: 'COALESCE(s.name_en, s.name_ar) ASC',
+        fee_asc:  'COALESCE(s.fee_omr, 999) ASC',
+        fee_desc: 'COALESCE(s.fee_omr, 0) DESC',
+        id: 's.id ASC'
+      }[sort] || 'COALESCE(s.name_en, s.name_ar) ASC';
+      const { rows } = await db.execute({
+        sql: `SELECT ${HYBRID_SELECT} FROM service_catalog s
+                ${filterClause}
+                ORDER BY ${orderClause}
+                LIMIT ? OFFSET ?`,
+        args: [...filterArgs, limit, offset]
+      });
+      const { rows: totalRows } = await db.execute({
+        sql: `SELECT COUNT(*) AS n FROM service_catalog s ${filterClause}`,
+        args: filterArgs
+      });
       return res.json({
-        results: [], total: 0, limit,
-        search: { mode: 'browse', semantic_available: LLM_ENABLED }
+        results: rows.map(r => shapeRow(r)),
+        total: totalRows[0].n, limit, offset,
+        search: { mode: 'browse', semantic_available: LLM_ENABLED, filters }
       });
     }
 
+    // ── Hybrid mode: q present ──
     const [fts, sem, sub] = await Promise.all([
-      ftsLane(q, 60),
-      semanticLane(q, 60),
-      substringLane(q, 60)
+      ftsLane(q, 80),
+      semanticLane(q, 80),
+      substringLane(q, 80)
     ]);
 
     const fused = rrfFuse([
@@ -102,50 +169,40 @@ catalogueRouter.get('/hybrid', async (req, res) => {
 
     if (!fused.length) {
       return res.json({
-        results: [], total: 0, limit,
-        search: { mode: 'hybrid', q, semantic_available: LLM_ENABLED, lanes: { fts: 0, semantic: 0, partial: 0 } }
+        results: [], total: 0, limit, offset,
+        search: { mode: 'hybrid', q, semantic_available: LLM_ENABLED, lanes: { fts: 0, semantic: 0, partial: 0 }, filters }
       });
     }
 
-    const pageIds = fused.slice(0, limit).map(x => x.id);
-    const placeholders = pageIds.map(() => '?').join(',');
-    const args = entity ? [...pageIds, entity] : pageIds;
-    const where = entity ? `WHERE s.id IN (${placeholders}) AND s.entity_en = ?`
-                         : `WHERE s.id IN (${placeholders})`;
-    const { rows } = await db.execute({
-      sql: `SELECT s.id, s.entity_en, s.entity_ar, s.name_en, s.name_ar,
-                   s.fee_omr, s.fees_text, s.avg_time_en, s.avg_time_ar,
-                   s.required_documents_json
-              FROM service_catalog s
-              ${where}`,
-      args
+    // Apply post-filter on the fused candidate set: only keep ids that pass
+    // the filter clause. We do it in one IN() query so we don't N+1.
+    const fusedIds = fused.map(f => f.id);
+    const placeholders = fusedIds.map(() => '?').join(',');
+    const { rows: kept } = await db.execute({
+      sql: `SELECT ${HYBRID_SELECT} FROM service_catalog s
+              ${filterClause}
+              AND s.id IN (${placeholders})`,
+      args: [...filterArgs, ...fusedIds]
     });
-    const byId = new Map(rows.map(r => [r.id, r]));
+    const byId = new Map(kept.map(r => [r.id, r]));
+    const filteredFused = fused.filter(f => byId.has(f.id));
+    const total = filteredFused.length;
+    const page = filteredFused.slice(offset, offset + limit);
 
-    const results = fused.slice(0, limit)
-      .map(f => {
-        const r = byId.get(f.id);
-        if (!r) return null;
-        let docs = [];
-        try { docs = JSON.parse(r.required_documents_json || '[]'); } catch {}
-        return {
-          ...r,
-          required_documents_json: undefined,
-          doc_count: Array.isArray(docs) ? docs.length : 0,
-          relevance: Math.round(f.score * 1000) / 1000,
-          matched_by: f.matched_by
-        };
-      })
+    const results = page
+      .map(f => byId.get(f.id) ? shapeRow(byId.get(f.id), {
+        relevance: Math.round(f.score * 1000) / 1000,
+        matched_by: f.matched_by
+      }) : null)
       .filter(Boolean);
 
     res.json({
-      results,
-      total: fused.length,
-      limit,
+      results, total, limit, offset,
       search: {
         mode: 'hybrid', q,
         semantic_available: LLM_ENABLED,
-        lanes: { fts: fts.length, semantic: sem.length, partial: sub.length }
+        lanes: { fts: fts.length, semantic: sem.length, partial: sub.length },
+        filters
       }
     });
   } catch (e) {
@@ -210,6 +267,32 @@ catalogueRouter.get('/entities', async (_req, res) => {
      ORDER BY n DESC
   `);
   res.json({ entities: rows });
+});
+
+// Beneficiary list (Citizen / Resident / Business / Tourist / etc.)
+catalogueRouter.get('/beneficiaries', async (_req, res) => {
+  const { rows } = await db.execute(`
+    SELECT COALESCE(beneficiary, '') AS beneficiary, COUNT(*) AS n
+      FROM service_catalog
+     WHERE COALESCE(beneficiary,'') != ''
+     GROUP BY beneficiary
+     ORDER BY n DESC
+  `);
+  res.json({ beneficiaries: rows });
+});
+
+// Fee buckets — for the citizen UI to show coarse "free / under 10 / 10-50 / 50+"
+catalogueRouter.get('/fee-buckets', async (_req, res) => {
+  const { rows } = await db.execute(`
+    SELECT
+      SUM(CASE WHEN fee_omr = 0 THEN 1 ELSE 0 END) AS free_count,
+      SUM(CASE WHEN fee_omr > 0 AND fee_omr < 10 THEN 1 ELSE 0 END) AS lt10,
+      SUM(CASE WHEN fee_omr >= 10 AND fee_omr < 50 THEN 1 ELSE 0 END) AS m10_50,
+      SUM(CASE WHEN fee_omr >= 50 THEN 1 ELSE 0 END) AS gte50,
+      SUM(CASE WHEN fee_omr IS NULL THEN 1 ELSE 0 END) AS unknown
+      FROM service_catalog WHERE is_active = 1
+  `);
+  res.json({ buckets: rows[0] });
 });
 
 // One service by id

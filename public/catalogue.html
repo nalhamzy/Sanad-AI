@@ -1,209 +1,570 @@
 <!doctype html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Saned · Service catalogue</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;700&display=swap" rel="stylesheet"/>
-<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
-<link rel="apple-touch-icon" href="/favicon.svg"/>
+<title>ساند · Saned — تصفّح الخدمات · Browse services</title>
+<meta name="description" content="تصفّح أكثر من 600 خدمة حكومية عُمانية وابدأ طلبك من ساند. Browse 600+ Omani government services and start your request via Saned."/>
 <meta name="theme-color" content="#0d9488"/>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<script>
+  (function () {
+    try {
+      const saved = localStorage.getItem('sanad.lang');
+      const lang = saved || 'ar';
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    } catch {}
+  })();
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Kufi+Arabic:wght@400;500;700;800;900&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/theme.css"/>
 <style>
-  body{font-family:'Inter',sans-serif}
-  [dir="rtl"] body, html[dir="rtl"] *{font-family:'Noto Kufi Arabic',sans-serif}
-  .tag{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
-  .skel{background:linear-gradient(90deg,#f1f5f9,#e2e8f0,#f1f5f9);background-size:200% 100%;animation:sk 1.2s infinite}
-  @keyframes sk{0%{background-position:0 0}100%{background-position:-200% 0}}
+  body { font-family: 'Inter', sans-serif; }
+  [dir="rtl"] body, html[dir="rtl"] * { font-family: 'Noto Kufi Arabic', sans-serif; }
+  .page-bg {
+    background:
+      radial-gradient(900px 500px at 12% -8%, rgba(20,184,166,.10) 0%, transparent 55%),
+      radial-gradient(700px 400px at 110% 0%, rgba(34,197,94,.08) 0%, transparent 55%),
+      linear-gradient(180deg, #fbfaf6 0%, #f5f1e8 100%);
+  }
+  .wordmark { background: linear-gradient(135deg, #0d9488, #15803d); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  .matched-chip { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 9999px; letter-spacing: .04em; text-transform: uppercase; }
+  .matched-fts { background: #ccfbf1; color: #0f766e; }
+  .matched-semantic { background: #ede9fe; color: #6d28d9; }
+  .matched-partial { background: #fee2e2; color: #b91c1c; }
+
+  .svc-card { transition: all .18s; }
+  .svc-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 36px -16px rgba(15,23,42,.18);
+    border-color: rgba(20,184,166,.5);
+  }
+
+  .filter-pill { transition: all .15s; cursor: pointer; }
+  .filter-pill:hover { border-color: #14b8a6; background: #f0fdfa; }
+  .filter-pill.active { background: linear-gradient(135deg, #0d9488, #15803d); color: white; border-color: transparent; }
+  .filter-pill.active .filter-count { color: rgba(255,255,255,.85); background: rgba(255,255,255,.18); }
+
+  .skel { background: linear-gradient(90deg, #f1f5f9, #e2e8f0, #f1f5f9); background-size: 200% 100%; animation: sk 1.2s infinite; }
+  @keyframes sk { 0% { background-position: 0 0 } 100% { background-position: -200% 0 } }
 </style>
 </head>
-<body class="bg-slate-50">
+<body class="min-h-screen text-slate-900 page-bg">
 
-<header class="bg-white border-b border-slate-200 px-5 py-3 flex items-center gap-3 sticky top-0 z-40">
-  <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-green-700 text-white grid place-items-center font-bold">S</div>
-  <div><div class="font-bold">Service catalogue</div><div class="text-[11px] text-slate-500"><span id="totalCount">—</span> services · FTS search</div></div>
-  <div class="ms-auto flex gap-2 text-xs">
-    <button id="langBtn" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 font-semibold" data-i18n="lang.toggle"></button>
-    <a href="/" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200" data-i18n="nav.home"></a>
-    <a href="/chat.html" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200" data-i18n="nav.chat"></a>
-    <a href="/officer.html" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200" data-i18n="nav.officer"></a>
+<!-- ─────────── HEADER ─────────── -->
+<header class="max-w-7xl mx-auto px-5 sm:px-6 py-5 flex items-center">
+  <a href="/" class="flex items-center gap-3" aria-label="Saned home">
+    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-green-700 text-white grid place-items-center text-lg font-black shadow-md">س</div>
+    <div class="leading-tight">
+      <div class="text-base font-extrabold wordmark" data-i18n="app.name"></div>
+      <div class="text-[11px] text-slate-500" data-i18n="catalogue.header_sub"></div>
+    </div>
+  </a>
+  <div class="ms-auto flex items-center gap-2">
+    <a id="navAccount" href="/account.html" class="hidden px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-slate-200 font-semibold text-xs shadow-sm text-slate-700" data-i18n="auth.account"></a>
+    <a id="navSignIn" href="/login.html" class="px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-slate-200 font-semibold text-xs shadow-sm text-slate-700 hidden sm:inline-flex" data-i18n="auth.sign_in"></a>
+    <button id="langBtn" class="px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-slate-200 font-semibold text-xs shadow-sm" data-i18n="lang.toggle"></button>
   </div>
 </header>
 
-<main class="max-w-7xl mx-auto p-4 md:p-6 grid md:grid-cols-[260px_1fr] gap-5">
+<main class="max-w-7xl mx-auto px-5 sm:px-6 pb-16">
 
-  <aside class="space-y-3">
-    <div class="rounded-xl bg-white border border-slate-200 p-3">
-      <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Search</label>
-      <div class="relative mt-1">
-        <svg class="w-4 h-4 absolute left-3 top-2.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
-        <input id="q" class="w-full ps-9 pe-3 py-2 rounded-lg bg-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" placeholder="passport, تجديد, fishing…"/>
-      </div>
-      <div class="text-[11px] text-slate-500 mt-2"><span class="kbd">/</span> to focus</div>
-    </div>
-
-    <div class="rounded-xl bg-white border border-slate-200 p-3 text-sm">
-      <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Entities</div>
-      <div id="entities" class="max-h-[60vh] overflow-y-auto space-y-0.5 text-xs"></div>
-    </div>
-  </aside>
-
-  <section>
-    <div class="flex items-center justify-between mb-3">
-      <div class="text-sm text-slate-600"><b id="resultCount">0</b> results <span id="filterLabel" class="text-slate-400"></span></div>
-      <div class="text-xs text-slate-500" id="searchTime"></div>
-    </div>
-    <div id="results" class="space-y-3"></div>
-    <div class="text-center py-6"><button id="loadMore" class="px-4 py-2 rounded-lg border border-slate-200 hover:bg-white font-semibold text-sm hidden">Load more</button></div>
+  <!-- ─────────── HERO ─────────── -->
+  <section class="mb-6 sm:mb-8">
+    <h1 class="text-3xl sm:text-4xl font-black tracking-tight" data-i18n="catalogue.title"></h1>
+    <p class="mt-2 text-slate-500 text-sm sm:text-base max-w-2xl" data-i18n="catalogue.subtitle"></p>
   </section>
+
+  <!-- ─────────── SEARCH BAR (full width, prominent) ─────────── -->
+  <section class="mb-6">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-md p-2 sm:p-3 flex items-center gap-2 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
+      <svg viewBox="0 0 24 24" class="w-5 h-5 text-slate-400 mx-2 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="q" type="search"
+             class="flex-1 bg-transparent outline-none text-base sm:text-lg py-2"
+             autocomplete="off"
+             data-i18n-placeholder="catalogue.search_placeholder"/>
+      <button id="qClear" class="hidden w-8 h-8 grid place-items-center rounded-lg hover:bg-slate-100 text-slate-400 text-xl" aria-label="Clear · مسح"><span aria-hidden="true">×</span></button>
+      <span id="lanesBadge" class="hidden mx-2 text-[10px] font-semibold text-slate-500 whitespace-nowrap"></span>
+    </div>
+
+    <!-- Quick-filter pill row — fee buckets + has_docs -->
+    <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
+      <span class="text-slate-500 font-bold uppercase tracking-wider me-1" data-i18n="catalogue.quick"></span>
+      <button class="filter-pill px-3 py-1.5 rounded-full bg-white border border-slate-200 font-semibold flex items-center gap-1.5" data-fee="" data-i18n="catalogue.fee.any"></button>
+      <button class="filter-pill px-3 py-1.5 rounded-full bg-white border border-slate-200 font-semibold flex items-center gap-1.5" data-fee="0" data-i18n="catalogue.fee.free"></button>
+      <button class="filter-pill px-3 py-1.5 rounded-full bg-white border border-slate-200 font-semibold flex items-center gap-1.5" data-fee="lt10" data-i18n="catalogue.fee.lt10"></button>
+      <button class="filter-pill px-3 py-1.5 rounded-full bg-white border border-slate-200 font-semibold flex items-center gap-1.5" data-fee="m10_50"><span data-i18n="catalogue.fee.m10_50"></span></button>
+      <button class="filter-pill px-3 py-1.5 rounded-full bg-white border border-slate-200 font-semibold flex items-center gap-1.5" data-fee="gte50"><span data-i18n="catalogue.fee.gte50"></span></button>
+      <span class="mx-2 w-px h-5 bg-slate-200"></span>
+      <button class="filter-pill px-3 py-1.5 rounded-full bg-white border border-slate-200 font-semibold flex items-center gap-1.5" data-docs="yes" data-i18n="catalogue.has_docs.yes"></button>
+    </div>
+  </section>
+
+  <!-- ─────────── BODY: filter rail + results ─────────── -->
+  <div class="grid md:grid-cols-[280px_1fr] gap-5 lg:gap-6">
+
+    <!-- ── Filter rail ── -->
+    <aside class="space-y-4 md:sticky md:top-4 md:self-start">
+
+      <!-- Beneficiary filter -->
+      <div class="rounded-2xl bg-white border border-slate-200 p-4">
+        <div class="flex items-center justify-between mb-2.5">
+          <div class="text-xs font-extrabold uppercase tracking-wider text-slate-500" data-i18n="catalogue.beneficiary"></div>
+          <button class="text-[11px] text-teal-700 hover:text-teal-800 font-semibold hidden" id="benClear" data-i18n="catalogue.clear"></button>
+        </div>
+        <div id="beneficiaries" class="space-y-1"></div>
+      </div>
+
+      <!-- Entity filter — accordion-able, scrolls when long -->
+      <div class="rounded-2xl bg-white border border-slate-200 p-4">
+        <div class="flex items-center justify-between mb-2.5">
+          <div class="text-xs font-extrabold uppercase tracking-wider text-slate-500" data-i18n="catalogue.entity"></div>
+          <button class="text-[11px] text-teal-700 hover:text-teal-800 font-semibold hidden" id="entClear" data-i18n="catalogue.clear"></button>
+        </div>
+        <input id="entFilter" class="w-full mb-2 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 outline-none text-xs" data-i18n-placeholder="catalogue.entity_search"/>
+        <div id="entities" class="max-h-[340px] overflow-y-auto space-y-0.5"></div>
+      </div>
+
+      <!-- Sort -->
+      <div class="rounded-2xl bg-white border border-slate-200 p-4">
+        <div class="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-2.5" data-i18n="catalogue.sort"></div>
+        <select id="sortSel" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 outline-none text-sm font-semibold">
+          <option value="relevance" data-i18n="catalogue.sort.relevance"></option>
+          <option value="name" data-i18n="catalogue.sort.name"></option>
+          <option value="fee_asc" data-i18n="catalogue.sort.fee_asc"></option>
+          <option value="fee_desc" data-i18n="catalogue.sort.fee_desc"></option>
+        </select>
+      </div>
+
+      <!-- Reset all -->
+      <button id="resetAll" class="hidden w-full px-3 py-2 rounded-xl bg-white hover:bg-rose-50 border border-rose-200 text-rose-600 font-semibold text-sm" data-i18n="catalogue.reset_all"></button>
+    </aside>
+
+    <!-- ── Results ── -->
+    <section>
+      <div class="flex items-center justify-between mb-3 px-1">
+        <div class="text-sm text-slate-600">
+          <b id="resultCount">—</b>
+          <span data-i18n="catalogue.results_label"></span>
+          <span id="filterEcho" class="text-slate-400"></span>
+        </div>
+        <div class="text-xs text-slate-500" id="searchTime"></div>
+      </div>
+
+      <div id="results" class="grid sm:grid-cols-2 gap-3 sm:gap-4"></div>
+
+      <div id="emptyState" class="hidden mt-8 rounded-2xl bg-white border border-slate-200 p-10 text-center">
+        <div class="text-5xl mb-3">🔍</div>
+        <div class="text-base font-bold text-slate-700 mb-1" data-i18n="catalogue.empty.title"></div>
+        <div class="text-sm text-slate-500" data-i18n="catalogue.empty.sub"></div>
+      </div>
+
+      <div class="text-center mt-6">
+        <button id="loadMore" class="hidden px-5 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 font-semibold text-sm" data-i18n="catalogue.load_more"></button>
+      </div>
+    </section>
+  </div>
 </main>
 
-<!-- Detail modal -->
+<!-- ─────────── DETAIL MODAL ─────────── -->
 <div id="detail" class="fixed inset-0 bg-slate-900/60 backdrop-blur z-50 p-4 hidden overflow-y-auto">
-  <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl">
-    <div class="flex items-start gap-3 px-5 py-4 border-b border-slate-200">
-      <button id="closeDetail" class="text-slate-400 hover:text-slate-900 text-xl leading-none">✕</button>
+  <div class="max-w-3xl mx-auto bg-white rounded-3xl shadow-xl mt-8 mb-8">
+    <div class="flex items-start gap-3 px-5 sm:px-6 py-4 border-b border-slate-200">
+      <button id="closeDetail" class="text-slate-400 hover:text-slate-900 text-xl leading-none" aria-label="Close · إغلاق"><span aria-hidden="true">✕</span></button>
       <div class="flex-1" id="detailHeader">—</div>
-      <a id="tryBot" target="_blank" class="text-xs px-3 py-1.5 rounded-lg bg-teal-500 text-white font-bold hover:bg-teal-600">💬 Try in chatbot</a>
     </div>
-    <div id="detailBody" class="p-5 space-y-5"></div>
+    <div id="detailBody" class="p-5 sm:p-6 space-y-5"></div>
+    <div class="px-5 sm:px-6 py-4 border-t border-slate-200 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between bg-slate-50/50 rounded-b-3xl">
+      <div class="text-xs text-slate-500" data-i18n="catalogue.detail.cta_hint"></div>
+      <div class="flex gap-2 flex-wrap">
+        <a id="ctaWA" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#1eb858] text-white font-bold text-sm shadow-md">
+          <svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.768.967-.941 1.164-.173.198-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413"/></svg>
+          <span data-i18n="catalogue.detail.cta_wa"></span>
+        </a>
+        <a id="ctaWeb" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-br from-teal-500 to-green-700 text-white font-bold text-sm shadow-md">
+          <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span data-i18n="catalogue.detail.cta_web"></span>
+        </a>
+      </div>
+    </div>
   </div>
 </div>
 
 <script src="/i18n.js"></script>
-<script src="/ui.js"></script>
 <script>
-(function(){
-  const q = document.getElementById('q');
-  const entitiesEl = document.getElementById('entities');
-  const results = document.getElementById('results');
-  const resultCount = document.getElementById('resultCount');
-  const filterLabel = document.getElementById('filterLabel');
-  const searchTime = document.getElementById('searchTime');
-  const loadMoreBtn = document.getElementById('loadMore');
+(function () {
+  const $ = s => document.querySelector(s);
+  const I18N = window.I18N;
+  const PAGE_LIMIT = 20;
 
-  let entityFilter = '';
-  let offset = 0;
-  let lastQuery = '';
-  let timer;
+  // ── State ──────────────────────────────────────────────
+  const state = {
+    q: '',
+    entity: new URLSearchParams(location.search).get('entity') || '',
+    beneficiary: '',
+    feeBucket: '',          // '' | '0' | 'lt10' | 'm10_50' | 'gte50'
+    hasDocs: '',
+    sort: 'relevance',
+    offset: 0,
+    total: 0
+  };
 
-  function skel() {
-    return Array.from({length:6}).map(()=>`<div class="skel h-20 rounded-xl"></div>`).join('');
+  // ── DOM refs ───────────────────────────────────────────
+  const qInput = $('#q');
+  const qClear = $('#qClear');
+  const resultsEl = $('#results');
+  const emptyEl = $('#emptyState');
+  const lanesBadge = $('#lanesBadge');
+  const resultCountEl = $('#resultCount');
+  const searchTimeEl = $('#searchTime');
+  const filterEcho = $('#filterEcho');
+  const loadMoreBtn = $('#loadMore');
+  const sortSel = $('#sortSel');
+  const resetAllBtn = $('#resetAll');
+
+  $('#langBtn').onclick = () => I18N.setLang(I18N.lang === 'ar' ? 'en' : 'ar');
+
+  // ── Helpers ────────────────────────────────────────────
+  function escapeHtml(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+  function feeBucketParams(b) {
+    switch (b) {
+      case '0':       return { fee_min: 0, fee_max: 0 };
+      case 'lt10':    return { fee_max: 9.999, fee_min: 0.001 };
+      case 'm10_50':  return { fee_min: 10, fee_max: 50 };
+      case 'gte50':   return { fee_min: 50 };
+      default:        return {};
+    }
+  }
+  function activeFilterCount() {
+    let n = 0;
+    if (state.entity) n++;
+    if (state.beneficiary) n++;
+    if (state.feeBucket) n++;
+    if (state.hasDocs) n++;
+    return n;
   }
 
-  async function loadEntities() {
-    const r = await fetch('/api/catalogue/entities').then(r=>r.json());
-    const html = [`<button data-ent="" class="w-full text-start px-2 py-1.5 rounded hover:bg-slate-100 flex justify-between"><span>All</span><span class="text-slate-400">${r.entities.reduce((a,b)=>a+Number(b.n),0)}</span></button>`]
-      .concat(r.entities.map(e => `<button data-ent="${e.entity_en.replace(/"/g,'&quot;')}" class="w-full text-start px-2 py-1.5 rounded hover:bg-slate-100 flex justify-between"><span class="truncate me-2" title="${e.entity_en}">${e.entity_en || '—'}</span><span class="text-slate-400">${e.n}</span></button>`))
-      .join('');
-    entitiesEl.innerHTML = html;
-    entitiesEl.querySelectorAll('[data-ent]').forEach(b => b.onclick = () => {
-      entityFilter = b.getAttribute('data-ent');
-      entitiesEl.querySelectorAll('button').forEach(x => x.classList.remove('bg-teal-500','text-white'));
-      b.classList.add('bg-teal-500','text-white');
-      filterLabel.textContent = entityFilter ? ' · ' + entityFilter : '';
-      offset = 0; run();
+  // ── Load filter rail data ──────────────────────────────
+  async function loadFilters() {
+    try {
+      const [eR, bR] = await Promise.all([
+        fetch('/api/catalogue/entities').then(r => r.json()),
+        fetch('/api/catalogue/beneficiaries').then(r => r.json())
+      ]);
+      renderEntities(eR.entities || []);
+      renderBeneficiaries(bR.beneficiaries || []);
+    } catch (e) {
+      console.warn('[catalogue] filter load failed:', e);
+    }
+  }
+  function entityRow(e) {
+    const lang = I18N.lang;
+    const name = (lang === 'ar' && e.entity_ar) ? e.entity_ar : (e.entity_en || '—');
+    const isActive = e.entity_en === state.entity;
+    return `<button data-ent="${escapeHtml(e.entity_en)}" class="filter-pill ${isActive ? 'active' : ''} w-full text-start px-3 py-1.5 rounded-lg bg-white border border-transparent hover:border-teal-300 flex items-center justify-between gap-2 text-xs">
+      <span class="truncate" title="${escapeHtml(e.entity_en)}">${escapeHtml(name)}</span>
+      <span class="filter-count text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded shrink-0">${e.n}</span>
+    </button>`;
+  }
+  function renderEntities(list) {
+    const term = $('#entFilter').value.toLowerCase().trim();
+    const filtered = term ? list.filter(e => (e.entity_en || '').toLowerCase().includes(term) || (e.entity_ar || '').includes(term)) : list;
+    $('#entities').innerHTML = filtered.map(entityRow).join('');
+    $('#entities').querySelectorAll('[data-ent]').forEach(b => {
+      b.onclick = () => {
+        const v = b.getAttribute('data-ent');
+        state.entity = state.entity === v ? '' : v;
+        state.offset = 0;
+        renderEntities(list);
+        $('#entClear').classList.toggle('hidden', !state.entity);
+        run();
+      };
+    });
+    $('#entClear').classList.toggle('hidden', !state.entity);
+    $('#entClear').onclick = () => { state.entity = ''; state.offset = 0; renderEntities(list); run(); };
+  }
+  function renderBeneficiaries(list) {
+    const lang = I18N.lang;
+    const html = list.map(b => {
+      const isActive = b.beneficiary === state.beneficiary;
+      const labelKey = `catalogue.beneficiary.${(b.beneficiary || '').toLowerCase().replace(/\s+/g, '_')}`;
+      const localized = I18N.t(labelKey, b.beneficiary || '—');
+      return `<button data-ben="${escapeHtml(b.beneficiary)}" class="filter-pill ${isActive ? 'active' : ''} w-full text-start px-3 py-1.5 rounded-lg bg-white border border-transparent hover:border-teal-300 flex items-center justify-between gap-2 text-xs">
+        <span class="truncate">${escapeHtml(localized)}</span>
+        <span class="filter-count text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">${b.n}</span>
+      </button>`;
+    }).join('');
+    $('#beneficiaries').innerHTML = html || `<div class="text-xs text-slate-400 italic">${I18N.t('catalogue.no_beneficiaries')}</div>`;
+    $('#beneficiaries').querySelectorAll('[data-ben]').forEach(b => {
+      b.onclick = () => {
+        const v = b.getAttribute('data-ben');
+        state.beneficiary = state.beneficiary === v ? '' : v;
+        state.offset = 0;
+        renderBeneficiaries(list);
+        $('#benClear').classList.toggle('hidden', !state.beneficiary);
+        run();
+      };
+    });
+    $('#benClear').classList.toggle('hidden', !state.beneficiary);
+    $('#benClear').onclick = () => { state.beneficiary = ''; state.offset = 0; renderBeneficiaries(list); run(); };
+  }
+
+  // ── Pill filter handlers (fee + has_docs) ──────────────
+  document.querySelectorAll('.filter-pill[data-fee]').forEach(b => {
+    b.addEventListener('click', () => {
+      const v = b.getAttribute('data-fee');
+      state.feeBucket = state.feeBucket === v ? '' : v;
+      state.offset = 0;
+      syncPills();
+      run();
+    });
+  });
+  document.querySelectorAll('.filter-pill[data-docs]').forEach(b => {
+    b.addEventListener('click', () => {
+      const v = b.getAttribute('data-docs');
+      state.hasDocs = state.hasDocs === v ? '' : v;
+      state.offset = 0;
+      syncPills();
+      run();
+    });
+  });
+  function syncPills() {
+    document.querySelectorAll('.filter-pill[data-fee]').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-fee') === state.feeBucket);
+    });
+    document.querySelectorAll('.filter-pill[data-docs]').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-docs') === state.hasDocs);
     });
   }
 
-  async function run(append) {
-    if (!append) {
-      results.innerHTML = skel();
-      offset = 0;
-    }
-    const term = q.value.trim();
-    lastQuery = term;
-    const t0 = performance.now();
-    const params = new URLSearchParams({ q: term, entity: entityFilter, limit: '40', offset: String(offset) });
-    let data;
-    try {
-      data = await fetch('/api/catalogue/search?' + params).then(r => r.json());
-    } catch (e) {
-      Sanad.toast('Search failed', 'err'); return;
-    }
-    const t1 = performance.now();
-    searchTime.textContent = (t1 - t0).toFixed(0) + ' ms';
-    resultCount.textContent = data.results.length + (offset > 0 ? ' (more)' : '');
-    document.getElementById('totalCount').textContent = data.total.toLocaleString();
-    const html = data.results.map(r => `
-      <article class="rounded-xl bg-white border border-slate-200 p-4 hover:shadow-md cursor-pointer" data-id="${r.id}">
-        <div class="flex items-start gap-2 mb-1 flex-wrap">
-          <span class="tag bg-teal-50 text-teal-700">${r.entity_en || '—'}</span>
-          ${r.fee_omr > 0 ? `<span class="tag bg-amber-50 text-amber-700">${r.fee_omr} OMR</span>` : r.fee_omr === 0 ? '<span class="tag bg-emerald-50 text-emerald-700">free</span>' : ''}
-          <span class="tag bg-slate-100 text-slate-600 ms-auto">#${r.id}</span>
-        </div>
-        <div class="font-semibold text-sm">${r.name_en || '(no English name)'}</div>
-        ${r.name_ar ? `<div class="text-sm text-slate-500 mt-0.5" dir="rtl">${r.name_ar}</div>` : ''}
-      </article>
-    `).join('');
-    if (append) results.insertAdjacentHTML('beforeend', html);
-    else results.innerHTML = html || `<div class="text-center py-12 text-slate-400 italic">No matches. Try Arabic or a broader term.</div>`;
-    loadMoreBtn.classList.toggle('hidden', data.results.length < 40);
+  // ── Sort + reset ───────────────────────────────────────
+  sortSel.addEventListener('change', () => { state.sort = sortSel.value; state.offset = 0; run(); });
+  resetAllBtn.addEventListener('click', () => {
+    state.q = ''; state.entity = ''; state.beneficiary = '';
+    state.feeBucket = ''; state.hasDocs = ''; state.sort = 'relevance';
+    state.offset = 0;
+    qInput.value = ''; qClear.classList.add('hidden');
+    sortSel.value = 'relevance';
+    syncPills();
+    loadFilters().then(() => run());
+  });
 
-    results.querySelectorAll('[data-id]').forEach(c => c.onclick = () => openDetail(c.getAttribute('data-id')));
-  }
-
-  async function openDetail(id) {
-    const r = await fetch('/api/catalogue/' + id).then(r=>r.json());
-    const s = r.service;
-    document.getElementById('detail').classList.remove('hidden');
-    document.getElementById('detailHeader').innerHTML = `
-      <div class="flex items-center gap-2 flex-wrap">
-        <span class="tag bg-teal-50 text-teal-700">${s.entity_en || '—'}</span>
-        <span class="tag bg-slate-100 text-slate-600">v ${s.version ?? 1}</span>
-        <span class="tag ${s.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}">${s.is_active ? 'live' : 'inactive'}</span>
-      </div>
-      <div class="font-bold text-lg mt-1">${s.name_en || '—'}</div>
-      ${s.name_ar ? `<div class="text-slate-500" dir="rtl">${s.name_ar}</div>` : ''}
-    `;
-    document.getElementById('tryBot').href = '/chat.html?service=' + encodeURIComponent(s.name_en || '');
-
-    const docs = s.required_documents || [];
-    const docsHtml = docs.length
-      ? `<ol class="space-y-1.5 text-sm list-decimal ps-5">${docs.map(d => `<li><b>${d.label_en || d.code}</b>${d.label_ar ? ` · <span dir="rtl">${d.label_ar}</span>` : ''}</li>`).join('')}</ol>`
-      : '<div class="text-sm text-slate-500 italic">No structured document list — the bot will ask in free-text.</div>';
-
-    document.getElementById('detailBody').innerHTML = `
-      <div class="grid md:grid-cols-2 gap-5">
-        <div>
-          <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Description</div>
-          <p class="text-sm text-slate-700">${s.description_en || '—'}</p>
-          ${s.description_ar ? `<p class="text-sm text-slate-500 mt-1" dir="rtl">${s.description_ar}</p>` : ''}
-        </div>
-        <div>
-          <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Fees</div>
-          <p class="text-sm">${s.fees_text || '—'} ${s.fee_omr!=null ? `<span class="text-slate-500">· ${s.fee_omr} OMR</span>` : ''}</p>
-        </div>
-        <div class="md:col-span-2">
-          <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Required documents</div>
-          ${docsHtml}
-        </div>
-        ${s.source_url ? `<div class="md:col-span-2 text-xs"><a href="${s.source_url}" target="_blank" class="text-teal-600 underline">Source on services directory ↗</a></div>` : ''}
-      </div>
-    `;
-  }
-
-  document.getElementById('closeDetail').onclick = () => document.getElementById('detail').classList.add('hidden');
-  document.getElementById('detail').addEventListener('click', e => { if (e.target.id === 'detail') e.currentTarget.classList.add('hidden'); });
-  document.getElementById('langBtn').onclick = () => I18N.setLang(I18N.lang === 'ar' ? 'en' : 'ar');
-  loadMoreBtn.onclick = () => { offset += 40; run(true); };
-
-  q.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => run(false), 150); });
+  // ── Search input ───────────────────────────────────────
+  qInput.addEventListener('input', debounce(() => {
+    state.q = qInput.value.trim();
+    state.offset = 0;
+    qClear.classList.toggle('hidden', !state.q);
+    run();
+  }, 200));
+  qClear.addEventListener('click', () => {
+    qInput.value = ''; state.q = ''; state.offset = 0;
+    qClear.classList.add('hidden'); qInput.focus();
+    run();
+  });
+  // '/' shortcut to focus
   document.addEventListener('keydown', e => {
-    if (e.key === '/' && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) {
-      e.preventDefault(); q.focus();
+    if (e.key === '/' && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) {
+      e.preventDefault(); qInput.focus();
     }
   });
 
-  Sanad.attachShortcuts([
-    { key: '/', desc: 'Focus search' },
-    { key: 'Esc', desc: 'Close overlay' },
-    { key: '?', desc: 'Show shortcuts' }
-  ]);
+  // ── Render results ─────────────────────────────────────
+  function skel() {
+    return Array.from({length: 6}).map(() =>
+      `<div class="rounded-2xl bg-white border border-slate-200 p-5">
+         <div class="skel h-3 w-24 mb-2 rounded"></div>
+         <div class="skel h-5 w-full mb-1.5 rounded"></div>
+         <div class="skel h-3 w-3/4 rounded"></div>
+       </div>`
+    ).join('');
+  }
 
-  loadEntities();
-  run(false);
+  function feeBadge(s) {
+    if (s.fee_omr === 0)        return `<span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">${I18N.t('catalogue.fee.free')}</span>`;
+    if (s.fee_omr != null)      return `<span class="text-[11px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800">${Number(s.fee_omr).toFixed(3)} OMR</span>`;
+    if (s.fees_text)            return `<span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600">${escapeHtml(s.fees_text.slice(0, 24))}</span>`;
+    return '';
+  }
+  function timeBadge(s) {
+    const lang = I18N.lang;
+    const t = (lang === 'ar' && s.avg_time_ar) ? s.avg_time_ar : s.avg_time_en;
+    if (!t) return '';
+    return `<span class="text-[11px] text-slate-500">⏱ ${escapeHtml(t.slice(0, 24))}</span>`;
+  }
+
+  function cardHtml(s) {
+    const lang = I18N.lang;
+    const name = (lang === 'ar' && s.name_ar) ? s.name_ar : (s.name_en || s.name_ar || '—');
+    const entity = (lang === 'ar' && s.entity_ar) ? s.entity_ar : (s.entity_en || '');
+    const desc = (lang === 'ar' && s.description_ar) ? s.description_ar : (s.description_en || '');
+    const tags = (s.matched_by || []).map(t => `<span class="matched-chip matched-${t}">${t}</span>`).join('');
+    return `<article class="svc-card rounded-2xl bg-white border border-slate-200 p-5 cursor-pointer relative" data-id="${s.id}">
+      <div class="flex items-start gap-2 flex-wrap mb-1.5">
+        <span class="text-[10px] font-extrabold uppercase tracking-wider text-teal-700 bg-teal-50 px-2 py-0.5 rounded">${escapeHtml(entity)}</span>
+        ${feeBadge(s)}
+        ${tags}
+      </div>
+      <div class="font-bold text-slate-800 text-base leading-snug mb-1.5">${escapeHtml(name)}</div>
+      ${desc ? `<div class="text-xs text-slate-500 leading-relaxed line-clamp-2">${escapeHtml(desc.slice(0, 180))}${desc.length > 180 ? '…' : ''}</div>` : ''}
+      <div class="mt-3 flex items-center gap-3 text-[11px] text-slate-500">
+        ${timeBadge(s)}
+        ${s.doc_count ? `<span>📎 ${s.doc_count} ${I18N.t('catalogue.docs_short')}</span>` : ''}
+        <span class="ms-auto text-teal-700 font-bold inline-flex items-center gap-1">
+          ${I18N.t('catalogue.detail.open')}
+          <svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </span>
+      </div>
+    </article>`;
+  }
+
+  async function run(append = false) {
+    if (!append) {
+      resultsEl.innerHTML = skel();
+      emptyEl.classList.add('hidden');
+      state.offset = 0;
+    }
+    resetAllBtn.classList.toggle('hidden', activeFilterCount() === 0 && !state.q);
+    const t0 = performance.now();
+    const params = new URLSearchParams({
+      q: state.q,
+      limit: String(PAGE_LIMIT),
+      offset: String(state.offset),
+      sort: state.sort
+    });
+    if (state.entity)      params.set('entity', state.entity);
+    if (state.beneficiary) params.set('beneficiary', state.beneficiary);
+    if (state.hasDocs)     params.set('has_docs', state.hasDocs);
+    Object.entries(feeBucketParams(state.feeBucket)).forEach(([k, v]) => params.set(k, String(v)));
+
+    let data;
+    try {
+      data = await fetch('/api/catalogue/hybrid?' + params).then(r => r.json());
+    } catch (e) {
+      resultsEl.innerHTML = '';
+      emptyEl.classList.remove('hidden');
+      return;
+    }
+    const dt = performance.now() - t0;
+    state.total = data.total || 0;
+
+    // Lanes badge — show how the search hit (only in hybrid mode)
+    if (data.search?.mode === 'hybrid' && data.search.lanes) {
+      const L = data.search.lanes;
+      lanesBadge.textContent = `FTS ${L.fts} · sem ${L.semantic} · partial ${L.partial}`;
+      lanesBadge.classList.remove('hidden');
+    } else {
+      lanesBadge.classList.add('hidden');
+    }
+
+    resultCountEl.textContent = state.total.toLocaleString();
+    searchTimeEl.textContent = `${dt.toFixed(0)} ms`;
+    const echoBits = [];
+    if (state.q) echoBits.push(`"${state.q}"`);
+    if (state.entity) echoBits.push(state.entity);
+    filterEcho.textContent = echoBits.length ? ' · ' + echoBits.join(' · ') : '';
+
+    const html = (data.results || []).map(cardHtml).join('');
+    if (append) resultsEl.insertAdjacentHTML('beforeend', html);
+    else        resultsEl.innerHTML = html;
+
+    emptyEl.classList.toggle('hidden', !!data.results?.length);
+    loadMoreBtn.classList.toggle('hidden', state.offset + (data.results?.length || 0) >= state.total);
+
+    resultsEl.querySelectorAll('[data-id]').forEach(c =>
+      c.addEventListener('click', () => openDetail(c.getAttribute('data-id'))));
+  }
+
+  loadMoreBtn.addEventListener('click', () => {
+    state.offset += PAGE_LIMIT;
+    run(true);
+  });
+
+  // ── Detail modal ───────────────────────────────────────
+  async function openDetail(id) {
+    try {
+      const r = await fetch(`/api/catalogue/${id}`).then(r => r.json());
+      const s = r.service;
+      const lang = I18N.lang;
+      const name   = (lang === 'ar' && s.name_ar) ? s.name_ar : (s.name_en || '—');
+      const entity = (lang === 'ar' && s.entity_ar) ? s.entity_ar : (s.entity_en || '');
+      const desc   = (lang === 'ar' && s.description_ar) ? s.description_ar : (s.description_en || '');
+      const time   = (lang === 'ar' && s.avg_time_ar) ? s.avg_time_ar : s.avg_time_en;
+
+      $('#detailHeader').innerHTML = `
+        <div class="flex items-center gap-2 flex-wrap mb-2">
+          <span class="text-[10px] font-extrabold uppercase tracking-wider text-teal-700 bg-teal-50 px-2 py-0.5 rounded">${escapeHtml(entity)}</span>
+          ${feeBadge(s)}
+          ${time ? `<span class="text-[11px] text-slate-500">⏱ ${escapeHtml(time.slice(0, 40))}</span>` : ''}
+        </div>
+        <div class="font-extrabold text-xl tracking-tight">${escapeHtml(name)}</div>
+        ${(s.name_ar && s.name_en && lang === 'en') ? `<div class="text-slate-500 text-sm mt-0.5" dir="rtl">${escapeHtml(s.name_ar)}</div>` : ''}
+        ${(s.name_en && s.name_ar && lang === 'ar') ? `<div class="text-slate-500 text-sm mt-0.5" dir="ltr">${escapeHtml(s.name_en)}</div>` : ''}
+      `;
+
+      const docs = s.required_documents || [];
+      const docsHtml = docs.length
+        ? `<ol class="space-y-2 text-sm list-decimal ps-5">${docs.map(d =>
+            `<li class="leading-relaxed"><b class="text-slate-800">${escapeHtml(lang === 'ar' && d.label_ar ? d.label_ar : (d.label_en || d.code || '—'))}</b></li>`
+          ).join('')}</ol>`
+        : `<div class="text-sm text-slate-500 italic">${I18N.t('catalogue.detail.no_docs')}</div>`;
+
+      $('#detailBody').innerHTML = `
+        <div>
+          <div class="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-2">${I18N.t('catalogue.detail.description')}</div>
+          <p class="text-sm text-slate-700 leading-relaxed">${escapeHtml(desc) || `<span class="italic text-slate-400">${I18N.t('catalogue.detail.no_desc')}</span>`}</p>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div class="rounded-xl bg-slate-50 p-4">
+            <div class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">${I18N.t('catalogue.detail.fees')}</div>
+            <div class="text-sm font-bold text-slate-800">${s.fee_omr != null ? Number(s.fee_omr).toFixed(3) + ' OMR' : (s.fees_text || '—')}</div>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-4">
+            <div class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">${I18N.t('catalogue.detail.time')}</div>
+            <div class="text-sm font-bold text-slate-800">${time ? escapeHtml(time) : '—'}</div>
+          </div>
+        </div>
+        <div>
+          <div class="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-2">${I18N.t('catalogue.detail.docs')}</div>
+          ${docsHtml}
+        </div>
+        ${s.source_url ? `<div class="text-xs"><a href="${escapeHtml(s.source_url)}" target="_blank" rel="noopener" class="text-teal-600 hover:underline">${I18N.t('catalogue.detail.source')} ↗</a></div>` : ''}
+      `;
+      $('#ctaWA').href = `https://wa.me/96890944196?text=${encodeURIComponent((lang === 'ar' ? 'أبغى ' : 'I want ') + name)}`;
+      $('#ctaWeb').href = `/chat.html?service=${encodeURIComponent(name)}`;
+      $('#detail').classList.remove('hidden');
+    } catch (e) {
+      console.warn('[catalogue] detail failed:', e);
+    }
+  }
+  $('#closeDetail').onclick = () => $('#detail').classList.add('hidden');
+  $('#detail').addEventListener('click', e => { if (e.target.id === 'detail') $('#detail').classList.add('hidden'); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#detail').classList.add('hidden'); });
+
+  // ── Nav state ──────────────────────────────────────────
+  (async () => {
+    try {
+      const r = await fetch('/api/citizen-auth/me');
+      if (r.ok) {
+        $('#navSignIn')?.classList.add('hidden');
+        $('#navAccount')?.classList.remove('hidden');
+      }
+    } catch {}
+  })();
+
+  // ── Entity-search filter input (within the rail) ─────────
+  $('#entFilter').addEventListener('input', () => {
+    // Re-fetch the entities list once and re-render with current filter term.
+    fetch('/api/catalogue/entities').then(r => r.json()).then(d => renderEntities(d.entities || []));
+  });
+
+  // ── Boot ───────────────────────────────────────────────
+  loadFilters().then(() => run());
 })();
 </script>
 </body>

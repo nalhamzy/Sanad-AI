@@ -28,11 +28,12 @@ const { server, port } = await start(0);
 const base = `http://localhost:${port}`;
 
 const PAGES = [
-  { path: '/',              key: 'home',    minScore: 80 },
-  { path: '/signup.html',   key: 'signup',  minScore: 75 },
-  { path: '/login.html',    key: 'login',   minScore: 75 },
-  { path: '/account.html',  key: 'account', minScore: 75, requireAuth: true },
-  { path: '/request.html?id=1', key: 'request', minScore: 70, requireAuth: true }
+  { path: '/',                            key: 'home',      minScore: 80 },
+  { path: '/signup.html',                 key: 'signup',    minScore: 75 },
+  { path: '/login.html',                  key: 'login',     minScore: 75 },
+  { path: '/account.html',                key: 'account',   minScore: 75, requireAuth: true },
+  { path: '/catalogue.html?entity=Royal%20Oman%20Police', key: 'catalogue', minScore: 75 },
+  { path: '/request.html?id=1',           key: 'request',   minScore: 70, requireAuth: true }
 ];
 
 // Resolve i18n strings from the JS module so we can validate the
@@ -118,6 +119,14 @@ function structuralChecks(html, page) {
     if (!html.includes('timeline'))               issues.push('request-missing-timeline');
     if (!html.includes('docList'))                issues.push('request-missing-docs');
     if (!html.includes('thread'))                 issues.push('request-missing-thread');
+  }
+  if (page.key === 'catalogue') {
+    if (!/lang="ar"/.test(html))                  issues.push('catalogue-not-arabic-first');
+    if (!html.includes('/api/catalogue/hybrid'))  issues.push('catalogue-not-using-hybrid');
+    if (!html.includes('data-fee="lt10"'))        issues.push('catalogue-missing-fee-filters');
+    if (!html.includes('beneficiaries'))          issues.push('catalogue-missing-beneficiary-rail');
+    if (!html.includes('sortSel'))                issues.push('catalogue-missing-sort');
+    if (!html.includes('matched-fts'))            issues.push('catalogue-missing-match-chips');
   }
 
   return { issues, wins, usedKeys };

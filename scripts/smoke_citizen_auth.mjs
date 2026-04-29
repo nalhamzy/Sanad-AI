@@ -174,6 +174,49 @@ try {
   d = await r.json();
   ok('/hybrid handles Arabic query', r.status === 200);
 
+  // 7c) Browse mode (no q) — returns paginated results sorted by name
+  r = await fetch(`${base}/api/catalogue/hybrid?limit=5&sort=name`);
+  d = await r.json();
+  ok('/hybrid browse mode returns 200', r.status === 200);
+  ok('/hybrid browse mode = "browse"', d.search?.mode === 'browse', JSON.stringify(d.search));
+  ok('/hybrid browse mode returns total count', typeof d.total === 'number' && d.total > 0);
+
+  // 7d) Filter combos work
+  r = await fetch(`${base}/api/catalogue/hybrid?fee_min=0&fee_max=0&limit=3`);
+  d = await r.json();
+  ok('/hybrid fee filter (free only) returns 200', r.status === 200);
+  if (d.results?.length) {
+    ok('all returned services have fee_omr=0 when filtered free', d.results.every(r => r.fee_omr === 0));
+  } else {
+    ok('free-fee filter empty result is OK', true);
+  }
+
+  r = await fetch(`${base}/api/catalogue/hybrid?has_docs=yes&limit=3`);
+  d = await r.json();
+  ok('/hybrid has_docs=yes returns 200', r.status === 200);
+
+  // 7e) Faceting endpoints
+  r = await fetch(`${base}/api/catalogue/beneficiaries`);
+  d = await r.json();
+  ok('/beneficiaries returns 200 + array', r.status === 200 && Array.isArray(d.beneficiaries));
+
+  r = await fetch(`${base}/api/catalogue/fee-buckets`);
+  d = await r.json();
+  ok('/fee-buckets returns 200', r.status === 200);
+  ok('fee-buckets has free_count + lt10 + m10_50 + gte50', d.buckets && 'free_count' in d.buckets && 'lt10' in d.buckets);
+
+  // 7f) Catalogue page brand + RTL + hybrid wiring
+  const catHtml = await fetch(`${base}/catalogue.html`).then(r => r.text());
+  ok('catalogue.html is Arabic-first (lang="ar" dir="rtl")',
+     catHtml.includes('lang="ar"') && catHtml.includes('dir="rtl"'));
+  ok('catalogue.html uses /api/catalogue/hybrid (not legacy search)',
+     catHtml.includes('/api/catalogue/hybrid') && !/\/api\/catalogue\/search\?/.test(catHtml));
+  ok('catalogue.html has fee-bucket filter pills', catHtml.includes('data-fee="lt10"'));
+  ok('catalogue.html has beneficiary filter rail', catHtml.includes('beneficiaries'));
+  ok('catalogue.html has sort dropdown', catHtml.includes('sortSel'));
+  ok('catalogue.html has match-by chips (matched-fts/semantic/partial)',
+     catHtml.includes('matched-fts') && catHtml.includes('matched-semantic'));
+
   // 8) my-request/:id 404 for non-existent id
   r = await fetch(`${base}/api/chat/my-request/999999`, { headers: { cookie } });
   ok('/my-request/999999 returns 404', r.status === 404);
