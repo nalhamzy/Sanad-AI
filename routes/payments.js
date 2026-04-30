@@ -96,6 +96,86 @@ paymentsRouter.post('/request/:id/confirm-stub', async (req, res) => {
   res.json(result);
 });
 
+// ────────────────────────────────────────────────────────────
+// THAWANI-style hosted-checkout endpoints (dev / dummy gateway)
+// ────────────────────────────────────────────────────────────
+// In production the citizen would land on Thawani's hosted page; here we
+// render our own /pay.html that mimics the experience (order summary +
+// card form + confirm). The flow:
+//
+//   1. GET  /api/payments/dummy/session/:ref  → returns the order details
+//      that /pay.html shows (amount, service, office, etc.)
+//   2. POST /api/payments/dummy/pay           → marks the request paid +
+//      returns { ok, redirect_to: '/request.html?id=N&paid=1' }
+//
+// Both endpoints work only when the request's payment_ref starts with
+// "req" (so this can't be abused to flip a subscription payment) and
+// only when DEBUG_MODE is on or AMWAL_ENABLED is off (i.e. we're in the
+// dummy-gateway window).
+
+function dummyAllowed() {
+  // Allow when the real gateway is off (stub mode) OR explicitly in debug.
+  return !AMWAL_ENABLED || process.env.DEBUG_MODE === 'true';
+}
+
+paymentsRouter.get('/dummy/session/:ref', async (req, res) => {
+  if (!dummyAllowed()) return res.status(404).end();
+  const ref = String(req.params.ref || '');
+  if (!ref.startsWith('req')) return res.status(400).json({ error: 'bad_ref' });
+  const { rows } = await db.execute({
+    sql: `SELECT r.id, r.payment_amount_omr, r.payment_ref, r.payment_status,
+                 r.office_fee_omr, r.government_fee_omr,
+                 s.name_en AS service_name, s.name_ar AS service_name_ar,
+                 s.entity_en, s.entity_ar,
+                 off.name_en AS office_name_en, off.name_ar AS office_name_ar
+            FROM request r
+            LEFT JOIN service_catalog s ON s.id = r.service_id
+            LEFT JOIN office off        ON off.id = r.office_id
+           WHERE r.payment_ref = ? LIMIT 1`,
+    args: [ref]
+  });
+  const r = rows[0];
+  if (!r) return res.status(404).json({ error: 'unknown_ref' });
+  res.json({
+    request_id: r.id,
+    amount_omr: r.payment_amount_omr,
+    office_fee_omr: r.office_fee_omr,
+    government_fee_omr: r.government_fee_omr,
+    payment_status: r.payment_status,
+    service_name: r.service_name,
+    service_name_ar: r.service_name_ar,
+    entity_en: r.entity_en,
+    entity_ar: r.entity_ar,
+    office_name_en: r.office_name_en,
+    office_name_ar: r.office_name_ar,
+    merchant_ref: ref
+  });
+});
+
+paymentsRouter.post('/dummy/pay', async (req, res) => {
+  if (!dummyAllowed()) return res.status(404).end();
+  const ref = String(req.body?.ref || '');
+  if (!ref.startsWith('req')) return res.status(400).json({ error: 'bad_ref' });
+  // Best-effort form validation: in real Thawani these fields are processed
+  // by their hosted form. Here we just confirm at least SOMETHING was typed
+  // so the dummy feels real (a totally empty form should fail).
+  const card = String(req.body?.card || '').replace(/\s/g, '');
+  if (card && card.length < 12) return res.status(400).json({ error: 'invalid_card' });
+
+  const { rows } = await db.execute({
+    sql: `SELECT id FROM request WHERE payment_ref=? LIMIT 1`,
+    args: [ref]
+  });
+  if (!rows[0]) return res.status(404).json({ error: 'unknown_ref' });
+  const result = await markRequestPaid(rows[0].id, 'dummy-checkout');
+  res.json({
+    ok: true,
+    request_id: rows[0].id,
+    redirect_to: `/request.html?id=${rows[0].id}${result.alreadyPaid ? '&already=1' : '&paid=1'}`,
+    alreadyPaid: !!result.alreadyPaid
+  });
+});
+
 // Dev-only: the stub payment URL from createPaymentLink() lands here for
 // REQUEST payments (prefix req…). It marks the request paid + redirects to
 // the citizen's tracking page. Distinct from /_stub/pay which handles the

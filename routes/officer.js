@@ -27,11 +27,79 @@ import { storeMessage } from '../lib/agent.js';
 import { requireOfficer } from '../lib/auth.js';
 import { sendWhatsAppText, isWhatsAppSession } from '../lib/whatsapp_send.js';
 import { createPaymentLink, newMerchantRef, AMWAL_ENABLED } from '../lib/amwal.js';
+import { SLA_MINUTES } from '../lib/sla.js';
 
 export const officerRouter = Router();
 
 // All officer routes require an active, approved office.
 officerRouter.use(requireOfficer());
+
+// ─── GET /reports — operational analytics for the office ───
+// Returns daily/weekly counts of pipeline events + averages so the office
+// can see throughput at a glance. Filtered to req.office.id only.
+officerRouter.get('/reports', async (req, res) => {
+  const office_id = req.office.id;
+  // Counts by lifecycle stage over the last 7 days (UTC).
+  const { rows: byStatus } = await db.execute({
+    sql: `SELECT status, COUNT(*) AS n FROM request
+           WHERE office_id = ?
+             AND created_at >= datetime('now', '-7 days')
+           GROUP BY status`,
+    args: [office_id]
+  });
+  // Daily pipeline (last 14 days) — claimed, paid, completed.
+  const { rows: daily } = await db.execute({
+    sql: `SELECT date(claimed_at) AS day,
+                 COUNT(CASE WHEN claimed_at IS NOT NULL THEN 1 END) AS claimed,
+                 COUNT(CASE WHEN paid_at IS NOT NULL THEN 1 END)    AS paid,
+                 COUNT(CASE WHEN completed_at IS NOT NULL THEN 1 END) AS completed
+            FROM request
+           WHERE office_id = ?
+             AND claimed_at >= datetime('now', '-14 days')
+           GROUP BY day ORDER BY day DESC`,
+    args: [office_id]
+  });
+  // Average minutes from claim → completion (for completed only, last 30d).
+  const { rows: avgRows } = await db.execute({
+    sql: `SELECT AVG((julianday(completed_at) - julianday(claimed_at)) * 24 * 60) AS avg_minutes,
+                 COUNT(*) AS n
+            FROM request
+           WHERE office_id = ?
+             AND completed_at IS NOT NULL
+             AND claimed_at >= datetime('now', '-30 days')`,
+    args: [office_id]
+  });
+  // SLA expirations (auto-release) from audit log, last 30 days.
+  const { rows: slaRows } = await db.execute({
+    sql: `SELECT COUNT(*) AS n FROM audit_log
+           WHERE action = 'sla_auto_release'
+             AND target_type = 'request'
+             AND target_id IN (SELECT id FROM request WHERE office_id = ?)
+             AND created_at >= datetime('now', '-30 days')`,
+    args: [office_id]
+  });
+  // Currently in-flight (status='claimed' / 'awaiting_payment' / 'in_progress')
+  // with their elapsed time since claim — useful for the dashboard's "active
+  // SLA timers" surface.
+  const { rows: inflight } = await db.execute({
+    sql: `SELECT id, status, payment_status, claimed_at,
+                 CAST((julianday('now') - julianday(claimed_at)) * 24 * 60 AS INTEGER) AS minutes_elapsed
+            FROM request
+           WHERE office_id = ?
+             AND status IN ('claimed','awaiting_payment','in_progress','needs_more_info','on_hold')
+           ORDER BY claimed_at DESC LIMIT 20`,
+    args: [office_id]
+  });
+  res.json({
+    sla_minutes: SLA_MINUTES,
+    by_status_7d: byStatus,
+    daily_14d: daily,
+    avg_minutes_30d: avgRows[0]?.avg_minutes ? Math.round(avgRows[0].avg_minutes) : null,
+    completed_30d: avgRows[0]?.n || 0,
+    sla_expired_30d: slaRows[0]?.n || 0,
+    inflight
+  });
+});
 
 // ─── GET /inbox ────────────────────────────────────────────
 // Anonymized marketplace + my in-flight board + credit status.

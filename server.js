@@ -18,6 +18,7 @@ import { paymentsRouter } from './routes/payments.js';
 import { citizenAuthRouter } from './routes/citizen_auth.js';
 import { attachSession, attachCitizenSession } from './lib/auth.js';
 import { originCheck } from './lib/csrf.js';
+import { startSLAWatcher } from './lib/sla.js';
 import { LLM_ENABLED } from './lib/llm.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -182,6 +183,9 @@ export async function start(port = PORT) {
       if (!LLM_ENABLED) {
         console.warn('⚠  No LLM key configured — chat will use canned stub replies. Set ANTHROPIC_API_KEY or QWEN_API_KEY for real replies.');
       }
+      // Kick off the office SLA watcher AFTER the server is listening so
+      // the sweep doesn't fire before migrate() finishes.
+      startSLAWatcher();
       resolve({ server, app, port: bound });
     });
   });
