@@ -1,0 +1,701 @@
+{
+  "generated_at": "2026-04-30T12:24:57.575Z",
+  "llm_model": "claude-opus-4-5",
+  "totals": {
+    "checks_passed": 111,
+    "checks_total": 111,
+    "llm_avg": 87
+  },
+  "features": [
+    {
+      "area": "Citizen-facing",
+      "name": "Homepage",
+      "tests": [
+        {
+          "label": "homepage serves 200",
+          "ok": true,
+          "detail": "40864 bytes"
+        },
+        {
+          "label": "Arabic-first (lang=\"ar\" dir=\"rtl\")",
+          "ok": true
+        },
+        {
+          "label": "uses new brand \"ساند · Saned\" in title",
+          "ok": true
+        },
+        {
+          "label": "no legacy \"Sanad-AI\" in title",
+          "ok": true
+        },
+        {
+          "label": "hero search box present",
+          "ok": true
+        },
+        {
+          "label": "dual-path CTAs (Web + WhatsApp)",
+          "ok": true
+        },
+        {
+          "label": "\"Easiest · Recommended\" badge on Web path",
+          "ok": true
+        },
+        {
+          "label": "Why-Saned 4-card section",
+          "ok": true
+        },
+        {
+          "label": "Voices/testimonials section",
+          "ok": true
+        },
+        {
+          "label": "Trust strip (services / entities / offices / 24-7)",
+          "ok": true
+        },
+        {
+          "label": "Assurance band",
+          "ok": true
+        },
+        {
+          "label": "Office partner pitch removed from main CTAs",
+          "ok": true
+        }
+      ],
+      "llm": {
+        "score": 92,
+        "good": [
+          "All 12 deterministic checks pass — hero, dual-path CTAs, Why-Saned, testimonials, trust strip all render correctly",
+          "Arabic-first with lang=\"ar\" dir=\"rtl\" set at document level",
+          "Brand wordmark \"ساند · Saned\" in title; legacy \"Sanad-AI\" fully removed",
+          "Dual application paths (Web + WhatsApp) with clear \"Easiest · Recommended\" badge guiding citizens toward the smoother flow",
+          "Office partner pitch correctly relegated to footer (\"I run a Sanad office →\") — keeps citizen focus clean",
+          "40 KB payload is reasonable for a content-rich landing page"
+        ],
+        "issues": [
+          "No test coverage for How-it-works 3-step section mentioned in spec — verify it renders and is accessible",
+          "FAQ section not explicitly validated; confirm accordion/expand behaviour and that answers are bilingual",
+          "Service spotlight block not tested — ensure dynamic content or placeholder gracefully degrades",
+          "Missing performance baseline (LCP, CLS) — hero image or search box could regress Core Web Vitals",
+          "No explicit check that WhatsApp CTA deep-links correctly (wa.me with pre-filled text)"
+        ],
+        "verdict": "ship-with-watchlist"
+      }
+    },
+    {
+      "area": "Citizen-facing",
+      "name": "Citizen Auth",
+      "tests": [
+        {
+          "label": "POST /start-otp returns 200",
+          "ok": true
+        },
+        {
+          "label": "debug_code is 6-digit numeric",
+          "ok": true
+        },
+        {
+          "label": "cooldown_s + expires_in_min returned",
+          "ok": true
+        },
+        {
+          "label": "POST /verify-otp succeeds",
+          "ok": true
+        },
+        {
+          "label": "citizen.phone_verified is true",
+          "ok": true
+        },
+        {
+          "label": "sanad_citizen_sess cookie set",
+          "ok": true
+        },
+        {
+          "label": "GET /me returns the signed-in citizen",
+          "ok": true
+        },
+        {
+          "label": "magic OTP 000000 works in DEBUG_MODE",
+          "ok": true
+        },
+        {
+          "label": "POST /google with bad token returns 401",
+          "ok": true
+        },
+        {
+          "label": "/signup.html serves 200 + has 6 OTP boxes",
+          "ok": true
+        },
+        {
+          "label": "/signup.html carries DEBUG auto-fill button wiring",
+          "ok": true
+        },
+        {
+          "label": "/login.html serves 200 + has 6 OTP boxes",
+          "ok": true
+        },
+        {
+          "label": "/login.html carries DEBUG auto-fill button wiring",
+          "ok": true
+        }
+      ],
+      "llm": {
+        "score": 82,
+        "good": [
+          "OTP flow complete: /start-otp → /verify-otp → /me chain works end-to-end",
+          "Security basics present: httpOnly cookie, 30s cooldown, 5 max-attempts, 5-min TTL",
+          "Magic OTP 000000 gated behind DEBUG_MODE — safe for prod if flag is off",
+          "Google OAuth rejects bad tokens (401) — no silent pass-through",
+          "6-digit OTP UI on both /signup.html and /login.html with auto-fill wiring",
+          "phone_verified flag correctly set after successful verification"
+        ],
+        "issues": [
+          "No test for cooldown enforcement — 30s claim unverified; second /start-otp within window should return 429",
+          "No test for max-attempts lockout — 5 failed /verify-otp calls should block further attempts",
+          "No test for TTL expiry — OTP used after 5 min should fail",
+          "Google sign-in flow incomplete: no test that phone verification is required post-Google auth",
+          "No test for Arabic error messages on /start-otp or /verify-otp failures",
+          "DEBUG auto-fill button should be hidden/absent in production builds — no assertion for PROD mode",
+          "No logout endpoint tested (/logout or cookie clearing)",
+          "No rate-limit test on /google endpoint — potential brute-force vector"
+        ],
+        "verdict": "ship-with-watchlist"
+      }
+    },
+    {
+      "area": "Citizen-facing",
+      "name": "Dashboard + Request Tracking",
+      "tests": [
+        {
+          "label": "/my-requests returns the seeded request",
+          "ok": true
+        },
+        {
+          "label": "rows include payment_status + status",
+          "ok": true
+        },
+        {
+          "label": "/my-request/:id returns request + documents + messages",
+          "ok": true
+        },
+        {
+          "label": "chat_unlocked_for_office=false pre-payment",
+          "ok": true
+        },
+        {
+          "label": "non-existent request → 404",
+          "ok": true
+        },
+        {
+          "label": "without cookie → 401",
+          "ok": true
+        },
+        {
+          "label": "account.html is Arabic-first",
+          "ok": true
+        },
+        {
+          "label": "account.html has phone-banner + search + reqList",
+          "ok": true
+        },
+        {
+          "label": "account.html has DEBUG attach-phone shortcut",
+          "ok": true
+        },
+        {
+          "label": "request.html has timeline + docList + thread",
+          "ok": true
+        },
+        {
+          "label": "request.html has Pay-now CTA card",
+          "ok": true
+        }
+      ],
+      "llm": {
+        "score": 82,
+        "good": [
+          "GET /my-requests returns correct payload with payment_status + status fields",
+          "GET /my-request/:id returns request + documents + messages bundle",
+          "chat_unlocked_for_office=false enforced pre-payment — correct gating logic",
+          "401 for unauthenticated, 404 for non-existent request — proper error handling",
+          "account.html is Arabic-first with phone-banner, search, and reqList elements",
+          "request.html has timeline, docList, thread, and Pay-now CTA card",
+          "Status timeline covers full lifecycle: collecting → ready → claimed → awaiting_payment → in_progress → completed",
+          "Document chips show verified/pending/rejected states — good transparency"
+        ],
+        "issues": [
+          "DEBUG attach-phone shortcut present in account.html — must be removed or feature-flagged before production",
+          "Phone-required banner for Google-only users needs clear CTA copy explaining why phone verification matters for Sanad office communication",
+          "No test coverage for pagination on /my-requests — could break with many requests",
+          "No test for message thread ordering (chronological vs reverse)",
+          "No test for document upload/re-upload flow from request.html",
+          "Entity grid mentioned in description but not validated in tests",
+          "No test for Pay-now CTA behaviour (link target, disabled state when already paid)",
+          "No Arabic validation for request.html — only account.html confirmed Arabic-first"
+        ],
+        "verdict": "ship-with-watchlist"
+      }
+    },
+    {
+      "area": "Search",
+      "name": "Catalogue + Hybrid Search",
+      "tests": [
+        {
+          "label": "browse mode: search.mode = \"browse\"",
+          "ok": true
+        },
+        {
+          "label": "browse returns total + results",
+          "ok": true
+        },
+        {
+          "label": "hybrid mode: search.mode = \"hybrid\"",
+          "ok": true
+        },
+        {
+          "label": "hybrid returns lane counts (fts/semantic/partial)",
+          "ok": true
+        },
+        {
+          "label": "hybrid result has matched_by tags",
+          "ok": true
+        },
+        {
+          "label": "Arabic query returns 200",
+          "ok": true
+        },
+        {
+          "label": "free-fee filter: all results have fee_omr=0",
+          "ok": true
+        },
+        {
+          "label": "has_docs=yes: all results have doc_count > 0",
+          "ok": true
+        },
+        {
+          "label": "/entities returns array of {entity_en, entity_ar, n}",
+          "ok": true
+        },
+        {
+          "label": "/beneficiaries returns 200",
+          "ok": true
+        },
+        {
+          "label": "/fee-buckets returns the 5 bucket counts",
+          "ok": true
+        },
+        {
+          "label": "catalogue.html Arabic-first",
+          "ok": true
+        },
+        {
+          "label": "catalogue.html uses hybrid endpoint, not legacy /search",
+          "ok": true
+        },
+        {
+          "label": "catalogue.html has fee-pill filters",
+          "ok": true
+        },
+        {
+          "label": "catalogue.html has beneficiary rail + sort dropdown",
+          "ok": true
+        },
+        {
+          "label": "catalogue.html match-by chips",
+          "ok": true
+        }
+      ],
+      "llm": {
+        "score": 91,
+        "good": [
+          "Hybrid search architecture (FTS5 BM25 + Qwen embeddings + substring LIKE) with RRF fusion is sophisticated and production-grade",
+          "matched_by tags provide transparency on which lane(s) matched — excellent for debugging and user trust",
+          "All 16 deterministic tests pass including Arabic query handling",
+          "Filter endpoints well-structured: /entities returns {entity_en, entity_ar, n}, /fee-buckets returns 5 bucket counts",
+          "Free-fee filter correctly enforces fee_omr=0 on all results",
+          "has_docs=yes filter properly validates doc_count > 0",
+          "catalogue.html confirmed Arabic-first with modern UI: fee-pill filters, beneficiary rail, sort dropdown, match-by chips",
+          "Hybrid endpoint correctly wired (not legacy /search)",
+          "Browse vs hybrid mode distinction (search.mode) is clean API design"
+        ],
+        "issues": [
+          "No test coverage for empty query edge case or whitespace-only input",
+          "Missing test for fee_min/max range filter (only free-fee tested)",
+          "No test for sort parameter behaviour (e.g., sort=fee_asc, sort=relevance)",
+          "entity filter not explicitly tested despite being documented",
+          "No test for pagination (limit/offset) on large result sets",
+          "Lane counts (fts/semantic/partial) returned but no test verifying counts sum correctly or handle zero-match lanes",
+          "Detail modal WA + Web CTAs mentioned but not tested for correct deep-link generation"
+        ],
+        "verdict": "ship-with-watchlist"
+      }
+    },
+    {
+      "area": "Office-facing",
+      "name": "Office Auth",
+      "tests": [
+        {
+          "label": "demo officer login OK",
+          "ok": true
+        },
+        {
+          "label": "sanad_sess (officer) cookie set",
+          "ok": true
+        },
+        {
+          "label": "/api/auth/me returns officer + office",
+          "ok": true
+        },
+        {
+          "label": "wrong password → 401",
+          "ok": true
+        },
+        {
+          "label": "/office-login.html serves 200",
+          "ok": true
+        },
+        {
+          "label": "/office-signup.html serves 200",
+          "ok": true
+        },
+        {
+          "label": "/officer.html serves 200",
+          "ok": true
+        }
+      ],
+      "llm": {
+        "score": 74,
+        "good": [
+          "bcrypt 10 rounds meets OWASP minimum for password hashing",
+          "Separate cookie namespace (sanad_sess) prevents session collision with citizen auth",
+          "attachSession middleware pattern ensures consistent auth hydration across routes",
+          "pending_review workflow prevents unauthorized marketplace access until admin vetting",
+          "All critical endpoints return expected status codes (login, me, wrong password 401)",
+          "Static pages for login/signup/dashboard all serve correctly"
+        ],
+        "issues": [
+          "No rate limiting tested on /api/office/login — brute-force vector for officer credentials",
+          "Missing test for session expiry/max-age on sanad_sess cookie",
+          "No CSRF protection evidence for cookie-based auth on state-changing endpoints",
+          "Signup flow lacks email verification step — pending_review alone doesn't confirm email ownership",
+          "No test for password complexity requirements at signup",
+          "Missing Arabic UI/copy verification on /office-login.html and /office-signup.html",
+          "No logout endpoint tested — unclear if session invalidation works",
+          "Cookie security flags (HttpOnly, Secure, SameSite) not verified in test output",
+          "No test for concurrent session handling or session fixation protection"
+        ],
+        "verdict": "needs-work"
+      }
+    },
+    {
+      "area": "Marketplace",
+      "name": "Single-claim + Payment Gate",
+      "tests": [
+        {
+          "label": "POST /claim returns pricing { office_fee, government_fee, total }",
+          "ok": true
+        },
+        {
+          "label": "pricing.total = office_fee + government_fee",
+          "ok": true
+        },
+        {
+          "label": "second claim returns 409 already_claimed",
+          "ok": true
+        },
+        {
+          "label": "payment/start returns 200 + payment_link + amount",
+          "ok": true
+        },
+        {
+          "label": "stub-mode flag set (no Amwal creds)",
+          "ok": true
+        },
+        {
+          "label": "payment/start idempotent (reused=true)",
+          "ok": true
+        },
+        {
+          "label": "officer chat locked pre-payment (403)",
+          "ok": true
+        },
+        {
+          "label": "stub_pay redirects to /request.html",
+          "ok": true
+        },
+        {
+          "label": "after pay: paid_at set + status=in_progress + payment_status=paid",
+          "ok": true
+        },
+        {
+          "label": "officer chat unlocks post-payment (200)",
+          "ok": true
+        },
+        {
+          "label": "citizen sees chat_unlocked_for_office=true post-pay",
+          "ok": true
+        },
+        {
+          "label": "POST /complete returns 200",
+          "ok": true
+        },
+        {
+          "label": "status=completed",
+          "ok": true
+        },
+        {
+          "label": "inbox returns lifecycle buckets (reviewing/awaiting_payment/in_progress/on_hold)",
+          "ok": true
+        }
+      ],
+      "llm": {
+        "score": 88,
+        "good": [
+          "Atomic claim with WHERE office_id IS NULL prevents race conditions — deterministic test confirms 409 already_claimed on second attempt",
+          "Pricing transparency: POST /claim returns structured { office_fee, government_fee, total } breakdown before payment commitment",
+          "Payment idempotency handled correctly (reused=true on duplicate payment/start calls)",
+          "Chat gating enforced server-side: 403 chat_locked_until_paid prevents officer access to citizen messages pre-payment",
+          "Clean state transitions: paid_at timestamp + status=in_progress + payment_status=paid all set atomically on payment confirmation",
+          "Lifecycle buckets in inbox (reviewing/awaiting_payment/in_progress/on_hold) enable proper dashboard filtering",
+          "stub_pay redirect to /request.html provides graceful fallback when Amwal credentials unavailable"
+        ],
+        "issues": [
+          "No test coverage for POST /release refund flow — description mentions refund_required=true but no deterministic validation of refund state or citizen notification",
+          "Missing Arabic copy verification: payment notifications via 'bot voice + WhatsApp' described but no test confirms رسالة الدفع or تم فتح المحادثة messaging",
+          "No timeout/expiry test for payment links — what happens if citizen abandons payment? No TTL or cleanup validation",
+          "Officer sees empty messages array pre-payment but no test confirms citizen-side UX shows equivalent lock state or explanation",
+          "No test for edge case: what if payment webhook arrives before payment/start completes? Race condition unvalidated",
+          "Missing test for partial payment or payment failure states — only happy path (stub_pay → paid) covered"
+        ],
+        "verdict": "ship-with-watchlist"
+      }
+    },
+    {
+      "area": "Agent",
+      "name": "WhatsApp Agent + Bot Persona",
+      "tests": [
+        {
+          "label": "SYSTEM_PROMPT names the bot ساند / Saned",
+          "ok": true
+        },
+        {
+          "label": "forbids old \"Ahmed\" persona explicitly",
+          "ok": true
+        },
+        {
+          "label": "SYSTEM_V2 also rebranded",
+          "ok": true
+        },
+        {
+          "label": "welcomeMessage uses ساند",
+          "ok": true
+        },
+        {
+          "label": "helpMessage uses ساند",
+          "ok": true
+        },
+        {
+          "label": "no unintended \"Ahmed\" mentions in user-facing strings (excluding slot-comment)",
+          "ok": true
+        },
+        {
+          "label": "WhatsApp webhook signature verification",
+          "ok": true
+        },
+        {
+          "label": "WhatsApp webhook ACKs immediately, processes async",
+          "ok": true
+        },
+        {
+          "label": "Empty-reply guard for burst-continuation",
+          "ok": true
+        }
+      ],
+      "llm": {
+        "score": 82,
+        "good": [
+          "SYSTEM_PROMPT and SYSTEM_V2 both correctly name the bot ساند / Saned",
+          "Old 'Ahmed' persona explicitly forbidden in system prompts",
+          "welcomeMessage and helpMessage consistently use ساند branding",
+          "WhatsApp webhook signature verification implemented for security",
+          "Webhook ACKs immediately (200) then processes async — correct pattern for WhatsApp API timeouts",
+          "Burst-continuation logic with 6s window and empty-reply guard prevents spam on multi-file uploads",
+          "One-language reply mandate supports Arabic-first UX",
+          "Four deterministic launch flows defined (drivers_licence_renewal, mulkiya_renewal, cr_issuance, civil_id, passport — note: five listed, not four)"
+        ],
+        "issues": [
+          "Description says 'four deterministic launch flows' but lists five services — inconsistency in documentation",
+          "Slot-comment exclusion noted for Ahmed check — unclear if this is a code comment or user-visible; needs verification",
+          "Two separate system prompts (SYSTEM_PROMPT + SYSTEM_V2) creates maintenance burden and potential drift risk",
+          "No test coverage for one-language reply enforcement — could reply in mixed Arabic/English",
+          "No test for ground-truth-from-tools-only behaviour — LLM could hallucinate service details",
+          "Burst-continuation 6s window is arbitrary — no test for edge cases (exactly 6s, rapid sequential uploads)",
+          "No explicit test for Arabic-first greeting or language detection on first message"
+        ],
+        "verdict": "ship-with-watchlist"
+      }
+    },
+    {
+      "area": "Platform",
+      "name": "i18n (EN + AR)",
+      "tests": [
+        {
+          "label": "i18n has 200+ unique keys",
+          "ok": true,
+          "detail": "536 keys"
+        },
+        {
+          "label": "/: every data-i18n key exists in i18n.js",
+          "ok": true
+        },
+        {
+          "label": "/signup.html: every data-i18n key exists in i18n.js",
+          "ok": true
+        },
+        {
+          "label": "/login.html: every data-i18n key exists in i18n.js",
+          "ok": true
+        },
+        {
+          "label": "/account.html: every data-i18n key exists in i18n.js",
+          "ok": true
+        },
+        {
+          "label": "/catalogue.html: every data-i18n key exists in i18n.js",
+          "ok": true
+        },
+        {
+          "label": "/request.html: every data-i18n key exists in i18n.js",
+          "ok": true
+        },
+        {
+          "label": "app.name (en) = \"Saned\"",
+          "ok": true
+        },
+        {
+          "label": "app.name (ar) = \"ساند\"",
+          "ok": true
+        },
+        {
+          "label": "no legacy \"سند الذكي\" anywhere",
+          "ok": true
+        }
+      ],
+      "llm": {
+        "score": 96,
+        "good": [
+          "536 i18n keys far exceeds 200-key threshold — comprehensive coverage",
+          "All 6 HTML pages pass data-i18n key existence checks (/, /signup, /login, /account, /catalogue, /request)",
+          "Brand naming correct: en=\"Saned\", ar=\"ساند\" — no legacy \"Sanad-AI\" or \"سند الذكي\" remnants",
+          "Arabic-first default with <html lang=\"ar\" dir=\"rtl\"> at first paint prevents English flash",
+          "Clear separation of product brand (Saned · ساند) vs real-world Sanad offices (مكاتب سند)"
+        ],
+        "issues": [
+          "No test coverage for dynamic JS-injected strings (e.g., toast messages, error modals) — only static data-i18n attributes verified",
+          "Missing validation that localStorage sanad.lang toggle actually switches all visible copy at runtime",
+          "No RTL/LTR layout regression test — dir=\"rtl\" is set but visual alignment not verified"
+        ],
+        "verdict": "production-ready"
+      }
+    },
+    {
+      "area": "Platform",
+      "name": "Database Schema",
+      "tests": [
+        {
+          "label": "citizen.email column exists",
+          "ok": true
+        },
+        {
+          "label": "citizen.google_sub column exists",
+          "ok": true
+        },
+        {
+          "label": "citizen.display_name column exists",
+          "ok": true
+        },
+        {
+          "label": "citizen.avatar_url column exists",
+          "ok": true
+        },
+        {
+          "label": "citizen.phone_verified_at column exists",
+          "ok": true
+        },
+        {
+          "label": "citizen.email_verified_at column exists",
+          "ok": true
+        },
+        {
+          "label": "citizen.last_login_at column exists",
+          "ok": true
+        },
+        {
+          "label": "citizen.signup_source column exists",
+          "ok": true
+        },
+        {
+          "label": "request.payment_status column exists",
+          "ok": true
+        },
+        {
+          "label": "request.payment_link column exists",
+          "ok": true
+        },
+        {
+          "label": "request.payment_ref column exists",
+          "ok": true
+        },
+        {
+          "label": "request.payment_amount_omr column exists",
+          "ok": true
+        },
+        {
+          "label": "request.paid_at column exists",
+          "ok": true
+        },
+        {
+          "label": "request.released_count column exists",
+          "ok": true
+        },
+        {
+          "label": "request.claim_review_started_at column exists",
+          "ok": true
+        },
+        {
+          "label": "citizen_otp table exists",
+          "ok": true
+        },
+        {
+          "label": "idx_citizen_email unique index",
+          "ok": true
+        },
+        {
+          "label": "idx_request_payment index",
+          "ok": true
+        },
+        {
+          "label": "idx_request_office_status index",
+          "ok": true
+        }
+      ],
+      "llm": {
+        "score": 92,
+        "good": [
+          "All 19 schema assertions pass — citizen, request, and citizen_otp tables have expected columns",
+          "Idempotent ALTERs via pragma_table_info checks allow safe re-runs on persistent SQLite volumes",
+          "Proper indexing: unique idx_citizen_email prevents duplicate accounts; idx_request_payment and idx_request_office_status support common queries",
+          "phone_verified_at / email_verified_at columns enable proper verification state tracking for OTP and Google flows",
+          "payment_status + payment_link + paid_at columns align with Thawani payment-gate requirements",
+          "released_count column supports partial-release logic for multi-document requests"
+        ],
+        "issues": [
+          "No foreign-key constraint test for citizen_otp.citizen_id → citizen.id (SQLite FK enforcement may be off by default)",
+          "Missing index on citizen.google_sub — Google login lookups will table-scan as user base grows",
+          "No test for citizen_otp expiry/cleanup mechanism (stale OTPs could accumulate)",
+          "claim_review_started_at added but no corresponding index for office dashboard queries filtering by review state"
+        ],
+        "verdict": "ship-with-watchlist"
+      }
+    }
+  ]
+}
