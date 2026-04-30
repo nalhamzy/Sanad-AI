@@ -4,6 +4,24 @@
 // .otp-input × 6, #errBox, #langBtn, #g_id_signin.
 (function () {
   const $ = s => document.querySelector(s);
+
+  // Honor a ?next=… query param so deep-links survive sign-in.
+  // Examples:
+  //   /apply.html?service=140013     → bounces to /login.html?next=…
+  //   user signs in (or signs up)    → returns to the resolved next URL
+  // Falls back to /account.html if the param is missing or unsafe.
+  function resolveNextUrl() {
+    try {
+      const raw = new URLSearchParams(location.search).get('next');
+      if (!raw) return '/account.html';
+      const decoded = decodeURIComponent(raw);
+      // Same-origin only — refuse anything starting with a scheme or "//".
+      if (!decoded.startsWith('/') || decoded.startsWith('//')) return '/account.html';
+      return decoded;
+    } catch { return '/account.html'; }
+  }
+  const NEXT_URL = resolveNextUrl();
+
   const phoneInput = $('#phone');
   const sendBtn = $('#sendOtpBtn');
   const verifyBtn = $('#verifyOtpBtn');
@@ -115,7 +133,7 @@
         otpInputs[0]?.focus();
         return;
       }
-      window.location.href = '/account.html';
+      window.location.href = NEXT_URL;
     } catch (e) {
       showErr(I18N.t('auth.err.network'));
     } finally {
@@ -164,7 +182,7 @@
       });
       const d = await r.json();
       if (!r.ok) return showErr(I18N.t('auth.err.google'));
-      window.location.href = '/account.html';
+      window.location.href = NEXT_URL;
     } catch (e) {
       showErr(I18N.t('auth.err.network'));
     }

@@ -176,13 +176,18 @@
   const PAGE_LIMIT = 20;
 
   // ── State ──────────────────────────────────────────────
+  // Hydrate from URL params so deep-links from the homepage spotlight tiles
+  // (e.g. /catalogue.html?q=passport) and entity-prefilled redirects
+  // (e.g. /catalogue.html?entity=Royal Oman Police) both work without the
+  // citizen having to re-type or re-pick.
+  const _urlParams = new URLSearchParams(location.search);
   const state = {
-    q: '',
-    entity: new URLSearchParams(location.search).get('entity') || '',
-    beneficiary: '',
-    feeBucket: '',          // '' | '0' | 'lt10' | 'm10_50' | 'gte50'
-    hasDocs: '',
-    sort: 'relevance',
+    q:           _urlParams.get('q') || '',
+    entity:      _urlParams.get('entity') || '',
+    beneficiary: _urlParams.get('beneficiary') || '',
+    feeBucket:   _urlParams.get('fee') || '',
+    hasDocs:     _urlParams.get('has_docs') || '',
+    sort:        _urlParams.get('sort') || 'relevance',
     offset: 0,
     total: 0
   };
@@ -511,7 +516,10 @@
         ${s.source_url ? `<div class="text-xs"><a href="${escapeHtml(s.source_url)}" target="_blank" rel="noopener" class="text-teal-600 hover:underline">${I18N.t('catalogue.detail.source')} ↗</a></div>` : ''}
       `;
       $('#ctaWA').href = `https://wa.me/96890944196?text=${encodeURIComponent((lang === 'ar' ? 'أبغى ' : 'I want ') + name)}`;
-      $('#ctaWeb').href = `/chat.html?service=${encodeURIComponent(name)}`;
+      // The "Apply on the web" CTA goes to the structured form, not the
+      // chat. apply.html itself handles unsigned-in users with a
+      // sign-in-then-resume redirect.
+      $('#ctaWeb').href = `/apply.html?service=${s.id}`;
       $('#detail').classList.remove('hidden');
     } catch (e) {
       console.warn('[catalogue] detail failed:', e);
@@ -539,6 +547,11 @@
   });
 
   // ── Boot ───────────────────────────────────────────────
+  // Reflect URL-hydrated state in the inputs BEFORE running the search:
+  // search bar text, sort dropdown, fee/has_docs pill active states.
+  if (state.q) { qInput.value = state.q; qClear.classList.remove('hidden'); }
+  if (state.sort && sortSel) sortSel.value = state.sort;
+  syncPills();
   loadFilters().then(() => run());
 })();
 </script>

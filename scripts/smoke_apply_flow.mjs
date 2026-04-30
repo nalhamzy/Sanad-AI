@@ -226,6 +226,50 @@ try {
   ok('/account.html drops the old "category grid"',
      !account.includes('account.categories.h2'));
 
+  // ── Routing-fix regressions (the bugs the user reported) ──
+  // Homepage hero / spotlight + catalogue modal must NEVER route applies
+  // to /chat.html — they go to /apply.html (form) or /catalogue.html.
+  const indexHtml = await fetch(`${base}/`).then(r => r.text());
+  ok('index.html hero search routes results to /apply.html?service=',
+     /href="\/apply\.html\?service=/.test(indexHtml));
+  ok('index.html hero search does NOT route to /chat.html?q=',
+     !/href="\/chat\.html\?q=/.test(indexHtml));
+  ok('index.html spotlight cards route to /catalogue.html (not /chat.html)',
+     /href="\/catalogue\.html\?q=civil\+id"/.test(indexHtml) &&
+     !/href="\/chat\.html\?q=civil\+id"/.test(indexHtml));
+
+  // catHtml + ac are loaded here (smoke_apply_flow doesn't have them yet
+  // unlike smoke_citizen_auth which fetches them earlier).
+  const catHtmlFa = await fetch(`${base}/catalogue.html`).then(r => r.text());
+  ok('catalogue.html modal Apply CTA goes to /apply.html, not /chat.html',
+     catHtmlFa.includes('/apply.html?service=${s.id}') ||
+     catHtmlFa.includes('apply.html?service=${s.id}'));
+  ok('catalogue.html modal does NOT use /chat.html?service=',
+     !/\/chat\.html\?service=\$\{[^}]+\}/.test(catHtmlFa));
+
+  // ── Catalogue URL-param hydration (?q= now pre-fills the search) ──
+  ok('catalogue.html hydrates state.q from URL params',
+     catHtmlFa.includes("_urlParams.get('q')") || catHtmlFa.includes("urlParams.get('q')"));
+  ok('catalogue.html reflects state.q in the search input on boot',
+     catHtmlFa.includes("if (state.q) { qInput.value = state.q;"));
+
+  // ── auth-client.js honors ?next= for round-trip after sign-in ──
+  const acFa = await fetch(`${base}/auth-client.js`).then(r => r.text());
+  ok('auth-client.js carries NEXT_URL fallback to /account.html',
+     acFa.includes('NEXT_URL') && acFa.includes('resolveNextUrl'));
+  ok('auth-client.js redirects to NEXT_URL post-OTP (not hardcoded /account.html)',
+     /window\.location\.href\s*=\s*NEXT_URL/.test(acFa));
+
+  // ── Slot-dot CSS collision regression — must be .is-empty/.is-filled ──
+  ok('apply.html uses .is-empty / .is-filled (not .empty / .filled)',
+     apply.includes("'is-filled'") && apply.includes("'is-empty'") &&
+     !apply.includes(".classList.toggle('empty'") &&
+     !apply.includes(".classList.toggle('filled'"));
+
+  // ── Account greeting doesn't double-render the phone ──
+  ok('account.html greeting prefers name over phone, falls back to welcome_back',
+     account.includes('account.welcome_back'));
+
 } catch (e) {
   fail++;
   console.error('✗ test threw:', e);

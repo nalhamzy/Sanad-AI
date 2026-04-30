@@ -305,27 +305,32 @@
     </div>
     <div id="serviceGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
       <!-- Pre-rendered cards (queries hybrid endpoint to enrich with prices) -->
-      <a href="/chat.html?q=civil+id" class="svc-card group bg-white rounded-2xl p-5 border border-slate-200 text-center" data-q="civil id">
+      <!-- Each tile pre-resolves the service id at load time (see service-card
+           enrichment script below); when the user clicks, we route to
+           /apply.html?service=<id> if signed in, else /login.html?next=…
+           Falls back to /catalogue.html?q=<keyword> if the tile failed
+           to resolve a real id (network error, no LLM key, etc.). -->
+      <a href="/catalogue.html?q=civil+id" class="svc-card group bg-white rounded-2xl p-5 border border-slate-200 text-center" data-q="civil id">
         <div class="text-3xl mb-2.5">🆔</div>
         <div class="text-sm sm:text-[15px] font-bold text-slate-800 leading-snug" data-i18n="home.services.civil_id"></div>
         <div class="mt-2 text-[11px] font-semibold text-teal-700 service-fee">—</div>
       </a>
-      <a href="/chat.html?q=driving+licence" class="svc-card group bg-white rounded-2xl p-5 border border-slate-200 text-center" data-q="driving licence">
+      <a href="/catalogue.html?q=driving+licence" class="svc-card group bg-white rounded-2xl p-5 border border-slate-200 text-center" data-q="driving licence">
         <div class="text-3xl mb-2.5">🚗</div>
         <div class="text-sm sm:text-[15px] font-bold text-slate-800 leading-snug" data-i18n="home.services.driving"></div>
         <div class="mt-2 text-[11px] font-semibold text-teal-700 service-fee">—</div>
       </a>
-      <a href="/chat.html?q=passport" class="svc-card group bg-white rounded-2xl p-5 border border-slate-200 text-center" data-q="passport">
+      <a href="/catalogue.html?q=passport" class="svc-card group bg-white rounded-2xl p-5 border border-slate-200 text-center" data-q="passport">
         <div class="text-3xl mb-2.5">🛂</div>
         <div class="text-sm sm:text-[15px] font-bold text-slate-800 leading-snug" data-i18n="home.services.passport"></div>
         <div class="mt-2 text-[11px] font-semibold text-teal-700 service-fee">—</div>
       </a>
-      <a href="/chat.html?q=mulkiya" class="svc-card group bg-white rounded-2xl p-5 border border-slate-200 text-center" data-q="mulkiya vehicle">
+      <a href="/catalogue.html?q=mulkiya" class="svc-card group bg-white rounded-2xl p-5 border border-slate-200 text-center" data-q="mulkiya vehicle">
         <div class="text-3xl mb-2.5">🚙</div>
         <div class="text-sm sm:text-[15px] font-bold text-slate-800 leading-snug" data-i18n="home.services.mulkiya"></div>
         <div class="mt-2 text-[11px] font-semibold text-teal-700 service-fee">—</div>
       </a>
-      <a href="/chat.html?q=commercial+registration" class="svc-card group bg-white rounded-2xl p-5 border border-slate-200 text-center" data-q="commercial registration">
+      <a href="/catalogue.html?q=commercial+registration" class="svc-card group bg-white rounded-2xl p-5 border border-slate-200 text-center" data-q="commercial registration">
         <div class="text-3xl mb-2.5">🏢</div>
         <div class="text-sm sm:text-[15px] font-bold text-slate-800 leading-snug" data-i18n="home.services.cr"></div>
         <div class="mt-2 text-[11px] font-semibold text-teal-700 service-fee">—</div>
@@ -524,7 +529,10 @@
       const fee = x.fee_omr != null ? `${x.fee_omr.toFixed(3)} OMR` : (x.fees_text || '');
       const time = (lang === 'ar' && x.avg_time_ar) ? x.avg_time_ar : (x.avg_time_en || '');
       const tags = (x.matched_by || []).map(t => `<span class="matched-chip matched-${t}">${t}</span>`).join('');
-      return `<a href="/chat.html?q=${encodeURIComponent(name)}" class="block px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-b-0">
+      // Route hero results to the structured apply form, NOT the chat. If
+      // the visitor isn't signed in, /apply.html bounces them to
+      // /login.html?next=… and resumes the form after sign-in.
+      return `<a href="/apply.html?service=${x.id}" class="block px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-b-0">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
             <div class="font-semibold text-slate-800 text-sm truncate">${escapeHtml(name)}</div>

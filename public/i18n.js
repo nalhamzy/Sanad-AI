@@ -468,7 +468,8 @@
       'auth.err.not_signed_in': 'Please sign in first.',
 
       // ── Citizen account dashboard ───────────────────────────
-      'account.welcome': 'Welcome back',
+      'account.welcome': 'My Saned account',
+      'account.welcome_back': 'Welcome back',
       'account.hello_prefix': 'Hi, ',
       'account.phone_banner.title': 'Add a WhatsApp number',
       'account.phone_banner.sub': 'A Sanad office can\'t contact you without a verified WhatsApp number.',
@@ -1110,7 +1111,8 @@
       'auth.err.not_signed_in': 'يرجى تسجيل الدخول أولاً.',
 
       // ── Citizen account dashboard ───────────────────────────
-      'account.welcome': 'أهلاً بعودتك',
+      'account.welcome': 'حسابك على ساند',
+      'account.welcome_back': 'أهلاً بعودتك',
       'account.hello_prefix': 'مرحباً، ',
       'account.phone_banner.title': 'أضف رقم واتساب',
       'account.phone_banner.sub': 'لا يستطيع مكتب سند التواصل معك بدون رقم واتساب مؤكَّد.',

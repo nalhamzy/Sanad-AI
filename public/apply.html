@@ -37,10 +37,14 @@
   .file-row:hover { border-color: var(--brand, #0f766e); background: var(--brand-tint, #f0fdfa); }
   .file-row.has-file { border-style: solid; border-color: var(--brand, #0f766e); background: var(--brand-tint, #f0fdfa); }
 
-  /* Slot status indicator — bespoke to /apply.html */
-  .slot-dot { width: 10px; height: 10px; border-radius: 9999px; flex-shrink: 0; }
-  .slot-dot.empty  { background: var(--warn, #d97706); box-shadow: 0 0 0 3px var(--warn-soft, #fef3c7); }
-  .slot-dot.filled { background: var(--brand, #0f766e); box-shadow: 0 0 0 3px var(--brand-soft, #ccfbf1); }
+  /* Slot status indicator — bespoke to /apply.html.
+     Note: state modifiers are .is-empty / .is-filled — NOT .empty / .filled
+     because theme.css already defines a legacy `.empty` empty-state class
+     (display:flex; padding:48px 24px) which would otherwise collide and
+     blow up the dot. */
+  .slot-dot { width: 10px; height: 10px; border-radius: 9999px; flex-shrink: 0; display: inline-block; }
+  .slot-dot.is-empty  { background: var(--warn, #d97706); box-shadow: 0 0 0 3px var(--warn-soft, #fef3c7); }
+  .slot-dot.is-filled { background: var(--brand, #0f766e); box-shadow: 0 0 0 3px var(--brand-soft, #ccfbf1); }
 
   /* Form section divider */
   .section-divider {
@@ -337,7 +341,7 @@
           <div class="step-num shrink-0" style="width:30px;height:30px;font-size:13px;border-radius:8px">${i+1}</div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
-              <div class="slot-dot empty" data-slot-dot="${escapeHtml(code)}"></div>
+              <div class="slot-dot is-empty" data-slot-dot="${escapeHtml(code)}"></div>
               <div class="font-bold ink-900 text-sm">${escapeHtml(slotLabel)}</div>
             </div>
             ${altLabel ? `<div class="text-xs ink-500 mt-0.5" dir="${lang === 'ar' ? 'ltr' : 'rtl'}">${escapeHtml(altLabel)}</div>` : ''}
@@ -400,8 +404,8 @@
     });
     document.querySelectorAll('[data-slot-dot]').forEach(d => {
       const code = d.getAttribute('data-slot-dot');
-      d.classList.toggle('filled', filledSlots.has(code));
-      d.classList.toggle('empty',  !filledSlots.has(code));
+      d.classList.toggle('is-filled', filledSlots.has(code));
+      d.classList.toggle('is-empty',  !filledSlots.has(code));
     });
     // Total file count
     let totalFiles = 0;

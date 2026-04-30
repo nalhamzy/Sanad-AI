@@ -261,10 +261,17 @@
     window.location.href = '/login.html'; return;
   }
 
-  // Greeting
-  const helloName = me.name || me.email || me.phone || I18N.t('account.welcome');
-  $('#hello').textContent = (I18N.t('account.hello_prefix') || '') + helloName;
-  $('#contactSub').textContent = me.phone || me.email || '';
+  // Greeting — show the user's NAME in the H1 if we have one, fall back to
+  // a localized "Welcome back" if not. The contact line below carries the
+  // phone (or email). Avoids the phone-shown-twice duplication when no
+  // name has been collected yet.
+  const helloName = me.name || I18N.t('account.welcome_back', 'Welcome back');
+  $('#hello').textContent = (me.name ? (I18N.t('account.hello_prefix') || '') : '') + helloName;
+  // Sub-line: phone preferred (it's the office's communication channel),
+  // email second. Suppress entirely if both are empty.
+  const sub = me.phone || me.email || '';
+  $('#contactSub').textContent = sub;
+  $('#contactSub').classList.toggle('hidden', !sub);
   if (me.avatar_url) $('#avatar').src = me.avatar_url;
   if (me.phone) $('#contactPhone').textContent = me.phone;
 
