@@ -858,6 +858,84 @@
     return list;
   }
 
+  // ─ SLA helpers ─
+  // Two windows: REVIEW (5 min default, pre-pay, anchored to claim_review_started_at)
+  // and WORK (45 min default, post-pay, anchored to paid_at). Both windows are
+  // configurable server-side via env (OFFICE_REVIEW_SLA_MINUTES / OFFICE_SLA_MINUTES)
+  // and surfaced through allInbox.sla so the client never hard-codes 5/45.
+  function slaConfig() {
+    const cfg = (allInbox && allInbox.sla) || {};
+    return {
+      review_minutes: Number(cfg.review_minutes ?? 5),
+      work_minutes:   Number(cfg.work_minutes   ?? 45)
+    };
+  }
+  function slaInfo(r) {
+    const cfg = slaConfig();
+    // Pre-pay review hold — 5-minute window from claim_review_started_at.
+    if (r.status === 'claimed' && !r.paid_at && r.claim_review_started_at) {
+      const startMs = new Date(r.claim_review_started_at.replace(' ','T')+'Z').getTime();
+      const totalMs = cfg.review_minutes * 60_000;
+      return { kind:'review', deadlineMs: startMs + totalMs, totalMs, labelKey:'officer.sla.review_remaining' };
+    }
+    // Post-pay work timer — 45-minute window from paid_at. Applies to in_progress.
+    if (r.status === 'in_progress' && r.paid_at) {
+      const startMs = new Date(r.paid_at.replace(' ','T')+'Z').getTime();
+      const totalMs = cfg.work_minutes * 60_000;
+      return { kind:'work', deadlineMs: startMs + totalMs, totalMs, labelKey:'officer.sla.work_remaining' };
+    }
+    // awaiting_payment, ready, completed, on_hold, etc. — no countdown.
+    return null;
+  }
+  function slaPillClass(kind, remainingMs) {
+    if (remainingMs <= 0) return 'chip-bad';
+    if (kind === 'review') {
+      // 5-minute window: red < 30s, amber < 2m, cyan otherwise.
+      if (remainingMs < 30_000)  return 'chip-bad';
+      if (remainingMs < 120_000) return 'chip-warn';
+      return 'chip-cyan';
+    }
+    // work (45-minute window): red < 2m, amber < 10m, cyan otherwise.
+    if (remainingMs < 120_000) return 'chip-bad';
+    if (remainingMs < 600_000) return 'chip-warn';
+    return 'chip-cyan';
+  }
+  function formatMmSs(ms) {
+    const s = Math.max(0, Math.ceil(ms / 1000));
+    const m = Math.floor(s / 60);
+    const ss = s % 60;
+    return `${m}:${String(ss).padStart(2,'0')}`;
+  }
+  // 1s ticker — re-paints the countdown text + chip color + bar fill on each
+  // rendered card without going to the server. The 4s liveTick handles
+  // structural refresh (cards entering/leaving the lifecycle); this just
+  // makes the visible time decrement smoothly.
+  function updateSlaCountdowns() {
+    const now = Date.now();
+    document.querySelectorAll('.sla-pill[data-sla-deadline]').forEach(el => {
+      const deadline = Number(el.dataset.slaDeadline);
+      const kind     = el.dataset.slaKind;
+      const remaining = Math.max(0, deadline - now);
+      const t = el.querySelector('.sla-time');
+      if (t) t.textContent = formatMmSs(remaining);
+      el.classList.remove('chip-cyan','chip-warn','chip-bad');
+      el.classList.add(slaPillClass(kind, remaining));
+    });
+    document.querySelectorAll('.sla-bar[data-sla-deadline]').forEach(el => {
+      const deadline = Number(el.dataset.slaDeadline);
+      const total    = Number(el.dataset.slaTotal);
+      const remaining = Math.max(0, deadline - now);
+      const pct = total > 0 ? (remaining / total) * 100 : 0;
+      const fill = el.querySelector('.bar-fill');
+      if (!fill) return;
+      fill.style.width = `${pct}%`;
+      fill.classList.remove('warn','bad');
+      if (pct < 25) fill.classList.add('bad');
+      else if (pct < 50) fill.classList.add('warn');
+    });
+  }
+  setInterval(updateSlaCountdowns, 1000);
+
   // ─ Card ─
   function cardHtml(r, idx) {
     const name = pickName(r) || '(service)';
@@ -865,10 +943,16 @@
     const claimable = r.status === 'ready';
     const alreadyQuoted = r.my_offer_status === 'pending';
     const unread = unreadChats.get(r.id) || 0;
-    const claimedAt = r.claimed_at ? new Date(r.claimed_at.replace(' ','T')+'Z').getTime() : null;
-    const slaMs = claimedAt ? Math.max(0, 2*3600*1000 - (Date.now() - claimedAt)) : null;
-    const slaText = slaMs != null ? (slaMs > 0 ? Math.floor(slaMs/60000)+'m SLA' : 'BREACH') : null;
-    const slaPct = slaMs != null ? (slaMs/(2*3600*1000))*100 : null;
+    // Two-window SLA — review (5 min from claim_review_started_at, pre-pay)
+    // and work (45 min from paid_at, post-pay). Awaiting-payment has no
+    // countdown (citizen is the bottleneck — never auto-released). The
+    // updateSlaCountdowns() ticker re-paints these every second using the
+    // data-sla-deadline attribute below; the render-time class is just the
+    // initial state.
+    const sla = slaInfo(r);
+    const slaRemaining = sla ? Math.max(0, sla.deadlineMs - Date.now()) : null;
+    const slaPct = sla ? (slaRemaining / sla.totalMs) * 100 : null;
+    const slaChipClass = sla ? slaPillClass(sla.kind, slaRemaining) : '';
 
     // Pricing shown on the card:
     //   • market (not yet awarded) → show effective office fee + effective gov fee = quote
@@ -929,7 +1013,7 @@
                    </div>`
                 : `<span class="text-[11.5px] font-semibold mono" data-tip="${t('offer.my_price')}: ${officeFee.toFixed(3)} + ${t('offer.gov_price')}: ${govFee.toFixed(3)}">${displayFee.toFixed ? displayFee.toFixed(3) : displayFee} ${t('officer.omr')}</span>`
               }
-              ${slaText ? `<span class="chip ${slaMs > 600000 ? '' : slaMs > 0 ? 'chip-warn' : 'chip-bad'} chip-sm">${slaText}</span>` : ''}
+              ${sla ? `<span class="chip chip-sm sla-pill ${slaChipClass}" data-sla-deadline="${sla.deadlineMs}" data-sla-total="${sla.totalMs}" data-sla-kind="${sla.kind}" data-tip="${t(sla.labelKey)}">⏱ <span class="sla-time mono">${formatMmSs(slaRemaining)}</span></span>` : ''}
               <div class="ms-auto flex items-center gap-1">
                 ${claimable
                   ? (alreadyQuoted
@@ -943,7 +1027,7 @@
                 }
               </div>
             </div>
-            ${slaPct != null ? `<div class="bar mt-2" style="height:2px"><div class="bar-fill ${slaPct < 25 ? 'bad' : slaPct < 50 ? 'warn' : ''}" style="width:${slaPct}%"></div></div>` : ''}
+            ${sla ? `<div class="bar mt-2 sla-bar" data-sla-deadline="${sla.deadlineMs}" data-sla-total="${sla.totalMs}" style="height:2px"><div class="bar-fill ${slaPct < 25 ? 'bad' : slaPct < 50 ? 'warn' : ''}" style="width:${slaPct}%"></div></div>` : ''}
           </div>
         </div>
       </li>`;

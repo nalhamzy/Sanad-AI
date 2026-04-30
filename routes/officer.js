@@ -27,7 +27,7 @@ import { storeMessage } from '../lib/agent.js';
 import { requireOfficer } from '../lib/auth.js';
 import { sendWhatsAppText, isWhatsAppSession } from '../lib/whatsapp_send.js';
 import { createPaymentLink, newMerchantRef, AMWAL_ENABLED } from '../lib/amwal.js';
-import { SLA_MINUTES } from '../lib/sla.js';
+import { SLA_MINUTES, REVIEW_SLA_MINUTES } from '../lib/sla.js';
 
 export const officerRouter = Router();
 
@@ -92,6 +92,7 @@ officerRouter.get('/reports', async (req, res) => {
   });
   res.json({
     sla_minutes: SLA_MINUTES,
+    review_sla_minutes: REVIEW_SLA_MINUTES,
     by_status_7d: byStatus,
     daily_14d: daily,
     avg_minutes_30d: avgRows[0]?.avg_minutes ? Math.round(avgRows[0].avg_minutes) : null,
@@ -224,6 +225,12 @@ officerRouter.get('/inbox', async (req, res) => {
     },
     settings: {
       default_office_fee_omr: credit.default_office_fee_omr ?? 5.0
+    },
+    // SLA windows surfaced to the client so countdown badges always reflect
+    // the live config (env-overrides for tests show through correctly).
+    sla: {
+      review_minutes: REVIEW_SLA_MINUTES,
+      work_minutes:   SLA_MINUTES
     },
     marketplace,
     my_offers: myOffers,
@@ -722,9 +729,13 @@ officerRouter.post('/request/:id/claim',
     const officer_id = req.officer.officer_id;
 
     // Resolve the predefined pricing in one read so we have it for the audit
-    // entry and the citizen-facing notification.
+    // entry and the citizen-facing notification. Also pull paid_at: if a
+    // previous office had this request and the SLA timer auto-transferred
+    // it, paid_at is still set — we'll land the new office directly in
+    // 'in_progress' (skip the payment-link step; the citizen already paid).
     const { rows: priceRows } = await db.execute({
       sql: `SELECT r.session_id, r.service_id, r.status, r.office_id,
+                   r.paid_at, r.payment_amount_omr, r.payment_ref,
                    c.phone AS citizen_phone, c.language_pref,
                    s.fee_omr AS catalog_gov_fee, s.name_en AS service_name, s.name_ar AS service_name_ar,
                    COALESCE(osp.office_fee_omr, off.default_office_fee_omr, 5.0) AS office_fee,
@@ -750,17 +761,22 @@ officerRouter.post('/request/:id/claim',
     const office_fee = Number(r.office_fee) || 0;
     const gov_fee    = Number(r.gov_fee) || 0;
     const total      = office_fee + gov_fee;
+    const isTransfer = !!r.paid_at;  // payment already received — transfer claim
 
-    // ATOMIC: only the first concurrent caller wins. Note WHERE office_id IS NULL.
+    // ATOMIC: only the first concurrent caller wins. WHERE office_id IS NULL
+    // is the lock. On a transfer claim (paid_at preserved) we skip straight
+    // to status='in_progress' so the new office sees the Complete button,
+    // not the Send-payment-link button.
+    const newStatus = isTransfer ? 'in_progress' : 'claimed';
     const upd = await db.execute({
       sql: `UPDATE request
-               SET status='claimed', office_id=?, officer_id=?,
+               SET status=?, office_id=?, officer_id=?,
                    office_fee_omr=?, government_fee_omr=?, quoted_fee_omr=?,
                    claimed_at=datetime('now'),
                    claim_review_started_at=datetime('now'),
                    last_event_at=datetime('now')
              WHERE id=? AND status='ready' AND office_id IS NULL`,
-      args: [office_id, officer_id, office_fee, gov_fee, total, id]
+      args: [newStatus, office_id, officer_id, office_fee, gov_fee, total, id]
     });
     if (!upd.rowsAffected) {
       // Lost the race — re-read to give the loser a precise reason.
@@ -772,19 +788,28 @@ officerRouter.post('/request/:id/claim',
 
     await db.execute({
       sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
-            VALUES ('officer', ?, 'request_claim', 'request', ?, ?)`,
-      args: [officer_id, id, JSON.stringify({ office_fee, gov_fee, total })]
+            VALUES ('officer', ?, ?, 'request', ?, ?)`,
+      args: [
+        officer_id,
+        isTransfer ? 'request_claim_transfer' : 'request_claim',
+        id,
+        JSON.stringify({ office_fee, gov_fee, total, transfer: isTransfer })
+      ]
     });
 
-    // Notify the citizen. Use the bot voice via the chat relay so the message
-    // shows up on web AND WhatsApp. Pre-payment: citizen sees "an office picked
-    // up your request" but does NOT see the office's chat yet — chat unlocks
-    // after payment.
+    // Notify the citizen. Two messages depending on whether this is a fresh
+    // claim or a transfer-claim of an already-paid request:
+    //   • fresh:    "an office picked up your request, payment link coming"
+    //   • transfer: "another office took over (no re-payment); they're working on it now"
     const lang = (r.language_pref || 'ar') === 'en' ? 'en' : 'ar';
     const sname = (lang === 'ar' && r.service_name_ar) ? r.service_name_ar : (r.service_name || '');
-    const claimMsg = lang === 'ar'
-      ? `📥 تم استلام طلبك "${sname}" من قِبَل أحد مكاتب سند المرخّصة. يراجع الموظف مستنداتك الآن وسيرسل لك رابط الدفع قريباً.`
-      : `📥 Your request "${sname}" was picked up by a licensed Sanad office. The officer is reviewing your documents and will send you a payment link shortly.`;
+    const claimMsg = isTransfer
+      ? (lang === 'ar'
+          ? `🤝 مكتب سند جديد استلم طلبك "${sname}" وبدأ المعالجة فوراً (الدفع قائم — لن تدفع مجدداً).`
+          : `🤝 A new Sanad office took over your "${sname}" request and started working immediately (payment is preserved — you won't be charged again).`)
+      : (lang === 'ar'
+          ? `📥 تم استلام طلبك "${sname}" من قِبَل أحد مكاتب سند المرخّصة. يراجع الموظف مستنداتك الآن وسيرسل لك رابط الدفع قريباً.`
+          : `📥 Your request "${sname}" was picked up by a licensed Sanad office. The officer is reviewing your documents and will send you a payment link shortly.`);
     await storeMessage({
       session_id: r.session_id, request_id: id,
       direction: 'out', actor_type: 'bot',
@@ -795,7 +820,13 @@ officerRouter.post('/request/:id/claim',
       sendWhatsAppText(phone, claimMsg).catch(() => {});
     }
 
-    res.json({ ok: true, request_id: id, status: 'claimed', pricing: { office_fee, government_fee: gov_fee, total } });
+    res.json({
+      ok: true,
+      request_id: id,
+      status: newStatus,
+      transfer: isTransfer,
+      pricing: { office_fee, government_fee: gov_fee, total }
+    });
   }
 );
 

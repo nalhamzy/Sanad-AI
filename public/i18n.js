@@ -272,6 +272,11 @@
       'officer.attachment': '📎 attachment',
       'officer.sla_label': 'SLA',
       'officer.sla_minutes': 'SLA · {n} min',
+      // Two-window SLA badges shown on in-flight cards.
+      // review = the 5-minute pre-pay decision window (status='claimed', no payment yet).
+      // work   = the 45-minute post-pay completion window (status='in_progress', paid_at set).
+      'officer.sla.review_remaining': 'until auto-release',
+      'officer.sla.work_remaining':   'to complete the work',
       // extras
       'officer.brand': 'Sanad Officer',
       'officer.loading': 'loading…',
@@ -960,6 +965,9 @@
       'officer.attachment': '📎 مرفق',
       'officer.sla_label': 'مهلة الإنجاز',
       'officer.sla_minutes': 'مهلة · {n} دقيقة',
+      // مؤقتات النافذتين على بطاقات الطلبات الجارية
+      'officer.sla.review_remaining': 'حتى الإفراج التلقائي',
+      'officer.sla.work_remaining':   'لإنهاء العمل',
       // إضافات
       'officer.brand': 'موظف سند',
       'officer.loading': 'جارٍ التحميل…',
