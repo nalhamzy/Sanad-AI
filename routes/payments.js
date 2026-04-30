@@ -33,7 +33,7 @@ export const paymentsRouter = Router();
 
 // Idempotent: marking a request paid more than once is a no-op. Returns
 // { alreadyPaid:true } in that case so the webhook + stub agree.
-async function markRequestPaid(requestId, source = 'webhook') {
+export async function markRequestPaid(requestId, source = 'webhook') {
   const { rows } = await db.execute({
     sql: `SELECT id, session_id, office_id, status, payment_status, paid_at,
                  payment_amount_omr, payment_ref,

@@ -602,9 +602,22 @@
     }
   }
 
-  // ── Boot ──────────────────────────────────────────────
+  // ── Boot + live polling ───────────────────────────────
+  // The dashboard list polls every 15 s so a request that flips status
+  // (e.g. office paid → in_progress) reflects without a manual refresh.
+  // Polling pauses while the tab is hidden to spare CPU/battery, and
+  // resumes on visibilitychange.
   loadFilterRail().then(() => run());
   loadRequests();
+  let listPollTimer = setInterval(loadRequests, 15_000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (listPollTimer) { clearInterval(listPollTimer); listPollTimer = null; }
+    } else if (!listPollTimer) {
+      loadRequests();
+      listPollTimer = setInterval(loadRequests, 15_000);
+    }
+  });
 })();
 </script>
 </body>

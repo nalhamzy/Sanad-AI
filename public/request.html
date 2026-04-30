@@ -144,6 +144,32 @@
       <div id="thread" class="flex flex-col gap-2 max-h-[460px] overflow-auto px-1"></div>
       <p id="threadEmpty" class="hidden text-sm text-slate-500 italic text-center py-6" data-i18n="req.thread.empty"></p>
     </section>
+
+    <!-- 🧪 Dev simulation panel — DEBUG_MODE only. Drives the office side
+         (claim → send link → pay → complete) so the full lifecycle can be
+         exercised from a single tab. The whole panel is hidden in
+         production by the boot script that sets simPanel.classList.remove
+         only when /api/debug/health returns debug:true. -->
+    <section id="simPanel" class="hidden mt-6 rounded-2xl border-2 border-dashed border-amber-300 bg-amber-50/50 p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h2 class="text-sm font-extrabold text-amber-900">🧪 Dev simulation · محاكاة الاختبار</h2>
+          <p class="text-[11px] text-amber-800/80 mt-0.5">DEBUG_MODE only. Step through the office flow without a second tab.</p>
+        </div>
+        <span class="text-[10px] font-bold text-amber-900 bg-amber-200 px-2 py-1 rounded-full">DEV</span>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <button id="simClaim"    class="px-3 py-2 rounded-lg bg-white hover:bg-amber-100 border border-amber-200 text-xs font-bold text-amber-900 disabled:opacity-40 disabled:cursor-not-allowed">1 · ⚡ Claim</button>
+        <button id="simSendLink" class="px-3 py-2 rounded-lg bg-white hover:bg-amber-100 border border-amber-200 text-xs font-bold text-amber-900 disabled:opacity-40 disabled:cursor-not-allowed">2 · 💳 Send link</button>
+        <button id="simPay"      class="px-3 py-2 rounded-lg bg-white hover:bg-amber-100 border border-amber-200 text-xs font-bold text-amber-900 disabled:opacity-40 disabled:cursor-not-allowed">3 · ✅ Pay</button>
+        <button id="simComplete" class="px-3 py-2 rounded-lg bg-white hover:bg-amber-100 border border-amber-200 text-xs font-bold text-amber-900 disabled:opacity-40 disabled:cursor-not-allowed">4 · 🏁 Complete</button>
+      </div>
+      <div class="mt-2 flex items-center justify-between gap-3">
+        <button id="simAuto" class="px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold disabled:opacity-40">▶ Run full flow</button>
+        <span id="simHint" class="text-[11px] text-amber-800 italic">Each step calls /api/debug/simulate/&lt;step&gt;/{id}</span>
+      </div>
+      <div id="simLog" class="mt-3 text-[11px] font-mono bg-amber-100 rounded-lg p-2 max-h-32 overflow-auto whitespace-pre-wrap"></div>
+    </section>
   </div>
 
   <p id="errBox" class="hidden mt-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm"></p>
@@ -191,114 +217,159 @@
   $('#loadingBox').classList.add('hidden');
   $('#content').classList.remove('hidden');
 
-  const req = data.request;
-  const lang = I18N.lang;
+  // ── Live polling ──────────────────────────────────────
+  // Office actions (claim, send-link, paid, complete) propagate to the citizen
+  // page via a 6-second poll on /api/chat/my-request/:id. We re-paint the
+  // whole live area on each poll — the DOM diff is tiny (chip text, payment
+  // block visibility, timeline dots, docs list) so flicker is invisible.
+  // The message thread only APPENDS new messages and only auto-scrolls if
+  // the user is already at the bottom — never yanks them away from older
+  // messages they're reading.
+  // Polling stops once the request reaches a terminal status.
+  const TERMINAL = ['completed','cancelled_by_citizen','cancelled_by_office'];
+  let lastSeenMsgId = 0;
+  let pollTimer = null;
 
-  // Service header
-  $('#entityLabel').textContent = (lang === 'ar' && req.entity_ar) ? req.entity_ar : (req.entity_en || '');
-  $('#serviceName').textContent = (lang === 'ar' && req.service_name_ar) ? req.service_name_ar : (req.service_name || '—');
-  $('#reqMeta').textContent =
-    `${I18N.t('account.req.id')} #${req.id} · ${I18N.t('req.created')} ${(req.created_at || '').split(' ')[0]}`;
+  function paint(payload) {
+    const req = payload.request;
+    const lang = I18N.lang;
 
-  // Status chip
-  const statusKey = (req.status || '').replace(/[^a-z_]/g, '');
-  const statusChip = $('#statusChip');
-  statusChip.className = `status-chip chip-${statusKey.split('_')[0]}`;
-  statusChip.textContent = I18N.t('account.status.' + statusKey) || statusKey;
+    // Service header (rarely changes; safe to re-paint)
+    $('#entityLabel').textContent = (lang === 'ar' && req.entity_ar) ? req.entity_ar : (req.entity_en || '');
+    $('#serviceName').textContent = (lang === 'ar' && req.service_name_ar) ? req.service_name_ar : (req.service_name || '—');
+    $('#reqMeta').textContent =
+      `${I18N.t('account.req.id')} #${req.id} · ${I18N.t('req.created')} ${(req.created_at || '').split(' ')[0]}`;
 
-  // Payment chip
-  if (req.payment_status && req.payment_status !== 'none') {
+    // Status chip
+    const statusKey = (req.status || '').replace(/[^a-z_]/g, '');
+    const statusChip = $('#statusChip');
+    statusChip.className = `status-chip chip-${statusKey.split('_')[0]}`;
+    statusChip.textContent = I18N.t('account.status.' + statusKey) || statusKey;
+
+    // Payment chip — show / hide / re-color based on current state
     const payChip = $('#paymentChip');
-    payChip.classList.remove('hidden');
-    payChip.className = `status-chip chip-${req.payment_status === 'paid' ? 'in_progress' : 'awaiting_payment'}`;
-    payChip.textContent = req.payment_status === 'paid' ? I18N.t('req.pay.paid_chip') : I18N.t('req.pay.awaiting_chip');
-  }
+    if (req.payment_status && req.payment_status !== 'none') {
+      payChip.classList.remove('hidden');
+      payChip.className = `status-chip chip-${req.payment_status === 'paid' ? 'in_progress' : 'awaiting_payment'}`;
+      payChip.textContent = req.payment_status === 'paid' ? I18N.t('req.pay.paid_chip') : I18N.t('req.pay.awaiting_chip');
+    } else {
+      payChip.classList.add('hidden');
+    }
 
-  // Pay-now CTA — only when awaiting
-  if (req.payment_status === 'awaiting' && req.payment_link) {
-    $('#paymentBlock').classList.remove('hidden');
-    const total = req.payment_amount_omr || (req.office_fee_omr || 0) + (req.government_fee_omr || req.catalog_fee_omr || 0);
-    $('#payAmount').textContent = `${(total).toFixed(3)} OMR`;
-    $('#payBreakdown').textContent =
-      `${I18N.t('req.pay.gov')} ${(req.government_fee_omr || req.catalog_fee_omr || 0).toFixed(3)} · ${I18N.t('req.pay.office')} ${(req.office_fee_omr || 0).toFixed(3)}`;
-    $('#payNowBtn').href = req.payment_link;
-  }
+    // Pay-now CTA — only while awaiting; auto-disappears once paid
+    const payBlock = $('#paymentBlock');
+    if (req.payment_status === 'awaiting' && req.payment_link) {
+      payBlock.classList.remove('hidden');
+      const total = req.payment_amount_omr || (req.office_fee_omr || 0) + (req.government_fee_omr || req.catalog_fee_omr || 0);
+      $('#payAmount').textContent = `${(total).toFixed(3)} OMR`;
+      $('#payBreakdown').textContent =
+        `${I18N.t('req.pay.gov')} ${(req.government_fee_omr || req.catalog_fee_omr || 0).toFixed(3)} · ${I18N.t('req.pay.office')} ${(req.office_fee_omr || 0).toFixed(3)}`;
+      $('#payNowBtn').href = req.payment_link;
+    } else {
+      payBlock.classList.add('hidden');
+    }
 
-  // Office (if claimed)
-  if (req.office_name_en || req.office_name_ar) {
-    $('#officeBlock').classList.remove('hidden');
-    $('#officeName').textContent = (lang === 'ar' && req.office_name_ar) ? req.office_name_ar : (req.office_name_en || '—');
-    const meta = [];
-    if (req.office_gov) meta.push(req.office_gov);
-    if (req.office_rating) meta.push(`★ ${req.office_rating.toFixed(1)}`);
-    if (req.office_completed) meta.push(`${req.office_completed} ${I18N.t('req.office.completed')}`);
-    $('#officeMeta').textContent = meta.join(' · ');
-  }
+    // Office card — only after a claim happened
+    const officeBlock = $('#officeBlock');
+    if (req.office_name_en || req.office_name_ar) {
+      officeBlock.classList.remove('hidden');
+      $('#officeName').textContent = (lang === 'ar' && req.office_name_ar) ? req.office_name_ar : (req.office_name_en || '—');
+      const meta = [];
+      if (req.office_gov) meta.push(req.office_gov);
+      if (req.office_rating) meta.push(`★ ${req.office_rating.toFixed(1)}`);
+      if (req.office_completed) meta.push(`${req.office_completed} ${I18N.t('req.office.completed')}`);
+      $('#officeMeta').textContent = meta.join(' · ');
+    } else {
+      officeBlock.classList.add('hidden');
+    }
 
-  // Timeline
-  // Map status → ordered step list with done/current state.
-  const STEPS = [
-    { key: 'collecting', label: I18N.t('req.step.collecting'), at: req.created_at },
-    { key: 'ready', label: I18N.t('req.step.ready'), at: req.last_event_at },
-    { key: 'claimed', label: I18N.t('req.step.claimed'), at: req.claimed_at },
-    { key: 'awaiting_payment', label: I18N.t('req.step.awaiting_payment'), at: req.payment_status === 'awaiting' ? req.last_event_at : null },
-    { key: 'in_progress', label: I18N.t('req.step.in_progress'), at: req.paid_at },
-    { key: 'completed', label: I18N.t('req.step.completed'), at: req.completed_at }
-  ];
-  const order = ['collecting','ready','claimed','awaiting_payment','in_progress','completed'];
-  const cancelled = ['cancelled_by_citizen','cancelled_by_office'].includes(req.status);
-  const currentIdx = cancelled ? -1 : order.indexOf(req.status);
-  $('#timeline').innerHTML = STEPS.map((s, i) => {
-    const isDone = !cancelled && (i < currentIdx || (i === currentIdx && req.completed_at));
-    const isCurrent = !cancelled && i === currentIdx && !req.completed_at;
-    const cls = isDone ? 'done' : isCurrent ? 'current' : '';
-    const icon = isDone ? '✓' : isCurrent ? '•' : (i + 1);
-    const at = s.at ? `<div class="text-[11px] text-slate-400 mt-0.5">${escapeHtml(s.at.split(' ')[0])}</div>` : '';
-    return `<div class="timeline-step ${cls}">
-      <div class="timeline-dot">${icon}</div>
-      <div class="text-sm font-bold ${isDone || isCurrent ? 'text-slate-800' : 'text-slate-400'}">${escapeHtml(s.label)}</div>
-      ${at}
-    </div>`;
-  }).join('');
-  if (cancelled) {
-    $('#timeline').innerHTML += `<div class="mt-2 p-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-600">
-      ${I18N.t('req.cancelled.text')} ${req.cancel_reason ? '· ' + escapeHtml(req.cancel_reason) : ''}
-    </div>`;
-  }
+    // Timeline — recompute current step every paint
+    const STEPS = [
+      { key: 'collecting', label: I18N.t('req.step.collecting'), at: req.created_at },
+      { key: 'ready', label: I18N.t('req.step.ready'), at: req.last_event_at },
+      { key: 'claimed', label: I18N.t('req.step.claimed'), at: req.claimed_at },
+      { key: 'awaiting_payment', label: I18N.t('req.step.awaiting_payment'), at: req.payment_status === 'awaiting' ? req.last_event_at : null },
+      { key: 'in_progress', label: I18N.t('req.step.in_progress'), at: req.paid_at },
+      { key: 'completed', label: I18N.t('req.step.completed'), at: req.completed_at }
+    ];
+    const order = ['collecting','ready','claimed','awaiting_payment','in_progress','completed'];
+    const cancelled = ['cancelled_by_citizen','cancelled_by_office'].includes(req.status);
+    const currentIdx = cancelled ? -1 : order.indexOf(req.status);
+    let timelineHtml = STEPS.map((s, i) => {
+      const isDone = !cancelled && (i < currentIdx || (i === currentIdx && req.completed_at));
+      const isCurrent = !cancelled && i === currentIdx && !req.completed_at;
+      const cls = isDone ? 'done' : isCurrent ? 'current' : '';
+      const icon = isDone ? '✓' : isCurrent ? '•' : (i + 1);
+      const at = s.at ? `<div class="text-[11px] text-slate-400 mt-0.5">${escapeHtml(s.at.split(' ')[0])}</div>` : '';
+      return `<div class="timeline-step ${cls}">
+        <div class="timeline-dot">${icon}</div>
+        <div class="text-sm font-bold ${isDone || isCurrent ? 'text-slate-800' : 'text-slate-400'}">${escapeHtml(s.label)}</div>
+        ${at}
+      </div>`;
+    }).join('');
+    if (cancelled) {
+      timelineHtml += `<div class="mt-2 p-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-600">
+        ${I18N.t('req.cancelled.text')} ${req.cancel_reason ? '· ' + escapeHtml(req.cancel_reason) : ''}
+      </div>`;
+    }
+    $('#timeline').innerHTML = timelineHtml;
 
-  // Documents
-  const docs = data.documents || [];
-  $('#docCount').textContent = `${docs.length} ${I18N.t('req.docs.count_label')}`;
-  $('#docList').innerHTML = docs.length ? docs.map(d => {
-    const statusBadge = d.status === 'verified' ? `<span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">✓ ${I18N.t('status.verified')}</span>`
-                     : d.status === 'rejected' ? `<span class="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full">✗ ${I18N.t('status.rejected')}</span>`
-                     : `<span class="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">${I18N.t('status.pending')}</span>`;
-    const isImage = (d.mime || '').startsWith('image/');
-    const icon = isImage ? '🖼️' : (d.mime?.includes('pdf') ? '📄' : '📎');
-    const reject = d.status === 'rejected' && d.reject_reason ?
-      `<div class="mt-2 text-[11px] text-rose-700 bg-rose-50 px-2.5 py-1.5 rounded-lg"><b>${I18N.t('req.docs.rejected')}:</b> ${escapeHtml(d.reject_reason)}</div>` : '';
-    return `<div class="doc-card border border-slate-200 rounded-xl p-3 flex items-start gap-3">
-      <div class="text-2xl shrink-0">${icon}</div>
-      <div class="flex-1 min-w-0">
-        <div class="flex items-start justify-between gap-2">
-          <div class="font-semibold text-sm text-slate-800 truncate">${escapeHtml(d.label || d.original_name || d.doc_code || '—')}</div>
-          ${statusBadge}
+    // Documents
+    const docs = payload.documents || [];
+    $('#docCount').textContent = `${docs.length} ${I18N.t('req.docs.count_label')}`;
+    $('#docList').innerHTML = docs.length ? docs.map(d => {
+      const statusBadge = d.status === 'verified' ? `<span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">✓ ${I18N.t('status.verified')}</span>`
+                       : d.status === 'rejected' ? `<span class="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full">✗ ${I18N.t('status.rejected')}</span>`
+                       : `<span class="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">${I18N.t('status.pending')}</span>`;
+      const isImage = (d.mime || '').startsWith('image/');
+      const icon = isImage ? '🖼️' : (d.mime?.includes('pdf') ? '📄' : '📎');
+      const reject = d.status === 'rejected' && d.reject_reason ?
+        `<div class="mt-2 text-[11px] text-rose-700 bg-rose-50 px-2.5 py-1.5 rounded-lg"><b>${I18N.t('req.docs.rejected')}:</b> ${escapeHtml(d.reject_reason)}</div>` : '';
+      return `<div class="doc-card border border-slate-200 rounded-xl p-3 flex items-start gap-3">
+        <div class="text-2xl shrink-0">${icon}</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-start justify-between gap-2">
+            <div class="font-semibold text-sm text-slate-800 truncate">${escapeHtml(d.label || d.original_name || d.doc_code || '—')}</div>
+            ${statusBadge}
+          </div>
+          <div class="mt-0.5 text-[11px] text-slate-500">
+            ${d.size_bytes ? Math.round(d.size_bytes / 1024) + ' KB · ' : ''}${escapeHtml((d.uploaded_at || '').split(' ')[0])}
+            ${d.is_extra ? ' · <span class="text-violet-600 font-semibold">' + I18N.t('req.docs.extra') + '</span>' : ''}
+          </div>
+          ${d.caption ? `<div class="mt-1 text-xs text-slate-600 italic">"${escapeHtml(d.caption)}"</div>` : ''}
+          ${reject}
         </div>
-        <div class="mt-0.5 text-[11px] text-slate-500">
-          ${d.size_bytes ? Math.round(d.size_bytes / 1024) + ' KB · ' : ''}${escapeHtml((d.uploaded_at || '').split(' ')[0])}
-          ${d.is_extra ? ' · <span class="text-violet-600 font-semibold">' + I18N.t('req.docs.extra') + '</span>' : ''}
-        </div>
-        ${d.caption ? `<div class="mt-1 text-xs text-slate-600 italic">"${escapeHtml(d.caption)}"</div>` : ''}
-        ${reject}
-      </div>
-    </div>`;
-  }).join('') : `<div class="text-sm text-slate-500 italic col-span-2">${I18N.t('req.docs.empty')}</div>`;
+      </div>`;
+    }).join('') : `<div class="text-sm text-slate-500 italic col-span-2">${I18N.t('req.docs.empty')}</div>`;
 
-  // Messages thread
-  const msgs = data.messages || [];
-  if (!data.chat_unlocked_for_office) $('#threadGate').classList.remove('hidden');
-  if (!msgs.length) $('#threadEmpty').classList.remove('hidden');
-  $('#thread').innerHTML = msgs.map(m => {
+    // Chat-gate banner (visible only when chat is locked pre-pay)
+    if (!payload.chat_unlocked_for_office) $('#threadGate').classList.remove('hidden');
+    else                                    $('#threadGate').classList.add('hidden');
+
+    // Messages — APPEND only the new ones (preserves scroll for the user
+    // who is mid-read of older messages). Auto-scroll only if they were
+    // already at the bottom or if it's the very first paint.
+    const msgs = payload.messages || [];
+    const thread = $('#thread');
+    const newOnes = msgs.filter(m => m.id > lastSeenMsgId);
+    if (newOnes.length || lastSeenMsgId === 0) {
+      // Stickiness check before mutating: were we at the bottom?
+      const stickyBottom = lastSeenMsgId === 0 ||
+        (thread.scrollHeight - thread.scrollTop - thread.clientHeight < 24);
+      if (lastSeenMsgId === 0) {
+        // First paint — fully render so renames / re-orders render cleanly.
+        thread.innerHTML = msgs.map(renderMsgHtml).join('');
+      } else {
+        thread.insertAdjacentHTML('beforeend', newOnes.map(renderMsgHtml).join(''));
+      }
+      if (msgs.length) lastSeenMsgId = Math.max(...msgs.map(m => m.id || 0));
+      if (msgs.length === 0) $('#threadEmpty').classList.remove('hidden');
+      else                   $('#threadEmpty').classList.add('hidden');
+      if (stickyBottom) thread.scrollTop = thread.scrollHeight;
+    }
+  }
+
+  function renderMsgHtml(m) {
     const own = m.actor_type === 'citizen';
     const bot = m.actor_type === 'bot';
     const sys = m.actor_type === 'system';
@@ -310,9 +381,111 @@
       <div class="text-sm leading-relaxed">${body}</div>
       ${ts}
     </div>`;
-  }).join('');
-  // Auto-scroll to latest
-  $('#thread').scrollTop = $('#thread').scrollHeight;
+  }
+
+  async function pollOnce() {
+    try {
+      const r = await fetch(`/api/chat/my-request/${reqId}`);
+      if (!r.ok) return;
+      const fresh = await r.json();
+      paint(fresh);
+      // Stop polling forever once the request reaches a terminal state — no
+      // further changes possible. Timer is also cleared if the tab is hidden
+      // (saves CPU + battery; resumes on visibilitychange).
+      if (TERMINAL.includes(fresh.request?.status)) {
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+      }
+    } catch { /* network blip — try again on the next tick */ }
+  }
+
+  paint(data);
+
+  // ── Dev simulation panel wiring ─────────────────────────
+  // Show the panel only if the server is in DEBUG_MODE. Each button hits
+  // a /api/debug/simulate/* route; on success we trigger a poll so the
+  // citizen UI reflects the new state immediately instead of waiting
+  // for the next 6s tick.
+  (async () => {
+    try {
+      const h = await fetch('/api/debug/health');
+      if (!h.ok) return;
+      const hd = await h.json();
+      if (!hd.debug) return;
+      $('#simPanel').classList.remove('hidden');
+      const log = (msg, kind = 'info') => {
+        const el = $('#simLog');
+        const stamp = new Date().toLocaleTimeString();
+        const colour = kind === 'err' ? 'color:#b91c1c' : kind === 'ok' ? 'color:#047857' : 'color:#92400e';
+        el.innerHTML += `<div style="${colour}">[${stamp}] ${escapeHtml(msg)}</div>`;
+        el.scrollTop = el.scrollHeight;
+      };
+      const fire = async (label, path) => {
+        log(`→ ${label}…`);
+        try {
+          const r = await fetch(`/api/debug/simulate/${path}/${reqId}`, { method: 'POST' });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) { log(`✗ ${label} failed (${r.status}) ${d.error || ''}`, 'err'); return false; }
+          log(`✓ ${label} done`, 'ok');
+          await pollOnce();
+          syncSimButtons();
+          return true;
+        } catch (e) {
+          log(`✗ ${label} threw: ${e.message}`, 'err');
+          return false;
+        }
+      };
+      function syncSimButtons() {
+        // Look at the current chip text (cheaper than re-fetching) — disable
+        // the steps that wouldn't apply at this status.
+        const chip = $('#statusChip').textContent || '';
+        const status = ['ready','claimed','awaiting_payment','in_progress','completed'].find(s => chip.includes(I18N.t('account.status.' + s) || s)) || 'ready';
+        $('#simClaim').disabled    = status !== 'ready';
+        $('#simSendLink').disabled = status !== 'claimed';
+        $('#simPay').disabled      = status !== 'awaiting_payment';
+        $('#simComplete').disabled = status !== 'in_progress';
+        $('#simAuto').disabled     = status === 'completed';
+      }
+      syncSimButtons();
+      $('#simClaim').onclick    = () => fire('Claim',          'claim');
+      $('#simSendLink').onclick = () => fire('Send pay link',  'send-link');
+      $('#simPay').onclick      = () => fire('Mark paid',      'pay');
+      $('#simComplete').onclick = () => fire('Complete',       'complete');
+      $('#simAuto').onclick = async () => {
+        $('#simAuto').disabled = true;
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+        // Drive every step sequentially — the simulate routes return 409
+        // (with a not_xxx code) for steps that don't apply at the current
+        // status, so we just step over those silently. This is more robust
+        // than chip-text matching which can break with i18n variations.
+        const seq = [
+          ['Claim',         'claim'    ],
+          ['Send pay link', 'send-link'],
+          ['Mark paid',     'pay'      ],
+          ['Complete',      'complete' ]
+        ];
+        for (const [label, path] of seq) {
+          const ok = await fire(label, path);
+          await sleep(1200);   // visible pause between steps
+          if (!ok) {
+            // Soft-fail: keep going even if one step is a no-op (e.g. status
+            // doesn't match). This way auto-flow works even if the user
+            // already advanced manually.
+          }
+        }
+        $('#simAuto').disabled = false;
+      };
+    } catch { /* silent — panel just stays hidden */ }
+  })();
+
+  pollTimer = setInterval(pollOnce, 6000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    } else if (!pollTimer && !TERMINAL.includes(data.request?.status)) {
+      pollOnce();
+      pollTimer = setInterval(pollOnce, 6000);
+    }
+  });
 })();
 </script>
 </body>

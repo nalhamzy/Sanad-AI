@@ -323,13 +323,18 @@ window.addEventListener('unhandledrejection', e => {
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       typing.classList.add('hidden');
-      if (data.reply) bubble(data.reply, 'bot', { time: hhmm() });
+      // Don't bubble data.reply here — the next poll() tick (≤2.5s) is the
+      // single source of truth for incoming messages and will append it.
+      // Doing both caused the bot reply to render twice.
       if (data.request_id) {
         reqNoEl.textContent = '#R-' + data.request_id;
         window.Sanad?.toast && Sanad.toast('Request #R-' + data.request_id + ' queued', 'ok', 2200);
       }
       if (data.state) stateView.textContent = JSON.stringify(data.state, null, 2);
       if (data.trace) traceView.textContent = JSON.stringify(data.trace, null, 2);
+      // Poll immediately so the bot reply lands in <100ms instead of waiting
+      // for the next 2.5s tick.
+      poll();
     } catch (e) {
       typing.classList.add('hidden');
       bubble('⚠ ' + (e.message || e) + ' — retry?', 'sys');
