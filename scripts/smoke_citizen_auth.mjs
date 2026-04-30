@@ -138,6 +138,32 @@ try {
   d = await r.json();
   ok('/api/health exposes debug:true in DEBUG_MODE', d.debug === true, JSON.stringify(d));
 
+  // 4e) Hardening — origin check is bypassed in DEBUG_MODE, but the source
+  // wiring should still be present (smoke is a static assertion here).
+  const fs = await import('node:fs');
+  const serverSrc = fs.readFileSync('./server.js', 'utf8');
+  ok('server.js wires originGuard on /api/auth', serverSrc.includes("originGuard, authRouter"));
+  ok('server.js wires originGuard on /api/citizen-auth', serverSrc.includes("originGuard, citizenAuthRouter"));
+  ok('server.js wires originGuard on /api/officer', serverSrc.includes("originGuard, officerRouter"));
+  ok('server.js excludes whatsapp + payments/webhook from origin check',
+     serverSrc.includes("'/api/whatsapp/'") && serverSrc.includes("'/api/payments/webhook'"));
+  ok('server.js excludes /api/chat (no cookie + dev tester)', serverSrc.includes("'/api/chat/'"));
+
+  // 4f) Rate-limit module is wired into the auth routes
+  const authSrc = fs.readFileSync('./routes/auth.js', 'utf8');
+  ok('routes/auth.js mounts loginLimiter on /login', /authRouter\.post\('\/login',\s*loginLimiter/.test(authSrc));
+  ok('routes/auth.js mounts signupLimiter on /signup', /authRouter\.post\('\/signup',\s*signupLimiter/.test(authSrc));
+  ok('routes/auth.js enforces password complexity (passwordIssues helper)',
+     authSrc.includes('passwordIssues') && authSrc.includes('min_10_chars'));
+
+  const citAuthSrc = fs.readFileSync('./routes/citizen_auth.js', 'utf8');
+  ok('routes/citizen_auth.js mounts startLim on /start-otp',
+     /\/start-otp',\s*startLim/.test(citAuthSrc));
+  ok('routes/citizen_auth.js mounts verifyLim on /verify-otp',
+     /\/verify-otp',\s*verifyLim/.test(citAuthSrc));
+  ok('routes/citizen_auth.js mounts googleLim on /google',
+     /\/google',\s*googleLim/.test(citAuthSrc));
+
   // 5) Static pages exist
   for (const p of ['/signup.html', '/login.html', '/account.html', '/request.html', '/auth-client.js', '/config.js', '/i18n.js']) {
     const sr = await fetch(`${base}${p}`);

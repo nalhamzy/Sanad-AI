@@ -17,8 +17,33 @@ import {
   signToken, setSessionCookie, clearSessionCookie,
   loadOfficer, requireOfficer
 } from '../lib/auth.js';
+import { rateLimit } from '../lib/rate_limit.js';
 
 export const authRouter = Router();
+
+// IP-level outer ring for officer credential endpoints. Per-account guards
+// (bcrypt cost, last_login_at audit) sit underneath.
+const loginLimiter  = rateLimit({ key: 'auth:login',  limit: 8,  windowMs: 60_000 });
+const signupLimiter = rateLimit({ key: 'auth:signup', limit: 4,  windowMs: 60_000 });
+
+// ─── Password complexity ───────────────────────────────────
+// Rejects common weak shapes. We don't try to enforce a giant blocklist —
+// the bcrypt cost handles offline attacks; this just stops obviously
+// guessable choices at signup.
+const WEAK_PASSWORDS = new Set([
+  'password', 'password1', 'password123', 'passw0rd',
+  '12345678', '123456789', 'qwerty123', 'qwertyui',
+  'admin123', 'letmein123', 'welcome1', 'sanad123', 'saned123',
+  'office123', 'abc12345'
+]);
+function passwordIssues(p) {
+  const issues = [];
+  if (typeof p !== 'string' || p.length < 10) issues.push('min_10_chars');
+  if (!/[A-Za-z]/.test(p))                    issues.push('needs_letter');
+  if (!/\d/.test(p))                          issues.push('needs_digit');
+  if (WEAK_PASSWORDS.has((p || '').toLowerCase())) issues.push('too_common');
+  return issues;
+}
 
 // Oman governorates — used for signup validation
 const GOVERNORATES = new Set([
@@ -36,7 +61,7 @@ function safeStr(s, max = 200) { return String(s || '').trim().slice(0, max); }
 // }
 // Creates office (status='pending_review') + admin officer (role='owner').
 // Auto-signs them in so they see "pending approval" page immediately.
-authRouter.post('/signup', async (req, res) => {
+authRouter.post('/signup', signupLimiter, async (req, res) => {
   try {
     const b = req.body || {};
     const office_name_en = safeStr(b.office_name_en, 120);
@@ -56,7 +81,8 @@ authRouter.post('/signup', async (req, res) => {
     if (!cr_number) missing.push('cr_number');
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) missing.push('email');
     if (!full_name) missing.push('full_name');
-    if (password.length < 8) missing.push('password>=8');
+    const pwIssues = passwordIssues(password);
+    if (pwIssues.length) missing.push(...pwIssues.map(i => `password:${i}`));
     if (missing.length) return res.status(400).json({ error: 'validation', missing });
     if (governorate && !GOVERNORATES.has(governorate)) {
       return res.status(400).json({ error: 'bad_governorate', allowed: [...GOVERNORATES] });
@@ -105,7 +131,7 @@ authRouter.post('/signup', async (req, res) => {
 });
 
 // ─── POST /login ───────────────────────────────────────────
-authRouter.post('/login', async (req, res) => {
+authRouter.post('/login', loginLimiter, async (req, res) => {
   const email = normEmail(req.body?.email);
   const password = String(req.body?.password || '');
   if (!email || !password) return res.status(400).json({ error: 'missing_credentials' });

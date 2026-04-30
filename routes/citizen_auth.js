@@ -34,8 +34,16 @@ import {
   loadCitizen
 } from '../lib/auth.js';
 import { sendWhatsAppTemplate, sendWhatsAppText } from '../lib/whatsapp_send.js';
+import { rateLimit } from '../lib/rate_limit.js';
 
 export const citizenAuthRouter = Router();
+
+// IP-outer-ring limits. Per-phone cooldown + max-attempts already exist
+// inside each handler; these prevent burst-from-one-IP across many phones.
+const startLim   = rateLimit({ key: 'citauth:start',   limit: 12, windowMs: 60_000 });
+const verifyLim  = rateLimit({ key: 'citauth:verify',  limit: 30, windowMs: 60_000 });
+const googleLim  = rateLimit({ key: 'citauth:google',  limit: 10, windowMs: 60_000 });
+const attachLim  = rateLimit({ key: 'citauth:attach',  limit: 8,  windowMs: 60_000 });
 
 // ─── Config ────────────────────────────────────────────────
 const OTP_TTL_MIN = Number(process.env.CITIZEN_OTP_TTL_MIN || 5);
@@ -146,7 +154,7 @@ async function verifyGoogleIdToken(idToken) {
 //   • /signup.html — first-time citizen entering their phone
 //   • /login.html — returning citizen
 // Idempotent on repeated calls inside the cooldown window.
-citizenAuthRouter.post('/start-otp', async (req, res) => {
+citizenAuthRouter.post('/start-otp', startLim, async (req, res) => {
   const phone = omanise(req.body?.phone);
   if (!phone) return res.status(400).json({ error: 'invalid_phone' });
 
@@ -209,7 +217,7 @@ citizenAuthRouter.post('/start-otp', async (req, res) => {
 // ─── POST /verify-otp ──────────────────────────────────────
 // On success: creates the citizen row if missing, sets the citizen cookie,
 // returns the public citizen view. The user is now signed in.
-citizenAuthRouter.post('/verify-otp', async (req, res) => {
+citizenAuthRouter.post('/verify-otp', verifyLim, async (req, res) => {
   const phone = omanise(req.body?.phone);
   const code = String(req.body?.code || '').replace(/\D/g, '').slice(0, 6);
   if (!phone || code.length !== 6) return res.status(400).json({ error: 'invalid_input' });
@@ -296,7 +304,7 @@ citizenAuthRouter.post('/verify-otp', async (req, res) => {
 // Creates / merges by google_sub (preferred) or email. Phone is NOT set yet —
 // the client should redirect to /account.html which renders an "add phone"
 // banner that calls /attach-phone.
-citizenAuthRouter.post('/google', async (req, res) => {
+citizenAuthRouter.post('/google', googleLim, async (req, res) => {
   const idToken = String(req.body?.id_token || '').trim();
   if (!idToken) return res.status(400).json({ error: 'no_token' });
 
@@ -352,7 +360,7 @@ citizenAuthRouter.post('/google', async (req, res) => {
 // ─── POST /attach-phone ────────────────────────────────────
 // Authenticated. Starts an OTP for an existing citizen who needs to add a
 // phone (typical: signed in with Google but doesn't have a verified phone).
-citizenAuthRouter.post('/attach-phone', requireCitizen(), async (req, res) => {
+citizenAuthRouter.post('/attach-phone', attachLim, requireCitizen(), async (req, res) => {
   const phone = omanise(req.body?.phone);
   if (!phone) return res.status(400).json({ error: 'invalid_phone' });
 

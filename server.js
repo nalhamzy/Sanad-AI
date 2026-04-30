@@ -17,6 +17,7 @@ import { platformAdminRouter } from './routes/platform_admin.js';
 import { paymentsRouter } from './routes/payments.js';
 import { citizenAuthRouter } from './routes/citizen_auth.js';
 import { attachSession, attachCitizenSession } from './lib/auth.js';
+import { originCheck } from './lib/csrf.js';
 import { LLM_ENABLED } from './lib/llm.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -64,18 +65,36 @@ app.use(express.static(path.join(__dirname, 'public'), {
   }
 }));
 
+// CSRF / Origin guard for state-changing API calls. /api/whatsapp (Meta
+// webhook — verified separately by HMAC) and /api/payments/webhook (Amwal
+// — also signature-verified) bypass this. /api/chat is excluded because
+// the citizen-side web tester posts from arbitrary localhost dev origins;
+// it carries no auth-cookie that an attacker could forge.
+//
+// We match against req.originalUrl because mounted routers strip the
+// mount prefix from req.path — `/api/payments/webhook` becomes `/webhook`
+// inside the originGuard, which would defeat the bypass.
+function originGuard(req, res, next) {
+  const url = req.originalUrl || req.url || '';
+  if (url.startsWith('/api/whatsapp/'))         return next();
+  if (url.startsWith('/api/payments/webhook'))  return next();
+  if (url.startsWith('/api/payments/_stub/'))   return next();
+  if (url.startsWith('/api/chat/'))             return next();
+  return originCheck(req, res, next);
+}
+
 // API
-app.use('/api/auth', authRouter);
-app.use('/api/citizen-auth', citizenAuthRouter);
-app.use('/api/office', officeRouter);
-app.use('/api/platform-admin', platformAdminRouter);
-app.use('/api/payments', paymentsRouter);
+app.use('/api/auth', originGuard, authRouter);
+app.use('/api/citizen-auth', originGuard, citizenAuthRouter);
+app.use('/api/office', originGuard, officeRouter);
+app.use('/api/platform-admin', originGuard, platformAdminRouter);
+app.use('/api/payments', originGuard, paymentsRouter);
 app.use('/api/chat', chatRouter);
-app.use('/api/officer', officerRouter);
+app.use('/api/officer', originGuard, officerRouter);
 app.use('/api/whatsapp', whatsappRouter);
 app.use('/api/debug', debugRouter);
 app.use('/api/catalogue', catalogueRouter);
-app.use('/api/annotator', annotatorRouter);
+app.use('/api/annotator', originGuard, annotatorRouter);
 
 // Health
 app.get('/api/health', (_req, res) => res.json({ ok: true, llm: LLM_ENABLED, debug: DEBUG }));
