@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ساند · Saned — Ministry Pitch / عرض للوزارة</title>
+<style>
+  /* ───────── Brand palette (matches app /public/theme.css) ─────────── */
+  :root {
+    --brand:       #0f766e;
+    --brand-dark:  #134e4a;
+    --brand-light: #14b8a6;
+    --brand-soft:  rgba(15,118,110,0.10);
+    --brand-tint:  #f0fdfa;
+    --ink:         #0f172a;
+    --ink-2:       #334155;
+    --mute:        #64748b;
+    --line:        #e2e8f0;
+    --paper:       #ffffff;
+    --cream:       #fefce8;
+    --card:        #ffffff;
+    --shadow-sm:   0 1px 2px rgba(15,23,42,.05);
+    --shadow:      0 8px 28px -12px rgba(15,118,110,.18);
+    --shadow-lg:   0 24px 48px -20px rgba(15,118,110,.32);
+    --radius:      14px;
+    --radius-sm:   8px;
+    --gap:         28px;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+    color: var(--ink);
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", "Noto Sans Arabic", "IBM Plex Sans Arabic", sans-serif;
+  }
+  /* Arabic text uses a slightly larger optical size for legibility. */
+  [dir="rtl"], .ar { font-family: "IBM Plex Sans Arabic", "Noto Sans Arabic", "Segoe UI", Tahoma, sans-serif; line-height: 1.85; }
+
+  h1, h2, h3, h4 { color: var(--brand-dark); font-weight: 700; letter-spacing: -0.01em; margin: 0 0 8px; }
+  h1 { font-size: 56px; line-height: 1.05; }
+  h2 { font-size: 32px; line-height: 1.15; }
+  h3 { font-size: 20px; }
+  h4 { font-size: 16px; color: var(--brand); text-transform: uppercase; letter-spacing: .08em; }
+  p  { margin: 0 0 12px; color: var(--ink-2); }
+  small { color: var(--mute); font-size: 12px; }
+  .mono { font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", monospace; }
+  .accent { color: var(--brand); }
+  .accent-strong { color: var(--brand-dark); font-weight: 700; }
+
+  /* ───────── Page (A4-friendly) ─────────── */
+  .page {
+    max-width: 1080px;
+    margin: 32px auto;
+    padding: 56px 60px;
+    background: var(--paper);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ───────── Cover ─────────── */
+  .cover {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 60%, var(--brand-light) 130%);
+    color: white;
+    padding: 88px 60px 80px;
+  }
+  .cover h1, .cover h2, .cover h3, .cover h4 { color: white; }
+  .cover .ar { color: rgba(255,255,255,.95); }
+  .cover .crest {
+    width: 72px; height: 72px;
+    border-radius: 18px;
+    background: rgba(255,255,255,.14);
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,.25);
+    margin-bottom: 28px;
+  }
+  .cover .crest svg { width: 42px; height: 42px; }
+  .cover .ribbon {
+    display: inline-block;
+    padding: 6px 14px;
+    background: rgba(255,255,255,.16);
+    border: 1px solid rgba(255,255,255,.32);
+    border-radius: 999px;
+    font-size: 12px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-bottom: 22px;
+  }
+  .cover .tagline {
+    font-size: 22px;
+    color: rgba(255,255,255,.92);
+    max-width: 720px;
+    margin-top: 14px;
+  }
+  .cover .meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-top: 56px;
+    padding-top: 28px;
+    border-top: 1px solid rgba(255,255,255,.22);
+  }
+  .cover .meta div { font-size: 13px; line-height: 1.5; color: rgba(255,255,255,.86); }
+  .cover .meta strong { display: block; color: white; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 6px; opacity: .75; }
+  .glow {
+    position: absolute; pointer-events: none;
+    width: 480px; height: 480px;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255,255,255,.18), transparent 70%);
+    right: -120px; top: -120px;
+  }
+
+  /* ───────── Bilingual two-column section ─────────── */
+  .bicol {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+  .bicol .col-en h2, .bicol .col-en p { text-align: left; }
+  .bicol .col-ar { direction: rtl; text-align: right; }
+  .bicol .col-ar h2, .bicol .col-ar h3 { text-align: right; }
+
+  /* ───────── Section header ─────────── */
+  .section-head {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-bottom: 12px;
+  }
+  .section-head .num {
+    font: 700 14px/1 ui-monospace, monospace;
+    color: var(--brand);
+    background: var(--brand-tint);
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+  }
+  .lead { font-size: 17px; color: var(--ink); margin-top: 6px; }
+
+  /* ───────── Cards / pills / stats ─────────── */
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px;
+    transition: transform .2s, box-shadow .2s, border-color .2s;
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--brand-soft); }
+  .card .icon {
+    width: 44px; height: 44px;
+    background: var(--brand-tint);
+    color: var(--brand);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    margin-bottom: 14px;
+  }
+  .card h3 { font-size: 17px; color: var(--brand-dark); }
+  .card p  { font-size: 14px; color: var(--ink-2); margin: 4px 0 0; }
+  .card.dark { background: var(--brand-dark); color: white; border: none; }
+  .card.dark h3 { color: white; }
+  .card.dark p  { color: rgba(255,255,255,.85); }
+  .card.dark .icon { background: rgba(255,255,255,.16); color: white; }
+
+  .stat {
+    text-align: center;
+    padding: 24px 16px;
+    background: linear-gradient(180deg, var(--brand-tint), white);
+    border: 1px solid var(--brand-soft);
+    border-radius: var(--radius);
+  }
+  .stat .num { font-size: 44px; font-weight: 800; color: var(--brand-dark); letter-spacing: -0.02em; line-height: 1; }
+  .stat .lbl { font-size: 12px; color: var(--mute); text-transform: uppercase; letter-spacing: .08em; margin-top: 8px; display: block; }
+  .stat .lbl-ar { font-size: 13px; color: var(--brand); display: block; margin-top: 4px; direction: rtl; }
+
+  /* ───────── Flow diagram ─────────── */
+  .flow {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin: 24px 0 8px;
+  }
+  .flow .step {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 14px 12px;
+    position: relative;
+    text-align: center;
+  }
+  .flow .step .ico {
+    width: 36px; height: 36px;
+    margin: 0 auto 8px;
+    background: var(--brand-tint); color: var(--brand);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700;
+  }
+  .flow .step .t  { font-weight: 700; font-size: 13px; color: var(--brand-dark); }
+  .flow .step .ar { font-size: 12px; color: var(--mute); margin-top: 4px; direction: rtl; }
+  .flow .step::after {
+    content: ""; position: absolute;
+    right: -10px; top: 50%; transform: translateY(-50%);
+    width: 20px; height: 2px;
+    background: linear-gradient(90deg, var(--brand-light), var(--brand));
+    z-index: 1;
+  }
+  .flow .step:last-child::after { display: none; }
+
+  /* ───────── Mock UI snippets ─────────── */
+  .mock {
+    background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+    border-radius: var(--radius);
+    padding: 22px;
+    border: 1px solid var(--line);
+  }
+  .mock .header {
+    background: white;
+    border-radius: 8px;
+    padding: 10px 14px;
+    box-shadow: var(--shadow-sm);
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 12px;
+    font-size: 12px;
+  }
+  .mock .header .dot { width: 10px; height: 10px; border-radius: 50%; background: #cbd5e1; }
+  .mock .header .dot.on { background: var(--brand-light); }
+  .mock .row {
+    background: white;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    box-shadow: var(--shadow-sm);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .mock .pill {
+    font-size: 11px; font-weight: 600;
+    padding: 3px 9px; border-radius: 999px;
+  }
+  .pill.warn  { background: #fef3c7; color: #b45309; }
+  .pill.ok    { background: #dcfce7; color: #166534; }
+  .pill.brand { background: var(--brand-tint); color: var(--brand-dark); }
+
+  /* ───────── Quote ─────────── */
+  .quote {
+    border-inline-start: 4px solid var(--brand);
+    background: var(--brand-tint);
+    padding: 18px 22px;
+    border-radius: var(--radius-sm);
+    font-style: italic;
+    color: var(--ink);
+  }
+
+  /* ───────── Footer / cover meta ─────────── */
+  .footer {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    color: var(--mute);
+    font-size: 12px;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  }
+
+  /* Print / PDF */
+  @page { size: A4; margin: 12mm; }
+  @media print {
+    body { background: white; }
+    .page { box-shadow: none; margin: 0 0 12mm; border-radius: 0; max-width: 100%; padding: 32mm 18mm; page-break-after: always; }
+    .cover { padding: 56mm 18mm 36mm; }
+    .card:hover { transform: none; box-shadow: none; }
+    .nav { display: none; }
+  }
+
+  /* ───────── In-page nav (screen only) ─────────── */
+  .nav {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(255,255,255,.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+    padding: 12px 24px;
+    display: flex; justify-content: center; gap: 18px; flex-wrap: wrap;
+    font-size: 13px;
+  }
+  .nav a { color: var(--ink-2); text-decoration: none; padding: 6px 10px; border-radius: 6px; }
+  .nav a:hover { background: var(--brand-tint); color: var(--brand-dark); }
+  .nav .brand { font-weight: 700; color: var(--brand-dark); margin-inline-end: auto; }
+</style>
+</head>
+<body>
+
+<!-- ──────────── In-page nav (hidden on print) ──────────── -->
+<nav class="nav">
+  <span class="brand">ساند · Saned</span>
+  <a href="#vision">Vision</a>
+  <a href="#problem">Problem</a>
+  <a href="#solution">Solution</a>
+  <a href="#flow">How it works</a>
+  <a href="#audiences">For citizens · offices · ministry</a>
+  <a href="#trust">Trust</a>
+  <a href="#numbers">Numbers</a>
+  <a href="#roadmap">Roadmap</a>
+</nav>
+
+<!-- ──────────── COVER ──────────── -->
+<section class="page cover">
+  <div class="glow"></div>
+  <div class="crest" aria-hidden="true">
+    <!-- Saned brand mark — open document with a checkmark, in white. -->
+    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="9" y="6" width="26" height="34" rx="4" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M14 14 H30" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M14 20 H30" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M14 26 H24" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="34" cy="34" r="9" fill="white"/>
+      <path d="M30 34 L33 37 L39 30" stroke="#0f766e" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <span class="ribbon">Ministry Briefing · إحاطة وزارية</span>
+
+  <div class="bicol" style="gap:64px;align-items:end">
+    <div class="col-en">
+      <h1>Saned</h1>
+      <p class="tagline">A unified digital front door for Oman's government services — citizens prepare requests in minutes; licensed Sanad offices fulfil them with full accountability.</p>
+    </div>
+    <div class="col-ar ar">
+      <h1 style="font-size:56px">ساند</h1>
+      <p class="tagline">بوابة موحّدة لخدمات حكومة سلطنة عُمان — المواطن يجهّز طلبه في دقائق، ومكاتب سند المرخّصة تُنجز المعاملة بمحاسبة كاملة.</p>
+    </div>
+  </div>
+
+  <div class="meta">
+    <div>
+      <strong>Prepared for</strong>
+      Ministry of Commerce, Industry & Investment Promotion · Sultanate of Oman
+    </div>
+    <div>
+      <strong>أُعدّ من أجل</strong>
+      <span class="ar" dir="rtl">وزارة التجارة والصناعة وترويج الاستثمار · سلطنة عُمان</span>
+    </div>
+    <div>
+      <strong>What it is</strong>
+      Web + WhatsApp marketplace · 601-service catalogue · payment-integrated · Arabic-first
+    </div>
+    <div>
+      <strong>ما هو ساند</strong>
+      <span class="ar" dir="rtl">منصّة ويب + واتساب · ٦٠١ خدمة · دفع مدمج · عربية أولاً</span>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────── 01 · VISION ──────────── -->
+<section class="page" id="vision">
+  <div class="section-head">
+    <span class="num">01</span><h4>Vision · الرؤية</h4>
+  </div>
+  <div class="bicol">
+    <div class="col-en">
+      <h2>Saned makes government services feel <span class="accent">effortless</span> — without replacing the people who deliver them.</h2>
+      <p class="lead">Oman has 600+ government services and a strong network of licensed Sanad offices. What's missing is the connective tissue: a way for citizens to find the right service, prepare it correctly, and hand it to a qualified office in one motion — on the web or in a WhatsApp chat they already use every day.</p>
+      <p>Saned does not replace Sanad offices. It empowers them: it routes prepared, document-complete requests to whichever office is fastest to respond, takes the citizen's payment cleanly, and gives the office a polished workspace to finish the job. The Ministry gets transparency over the whole flow.</p>
+    </div>
+    <div class="col-ar ar">
+      <h2>ساند يجعل الخدمات الحكومية <span class="accent">سهلة بلا عناء</span> — دون أن يُلغي دور المكاتب التي تُقدّمها.</h2>
+      <p class="lead">في عُمان أكثر من ٦٠٠ خدمة حكوميّة وشبكة قويّة من مكاتب سند المرخّصة، لكنّ الحلقة المفقودة هي الرابط الذي يصل المواطن بالخدمة الصحيحة ويُعدّها له بشكل سليم ثم يُسلّمها لمكتب مؤهّل في خطوة واحدة — عبر الويب أو واتساب الذي يستخدمه يوميّاً.</p>
+      <p>لا يحلّ ساند محلّ مكاتب سند، بل يُمكّنها: يُوزّع الطلبات الجاهزة بالمستندات على المكتب الأسرع استجابة، يُحصّل الدفع من المواطن بسلاسة، ويمنح المكتب لوحة عمل أنيقة لإنهاء المعاملة. والوزارة تحصل على شفافيّة كاملة لكلّ التدفّق.</p>
+    </div>
+  </div>
+
+  <div class="grid-3" style="margin-top:36px">
+    <div class="card">
+      <div class="icon">⚡</div>
+      <h3>Time to first action: minutes</h3>
+      <p>Citizens find the right service, upload documents, and get a response from a real Sanad office — typically within 5 minutes.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🤝</div>
+      <h3>Empowers the existing network</h3>
+      <p>Built around the licensed Sanad office model. The marketplace surfaces every active office; the citizen never has to hunt for one.</p>
+    </div>
+    <div class="card">
+      <div class="icon">📊</div>
+      <h3>Transparent for the regulator</h3>
+      <p>Every claim, payment, and SLA event is audited. Ministry-level reporting at the request, office, and service level.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────── 02 · PROBLEM ──────────── -->
+<section class="page" id="problem">
+  <div class="section-head">
+    <span class="num">02</span><h4>The problem · المشكلة</h4>
+  </div>
+  <div class="bicol">
+    <div class="col-en">
+      <h2>Government paperwork still costs hours and uncertainty.</h2>
+      <p>The catalogue of public services is sprawling, the rules behind each one are scattered across portals and PDFs, and most citizens cannot tell which Sanad office is fast, fair, and licensed for their case.</p>
+      <p>The result is well-documented:</p>
+      <ul>
+        <li><strong>Wasted time</strong> — half-finished applications, repeated visits to wrong offices, duplicate uploads.</li>
+        <li><strong>Opaque pricing</strong> — citizens often discover fees only after they've handed over documents.</li>
+        <li><strong>Inconsistent quality</strong> — no signal on which offices respond fast or finish correctly.</li>
+        <li><strong>Friction for the offices themselves</strong> — they juggle WhatsApp, calls, paper forms, and bank transfers with no shared workspace.</li>
+      </ul>
+    </div>
+    <div class="col-ar ar">
+      <h2>المعاملات الحكوميّة لا تزال تكلّف ساعات وقلقاً.</h2>
+      <p>دليل الخدمات الحكوميّة ضخم، والقواعد متناثرة بين بوّابات وملفّات PDF، ومعظم المواطنين لا يستطيعون تحديد مكتب سند السريع والعادل والمرخّص لحالتهم.</p>
+      <p>النتيجة معروفة:</p>
+      <ul>
+        <li><strong>وقت ضائع</strong> — طلبات نصف منتهية، زيارات مكرّرة لمكاتب خاطئة، رفع متكرّر للمستندات.</li>
+        <li><strong>أسعار غير شفّافة</strong> — كثيراً ما يكتشف المواطن الرسوم بعد تسليم أوراقه.</li>
+        <li><strong>جودة متفاوتة</strong> — لا توجد إشارة على المكتب السريع أو المُتقن.</li>
+        <li><strong>عبء على المكاتب ذاتها</strong> — يديرون واتساب ومكالمات ونماذج ورقيّة وتحويلات بنكيّة بلا مساحة عمل مشتركة.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────── 03 · SOLUTION ──────────── -->
+<section class="page" id="solution">
+  <div class="section-head">
+    <span class="num">03</span><h4>The solution · الحل</h4>
+  </div>
+  <div class="bicol">
+    <div class="col-en">
+      <h2>One platform. <span class="accent">Two doors.</span> Three winners.</h2>
+      <p class="lead">Saned is a marketplace built around the existing Sanad office network — accessible through a polished web app or directly through WhatsApp, with a smart Arabic/English bot that prepares the citizen's request before any office sees it.</p>
+      <p>When a request enters the marketplace, the first qualified office to claim it takes the case. They have a short, enforced window to review documents and send a payment link. Once paid, they have a clear timer to complete — and if they fail, the request transfers to another office automatically, without re-charging the citizen.</p>
+    </div>
+    <div class="col-ar ar">
+      <h2>منصّة واحدة. <span class="accent">بابان.</span> ثلاثة رابحين.</h2>
+      <p class="lead">ساند سوق إلكترونيّ مبنيّ على شبكة مكاتب سند القائمة — يُستخدم عبر تطبيق ويب أنيق أو عبر واتساب مباشرة، بمساعد ذكيّ بالعربيّة والإنجليزيّة يُجهّز طلب المواطن قبل أن يصل لأيّ مكتب.</p>
+      <p>عند دخول الطلب إلى السوق، يلتقطه أوّل مكتب مؤهّل ويُغلَق عليه آليّاً. للمكتب نافذة قصيرة لمراجعة المستندات وإرسال رابط الدفع. بعد الدفع، تبدأ مهلة واضحة لإنهاء العمل — وإذا تأخّر يُحوَّل الطلب تلقائيّاً إلى مكتب آخر دون أن يدفع المواطن مرّة أخرى.</p>
+    </div>
+  </div>
+
+  <!-- 5-step flow -->
+  <div class="flow" id="flow" style="margin-top:38px">
+    <div class="step"><div class="ico">1</div><div class="t">Find &amp; apply</div><div class="ar">يبحث ويُطبّق</div></div>
+    <div class="step"><div class="ico">2</div><div class="t">Office claims</div><div class="ar">المكتب يستلم</div></div>
+    <div class="step"><div class="ico">3</div><div class="t">Payment link</div><div class="ar">رابط الدفع</div></div>
+    <div class="step"><div class="ico">4</div><div class="t">Office works</div><div class="ar">تنفيذ المعاملة</div></div>
+    <div class="step"><div class="ico">5</div><div class="t">Done · delivery</div><div class="ar">إنجاز وتسليم</div></div>
+  </div>
+
+  <div class="grid-2" style="margin-top:30px">
+    <div class="mock">
+      <div class="header"><span class="dot on"></span><span class="dot"></span><span class="dot"></span><span style="margin-inline-start:auto">saned.om / apply</span></div>
+      <div class="row"><span class="pill brand">Civil ID</span><span style="flex:1">passport_front.jpg</span><span class="pill ok">✓ uploaded</span></div>
+      <div class="row"><span class="pill brand">Photo</span><span style="flex:1">portrait.png</span><span class="pill ok">✓ uploaded</span></div>
+      <div class="row"><span class="pill brand">Notes</span><span style="flex:1;color:var(--mute)">"Pickup tomorrow if possible"</span></div>
+      <div class="row" style="background:var(--brand-tint);border:1px solid var(--brand-soft)"><span style="flex:1;font-weight:600;color:var(--brand-dark)">Submit application</span><span class="pill brand">→</span></div>
+      <small>Citizen view · مشهد المواطن</small>
+    </div>
+    <div class="mock">
+      <div class="header"><span class="dot on"></span><span class="dot on"></span><span class="dot"></span><span style="margin-inline-start:auto">officer dashboard</span></div>
+      <div class="row"><span class="pill warn">⏱ 4:32</span><span style="flex:1;font-weight:600">#R-118 · Passport renewal</span><span class="pill brand">claim</span></div>
+      <div class="row"><span class="pill warn">⏱ 41:08</span><span style="flex:1;font-weight:600">#R-114 · Trade licence (paid)</span><span class="pill ok">complete</span></div>
+      <div class="row"><span class="pill ok">paid</span><span style="flex:1;color:var(--mute)">#R-99 · awaiting govt portal</span></div>
+      <small>Sanad office view · مشهد المكتب</small>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────── 04 · AUDIENCES — CITIZENS ──────────── -->
+<section class="page" id="audiences">
+  <div class="section-head">
+    <span class="num">04</span><h4>For citizens · للمواطن</h4>
+  </div>
+  <div class="bicol">
+    <div class="col-en">
+      <h2>Apply once. <span class="accent">Tracked everywhere.</span></h2>
+      <p class="lead">Whether the citizen prefers a polished website or a familiar WhatsApp thread, the experience is the same: find the right service, upload exactly the documents needed, pay once, and receive every status update on WhatsApp.</p>
+    </div>
+    <div class="col-ar ar">
+      <h2>قدّم طلبك مرّة واحدة. <span class="accent">تابِعه في كلّ مكان.</span></h2>
+      <p class="lead">سواء فضّل المواطن موقعاً أنيقاً أو محادثة واتساب اعتاد عليها، فالتجربة واحدة: يجد الخدمة الصحيحة، يرفع المستندات المطلوبة بدقّة، يدفع مرّة واحدة، ويستلم كل تحديث على واتساب.</p>
+    </div>
+  </div>
+
+  <div class="grid-3" style="margin-top:28px">
+    <div class="card">
+      <div class="icon">🔍</div>
+      <h3>Hybrid search</h3>
+      <p>Bilingual semantic + full-text search across 601 services. Filters by entity, fee, beneficiary, and required documents.</p>
+    </div>
+    <div class="card">
+      <div class="icon">📝</div>
+      <h3>Form-based apply</h3>
+      <p>Each service shows the exact required documents. Drop the files, add a note, submit. No back-and-forth in chat to figure out what to attach.</p>
+    </div>
+    <div class="card">
+      <div class="icon">💬</div>
+      <h3>Or apply via WhatsApp</h3>
+      <p>An Arabic/English assistant prepares the request, asks for missing documents, and hands it to an office — all from the citizen's existing chat thread.</p>
+    </div>
+    <div class="card">
+      <div class="icon">💳</div>
+      <h3>One clean payment</h3>
+      <p>Thawani-style hosted checkout. Office fee + government fee broken out clearly before paying. No surprise charges.</p>
+    </div>
+    <div class="card">
+      <div class="icon">📍</div>
+      <h3>Real-time status</h3>
+      <p>A timeline of where the request stands — claimed, awaiting payment, in progress, ready for pickup. Pushed to WhatsApp at every step.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🛡️</div>
+      <h3>Privacy preserved</h3>
+      <p>The citizen's phone is never exposed to the office until the office is awarded. Documents are stored encrypted at rest.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────── 05 · AUDIENCES — OFFICES ──────────── -->
+<section class="page">
+  <div class="section-head">
+    <span class="num">05</span><h4>For Sanad offices · لمكاتب سند</h4>
+  </div>
+  <div class="bicol">
+    <div class="col-en">
+      <h2>A workspace built for how Sanad offices <span class="accent">actually work</span>.</h2>
+      <p class="lead">Sanad offices already serve their communities every day — they just don't have software designed around the way they operate. Saned gives them a dashboard that surfaces incoming requests, enforces fair claim rules, processes payment, and reports their performance so they can grow.</p>
+    </div>
+    <div class="col-ar ar">
+      <h2>مساحة عمل مبنيّة على <span class="accent">واقع</span> مكاتب سند.</h2>
+      <p class="lead">مكاتب سند تخدم مجتمعاتها يوميّاً، لكنّها تفتقر إلى برنامج مصمَّم على طريقة عملها. ساند يمنحها لوحة تستعرض الطلبات الواردة، تطبّق قواعد استلام عادلة، تُعالج الدفع، وتُقدّم تقارير أدائها ليتمكّن المكتب من النمو.</p>
+    </div>
+  </div>
+
+  <div class="grid-3" style="margin-top:28px">
+    <div class="card">
+      <div class="icon">🛒</div>
+      <h3>Marketplace inbox</h3>
+      <p>All ready-to-fulfil requests in one feed. Anonymized at first — only the winning office sees citizen documents.</p>
+    </div>
+    <div class="card">
+      <div class="icon">⚡</div>
+      <h3>Atomic single-claim</h3>
+      <p>Race-free locking — only one office can claim each request, even with dozens competing simultaneously. Verified by a 50-concurrent-claim simulation.</p>
+    </div>
+    <div class="card">
+      <div class="icon">⏱️</div>
+      <h3>Two SLA windows</h3>
+      <p>5 minutes to review documents and send a payment link. 45 minutes after payment to finish the work. Clear countdown badges, configurable per deployment.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🔁</div>
+      <h3>Auto-transfer if missed</h3>
+      <p>If the office can't finish in time, the request returns to the marketplace — with the citizen's payment preserved so they aren't charged twice.</p>
+    </div>
+    <div class="card">
+      <div class="icon">💰</div>
+      <h3>Per-service pricing</h3>
+      <p>Office fee defaults office-wide; can be overridden per service. Government fee shown separately and transparently to the citizen.</p>
+    </div>
+    <div class="card">
+      <div class="icon">📈</div>
+      <h3>Operational reports</h3>
+      <p>Daily pipeline, average time-to-completion, SLA breaches, currently in-flight — surfaced inside the dashboard for the office owner.</p>
+    </div>
+  </div>
+
+  <div class="quote" style="margin-top:30px">
+    <strong>Why this matters operationally:</strong> a fair, race-free claim model + enforced SLAs means no one office can monopolise or grief-hold the queue. The market self-balances toward the offices that respond fastest and finish cleanly — exactly the quality signal regulators want.
+  </div>
+</section>
+
+<!-- ──────────── 06 · AUDIENCES — MINISTRY ──────────── -->
+<section class="page">
+  <div class="section-head">
+    <span class="num">06</span><h4>For the Ministry · للوزارة</h4>
+  </div>
+  <div class="bicol">
+    <div class="col-en">
+      <h2>An evidence base, <span class="accent">not a black box.</span></h2>
+      <p class="lead">Saned is designed so the Ministry can see — at any moment — which services are in highest demand, which offices are healthy, where citizens are dropping off, and where the system is meeting (or breaking) its service-level promises.</p>
+      <p>Every event in the lifecycle (claim, release, payment, completion, transfer, SLA breach) is written to an immutable audit log keyed by request, office, and officer. Aggregations roll up into Ministry-level dashboards or feeds into existing OG-Tech reporting infrastructure.</p>
+    </div>
+    <div class="col-ar ar">
+      <h2>قاعدة أدلّة، <span class="accent">لا صندوق أسود.</span></h2>
+      <p class="lead">صُمِّم ساند ليتمكّن المسؤول الوزاريّ — في أي لحظة — من معرفة أكثر الخدمات طلباً، وأيّ المكاتب يعمل بصحّة، وأين يتسرّب المواطنون من المسار، وأين يفي النظام (أو يخلّ) بالتزاماته الزمنيّة.</p>
+      <p>كل حدث في الدورة (استلام، تحرير، دفع، إنجاز، تحويل، خرق SLA) يُسجَّل في سجلّ تدقيق غير قابل للتعديل مرتبط بالطلب والمكتب والموظّف. وتتجمّع البيانات في لوحات معلومات على مستوى الوزارة أو تتدفّق إلى البنية التحتيّة الحاليّة للتقارير.</p>
+    </div>
+  </div>
+
+  <div class="grid-3" style="margin-top:28px">
+    <div class="card dark">
+      <div class="icon">📊</div>
+      <h3>Demand intelligence</h3>
+      <p>Which services see the most applications, in which governorate, when. Identifies process-improvement candidates by signal, not anecdote.</p>
+    </div>
+    <div class="card dark">
+      <div class="icon">🏛️</div>
+      <h3>Office quality oversight</h3>
+      <p>Per-office completion rates, average turnaround, SLA breaches, citizen-facing rating. Direct input for licensing review cycles.</p>
+    </div>
+    <div class="card dark">
+      <div class="icon">🔐</div>
+      <h3>Auditable by design</h3>
+      <p>Every state transition is logged with actor, timestamp, and diff. Reconciliation against revenue and service delivery is a single SQL query away.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────── 07 · TRUST / ARCHITECTURE ──────────── -->
+<section class="page" id="trust">
+  <div class="section-head">
+    <span class="num">07</span><h4>Trust &amp; architecture · الموثوقيّة والبنية</h4>
+  </div>
+  <div class="bicol">
+    <div class="col-en">
+      <h2>Built for production, not for a demo.</h2>
+      <p class="lead">Saned is engineered to the bar a national service deserves: rate-limiting, CSRF/Origin protection, password complexity, signed webhook payloads, citizen-phone verification, and a documented threat model. Every state-changing endpoint has automated regression coverage.</p>
+    </div>
+    <div class="col-ar ar">
+      <h2>جاهز للإنتاج، لا للعرض فقط.</h2>
+      <p class="lead">صُمّم ساند بمستوى يستحقّه المرفق الوطنيّ: حدّ المعدّل، حماية CSRF/Origin، تعقيد كلمات المرور، توقيع webhooks، تحقّق من هاتف المواطن، ونموذج تهديد موثَّق. كلّ نقطة تُغيِّر حالة لها تغطية اختبار آليّ.</p>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:28px">
+    <div class="card">
+      <div class="icon">🔒</div>
+      <h3>Privacy posture</h3>
+      <p>Phone numbers never exposed to offices pre-claim. Documents stored on encrypted disk. Citizens authenticate via OTP or Google SSO; offices via salted-hash credentials. PII is segregated from operational logs.</p>
+    </div>
+    <div class="card">
+      <div class="icon">💳</div>
+      <h3>Payment integration</h3>
+      <p>Production-ready Amwal hosted checkout. Thawani-style fallback in development. Server-side webhook verification with HMAC; idempotent payment confirmation; full reconciliation through audit log.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🧪</div>
+      <h3>Tested end-to-end</h3>
+      <p>216 automated assertions covering citizen auth, payment lifecycle, office competition (10-vs-5 race), SLA two-window enforcement (pre-pay release + post-pay transfer), and citizen dashboard wiring. Every commit runs the suite.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🌍</div>
+      <h3>Bilingual + RTL-native</h3>
+      <p>Arabic-first UX with full RTL support; English provided as a peer language. Service catalogue uses the official AR + EN names. Citizen messages use the language preference recorded at signup.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────── 08 · NUMBERS ──────────── -->
+<section class="page" id="numbers">
+  <div class="section-head">
+    <span class="num">08</span><h4>By the numbers · بالأرقام</h4>
+  </div>
+  <div class="bicol">
+    <div class="col-en">
+      <h2>What's already shipped.</h2>
+      <p class="lead">Everything below is in the production build today — not on a roadmap, not in a sprint plan.</p>
+    </div>
+    <div class="col-ar ar">
+      <h2>ما تمّ إنجازه فعليّاً.</h2>
+      <p class="lead">كل ما يلي في النسخة الإنتاجيّة اليوم — ليس على خارطة طريق ولا خطّة قادمة.</p>
+    </div>
+  </div>
+
+  <div class="grid-3" style="margin-top:28px">
+    <div class="stat">
+      <div class="num">601</div>
+      <span class="lbl">Services in catalogue</span>
+      <span class="lbl-ar">خدمة في الدليل</span>
+    </div>
+    <div class="stat">
+      <div class="num">2</div>
+      <span class="lbl">Languages: AR + EN</span>
+      <span class="lbl-ar">لغتان: عربيّة وإنجليزيّة</span>
+    </div>
+    <div class="stat">
+      <div class="num">2</div>
+      <span class="lbl">Channels: Web + WhatsApp</span>
+      <span class="lbl-ar">قناتان: ويب وواتساب</span>
+    </div>
+    <div class="stat">
+      <div class="num">5</div>
+      <span class="lbl">Min review SLA (pre-pay)</span>
+      <span class="lbl-ar">دقائق مهلة المراجعة</span>
+    </div>
+    <div class="stat">
+      <div class="num">45</div>
+      <span class="lbl">Min work SLA (post-pay)</span>
+      <span class="lbl-ar">دقيقة مهلة الإنجاز</span>
+    </div>
+    <div class="stat">
+      <div class="num">216</div>
+      <span class="lbl">Automated assertions</span>
+      <span class="lbl-ar">اختبار آليّ</span>
+    </div>
+  </div>
+
+  <div class="quote" style="margin-top:32px">
+    <strong>Stress-tested:</strong> a 10-office × 5-request race finishes in 156 ms with exactly 5 wins, 45 clean 409 losses, and zero double-locks. The atomic-claim SQL is genuinely race-free under contention — proven by an automated simulation, not by hope.
+  </div>
+</section>
+
+<!-- ──────────── 09 · ROADMAP ──────────── -->
+<section class="page" id="roadmap">
+  <div class="section-head">
+    <span class="num">09</span><h4>Roadmap · خارطة الطريق</h4>
+  </div>
+  <div class="bicol">
+    <div class="col-en">
+      <h2>Where we go next, with the Ministry.</h2>
+      <p class="lead">Saned is production-ready today. With the Ministry's approval and integration touchpoints, the next quarter is about depth: government portals, payment rails, identity, and analytics that close the loop.</p>
+    </div>
+    <div class="col-ar ar">
+      <h2>الخطوات التالية، بالشراكة مع الوزارة.</h2>
+      <p class="lead">ساند جاهز للإنتاج اليوم. بدعم الوزارة وتكاملاتها، الربع القادم سيُركّز على العمق: بوّابات الخدمة الحكوميّة، قنوات الدفع، الهويّة الرقميّة، وتحليلات تُغلق الدائرة.</p>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:28px">
+    <div class="card">
+      <div class="icon">🪪</div>
+      <h3>Tam / Sahel SSO</h3>
+      <p>Replace OTP with national identity sign-in. Single tap from official portals into Saned with verified citizen data pre-filled.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🔌</div>
+      <h3>Direct ministry-portal hand-off</h3>
+      <p>Where APIs exist (ROP, MOCIIP, MOL), Saned will hand the prepared file directly into the back-office system instead of the office re-typing it.</p>
+    </div>
+    <div class="card">
+      <div class="icon">📡</div>
+      <h3>Live ministry dashboard</h3>
+      <p>Read-only Ministry-level analytics deployment: per-service demand, per-office quality, governorate-by-governorate uptake, SLA compliance.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🤖</div>
+      <h3>Voice + multilingual support</h3>
+      <p>Voice input on WhatsApp for citizens with low literacy. Filipino and Hindi for Oman's expat workforce on top of AR + EN.</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span><strong>Saned · ساند</strong> — Ministry briefing draft · April 2026</span>
+    <span>Prepared for Ministry of Commerce, Industry &amp; Investment Promotion · سلطنة عُمان</span>
+  </div>
+</section>
+
+</body>
+</html>
