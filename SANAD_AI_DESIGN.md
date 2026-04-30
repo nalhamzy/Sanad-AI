@@ -215,7 +215,7 @@ Each transition emits a `request_event`, an audit entry, and (where relevant) a 
 7. **WhatsApp chat simulator** — shows the citizen's side (useful for sales demos)
 8. **Settings** — office profile, officers, billing, WhatsApp number, PKI
 
-The HTML mockup (`sanad-ai-mockup.html`) demonstrates screens 1, 2, 3, 5, and 7 with a sidebar to navigate between them, bilingual AR/EN toggle, and Tailwind styling that matches the Angular app you'll build next.
+_(Original pre-implementation HTML mockup file removed — superseded by the live pages under `/public/` and the live deployment.)_
 
 ---
 
