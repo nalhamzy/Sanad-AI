@@ -48,62 +48,38 @@
   body { font-family: 'Inter', sans-serif; }
   [dir="rtl"] body, html[dir="rtl"] * { font-family: 'Noto Kufi Arabic', sans-serif; }
 
-  .page-bg {
+  /* Marketing-grade hero gradient — soft, government-respectful (no neon).
+     The rest (svc-card, matched-chip, step-num, rtl-flip, dots, wordmark,
+     btn-brand, btn-wa) all live in /theme.css. */
+  .hero-bg {
     background:
-      radial-gradient(1200px 700px at 8% -8%, rgba(20,184,166,.13) 0%, transparent 55%),
-      radial-gradient(900px 600px at 110% 0%, rgba(34,197,94,.10) 0%, transparent 55%),
-      radial-gradient(700px 600px at 50% 110%, rgba(20,184,166,.06) 0%, transparent 60%),
-      linear-gradient(180deg, #fbfaf6 0%, #f5f1e8 100%);
+      radial-gradient(1100px 600px at 8% -8%, rgba(15,118,110,.08) 0%, transparent 55%),
+      radial-gradient(900px 600px at 110% 0%, rgba(29,78,216,.04) 0%, transparent 55%),
+      var(--surface-2);
   }
-  .wordmark {
-    background: linear-gradient(135deg, #0d9488 0%, #15803d 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  .wa-btn { background: #25D366; box-shadow: 0 8px 20px -8px rgba(37,211,102,.6), 0 0 0 1px rgba(0,0,0,.04); transition: all .15s; }
-  .wa-btn:hover { background: #1eb858; transform: translateY(-1px); box-shadow: 0 14px 28px -10px rgba(37,211,102,.55); }
-  .wa-btn:active { transform: translateY(0); }
-  .primary-btn { background: linear-gradient(135deg, #0d9488 0%, #15803d 100%); box-shadow: 0 10px 24px -10px rgba(13,148,136,.55), 0 0 0 1px rgba(0,0,0,.03); transition: all .15s; }
-  .primary-btn:hover { transform: translateY(-1px); box-shadow: 0 16px 32px -12px rgba(13,148,136,.55); }
-  .step-num { background: linear-gradient(135deg, #0d9488, #15803d); color: white; box-shadow: 0 8px 16px -8px rgba(13,148,136,.55); }
-  .why-card { transition: all .2s; will-change: transform; }
-  .why-card:hover { transform: translateY(-3px); box-shadow: 0 22px 44px -22px rgba(15,23,42,.18); }
-  .svc-card { transition: all .2s; will-change: transform; }
-  .svc-card:hover { transform: translateY(-3px); box-shadow: 0 18px 36px -16px rgba(15,23,42,.18); border-color: rgba(20,184,166,.5); }
-  .voice-card { transition: all .2s; }
-  .voice-card:hover { transform: translateY(-2px); box-shadow: 0 18px 36px -18px rgba(15,23,42,.18); }
+
+  /* Cards specific to the marketing page */
+  .why-card, .voice-card, .path-card { transition: transform .18s ease-out, box-shadow .18s ease-out; will-change: transform; }
+  .why-card:hover, .voice-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+  .path-card:hover { transform: translateY(-2px); }
+
+  /* FAQ chevron rotate */
   details > summary { list-style: none; cursor: pointer; }
   details > summary::-webkit-details-marker { display: none; }
   details[open] .faq-chev { transform: rotate(180deg); }
   .faq-chev { transition: transform .2s; }
   .qr-card svg, .qr-card canvas { display: block; max-width: 100%; height: auto; }
-  .dots { background-image: radial-gradient(rgba(15,23,42,.06) 1.2px, transparent 1.2px); background-size: 24px 24px; }
 
-  /* Hero search box pop-out */
-  .hero-search-pop {
-    box-shadow: 0 24px 48px -16px rgba(15,23,42,.20), 0 0 0 1px rgba(15,23,42,.04);
-  }
-  .matched-chip { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 9999px; letter-spacing: .04em; text-transform: uppercase; }
-  .matched-fts { background: #ccfbf1; color: #0f766e; }
-  .matched-semantic { background: #ede9fe; color: #6d28d9; }
-  .matched-partial { background: #fee2e2; color: #b91c1c; }
+  /* Hero search popover shadow */
+  .hero-search-pop { box-shadow: var(--shadow-xl); }
 
-  /* Pulse ring on the WhatsApp CTA */
+  /* Subtle pulse ring on the WhatsApp CTA — kept (drives clicks) */
   @keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(37,211,102,.5); } 70% { box-shadow: 0 0 0 12px rgba(37,211,102,0); } 100% { box-shadow: 0 0 0 0 rgba(37,211,102,0); } }
   .wa-pulse { animation: pulseRing 2.4s infinite; }
-
-  /* Path-card subtle hover lift */
-  .path-card { will-change: transform; }
-  .path-card:hover { transform: translateY(-2px); }
-
-  /* RTL: flip the chevron arrow inside path-card CTAs so it points the
-     right direction in Arabic. */
-  [dir="rtl"] .rtl-flip { transform: scaleX(-1); }
   [dir="rtl"] .path-card:hover .rtl-flip { transform: scaleX(-1) translateX(2px); }
 </style>
 </head>
-<body class="min-h-screen text-slate-900 page-bg">
+<body class="min-h-screen text-slate-900 hero-bg">
 
 <!-- ─────────── HEADER ─────────── -->
 <header class="max-w-6xl mx-auto px-5 sm:px-6 py-5 flex items-center">
@@ -116,7 +92,7 @@
   </a>
   <div class="ms-auto flex items-center gap-2">
     <a id="navSignIn" href="/login.html" class="px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-slate-200 font-semibold text-xs shadow-sm text-slate-700 hidden sm:inline-flex" data-i18n="auth.sign_in"></a>
-    <a id="navSignUp" href="/signup.html" class="px-3 py-1.5 rounded-lg primary-btn text-white font-semibold text-xs shadow-sm" data-i18n="auth.sign_up"></a>
+    <a id="navSignUp" href="/signup.html" class="px-3 py-1.5 rounded-lg bg-gradient-to-br from-teal-800 to-teal-700 text-white font-semibold text-xs shadow-sm hover:shadow-md transition" data-i18n="auth.sign_up"></a>
     <a id="navAccount" href="/account.html" class="hidden px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-slate-200 font-semibold text-xs shadow-sm text-slate-700" data-i18n="auth.account"></a>
     <button id="langBtn" class="px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-slate-200 font-semibold text-xs shadow-sm" data-i18n="lang.toggle"></button>
   </div>
@@ -428,7 +404,7 @@
       <p class="mt-3 sm:mt-4 text-teal-100 max-w-md mx-auto text-base" data-i18n="home.subhead"></p>
       <div class="mt-7 flex items-center justify-center gap-3 flex-wrap">
         <a href="https://wa.me/96890944196" target="_blank" rel="noopener"
-           class="wa-btn inline-flex items-center gap-2 px-6 py-4 rounded-xl text-white font-bold text-base">
+           class="btn-wa inline-flex items-center gap-2" style="padding:14px 24px;border-radius:14px;font-size:16px">
           <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.768.967-.941 1.164-.173.198-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413"/></svg>
           <span data-i18n="home.cta.whatsapp"></span>
         </a>

@@ -206,8 +206,13 @@ try {
   const account = await fetch(`${base}/account.html`).then(r => r.text());
   ok('/account.html uses hybrid endpoint, not legacy /catalogue/search',
      account.includes('/api/catalogue/hybrid') && !/\/api\/catalogue\/search\?/.test(account));
-  ok('/account.html has match-by chips (matched-fts/semantic/partial)',
-     account.includes('matched-fts') && account.includes('matched-semantic'));
+  // The match-chip color classes (matched-fts/semantic/partial) now live in
+  // /theme.css; the page references the base class via inline JS template.
+  ok('/account.html renders match-chips (matched-chip + matched-${t} JS template)',
+     account.includes('matched-chip') && /matched-\$\{[^}]+\}/.test(account));
+  const themeCss = await fetch(`${base}/theme.css`).then(r => r.text());
+  ok('/theme.css defines matched-fts + matched-semantic + matched-partial',
+     themeCss.includes('matched-fts') && themeCss.includes('matched-semantic') && themeCss.includes('matched-partial'));
   ok('/account.html has filter rail (entity + beneficiary + sort)',
      account.includes('id="entities"') && account.includes('id="beneficiaries"') && account.includes('id="sortSel"'));
   ok('/account.html has fee-pill filters', account.includes('data-fee="lt10"'));

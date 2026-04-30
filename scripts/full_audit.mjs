@@ -343,7 +343,13 @@ pay-now CTA card.`, tests);
   tests.push(check('catalogue.html has fee-pill filters', cat.includes('data-fee="lt10"')));
   tests.push(check('catalogue.html has beneficiary rail + sort dropdown',
     cat.includes('beneficiaries') && cat.includes('sortSel')));
-  tests.push(check('catalogue.html match-by chips', cat.includes('matched-fts')));
+  // matched-fts/semantic/partial color classes now live in /theme.css; the
+  // page renders them via JS template `matched-${t}`. Assert both: the page
+  // uses matched-chip + the JS template, and theme.css carries the colours.
+  const themeCss = await asText(fetch(`${base}/theme.css`));
+  tests.push(check('catalogue.html match-by chips wired',
+    cat.includes('matched-chip') && /matched-\$\{[^}]+\}/.test(cat) &&
+    themeCss.includes('matched-fts') && themeCss.includes('matched-semantic')));
 
   const llm = await llmGrade('Catalogue search (hybrid + filters)', `
 /api/catalogue/hybrid runs FTS5 BM25 + Qwen-embedding cosine + substring

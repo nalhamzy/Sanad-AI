@@ -22,55 +22,40 @@
 <style>
   body { font-family: 'Inter', sans-serif; }
   [dir="rtl"] body, html[dir="rtl"] * { font-family: 'Noto Kufi Arabic', sans-serif; }
-  .page-bg {
-    background:
-      radial-gradient(900px 480px at 12% -10%, rgba(20,184,166,.08) 0%, transparent 55%),
-      linear-gradient(180deg, #fbfaf6 0%, #f5f1e8 100%);
-  }
-  .wordmark { background: linear-gradient(135deg, #0d9488 0%, #15803d 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .status-chip { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 9999px; letter-spacing: .03em; }
-  .chip-collecting   { background: #fef3c7; color: #92400e; }
-  .chip-ready        { background: #dbeafe; color: #1e40af; }
-  .chip-claimed      { background: #ede9fe; color: #5b21b6; }
-  .chip-awaiting_payment { background: #fee2e2; color: #991b1b; }
-  .chip-in_progress  { background: #d1fae5; color: #065f46; }
-  .chip-completed    { background: #e2e8f0; color: #334155; }
-  .chip-cancelled    { background: #f1f5f9; color: #64748b; }
-  .timeline-step {
-    position: relative;
-    padding-inline-start: 2.25rem;
-    padding-bottom: 1.25rem;
-  }
+  /* status-chip + chip-* + wordmark + page-bg now live in /theme.css.
+     Page-specific only below: timeline-step, doc-card, msg-* bubbles. */
+
+  /* Vertical status timeline — bespoke to /request.html */
+  .timeline-step { position: relative; padding-inline-start: 2.25rem; padding-bottom: 1.25rem; }
   .timeline-step::before {
-    content: '';
-    position: absolute;
-    inset-inline-start: 0.6875rem;
-    top: 1.5rem;
-    bottom: -0.25rem;
-    width: 2px;
-    background: #e2e8f0;
+    content: ''; position: absolute;
+    inset-inline-start: 0.6875rem; top: 1.5rem; bottom: -0.25rem;
+    width: 2px; background: var(--surface-4, #e2e8f0);
   }
   .timeline-step:last-child::before { display: none; }
   .timeline-dot {
-    position: absolute;
-    inset-inline-start: 0;
-    top: 0.25rem;
-    width: 1.5rem; height: 1.5rem;
-    border-radius: 9999px;
-    border: 2px solid #e2e8f0;
-    background: white;
+    position: absolute; inset-inline-start: 0; top: 0.25rem;
+    width: 1.5rem; height: 1.5rem; border-radius: 9999px;
+    border: 2px solid var(--surface-4, #e2e8f0); background: var(--surface, white);
     display: grid; place-items: center;
-    font-size: 12px; font-weight: 800;
-    color: #94a3b8;
+    font-size: 12px; font-weight: 800; color: var(--ink-400, #94a3b8);
   }
-  .timeline-step.done .timeline-dot { background: #14b8a6; border-color: #14b8a6; color: white; }
-  .timeline-step.done::before { background: #14b8a6; }
-  .timeline-step.current .timeline-dot { background: white; border-color: #0d9488; color: #0d9488; box-shadow: 0 0 0 4px rgba(13,148,136,.15); }
-  .doc-card { transition: all .15s; }
-  .doc-card:hover { transform: translateY(-1px); border-color: rgba(20,184,166,.5); }
-  .msg-mine { background: #d1fae5; color: #065f46; align-self: flex-end; border-radius: 16px 16px 4px 16px; }
-  .msg-theirs { background: white; align-self: flex-start; border: 1px solid #e2e8f0; border-radius: 16px 16px 16px 4px; }
-  .msg-bot { background: #f1f5f9; color: #475569; align-self: flex-start; border-radius: 16px 16px 16px 4px; }
+  .timeline-step.done .timeline-dot { background: var(--brand, #0f766e); border-color: var(--brand, #0f766e); color: white; }
+  .timeline-step.done::before { background: var(--brand, #0f766e); }
+  .timeline-step.current .timeline-dot {
+    background: var(--surface, white); border-color: var(--brand, #0f766e);
+    color: var(--brand, #0f766e);
+    box-shadow: 0 0 0 4px var(--brand-soft, rgba(15,118,110,.15));
+  }
+
+  /* Document card — bespoke to /request.html */
+  .doc-card { transition: transform .15s, border-color .15s; }
+  .doc-card:hover { transform: translateY(-1px); border-color: var(--brand, #0f766e); }
+
+  /* Message bubbles — bespoke to /request.html (citizen-side thread) */
+  .msg-mine   { background: #d1fae5; color: #065f46; align-self: flex-end;   border-radius: 16px 16px 4px 16px; }
+  .msg-theirs { background: var(--surface, white); align-self: flex-start; border: 1px solid var(--line, #e2e8f0); border-radius: 16px 16px 16px 4px; }
+  .msg-bot    { background: var(--surface-3, #f1f5f9); color: #475569; align-self: flex-start; border-radius: 16px 16px 16px 4px; }
   .msg-system { background: #fef3c7; color: #92400e; align-self: center; font-style: italic; font-size: 12px; padding: 4px 10px; border-radius: 9999px; }
 </style>
 </head>

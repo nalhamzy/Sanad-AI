@@ -40,7 +40,7 @@ Where the audit surfaced fixable gaps the **Enhancement applied** column shows w
 
 | Result | Check |
 |:---:|:---|
-| ✅ | homepage serves 200 <br/><sub>40864 bytes</sub> |
+| ✅ | homepage serves 200 <br/><sub>39211 bytes</sub> |
 | ✅ | Arabic-first (lang="ar" dir="rtl") |
 | ✅ | uses new brand "ساند · Saned" in title |
 | ✅ | no legacy "Sanad-AI" in title |
@@ -60,16 +60,16 @@ Where the audit surfaced fixable gaps the **Enhancement applied** column shows w
 - All 12 deterministic checks pass — hero, dual-path CTAs, Why-Saned, testimonials, trust strip all render correctly
 - Arabic-first with lang="ar" dir="rtl" set at document level
 - Brand wordmark "ساند · Saned" in title; legacy "Sanad-AI" fully removed
-- Dual application paths (Web + WhatsApp) with clear "Easiest · Recommended" badge guiding citizens toward the smoother flow
-- Office partner pitch correctly relegated to footer ("I run a Sanad office →") — keeps citizen focus clean
-- Page weight ~40 KB is reasonable for a content-rich landing; no obvious bloat
+- Dual application paths (Web + WhatsApp) presented as equal side-by-side cards with clear "Easiest · Recommended" badge on web path
+- Office partner pitch correctly relegated to footer ("I run a Sanad office →") — keeps citizen focus
+- 39KB payload is reasonable for a content-rich landing page
 
 **Watchlist**
 
-- No test coverage for FAQ accordion functionality or keyboard accessibility
-- Missing explicit check for How-it-works 3-step section mentioned in description
-- No performance or Core Web Vitals assertion (LCP, CLS) — important for first impression
-- Service spotlight section not verified in test output
+- No explicit test for FAQ accordion presence or functionality — description mentions FAQ but tests don't verify
+- Missing verification of How-it-works 3-step section mentioned in description
+- No accessibility checks (focus order, ARIA labels on search input, skip-to-content link)
+- Service spotlight section mentioned in description but not explicitly tested
 
 ---
 
@@ -110,14 +110,14 @@ Where the audit surfaced fixable gaps the **Enhancement applied** column shows w
 
 **Watchlist**
 
-- No test confirming cooldown actually blocks rapid /start-otp calls — could allow OTP spam
-- No test for max-attempts lockout after 5 failures — brute-force vector unverified
-- Missing test: expired OTP rejection after 5 min TTL
-- Google sign-in flow incomplete in tests — no happy-path /google → phone-verification chain shown
-- No explicit Arabic-first assertion (RTL dir, Arabic placeholder/label text) in HTML tests
-- Cookie SameSite and Secure flags not verified — CSRF/MITM risk on prod
-- No test for /logout or session invalidation
-- DEBUG auto-fill button should be hidden/absent in production builds — no assertion for that
+- No test confirming cooldown actually blocks rapid re-requests (30s enforcement untested)
+- No test for max-attempts lockout after 5 failures — brute-force protection unverified
+- Missing test: expired OTP (>5 min) should fail verification
+- Google sign-in flow incomplete: no test showing phone verification requirement after OAuth
+- No Arabic copy verification — 'Arabic-first' claimed but no assertion on RTL/lang attributes
+- Cookie SameSite and Secure flags not tested — CSRF/MITM surface unclear
+- No logout endpoint tested — session teardown path unknown
+- DEBUG auto-fill button should be hidden in production builds — no assertion it's conditionally rendered
 
 ---
 
@@ -147,24 +147,25 @@ Where the audit surfaced fixable gaps the **Enhancement applied** column shows w
 
 **What's working**
 
-- GET /my-requests returns seeded request with payment_status + status fields — correct schema
-- GET /my-request/:id returns request + documents + messages bundle in single call
-- chat_unlocked_for_office=false pre-payment enforces correct visibility rule
-- 401 for unauthenticated, 404 for non-existent request — proper error codes
-- account.html is Arabic-first with phone-banner, search, and reqList containers
-- request.html renders timeline, docList, thread, and Pay-now CTA card
-- DEBUG attach-phone shortcut present for testing phone verification flow
+- GET /my-requests returns correct payload with payment_status + status fields
+- GET /my-request/:id returns request + documents + messages bundle
+- chat_unlocked_for_office=false enforced pre-payment — correct gating logic
+- 401 for unauthenticated, 404 for non-existent request — proper error handling
+- account.html is Arabic-first with phone-banner, search, and reqList elements
+- request.html has timeline, docList, thread, and Pay-now CTA card
+- Status timeline covers full lifecycle: collecting → ready → claimed → awaiting_payment → in_progress → completed
+- Document chips show verified/pending/rejected states — good transparency
 
 **Watchlist**
 
-- DEBUG attach-phone shortcut visible in production build — should be dev-only or feature-flagged
+- DEBUG attach-phone shortcut present in account.html — must be removed or feature-flagged before production
 - No test for phone-banner conditional rendering (should hide when phone already verified)
-- chat_unlocked_for_office tested only for false case — missing test for true after paid_at
-- Timeline status progression not tested (e.g., correct chip for 'awaiting_payment' vs 'in_progress')
-- Document chips (verified/pending/rejected) rendering not explicitly tested
-- No test for empty state when citizen has zero requests
-- Entity grid mentioned in description but not covered by any test
-- No RTL layout or Arabic copy verification beyond 'Arabic-first' assertion
+- No test for hybrid search endpoint integration on /account.html
+- No test for entity grid rendering or data source
+- No test for message thread ordering or Arabic RTL bubble alignment
+- No test for Pay-now CTA state changes (hidden when already paid, disabled when not awaiting_payment)
+- No test for status chip Arabic labels (e.g., 'قيد التنفيذ' vs 'in_progress')
+- No test for documents grid click-to-preview or download behaviour
 
 ---
 
@@ -193,29 +194,31 @@ Where the audit surfaced fixable gaps the **Enhancement applied** column shows w
 | ✅ | catalogue.html uses hybrid endpoint, not legacy /search |
 | ✅ | catalogue.html has fee-pill filters |
 | ✅ | catalogue.html has beneficiary rail + sort dropdown |
-| ✅ | catalogue.html match-by chips |
+| ✅ | catalogue.html match-by chips wired |
 
 ### Opus verdict
 
 **What's working**
 
-- Three-lane hybrid search (FTS5 BM25 + Qwen embedding + substring LIKE) with RRF fusion is sophisticated and handles Arabic morphology well
-- matched_by tags give transparency into which lane surfaced each result — useful for debugging and user trust
-- Filter endpoints (/entities, /beneficiaries, /fee-buckets) are well-structured with counts for faceted UI
+- Hybrid search architecture (FTS5 BM25 + Qwen embeddings + substring LIKE) with RRF fusion is sophisticated and production-grade
+- matched_by tags provide transparency on which lane(s) contributed each result
+- Filter endpoints well-structured: /entities returns {entity_en, entity_ar, n}, /beneficiaries, /fee-buckets with 5 bucket counts
+- Arabic query returns 200 — bilingual search confirmed working
 - Free-fee filter correctly enforces fee_omr=0 on all results
-- has_docs=yes filter properly returns only services with doc_count > 0
-- catalogue.html confirmed Arabic-first with modern card grid, sticky filter rail, and match-by chips
-- UI correctly calls /hybrid endpoint rather than legacy /search — clean migration
-- Fee-pill filters and beneficiary rail provide good progressive disclosure for 200+ services
+- has_docs=yes filter properly validates doc_count > 0
+- catalogue.html confirmed Arabic-first with hybrid endpoint integration (not legacy /search)
+- UI components complete: fee-pill filters, beneficiary rail, sort dropdown, match-by chips all wired
+- Browse vs hybrid mode distinction (search.mode) enables graceful degradation
 
 **Watchlist**
 
-- No test for empty-result UX — what does user see when hybrid returns zero matches?
-- Missing test for pagination or infinite scroll — catalogue could have 200+ services
-- No latency assertion for hybrid search — three parallel lanes plus embedding lookup could be slow on cold start
-- Sort dropdown tested for presence but no verification that sort=fee_asc or sort=name actually reorders results
-- No test for detail modal CTA behaviour — do WA/Web buttons pass correct service_id?
-- Partial-match lane (LIKE) could surface noisy results for short queries — no minimum query length validation tested
+- No test for empty query edge case or minimum query length validation
+- Missing test for fee_min/max range filter (only free-fee tested)
+- No pagination test (limit/offset) for large result sets
+- No test for sort parameter options (relevance, fee, processing_time)
+- Entity filter not explicitly tested despite being documented
+- No latency benchmark for hybrid search — three parallel lanes could be slow on cold start
+- Missing test for detail modal WA + Web CTAs functionality
 
 ---
 
@@ -242,24 +245,23 @@ Where the audit surfaced fixable gaps the **Enhancement applied** column shows w
 **What's working**
 
 - bcrypt 10 rounds meets OWASP minimum for password hashing
-- Separate cookie namespace (sanad_sess) prevents session collision with citizen auth
-- attachSession middleware pattern ensures consistent auth hydration across routes
-- pending_review workflow prevents unauthorized marketplace access until admin vetting
-- All core endpoints return expected status codes (login, me, static pages)
-- 401 on wrong password confirms credential validation works
+- Separate sanad_sess cookie correctly isolates officer sessions from citizen sessions
+- attachSession middleware pattern ensures consistent auth hydration across requests
+- pending_review workflow prevents unauthorized offices from accessing marketplace
+- All critical endpoints return expected status codes (login, signup, dashboard pages)
+- 401 on wrong password confirms proper credential validation
 
 **Watchlist**
 
-- No rate limiting tested on /api/office/login — brute-force vector for officer accounts
-- Missing test for SQL injection or malformed email input on login/signup endpoints
-- No evidence of CSRF protection on auth forms (cookie-based auth requires this)
-- No password complexity validation tested during signup — weak passwords may be accepted
-- Missing test for session expiry/timeout behaviour
-- No test for duplicate email signup rejection
-- pending_review state has no tested notification flow — officers may not know approval status
-- Arabic localisation of auth error messages not verified (e.g., 'كلمة المرور غير صحيحة')
-- No test for logout endpoint or cookie clearing
-- Missing test for office data sanitisation in /api/auth/me response (potential data leak)
+- No rate-limiting test for /api/office/login — brute-force vector unverified
+- Missing test for session expiry/max-age on sanad_sess cookie
+- No CSRF protection evidence for login POST (cookie-based auth vulnerable)
+- No test for email validation or duplicate email handling during signup
+- Missing Arabic copy verification on /office-login.html and /office-signup.html
+- No test for password complexity requirements (length, charset)
+- pending_review → approved transition flow not tested end-to-end
+- No logout endpoint tested — session invalidation unverified
+- Missing test for office data sanitization in /api/auth/me response (potential data leak)
 
 ---
 
@@ -297,17 +299,18 @@ Where the audit surfaced fixable gaps the **Enhancement applied** column shows w
 - Idempotent payment/start (reused=true) prevents duplicate payment links on retry
 - Chat gating enforced at API level (403 chat_locked_until_paid) — not just UI hide
 - Lifecycle buckets in inbox (reviewing/awaiting_payment/in_progress/on_hold) support officer workflow
-- stub_pay redirect to /request.html maintains flow during Amwal integration
+- stub_pay redirect enables full flow testing without Amwal credentials
+- paid_at timestamp + payment_status=paid provides audit trail
 
 **Watchlist**
 
-- No test for payment expiry or stale payment links — citizen could click old link days later
-- Missing test for partial payment or payment amount mismatch scenarios
-- POST /release refund_required=true flag tested but actual refund flow untested — citizen expectation gap
-- No webhook signature verification test for Amwal callbacks — security risk in production
-- Arabic notification content for payment request not verified (voice + WhatsApp mentioned but not tested)
-- No test for citizen-side payment status polling or real-time update mechanism
-- Missing test for office_service_price override path — only default pricing verified
+- No test for payment expiry/timeout — what happens if citizen never pays? Stale awaiting_payment requests could accumulate
+- POST /release refund_required=true flag tested but actual refund flow not verified — manual process risk
+- No test for partial payment or payment amount mismatch scenarios
+- Missing test for citizen-side payment notification (bot voice + WhatsApp mentioned in spec but not verified)
+- No test for concurrent payment/start calls — potential for duplicate Amwal links if idempotency key fails
+- Officer sees empty messages array pre-payment but no test confirms 🔒 banner copy or Arabic localization
+- No timeout on awaiting_payment status — request could sit indefinitely blocking citizen from re-submitting
 
 ---
 
@@ -339,18 +342,19 @@ Where the audit surfaced fixable gaps the **Enhancement applied** column shows w
 - Old 'Ahmed' persona explicitly forbidden in system prompts
 - welcomeMessage and helpMessage consistently use ساند branding
 - WhatsApp webhook signature verification implemented for security
-- Webhook ACKs immediately (200) before async processing — prevents Meta timeouts
+- Webhook ACKs immediately (200) then processes async — prevents Meta timeouts
 - Burst-continuation logic with 6s window and empty-reply guard prevents spam on multi-file uploads
-- Four deterministic launch flows defined: drivers_licence_renewal, mulkiya_renewal, cr_issuance, civil ID, passport
+- Four deterministic launch flows defined (drivers_licence_renewal, mulkiya_renewal, cr_issuance, civil ID, passport)
+- One-language reply mandate and ground-truth-from-tools-only constraints documented
 
 **Watchlist**
 
-- Slot-comment exclusion noted in test — verify no 'Ahmed' leaks into conversation context or logs
-- Two separate system prompts (SYSTEM_PROMPT + SYSTEM_V2) risk drift; consider consolidating or adding sync tests
-- One-language reply mandate not explicitly tested — could fail on mixed Arabic/English input
-- No test coverage for tool-loop error handling when ground-truth tools fail
-- Burst-continuation 6s window is arbitrary — no test for edge cases (e.g., 5.9s vs 6.1s timing)
-- No explicit test that passport flow is fully wired (only listed, not verified like others)
+- Test notes 'excluding slot-comment' — residual Ahmed reference in slot comment should be cleaned for consistency
+- No test coverage for actual one-language enforcement (Arabic reply to Arabic input, English to English)
+- No test verifying the 6s burst window timing or edge cases (e.g., file at 5.9s vs 6.1s)
+- Passport listed as fifth flow but description says 'four deterministic launch flows' — count mismatch
+- No test for graceful degradation if async processing fails after ACK
+- Missing test for tool-loop error handling when ground-truth tools are unavailable
 
 ---
 
@@ -379,18 +383,18 @@ Where the audit surfaced fixable gaps the **Enhancement applied** column shows w
 
 **What's working**
 
-- 597 i18n keys far exceed 200+ requirement — comprehensive coverage
-- All 6 HTML pages pass data-i18n key validation — zero missing translations
+- 597 i18n keys far exceeds 200+ requirement — comprehensive coverage
+- All 6 HTML pages pass data-i18n key validation — zero missing references
 - Brand naming correct: en='Saned', ar='ساند' — consistent identity
 - Legacy 'سند الذكي' fully purged from codebase
 - Arabic-first default with RTL at first paint prevents English flash
+- Real-world 'Sanad office / مكاتب سند' distinction properly maintained
 
 **Watchlist**
 
-- No test for actual localStorage 'sanad.lang' persistence across sessions
-- Missing validation that <html lang='ar' dir='rtl'> is set before DOMContentLoaded
-- No coverage for dynamic content (toast messages, error responses) using i18n keys
-- 597 keys suggests possible duplication — audit for unused/redundant entries
+- No test for runtime lang-switch persistence (localStorage sanad.lang read/write cycle)
+- Missing validation that <html lang='ar' dir='rtl'> is actually set at first paint vs after JS load
+- No coverage for dynamic content (toast messages, API error strings) using i18n keys
 
 ---
 
@@ -428,19 +432,19 @@ Where the audit surfaced fixable gaps the **Enhancement applied** column shows w
 
 **What's working**
 
-- All 19 schema assertions pass — citizen, request, and citizen_otp tables have expected columns
-- Idempotent ALTERs via pragma_table_info checks allow safe re-runs on persistent SQLite volumes
-- Proper indexing: unique idx_citizen_email prevents duplicate accounts; idx_request_payment and idx_request_office_status support common queries
-- phone_verified_at / email_verified_at columns enable proper verification state tracking for OTP and Google flows
-- payment_status + payment_link + paid_at columns align with Thawani payment-gate requirements
-- released_count column supports partial-release logic for multi-document requests
+- All 19 schema assertions pass — auth columns (email, google_sub, display_name, phone_verified_at), payment columns (payment_status, payment_link, paid_at, payment_amount_omr), and citizen_otp table all present
+- Idempotent ALTERs via pragma_table_info checks ensure safe re-runs on persistent SQLite disks — critical for zero-downtime deploys
+- Proper indexing: unique idx_citizen_email prevents duplicate accounts; idx_request_payment and idx_request_office_status support payment queries and office dashboards
+- Schema supports full auth flow: Google OAuth (google_sub), email/password (email + email_verified_at), and phone OTP (phone_verified_at + citizen_otp table)
+- released_count and claim_review_started_at columns enable payment-gate logic without breaking legacy rows
 
 **Watchlist**
 
-- No foreign-key constraint test between citizen_otp.citizen_id → citizen.id (SQLite FK enforcement may be off by default)
-- Missing index on citizen.google_sub — Google login lookups will table-scan as user base grows
-- No test for citizen_otp expiry/cleanup mechanism — stale OTP rows could accumulate indefinitely
-- claim_review_started_at added but no corresponding index for office dashboard queries filtering by review state
+- No foreign-key constraint test for citizen_otp.citizen_id → citizen.id; orphan OTPs possible if citizen deleted
+- Missing index on citizen.google_sub — OAuth lookups will table-scan as user base grows
+- No test for payment_status CHECK constraint or ENUM-like validation; invalid states (e.g., 'piad') could slip in
+- avatar_url column exists but no length/format validation test; malformed URLs could break UI
+- No explicit test for DEFAULT values on new columns (e.g., payment_status DEFAULT 'pending'); legacy rows may have NULLs requiring app-level handling
 
 ---
 
@@ -472,69 +476,69 @@ Every Watchlist bullet from every feature, regrouped by rough severity. None are
 
 ### Security & hardening (priority)
 
-- **Citizen Auth** — No test for max-attempts lockout after 5 failures — brute-force vector unverified
-- **Citizen Auth** — Cookie SameSite and Secure flags not verified — CSRF/MITM risk on prod
-- **Office Auth** — No rate limiting tested on /api/office/login — brute-force vector for officer accounts
-- **Office Auth** — Missing test for SQL injection or malformed email input on login/signup endpoints
-- **Office Auth** — No evidence of CSRF protection on auth forms (cookie-based auth requires this)
-- **Office Auth** — No password complexity validation tested during signup — weak passwords may be accepted
-- **Single-claim + Payment Gate** — No webhook signature verification test for Amwal callbacks — security risk in production
+- **Citizen Auth** — No test for max-attempts lockout after 5 failures — brute-force protection unverified
+- **Citizen Auth** — Cookie SameSite and Secure flags not tested — CSRF/MITM surface unclear
+- **Office Auth** — No rate-limiting test for /api/office/login — brute-force vector unverified
+- **Office Auth** — No CSRF protection evidence for login POST (cookie-based auth vulnerable)
+- **Office Auth** — No test for password complexity requirements (length, charset)
 
 ### UX & accessibility (medium)
 
-- **Homepage** — No test coverage for FAQ accordion functionality or keyboard accessibility
-- **Homepage** — Missing explicit check for How-it-works 3-step section mentioned in description
-- **Citizen Auth** — No test confirming cooldown actually blocks rapid /start-otp calls — could allow OTP spam
-- **Citizen Auth** — Missing test: expired OTP rejection after 5 min TTL
-- **Citizen Auth** — No test for /logout or session invalidation
+- **Homepage** — Missing verification of How-it-works 3-step section mentioned in description
+- **Homepage** — No accessibility checks (focus order, ARIA labels on search input, skip-to-content link)
+- **Citizen Auth** — No test confirming cooldown actually blocks rapid re-requests (30s enforcement untested)
+- **Citizen Auth** — Missing test: expired OTP (>5 min) should fail verification
+- **Citizen Auth** — Google sign-in flow incomplete: no test showing phone verification requirement after OAuth
 - **Dashboard + Request Tracking** — No test for phone-banner conditional rendering (should hide when phone already verified)
-- **Dashboard + Request Tracking** — chat_unlocked_for_office tested only for false case — missing test for true after paid_at
-- **Dashboard + Request Tracking** — No test for empty state when citizen has zero requests
-- **Catalogue + Hybrid Search** — No test for empty-result UX — what does user see when hybrid returns zero matches?
-- **Catalogue + Hybrid Search** — Missing test for pagination or infinite scroll — catalogue could have 200+ services
-- **Catalogue + Hybrid Search** — No test for detail modal CTA behaviour — do WA/Web buttons pass correct service_id?
-- **Office Auth** — Missing test for session expiry/timeout behaviour
-- **Office Auth** — No test for duplicate email signup rejection
-- **Office Auth** — pending_review state has no tested notification flow — officers may not know approval status
-- **Office Auth** — No test for logout endpoint or cookie clearing
-- **Office Auth** — Missing test for office data sanitisation in /api/auth/me response (potential data leak)
-- **Single-claim + Payment Gate** — No test for payment expiry or stale payment links — citizen could click old link days later
-- **Single-claim + Payment Gate** — Missing test for partial payment or payment amount mismatch scenarios
-- **Single-claim + Payment Gate** — No test for citizen-side payment status polling or real-time update mechanism
-- **Single-claim + Payment Gate** — Missing test for office_service_price override path — only default pricing verified
-- **WhatsApp Agent + Bot Persona** — No test coverage for tool-loop error handling when ground-truth tools fail
-- **WhatsApp Agent + Bot Persona** — Burst-continuation 6s window is arbitrary — no test for edge cases (e.g., 5.9s vs 6.1s timing)
-- **i18n (EN + AR)** — No test for actual localStorage 'sanad.lang' persistence across sessions
-- **i18n (EN + AR)** — Missing validation that <html lang='ar' dir='rtl'> is set before DOMContentLoaded
-- **Database Schema** — Missing index on citizen.google_sub — Google login lookups will table-scan as user base grows
-- **Database Schema** — No test for citizen_otp expiry/cleanup mechanism — stale OTP rows could accumulate indefinitely
+- **Dashboard + Request Tracking** — No test for hybrid search endpoint integration on /account.html
+- **Dashboard + Request Tracking** — No test for entity grid rendering or data source
+- **Dashboard + Request Tracking** — No test for message thread ordering or Arabic RTL bubble alignment
+- **Dashboard + Request Tracking** — No test for Pay-now CTA state changes (hidden when already paid, disabled when not awaiting_payment)
+- **Dashboard + Request Tracking** — No test for status chip Arabic labels (e.g., 'قيد التنفيذ' vs 'in_progress')
+- **Dashboard + Request Tracking** — No test for documents grid click-to-preview or download behaviour
+- **Catalogue + Hybrid Search** — No test for empty query edge case or minimum query length validation
+- **Catalogue + Hybrid Search** — Missing test for fee_min/max range filter (only free-fee tested)
+- **Catalogue + Hybrid Search** — No test for sort parameter options (relevance, fee, processing_time)
+- **Catalogue + Hybrid Search** — Missing test for detail modal WA + Web CTAs functionality
+- **Office Auth** — Missing test for session expiry/max-age on sanad_sess cookie
+- **Office Auth** — No test for email validation or duplicate email handling during signup
+- **Office Auth** — Missing Arabic copy verification on /office-login.html and /office-signup.html
+- **Office Auth** — Missing test for office data sanitization in /api/auth/me response (potential data leak)
+- **Single-claim + Payment Gate** — No test for payment expiry/timeout — what happens if citizen never pays? Stale awaiting_payment requests could accumulate
+- **Single-claim + Payment Gate** — No test for partial payment or payment amount mismatch scenarios
+- **Single-claim + Payment Gate** — Missing test for citizen-side payment notification (bot voice + WhatsApp mentioned in spec but not verified)
+- **Single-claim + Payment Gate** — No test for concurrent payment/start calls — potential for duplicate Amwal links if idempotency key fails
+- **Single-claim + Payment Gate** — Officer sees empty messages array pre-payment but no test confirms 🔒 banner copy or Arabic localization
+- **WhatsApp Agent + Bot Persona** — No test coverage for actual one-language enforcement (Arabic reply to Arabic input, English to English)
+- **WhatsApp Agent + Bot Persona** — No test verifying the 6s burst window timing or edge cases (e.g., file at 5.9s vs 6.1s)
+- **WhatsApp Agent + Bot Persona** — No test for graceful degradation if async processing fails after ACK
+- **WhatsApp Agent + Bot Persona** — Missing test for tool-loop error handling when ground-truth tools are unavailable
+- **i18n (EN + AR)** — No test for runtime lang-switch persistence (localStorage sanad.lang read/write cycle)
+- **i18n (EN + AR)** — Missing validation that <html lang='ar' dir='rtl'> is actually set at first paint vs after JS load
+- **Database Schema** — Missing index on citizen.google_sub — OAuth lookups will table-scan as user base grows
+- **Database Schema** — No test for payment_status CHECK constraint or ENUM-like validation; invalid states (e.g., 'piad') could slip in
 
 ### Polish (low)
 
-- **Homepage** — No performance or Core Web Vitals assertion (LCP, CLS) — important for first impression
-- **Homepage** — Service spotlight section not verified in test output
-- **Citizen Auth** — Google sign-in flow incomplete in tests — no happy-path /google → phone-verification chain shown
-- **Citizen Auth** — No explicit Arabic-first assertion (RTL dir, Arabic placeholder/label text) in HTML tests
-- **Citizen Auth** — DEBUG auto-fill button should be hidden/absent in production builds — no assertion for that
-- **Dashboard + Request Tracking** — DEBUG attach-phone shortcut visible in production build — should be dev-only or feature-flagged
-- **Dashboard + Request Tracking** — Timeline status progression not tested (e.g., correct chip for 'awaiting_payment' vs 'in_progress')
-- **Dashboard + Request Tracking** — Document chips (verified/pending/rejected) rendering not explicitly tested
-- **Dashboard + Request Tracking** — Entity grid mentioned in description but not covered by any test
-- **Dashboard + Request Tracking** — No RTL layout or Arabic copy verification beyond 'Arabic-first' assertion
-- **Catalogue + Hybrid Search** — No latency assertion for hybrid search — three parallel lanes plus embedding lookup could be slow on cold start
-- **Catalogue + Hybrid Search** — Sort dropdown tested for presence but no verification that sort=fee_asc or sort=name actually reorders results
-- **Catalogue + Hybrid Search** — Partial-match lane (LIKE) could surface noisy results for short queries — no minimum query length validation tested
-- **Office Auth** — Arabic localisation of auth error messages not verified (e.g., 'كلمة المرور غير صحيحة')
-- **Single-claim + Payment Gate** — POST /release refund_required=true flag tested but actual refund flow untested — citizen expectation gap
-- **Single-claim + Payment Gate** — Arabic notification content for payment request not verified (voice + WhatsApp mentioned but not tested)
-- **WhatsApp Agent + Bot Persona** — Slot-comment exclusion noted in test — verify no 'Ahmed' leaks into conversation context or logs
-- **WhatsApp Agent + Bot Persona** — Two separate system prompts (SYSTEM_PROMPT + SYSTEM_V2) risk drift; consider consolidating or adding sync tests
-- **WhatsApp Agent + Bot Persona** — One-language reply mandate not explicitly tested — could fail on mixed Arabic/English input
-- **WhatsApp Agent + Bot Persona** — No explicit test that passport flow is fully wired (only listed, not verified like others)
-- **i18n (EN + AR)** — No coverage for dynamic content (toast messages, error responses) using i18n keys
-- **i18n (EN + AR)** — 597 keys suggests possible duplication — audit for unused/redundant entries
-- **Database Schema** — No foreign-key constraint test between citizen_otp.citizen_id → citizen.id (SQLite FK enforcement may be off by default)
-- **Database Schema** — claim_review_started_at added but no corresponding index for office dashboard queries filtering by review state
+- **Homepage** — No explicit test for FAQ accordion presence or functionality — description mentions FAQ but tests don't verify
+- **Homepage** — Service spotlight section mentioned in description but not explicitly tested
+- **Citizen Auth** — No Arabic copy verification — 'Arabic-first' claimed but no assertion on RTL/lang attributes
+- **Citizen Auth** — No logout endpoint tested — session teardown path unknown
+- **Citizen Auth** — DEBUG auto-fill button should be hidden in production builds — no assertion it's conditionally rendered
+- **Dashboard + Request Tracking** — DEBUG attach-phone shortcut present in account.html — must be removed or feature-flagged before production
+- **Catalogue + Hybrid Search** — No pagination test (limit/offset) for large result sets
+- **Catalogue + Hybrid Search** — Entity filter not explicitly tested despite being documented
+- **Catalogue + Hybrid Search** — No latency benchmark for hybrid search — three parallel lanes could be slow on cold start
+- **Office Auth** — pending_review → approved transition flow not tested end-to-end
+- **Office Auth** — No logout endpoint tested — session invalidation unverified
+- **Single-claim + Payment Gate** — POST /release refund_required=true flag tested but actual refund flow not verified — manual process risk
+- **Single-claim + Payment Gate** — No timeout on awaiting_payment status — request could sit indefinitely blocking citizen from re-submitting
+- **WhatsApp Agent + Bot Persona** — Test notes 'excluding slot-comment' — residual Ahmed reference in slot comment should be cleaned for consistency
+- **WhatsApp Agent + Bot Persona** — Passport listed as fifth flow but description says 'four deterministic launch flows' — count mismatch
+- **i18n (EN + AR)** — No coverage for dynamic content (toast messages, API error strings) using i18n keys
+- **Database Schema** — No foreign-key constraint test for citizen_otp.citizen_id → citizen.id; orphan OTPs possible if citizen deleted
+- **Database Schema** — avatar_url column exists but no length/format validation test; malformed URLs could break UI
+- **Database Schema** — No explicit test for DEFAULT values on new columns (e.g., payment_status DEFAULT 'pending'); legacy rows may have NULLs requiring app-level handling
 
 ---
 

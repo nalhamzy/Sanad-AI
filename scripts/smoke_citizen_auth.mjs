@@ -240,8 +240,10 @@ try {
   ok('catalogue.html has fee-bucket filter pills', catHtml.includes('data-fee="lt10"'));
   ok('catalogue.html has beneficiary filter rail', catHtml.includes('beneficiaries'));
   ok('catalogue.html has sort dropdown', catHtml.includes('sortSel'));
-  ok('catalogue.html has match-by chips (matched-fts/semantic/partial)',
-     catHtml.includes('matched-fts') && catHtml.includes('matched-semantic'));
+  // matched-fts/semantic/partial color classes live in /theme.css now;
+  // pages render them via inline JS template `matched-${t}`.
+  ok('catalogue.html renders match-chips (matched-chip + matched-${t} template)',
+     catHtml.includes('matched-chip') && /matched-\$\{[^}]+\}/.test(catHtml));
 
   // 8) my-request/:id 404 for non-existent id
   r = await fetch(`${base}/api/chat/my-request/999999`, { headers: { cookie } });
