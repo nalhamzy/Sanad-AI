@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ساند · Saned — تقديم طلب · Submit application</title>
+<meta name="description" content="قدّم طلبك عبر ساند بنموذج رقمي مهيكل، وارفق مستنداتك. مكتب سند المعتمد يُكمل المعاملة. Submit your government-service application via Saned with structured documents — a licensed Sanad office completes the rest."/>
+<meta name="theme-color" content="#0d9488"/>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<script>
+  (function () {
+    try {
+      const saved = localStorage.getItem('sanad.lang');
+      const lang = saved || 'ar';
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    } catch {}
+  })();
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Kufi+Arabic:wght@400;500;700;800;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/theme.css"/>
+<style>
+  body { font-family: 'Inter', sans-serif; background: #f8fafc; }
+  [dir="rtl"] body, html[dir="rtl"] * { font-family: 'Noto Kufi Arabic', sans-serif; }
+
+  /* Authoritative palette — deeper teal/slate, less playful */
+  .ink-900 { color: #0f172a; }
+  .ink-700 { color: #334155; }
+  .ink-500 { color: #64748b; }
+  .brand   { color: #0f766e; }              /* deeper teal */
+  .brand-bg { background: #0f766e; }
+  .brand-tint { background: #f0fdfa; border-color: #99f6e4; }
+  .panel   { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; }
+  .panel-elev { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 1px 0 rgba(15,23,42,.02), 0 8px 24px -16px rgba(15,23,42,.08); }
+
+  /* Numbered step badge */
+  .step-num {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, #134e4a, #0f766e);
+    color: white; display: grid; place-items: center;
+    font-weight: 800; font-size: 14px;
+    box-shadow: 0 6px 14px -8px rgba(15,118,110,.55);
+  }
+
+  /* File-input row */
+  .file-row {
+    border: 1.5px dashed #cbd5e1; border-radius: 12px;
+    padding: 12px; transition: all .15s; background: #f8fafc;
+  }
+  .file-row:hover { border-color: #14b8a6; background: #f0fdfa; }
+  .file-row.has-file { border-style: solid; border-color: #0f766e; background: #f0fdfa; }
+
+  /* Status indicator beside slot */
+  .slot-dot { width: 10px; height: 10px; border-radius: 9999px; flex-shrink: 0; }
+  .slot-dot.empty { background: #f59e0b; box-shadow: 0 0 0 3px #fef3c7; }
+  .slot-dot.filled { background: #0f766e; box-shadow: 0 0 0 3px #ccfbf1; }
+
+  /* Submit button — government grade */
+  .submit-btn {
+    background: linear-gradient(135deg, #0f766e, #134e4a);
+    color: white; font-weight: 800; padding: 14px 28px;
+    border-radius: 14px; transition: all .15s;
+    box-shadow: 0 12px 28px -12px rgba(15,118,110,.45);
+  }
+  .submit-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 18px 36px -14px rgba(15,118,110,.55); }
+  .submit-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* Trust strip / disclosure */
+  .wa-disclosure {
+    background: linear-gradient(135deg, #ecfdf5, #f0fdfa);
+    border: 1px solid #6ee7b7; border-radius: 14px;
+    padding: 18px 20px;
+  }
+  .warn-card { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 12px; padding: 14px 18px; }
+
+  /* Form section divider */
+  .section-divider {
+    height: 1px; background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+    margin: 28px 0;
+  }
+</style>
+</head>
+<body class="ink-900">
+
+<!-- ─── HEADER ─── -->
+<header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+  <div class="max-w-4xl mx-auto px-5 sm:px-6 py-3.5 flex items-center gap-3">
+    <a href="/account.html" class="flex items-center gap-2.5 text-sm text-slate-500 hover:text-slate-800">
+      <svg viewBox="0 0 24 24" class="w-4 h-4 rtl-flip" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      <span data-i18n="apply.back"></span>
+    </a>
+    <div class="ms-auto flex items-center gap-3">
+      <a href="/" class="flex items-center gap-2" aria-label="Saned home">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-700 to-teal-900 text-white grid place-items-center text-sm font-black">س</div>
+        <div class="text-sm font-extrabold ink-900">ساند · Saned</div>
+      </a>
+      <button id="langBtn" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 font-semibold text-xs" data-i18n="lang.toggle"></button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-4xl mx-auto px-5 sm:px-6 py-6 sm:py-10">
+
+  <!-- ─── PAGE TITLE ─── -->
+  <div class="mb-6">
+    <div class="text-xs font-bold uppercase tracking-[0.18em] brand mb-2" data-i18n="apply.eyebrow"></div>
+    <h1 class="text-2xl sm:text-3xl font-black tracking-tight" data-i18n="apply.title"></h1>
+    <p class="mt-1.5 ink-500 text-sm sm:text-base max-w-2xl" data-i18n="apply.subtitle"></p>
+  </div>
+
+  <!-- Loading state -->
+  <div id="loadingBox" class="panel p-10 text-center text-sm ink-500" data-i18n="apply.loading"></div>
+
+  <!-- Error state -->
+  <div id="errorBox" class="hidden panel p-8 text-center">
+    <div class="text-3xl mb-2">⚠</div>
+    <div class="text-base font-bold ink-900 mb-1" id="errorTitle">—</div>
+    <div class="text-sm ink-500 mb-4" id="errorBody">—</div>
+    <a href="/account.html" class="inline-flex items-center gap-1.5 text-sm font-bold brand hover:underline">
+      <span data-i18n="apply.error.back"></span>
+    </a>
+  </div>
+
+  <!-- ─── FORM ─── -->
+  <form id="applyForm" class="hidden space-y-6" enctype="multipart/form-data">
+
+    <!-- Service header card -->
+    <section class="panel-elev p-6">
+      <div class="flex flex-wrap items-start gap-3 mb-3">
+        <span id="entityChip" class="text-[11px] font-extrabold uppercase tracking-wider brand bg-teal-50 px-2.5 py-1 rounded-md">—</span>
+        <span id="feeChip" class="text-[11px] font-bold ink-700 bg-amber-50 text-amber-800 px-2.5 py-1 rounded-md hidden">—</span>
+        <span id="timeChip" class="text-[11px] font-semibold ink-500 hidden">—</span>
+      </div>
+      <h2 id="serviceName" class="text-xl sm:text-2xl font-black tracking-tight">—</h2>
+      <p id="serviceNameAlt" class="text-sm ink-500 mt-1 hidden">—</p>
+      <p id="serviceDesc" class="mt-3 text-sm ink-700 leading-relaxed hidden">—</p>
+    </section>
+
+    <!-- ─── How it works ─── -->
+    <section class="panel p-6">
+      <div class="text-[11px] font-extrabold uppercase tracking-[0.18em] ink-500 mb-3" data-i18n="apply.steps.h"></div>
+      <div class="grid sm:grid-cols-3 gap-4">
+        <div class="flex items-start gap-3">
+          <div class="step-num">1</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-bold ink-900" data-i18n="apply.steps.1.t"></div>
+            <div class="text-xs ink-500 mt-0.5 leading-relaxed" data-i18n="apply.steps.1.b"></div>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <div class="step-num">2</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-bold ink-900" data-i18n="apply.steps.2.t"></div>
+            <div class="text-xs ink-500 mt-0.5 leading-relaxed" data-i18n="apply.steps.2.b"></div>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <div class="step-num">3</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-bold ink-900" data-i18n="apply.steps.3.t"></div>
+            <div class="text-xs ink-500 mt-0.5 leading-relaxed" data-i18n="apply.steps.3.b"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Required documents ─── -->
+    <section class="panel-elev p-6">
+      <div class="flex items-end justify-between mb-4 flex-wrap gap-2">
+        <div>
+          <div class="text-[11px] font-extrabold uppercase tracking-[0.18em] ink-500 mb-0.5" data-i18n="apply.docs.eyebrow"></div>
+          <h3 class="text-lg font-black tracking-tight" data-i18n="apply.docs.h"></h3>
+        </div>
+        <div id="docCounter" class="text-[11px] ink-500 font-semibold">—</div>
+      </div>
+      <div id="slots" class="space-y-4"></div>
+
+      <div class="section-divider"></div>
+
+      <!-- Extras -->
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <div class="text-sm font-bold ink-900" data-i18n="apply.extras.h"></div>
+          <div class="text-xs ink-500 mt-0.5" data-i18n="apply.extras.sub"></div>
+        </div>
+        <button type="button" id="addExtraBtn" class="text-xs font-bold brand bg-teal-50 hover:bg-teal-100 border border-teal-200 px-3 py-2 rounded-lg">
+          <span data-i18n="apply.extras.add"></span>
+        </button>
+      </div>
+      <div id="extras" class="mt-4 space-y-3"></div>
+    </section>
+
+    <!-- ─── Notes ─── -->
+    <section class="panel p-6">
+      <label class="block">
+        <div class="text-[11px] font-extrabold uppercase tracking-[0.18em] ink-500 mb-2" data-i18n="apply.notes.eyebrow"></div>
+        <div class="text-sm font-bold ink-900 mb-1" data-i18n="apply.notes.h"></div>
+        <div class="text-xs ink-500 mb-3" data-i18n="apply.notes.sub"></div>
+        <textarea id="notes" rows="4" maxlength="2000"
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 text-sm leading-relaxed resize-none"
+          data-i18n-placeholder="apply.notes.placeholder"></textarea>
+        <div class="mt-1 text-[11px] ink-500"><span id="notesCount">0</span> / 2000</div>
+      </label>
+    </section>
+
+    <!-- ─── WhatsApp disclosure (prominent) ─── -->
+    <section class="wa-disclosure flex items-start gap-4">
+      <div class="w-10 h-10 rounded-lg bg-emerald-600 grid place-items-center text-white shrink-0">
+        <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.768.967-.941 1.164-.173.198-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884"/></svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-extrabold ink-900 mb-1" data-i18n="apply.wa.title"></div>
+        <div class="text-xs ink-700 leading-relaxed">
+          <span data-i18n="apply.wa.body"></span>
+          <span id="phoneEcho" class="font-mono font-bold" dir="ltr"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Missing-docs warning (only renders when applicable) ─── -->
+    <section id="missingWarn" class="warn-card hidden flex items-start gap-3">
+      <div class="text-amber-700 text-lg leading-none mt-0.5">⚠</div>
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-bold text-amber-900" data-i18n="apply.missing.title"></div>
+        <div class="text-xs text-amber-800 mt-0.5 leading-relaxed">
+          <span data-i18n="apply.missing.body"></span>
+          <span id="missingList" class="font-bold"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Submit ─── -->
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+      <button type="submit" id="submitBtn" class="submit-btn flex-1 inline-flex items-center justify-center gap-2" disabled>
+        <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span data-i18n="apply.submit"></span>
+      </button>
+      <div id="submitHint" class="text-xs ink-500 text-center sm:text-start" data-i18n="apply.submit_hint"></div>
+    </div>
+
+    <p id="formErr" class="hidden text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-xl p-3.5"></p>
+  </form>
+</main>
+
+<!-- ─── MINISTRY-VISION FOOTER ─── -->
+<footer class="border-t border-slate-200 bg-white mt-10">
+  <div class="max-w-4xl mx-auto px-5 sm:px-6 py-6 grid sm:grid-cols-[1fr_auto] gap-4 items-center">
+    <div class="text-xs ink-500 leading-relaxed" data-i18n="footer.ministry_vision"></div>
+    <div class="flex items-center gap-3 text-[11px] ink-500">
+      <a href="/privacy.html" class="hover:brand">الخصوصية · Privacy</a>
+      <span>·</span>
+      <a href="/terms.html" class="hover:brand">الشروط · Terms</a>
+    </div>
+  </div>
+</footer>
+
+<script src="/i18n.js"></script>
+<script>
+(async function () {
+  const $ = s => document.querySelector(s);
+  const I18N = window.I18N;
+  document.getElementById('langBtn').onclick = () => I18N.setLang(I18N.lang === 'ar' ? 'en' : 'ar');
+
+  function escapeHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  function showError(titleKey, bodyKey, body) {
+    $('#loadingBox').classList.add('hidden');
+    $('#errorBox').classList.remove('hidden');
+    $('#errorTitle').textContent = I18N.t(titleKey);
+    $('#errorBody').textContent  = body || I18N.t(bodyKey);
+  }
+
+  // ── Auth gate ──────────────────────────────────────────
+  const params = new URLSearchParams(location.search);
+  const serviceId = Number(params.get('service'));
+  if (!Number.isFinite(serviceId)) {
+    showError('apply.error.noservice.title', 'apply.error.noservice.body');
+    return;
+  }
+
+  let me = null;
+  try {
+    const r = await fetch('/api/citizen-auth/me');
+    if (!r.ok) {
+      window.location.href = '/login.html?next=' + encodeURIComponent(location.pathname + location.search);
+      return;
+    }
+    const d = await r.json();
+    me = d.citizen;
+    if (d.needs_phone || !me.phone_verified) {
+      window.location.href = '/account.html#add-phone';
+      return;
+    }
+  } catch {
+    window.location.href = '/login.html?next=' + encodeURIComponent(location.pathname + location.search);
+    return;
+  }
+
+  // Echo phone in WhatsApp disclosure
+  $('#phoneEcho').textContent = me.phone || '';
+
+  // ── Load service ───────────────────────────────────────
+  let svc;
+  try {
+    const r = await fetch(`/api/catalogue/${serviceId}`);
+    if (!r.ok) {
+      showError('apply.error.notfound.title', 'apply.error.notfound.body');
+      return;
+    }
+    const d = await r.json();
+    svc = d.service;
+  } catch (e) {
+    showError('apply.error.network.title', 'apply.error.network.body');
+    return;
+  }
+
+  $('#loadingBox').classList.add('hidden');
+  $('#applyForm').classList.remove('hidden');
+
+  // Header card
+  const lang = I18N.lang;
+  const name   = (lang === 'ar' && svc.name_ar) ? svc.name_ar : (svc.name_en || svc.name_ar || '—');
+  const altName = (lang === 'ar') ? (svc.name_en || '') : (svc.name_ar || '');
+  const entity = (lang === 'ar' && svc.entity_ar) ? svc.entity_ar : (svc.entity_en || '');
+  const desc   = (lang === 'ar' && svc.description_ar) ? svc.description_ar : (svc.description_en || '');
+  const time   = (lang === 'ar' && svc.avg_time_ar) ? svc.avg_time_ar : svc.avg_time_en;
+
+  $('#entityChip').textContent = entity || '—';
+  $('#serviceName').textContent = name;
+  if (altName) {
+    $('#serviceNameAlt').textContent = altName;
+    $('#serviceNameAlt').classList.remove('hidden');
+    $('#serviceNameAlt').setAttribute('dir', lang === 'ar' ? 'ltr' : 'rtl');
+  }
+  if (desc) {
+    $('#serviceDesc').textContent = desc;
+    $('#serviceDesc').classList.remove('hidden');
+  }
+  if (svc.fee_omr === 0) {
+    $('#feeChip').classList.remove('hidden');
+    $('#feeChip').className = 'text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md';
+    $('#feeChip').textContent = I18N.t('catalogue.fee.free', 'Free');
+  } else if (svc.fee_omr != null) {
+    $('#feeChip').classList.remove('hidden');
+    $('#feeChip').textContent = `${Number(svc.fee_omr).toFixed(3)} OMR`;
+  }
+  if (time) {
+    $('#timeChip').classList.remove('hidden');
+    $('#timeChip').textContent = '⏱ ' + time;
+  }
+
+  // ── Render document slots ──────────────────────────────
+  const required = Array.isArray(svc.required_documents) ? svc.required_documents : [];
+  const slotState = new Map(); // doc_code → File[]
+
+  function renderSlots() {
+    if (!required.length) {
+      $('#slots').innerHTML = `<div class="warn-card text-sm text-amber-900">${I18N.t('apply.docs.none')}</div>`;
+      return;
+    }
+    $('#docCounter').textContent = required.length + ' ' + I18N.t('apply.docs.required_count');
+    $('#slots').innerHTML = required.map((d, i) => {
+      const slotLabel = (lang === 'ar' && d.label_ar) ? d.label_ar : (d.label_en || d.code || `doc ${i+1}`);
+      const altLabel = (lang === 'ar') ? (d.label_en || '') : (d.label_ar || '');
+      const code = d.code || `slot_${i}`;
+      return `<div class="border border-slate-200 rounded-xl p-4" data-slot="${escapeHtml(code)}">
+        <div class="flex items-start gap-3">
+          <div class="step-num shrink-0" style="width:30px;height:30px;font-size:13px;border-radius:8px">${i+1}</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <div class="slot-dot empty" data-slot-dot="${escapeHtml(code)}"></div>
+              <div class="font-bold ink-900 text-sm">${escapeHtml(slotLabel)}</div>
+            </div>
+            ${altLabel ? `<div class="text-xs ink-500 mt-0.5" dir="${lang === 'ar' ? 'ltr' : 'rtl'}">${escapeHtml(altLabel)}</div>` : ''}
+            <div class="mt-3 space-y-2" data-slot-rows="${escapeHtml(code)}"></div>
+            <button type="button" class="add-file-btn mt-2 text-xs font-bold brand bg-teal-50 hover:bg-teal-100 border border-teal-200 px-3 py-1.5 rounded-lg" data-add="${escapeHtml(code)}">
+              <span>+ ${I18N.t('apply.docs.add_file')}</span>
+            </button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    // Initialise one row per slot.
+    required.forEach(d => addFileRow(d.code, false));
+    rebindAddButtons();
+    updateState();
+  }
+
+  function rebindAddButtons() {
+    document.querySelectorAll('[data-add]').forEach(b => {
+      b.onclick = () => addFileRow(b.getAttribute('data-add'), false);
+    });
+    $('#addExtraBtn').onclick = () => addExtraRow();
+  }
+
+  function addFileRow(code, isExtra) {
+    const targetSel = isExtra ? '#extras' : `[data-slot-rows="${CSS.escape(code)}"]`;
+    const target = document.querySelector(targetSel);
+    if (!target) return;
+    const row = document.createElement('div');
+    row.className = 'file-row';
+    row.innerHTML = `
+      <div class="flex items-center gap-3 flex-wrap">
+        <input type="file" class="text-sm flex-1 min-w-0"
+               accept="image/*,application/pdf"
+               data-slot-input="${escapeHtml(code)}"
+               data-is-extra="${isExtra ? '1' : '0'}"/>
+        ${isExtra ? `<input type="text" class="text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white" data-extra-label
+               placeholder="${I18N.t('apply.extras.label_placeholder')}" maxlength="120"/>` : ''}
+        <button type="button" class="text-xs ink-500 hover:text-rose-700 font-semibold" data-remove>×</button>
+      </div>
+    `;
+    target.appendChild(row);
+    const fileInput = row.querySelector('input[type="file"]');
+    fileInput.addEventListener('change', () => {
+      row.classList.toggle('has-file', !!fileInput.files?.length);
+      updateState();
+    });
+    row.querySelector('[data-remove]').onclick = () => { row.remove(); updateState(); };
+  }
+  function addExtraRow() { addFileRow('', true); }
+
+  // ── Submit-readiness logic ─────────────────────────────
+  function updateState() {
+    // Per-slot: has any file? → green dot
+    const filledSlots = new Set();
+    document.querySelectorAll('[data-slot-input]').forEach(inp => {
+      const code = inp.getAttribute('data-slot-input');
+      const isExtra = inp.getAttribute('data-is-extra') === '1';
+      if (code && !isExtra && inp.files?.length) filledSlots.add(code);
+    });
+    document.querySelectorAll('[data-slot-dot]').forEach(d => {
+      const code = d.getAttribute('data-slot-dot');
+      d.classList.toggle('filled', filledSlots.has(code));
+      d.classList.toggle('empty',  !filledSlots.has(code));
+    });
+    // Total file count
+    let totalFiles = 0;
+    document.querySelectorAll('input[type="file"]').forEach(inp => { if (inp.files?.length) totalFiles += inp.files.length; });
+    $('#submitBtn').disabled = totalFiles === 0;
+    $('#submitHint').textContent = totalFiles === 0
+      ? I18N.t('apply.submit_hint_empty')
+      : I18N.t('apply.submit_hint_ready', { n: totalFiles });
+
+    // Missing-required warning
+    const missing = required.filter(d => !filledSlots.has(d.code));
+    if (missing.length && totalFiles > 0) {
+      $('#missingWarn').classList.remove('hidden');
+      const labels = missing.map(d => (lang === 'ar' && d.label_ar) ? d.label_ar : (d.label_en || d.code));
+      $('#missingList').textContent = labels.join('، ');
+    } else {
+      $('#missingWarn').classList.add('hidden');
+    }
+  }
+
+  // Notes char counter
+  const notesEl = $('#notes');
+  notesEl.addEventListener('input', () => { $('#notesCount').textContent = notesEl.value.length; });
+
+  // ── Submit ─────────────────────────────────────────────
+  $('#applyForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    $('#submitBtn').disabled = true;
+    $('#formErr').classList.add('hidden');
+
+    const fd = new FormData();
+    fd.set('service_id', String(serviceId));
+    fd.set('notes', notesEl.value.trim());
+
+    let totalFiles = 0;
+    document.querySelectorAll('input[type="file"]').forEach(inp => {
+      const code = inp.getAttribute('data-slot-input');
+      const isExtra = inp.getAttribute('data-is-extra') === '1';
+      const extraLabel = inp.parentElement?.querySelector('[data-extra-label]')?.value?.trim() || '';
+      const files = inp.files || [];
+      for (const f of files) {
+        fd.append('files', f, f.name);
+        fd.append('slot_codes', code || '');
+        fd.append('labels', isExtra ? extraLabel : '');
+        fd.append('is_extra', isExtra ? '1' : '0');
+        totalFiles++;
+      }
+    });
+
+    if (totalFiles === 0) {
+      $('#formErr').textContent = I18N.t('apply.submit_hint_empty');
+      $('#formErr').classList.remove('hidden');
+      $('#submitBtn').disabled = false;
+      return;
+    }
+
+    try {
+      const r = await fetch('/api/chat/apply', { method: 'POST', body: fd });
+      const d = await r.json();
+      if (!r.ok) {
+        $('#formErr').textContent = (d.hint || d.error || I18N.t('apply.error.generic'));
+        $('#formErr').classList.remove('hidden');
+        $('#submitBtn').disabled = false;
+        return;
+      }
+      window.location.href = `/request.html?id=${d.request_id}&new=1`;
+    } catch (e) {
+      $('#formErr').textContent = I18N.t('apply.error.network.body');
+      $('#formErr').classList.remove('hidden');
+      $('#submitBtn').disabled = false;
+    }
+  });
+
+  renderSlots();
+})();
+</script>
+</body>
+</html>

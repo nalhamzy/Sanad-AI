@@ -5,6 +5,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { runTurn, loadSession, storeMessage } from '../lib/agent.js';
 import { db } from '../lib/db.js';
+import { requireCitizen } from '../lib/auth.js';
 
 const UPLOAD_DIR = path.resolve('./data/uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -25,6 +26,128 @@ const upload = multer({
 });
 
 export const chatRouter = Router();
+
+// ─── POST /apply — citizen-side direct request submission ────
+// MUST be defined BEFORE the catch-all POST /:session_id below — Express
+// matches in declaration order and `/:session_id` would otherwise eat
+// `/apply` as a session id.
+//
+// Bypasses the agent's collecting → reviewing → queued state machine.
+// Form on /apply.html posts here; we insert a 'ready' request + the
+// document rows directly. Same SQL shape as the agent's submit_request
+// tool, without the LLM loop in front of it.
+chatRouter.post('/apply',
+  requireCitizen({ requirePhone: true }),
+  (req, _res, next) => {
+    req.params.session_id = `citizen-${req.citizen.id}-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
+    next();
+  },
+  upload.array('files', 20),
+  async (req, res) => {
+    try {
+      const citizen = req.citizen;
+      const sessionId = req.params.session_id;
+      const service_id = Number(req.body?.service_id);
+      const notes = String(req.body?.notes || '').slice(0, 2000);
+      const files = req.files || [];
+
+      if (!Number.isFinite(service_id)) return res.status(400).json({ error: 'bad_service_id' });
+      if (!files.length)                  return res.status(400).json({ error: 'no_files', hint: 'Attach at least one document.' });
+
+      const { rows: svcRows } = await db.execute({
+        sql: `SELECT id, name_en, name_ar, fee_omr, required_documents_json
+                FROM service_catalog WHERE id = ? AND is_active = 1`,
+        args: [service_id]
+      });
+      const svc = svcRows[0];
+      if (!svc) return res.status(404).json({ error: 'service_not_found' });
+
+      let requiredDocs = [];
+      try { requiredDocs = JSON.parse(svc.required_documents_json || '[]'); } catch {}
+      const requiredCodes = new Set(requiredDocs.map(d => d.code).filter(Boolean));
+
+      function arr(v) { return Array.isArray(v) ? v : (v == null ? [] : [v]); }
+      const slotCodes = arr(req.body.slot_codes);
+      const labels    = arr(req.body.labels);
+      const isExtras  = arr(req.body.is_extra);
+
+      const filledSlots = new Set();
+      slotCodes.forEach((code, i) => {
+        if (code && (isExtras[i] !== '1' && isExtras[i] !== 1)) filledSlots.add(code);
+      });
+      const missingRequired = [...requiredCodes].filter(c => !filledSlots.has(c));
+
+      const ins = await db.execute({
+        sql: `INSERT INTO request
+                (session_id, citizen_id, service_id, status, fee_omr, governorate, state_json)
+              VALUES (?,?,?, 'ready', ?, ?, ?)`,
+        args: [
+          sessionId, citizen.id, service_id, svc.fee_omr ?? null, 'Muscat',
+          JSON.stringify({
+            source: 'web_form',
+            notes: notes || undefined,
+            missing_required_slots: missingRequired,
+            file_count: files.length
+          })
+        ]
+      });
+      const request_id = Number(ins.lastInsertRowid);
+
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        const slotCode = (slotCodes[i] || '').toString();
+        const isExtra  = (isExtras[i] === '1' || isExtras[i] === 1) ? 1 : 0;
+        const label = (labels[i] || '').toString().slice(0, 200);
+        const requiredEntry = requiredDocs.find(d => d.code === slotCode);
+        const finalLabel = label
+          || requiredEntry?.label_en
+          || requiredEntry?.label_ar
+          || f.originalname
+          || slotCode
+          || `document_${i + 1}`;
+        const finalCode = isExtra ? `extra_${i + 1}` : (slotCode || `extra_${i + 1}`);
+        await db.execute({
+          sql: `INSERT INTO request_document
+                  (request_id, doc_code, label, storage_url, mime, size_bytes,
+                   status, original_name, caption, matched_via, is_extra)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+          args: [
+            request_id, finalCode, finalLabel,
+            `/uploads/${encodeURIComponent(sessionId)}/${encodeURIComponent(f.filename)}`,
+            f.mimetype || 'application/octet-stream',
+            f.size || 0,
+            'pending',
+            f.originalname || null,
+            label || null,
+            'upload',
+            isExtra
+          ]
+        });
+      }
+
+      const summary = missingRequired.length
+        ? `📨 طلبك أُرسل من النموذج عبر الموقع. ${files.length} ملف. ⚠ بعض المستندات المطلوبة لم تُرفق: ${missingRequired.join(', ')} — قد يطلبها مكتب سند عبر واتساب.`
+        : `📨 طلبك أُرسل من النموذج عبر الموقع. ${files.length} ملف. كل المستندات المطلوبة مرفقة.`;
+      await storeMessage({
+        session_id: sessionId, request_id,
+        direction: 'in', actor_type: 'system',
+        body_text: summary,
+        meta: { source: 'web_form', notes: notes || null, missing_required_slots: missingRequired }
+      });
+
+      res.json({
+        ok: true,
+        request_id,
+        session_id: sessionId,
+        files_recorded: files.length,
+        missing_required_slots: missingRequired
+      });
+    } catch (e) {
+      console.error('[chat/apply] error', e);
+      res.status(500).json({ error: 'apply_failed', detail: e.message });
+    }
+  }
+);
 
 // Create a session id client-side; server just accepts it.
 chatRouter.post('/:session_id', upload.single('file'), async (req, res) => {

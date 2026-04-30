@@ -4,23 +4,56 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>ساند · Saned — حسابي · My account</title>
+<meta name="description" content="حسابك على ساند: ابحث عن أي خدمة حكومية، قدّم طلبك بنموذج رقمي، وتابع كل المعاملات في مكان واحد. Your Saned account: search any government service, submit via a structured form, track every request in one place."/>
 <meta name="theme-color" content="#0d9488"/>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<script>
+  (function () {
+    try {
+      const saved = localStorage.getItem('sanad.lang');
+      const lang = saved || 'ar';
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    } catch {}
+  })();
+</script>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Kufi+Arabic:wght@400;500;700;800;900&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/theme.css"/>
 <style>
-  body { font-family: 'Inter', sans-serif; }
+  body { font-family: 'Inter', sans-serif; background: #f8fafc; }
   [dir="rtl"] body, html[dir="rtl"] * { font-family: 'Noto Kufi Arabic', sans-serif; }
-  .page-bg {
-    background:
-      radial-gradient(900px 480px at 12% -10%, rgba(20,184,166,.08) 0%, transparent 55%),
-      linear-gradient(180deg, #fbfaf6 0%, #f5f1e8 100%);
-  }
-  .wordmark { background: linear-gradient(135deg, #0d9488 0%, #15803d 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  .ink-900 { color: #0f172a; }
+  .ink-700 { color: #334155; }
+  .ink-500 { color: #64748b; }
+  .brand   { color: #0f766e; }
+
+  .panel       { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; }
+  .panel-elev  { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 1px 0 rgba(15,23,42,.02), 0 8px 24px -16px rgba(15,23,42,.08); }
+
+  /* Match-by lane chips */
+  .matched-chip { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 9999px; letter-spacing: .04em; text-transform: uppercase; }
+  .matched-fts { background: #ccfbf1; color: #0f766e; }
+  .matched-semantic { background: #ede9fe; color: #6d28d9; }
+  .matched-partial { background: #fee2e2; color: #b91c1c; }
+
+  /* Service result card */
   .svc-card { transition: all .18s; }
-  .svc-card:hover { transform: translateY(-2px); box-shadow: 0 14px 28px -16px rgba(15,23,42,.18); border-color: rgba(20,184,166,.45); }
-  .status-chip { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; letter-spacing: .02em; text-transform: uppercase; }
+  .svc-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 36px -16px rgba(15,23,42,.18);
+    border-color: rgba(15,118,110,.4);
+  }
+
+  /* Filter pills */
+  .filter-pill { transition: all .15s; cursor: pointer; }
+  .filter-pill:hover { border-color: #0f766e; background: #f0fdfa; }
+  .filter-pill.active { background: linear-gradient(135deg, #134e4a, #0f766e); color: white; border-color: transparent; }
+  .filter-pill.active .filter-count { color: rgba(255,255,255,.85); background: rgba(255,255,255,.18); }
+
+  /* Request status chip */
+  .status-chip { font-size: 10.5px; font-weight: 800; padding: 3px 9px; border-radius: 9999px; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
   .chip-collecting   { background: #fef3c7; color: #92400e; }
   .chip-ready        { background: #dbeafe; color: #1e40af; }
   .chip-claimed      { background: #ede9fe; color: #5b21b6; }
@@ -28,41 +61,64 @@
   .chip-in_progress  { background: #d1fae5; color: #065f46; }
   .chip-completed    { background: #e2e8f0; color: #334155; }
   .chip-cancelled    { background: #f1f5f9; color: #64748b; }
+
+  /* Mini status timeline (•─•─•) */
+  .mini-tl { display: inline-flex; align-items: center; gap: 4px; }
+  .mini-tl-dot { width: 8px; height: 8px; border-radius: 9999px; background: #e2e8f0; }
+  .mini-tl-dot.done { background: #0f766e; }
+  .mini-tl-dot.current { background: #0f766e; box-shadow: 0 0 0 3px rgba(15,118,110,.18); }
+  .mini-tl-line { width: 14px; height: 2px; background: #e2e8f0; }
+  .mini-tl-line.done { background: #0f766e; }
+
+  /* Skeleton */
+  .skel { background: linear-gradient(90deg, #f1f5f9, #e2e8f0, #f1f5f9); background-size: 200% 100%; animation: sk 1.2s infinite; }
+  @keyframes sk { 0% { background-position: 0 0 } 100% { background-position: -200% 0 } }
+
+  /* RTL chevron flip */
+  [dir="rtl"] .rtl-flip { transform: scaleX(-1); }
+
   /* Search results dropdown */
   .results-pop { box-shadow: 0 18px 36px -12px rgba(15,23,42,.18); }
 </style>
 </head>
-<body class="min-h-screen text-slate-900 page-bg">
+<body class="ink-900">
 
-<!-- ─────────── HEADER ─────────── -->
-<header class="max-w-6xl mx-auto px-5 sm:px-6 py-5 flex items-center">
-  <a href="/" class="flex items-center gap-3" aria-label="Saned home">
-    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-green-700 text-white grid place-items-center text-lg font-black shadow-md">س</div>
-    <div class="leading-tight">
-      <div class="text-base font-extrabold wordmark" data-i18n="app.name"></div>
-      <div class="text-[11px] text-slate-500" data-i18n="home.footer.tagline"></div>
+<!-- ─── HEADER ─── -->
+<header class="bg-white border-b border-slate-200">
+  <div class="max-w-6xl mx-auto px-5 sm:px-6 py-3.5 flex items-center gap-3">
+    <a href="/" class="flex items-center gap-2.5" aria-label="Saned home">
+      <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-teal-700 to-teal-900 text-white grid place-items-center text-base font-black">س</div>
+      <div class="leading-tight">
+        <div class="text-sm font-extrabold ink-900">ساند · Saned</div>
+        <div class="text-[10px] ink-500" data-i18n="account.header_sub"></div>
+      </div>
+    </a>
+    <div class="ms-auto flex items-center gap-2">
+      <button id="langBtn" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 font-semibold text-xs" data-i18n="lang.toggle"></button>
+      <button id="logoutBtn" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 font-semibold text-xs ink-700" data-i18n="auth.logout"></button>
     </div>
-  </a>
-  <div class="ms-auto flex items-center gap-2">
-    <button id="langBtn" class="px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-slate-200 font-semibold text-xs shadow-sm" data-i18n="lang.toggle"></button>
-    <button id="logoutBtn" class="px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-slate-200 font-semibold text-xs shadow-sm text-slate-700" data-i18n="auth.logout"></button>
   </div>
 </header>
 
-<main class="max-w-6xl mx-auto px-5 sm:px-6 pb-16">
+<main class="max-w-6xl mx-auto px-5 sm:px-6 py-6 sm:py-8">
 
-  <!-- ─── Greeting + identity card ─── -->
-  <section class="mt-4 sm:mt-6 rounded-3xl bg-white border border-slate-200 shadow-sm p-6 sm:p-7 flex flex-col sm:flex-row sm:items-center gap-5">
-    <img id="avatar" class="w-16 h-16 rounded-full bg-slate-100 object-cover border border-slate-200" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'><path d='M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2c-3.3 0-9.8 1.6-9.8 4.9V22h19.6v-3.1C21.8 15.6 15.3 14 12 14z'/></svg>" alt=""/>
+  <!-- ─── GREETING ─── -->
+  <section class="panel-elev p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-5">
+    <img id="avatar" class="w-14 h-14 rounded-full bg-slate-100 object-cover border border-slate-200 shrink-0"
+         src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'><path d='M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2c-3.3 0-9.8 1.6-9.8 4.9V22h19.6v-3.1C21.8 15.6 15.3 14 12 14z'/></svg>" alt=""/>
     <div class="flex-1 min-w-0">
-      <div class="text-xs font-bold text-teal-600 uppercase tracking-wider" data-i18n="account.welcome"></div>
+      <div class="text-[11px] font-extrabold uppercase tracking-[0.18em] brand" data-i18n="account.welcome"></div>
       <div class="text-2xl sm:text-3xl font-black tracking-tight mt-0.5" id="hello">…</div>
-      <div class="mt-1 text-sm text-slate-500" id="contactSub">…</div>
+      <div class="mt-1 text-sm ink-500" id="contactSub">…</div>
+    </div>
+    <div class="hidden sm:flex flex-col items-end text-end">
+      <div class="text-[11px] ink-500 uppercase tracking-wider font-bold" data-i18n="account.kpi.requests"></div>
+      <div class="text-2xl font-black ink-900" id="kpiRequests">—</div>
     </div>
   </section>
 
-  <!-- ─── Phone-required banner (Google-only users) ─── -->
-  <section id="phoneBanner" class="hidden mt-5 rounded-2xl bg-amber-50 border border-amber-200 p-5 sm:p-6">
+  <!-- ─── PHONE-REQUIRED BANNER (Google sign-in users) ─── -->
+  <section id="phoneBanner" class="hidden mt-5 panel p-5 border-amber-200 bg-amber-50">
     <div class="flex flex-col sm:flex-row sm:items-center gap-4">
       <div class="w-11 h-11 rounded-xl bg-amber-100 grid place-items-center shrink-0">
         <svg viewBox="0 0 24 24" class="w-6 h-6 text-amber-700" fill="currentColor"><path d="M19.5 15.6l-2.4-1c-.3-.1-.7 0-.9.2l-1 1c-1.6-.8-3-2.2-3.8-3.8l1-1c.2-.2.3-.6.2-.9l-1-2.4C11.4 7.3 11 7 10.6 7H7.4C6.9 7 6.5 7.4 6.5 7.9c0 8.1 6.5 14.6 14.6 14.6.5 0 .9-.4.9-.9v-3.2c0-.4-.3-.8-.6-1z"/></svg>
@@ -79,7 +135,7 @@
         <input id="addPhoneInput" type="tel" inputmode="numeric"
                class="flex-1 px-4 py-2.5 rounded-xl border border-amber-300 bg-white outline-none text-sm font-semibold"
                placeholder="9094 4196" maxlength="11" />
-        <button id="addPhoneSendBtn" class="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm">→</button>
+        <button id="addPhoneSendBtn" aria-label="Send code" class="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm">→</button>
       </div>
       <div id="addPhoneOtpRow" class="hidden mt-3 flex items-stretch gap-2 max-w-md" dir="ltr">
         <input id="addPhoneCode" type="tel" inputmode="numeric" maxlength="6"
@@ -88,63 +144,152 @@
         <button id="addPhoneVerifyBtn" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm" data-i18n="auth.verify"></button>
       </div>
       <p id="addPhoneMsg" class="mt-2 text-xs text-amber-800"></p>
-      <!-- Debug-only auto-fill shortcut — rendered if /api/health.debug=true -->
       <div id="dbgAttachShortcut" class="hidden mt-3 pt-3 border-t border-amber-200 flex flex-wrap gap-2">
         <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 bg-amber-200 px-2 py-0.5 rounded self-center">DEBUG</span>
-        <button id="dbgAttachAutoBtn" class="text-xs font-bold text-amber-900 bg-white hover:bg-amber-100 border border-amber-300 px-3 py-1 rounded-lg">
-          🔑 Auto-fill OTP
-        </button>
-        <button id="dbgAttachMagicBtn" class="text-xs font-bold text-amber-900 bg-white hover:bg-amber-100 border border-amber-300 px-3 py-1 rounded-lg">
-          ⚡ Skip with 000000
-        </button>
+        <button id="dbgAttachAutoBtn" class="text-xs font-bold text-amber-900 bg-white hover:bg-amber-100 border border-amber-300 px-3 py-1 rounded-lg">🔑 Auto-fill OTP</button>
+        <button id="dbgAttachMagicBtn" class="text-xs font-bold text-amber-900 bg-white hover:bg-amber-100 border border-amber-300 px-3 py-1 rounded-lg">⚡ Skip with 000000</button>
       </div>
     </div>
   </section>
 
-  <!-- ─── Search bar (services) ─── -->
-  <section class="mt-7 sm:mt-8">
-    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider" data-i18n="account.search.label"></label>
+  <!-- ═══════════════════════════════════════════════════════════════
+       START A NEW REQUEST — hybrid search + filter rail
+       ═══════════════════════════════════════════════════════════════ -->
+  <section class="mt-7 sm:mt-9">
+    <div class="flex items-end justify-between flex-wrap gap-2 mb-4">
+      <div>
+        <div class="text-[11px] font-extrabold uppercase tracking-[0.18em] brand mb-1" data-i18n="account.start.eyebrow"></div>
+        <h2 class="text-xl sm:text-2xl font-black tracking-tight" data-i18n="account.start.h"></h2>
+      </div>
+      <a href="/catalogue.html" class="text-xs font-bold brand hover:underline">
+        <span data-i18n="account.start.browse"></span> →
+      </a>
+    </div>
+
+    <!-- ── Search bar ── -->
     <div class="relative">
-      <div class="flex items-center gap-2 bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-3.5 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
-        <svg viewBox="0 0 24 24" class="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-        <input id="searchInput" class="flex-1 bg-transparent outline-none text-base"
-               placeholder="" data-i18n-placeholder="account.search.placeholder" autocomplete="off"/>
-        <button id="searchClear" class="hidden w-7 h-7 grid place-items-center rounded-lg hover:bg-slate-100 text-slate-400" aria-label="Clear">×</button>
+      <div class="flex items-center gap-2 panel-elev px-3 py-2 sm:py-2.5 focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-100">
+        <svg viewBox="0 0 24 24" class="w-5 h-5 ink-500 mx-1.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="searchInput" type="search" autocomplete="off"
+               class="flex-1 bg-transparent outline-none text-base sm:text-lg py-1.5"
+               data-i18n-placeholder="account.search.placeholder"/>
+        <button id="searchClear" class="hidden w-8 h-8 grid place-items-center rounded-lg hover:bg-slate-100 ink-500 text-xl" aria-label="Clear · مسح"><span aria-hidden="true">×</span></button>
+        <span id="lanesBadge" class="hidden mx-2 text-[10px] font-semibold ink-500 whitespace-nowrap"></span>
       </div>
-      <div id="searchResults" class="hidden absolute left-0 right-0 mt-2 bg-white rounded-2xl border border-slate-200 results-pop max-h-[440px] overflow-auto z-30"></div>
+
+      <!-- Quick-filter pill row -->
+      <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
+        <span class="ink-500 font-bold uppercase tracking-wider me-1" data-i18n="catalogue.quick"></span>
+        <button class="filter-pill px-3 py-1.5 rounded-full bg-white border border-slate-200 font-semibold" data-fee="" data-i18n="catalogue.fee.any"></button>
+        <button class="filter-pill px-3 py-1.5 rounded-full bg-white border border-slate-200 font-semibold" data-fee="0" data-i18n="catalogue.fee.free"></button>
+        <button class="filter-pill px-3 py-1.5 rounded-full bg-white border border-slate-200 font-semibold" data-fee="lt10" data-i18n="catalogue.fee.lt10"></button>
+        <button class="filter-pill px-3 py-1.5 rounded-full bg-white border border-slate-200 font-semibold" data-fee="m10_50" data-i18n="catalogue.fee.m10_50"></button>
+        <button class="filter-pill px-3 py-1.5 rounded-full bg-white border border-slate-200 font-semibold" data-fee="gte50" data-i18n="catalogue.fee.gte50"></button>
+        <span class="mx-1 w-px h-5 bg-slate-200"></span>
+        <button class="filter-pill px-3 py-1.5 rounded-full bg-white border border-slate-200 font-semibold" data-docs="yes" data-i18n="catalogue.has_docs.yes"></button>
+      </div>
     </div>
-    <div class="mt-3 flex flex-wrap gap-2">
-      <button class="quick-chip px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-semibold hover:border-teal-300" data-q="passport">🛂 <span data-i18n="home.services.passport"></span></button>
-      <button class="quick-chip px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-semibold hover:border-teal-300" data-q="civil id">🆔 <span data-i18n="home.services.civil_id"></span></button>
-      <button class="quick-chip px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-semibold hover:border-teal-300" data-q="driving">🚗 <span data-i18n="home.services.driving"></span></button>
-      <button class="quick-chip px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-semibold hover:border-teal-300" data-q="mulkiya">🚙 <span data-i18n="home.services.mulkiya"></span></button>
-      <button class="quick-chip px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-semibold hover:border-teal-300" data-q="commercial">🏢 <span data-i18n="home.services.cr"></span></button>
+
+    <!-- ── Body: filter rail + results ── -->
+    <div class="grid md:grid-cols-[260px_1fr] gap-5 mt-5">
+
+      <!-- Sidebar -->
+      <aside class="space-y-4 md:sticky md:top-4 md:self-start">
+        <!-- Beneficiary -->
+        <div class="panel p-4">
+          <div class="flex items-center justify-between mb-2.5">
+            <div class="text-[11px] font-extrabold uppercase tracking-wider ink-500" data-i18n="catalogue.beneficiary"></div>
+            <button class="text-[11px] brand hover:underline font-semibold hidden" id="benClear" data-i18n="catalogue.clear"></button>
+          </div>
+          <div id="beneficiaries" class="space-y-1"></div>
+        </div>
+        <!-- Entity -->
+        <div class="panel p-4">
+          <div class="flex items-center justify-between mb-2.5">
+            <div class="text-[11px] font-extrabold uppercase tracking-wider ink-500" data-i18n="catalogue.entity"></div>
+            <button class="text-[11px] brand hover:underline font-semibold hidden" id="entClear" data-i18n="catalogue.clear"></button>
+          </div>
+          <input id="entFilter" class="w-full mb-2 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 outline-none text-xs" data-i18n-placeholder="catalogue.entity_search"/>
+          <div id="entities" class="max-h-[300px] overflow-y-auto space-y-0.5"></div>
+        </div>
+        <!-- Sort -->
+        <div class="panel p-4">
+          <div class="text-[11px] font-extrabold uppercase tracking-wider ink-500 mb-2.5" data-i18n="catalogue.sort"></div>
+          <select id="sortSel" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 outline-none text-sm font-semibold">
+            <option value="relevance" data-i18n="catalogue.sort.relevance"></option>
+            <option value="name" data-i18n="catalogue.sort.name"></option>
+            <option value="fee_asc" data-i18n="catalogue.sort.fee_asc"></option>
+            <option value="fee_desc" data-i18n="catalogue.sort.fee_desc"></option>
+          </select>
+        </div>
+        <button id="resetAll" class="hidden w-full px-3 py-2 rounded-xl bg-white hover:bg-rose-50 border border-rose-200 text-rose-600 font-semibold text-sm" data-i18n="catalogue.reset_all"></button>
+      </aside>
+
+      <!-- Result column -->
+      <section>
+        <div class="flex items-center justify-between mb-3 px-1">
+          <div class="text-sm ink-700"><b id="resultCount">—</b> <span data-i18n="catalogue.results_label"></span> <span id="filterEcho" class="ink-500"></span></div>
+          <div class="text-xs ink-500" id="searchTime"></div>
+        </div>
+        <div id="results" class="grid sm:grid-cols-2 gap-3"></div>
+        <div id="emptyState" class="hidden mt-4 panel p-10 text-center">
+          <div class="text-5xl mb-3">🔍</div>
+          <div class="text-base font-bold ink-700 mb-1" data-i18n="account.search.empty.title"></div>
+          <div class="text-sm ink-500" data-i18n="account.search.empty.sub"></div>
+        </div>
+        <div class="text-center mt-5">
+          <button id="loadMore" class="hidden px-5 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 font-semibold text-sm" data-i18n="catalogue.load_more"></button>
+        </div>
+      </section>
     </div>
   </section>
 
-  <!-- ─── My active requests ─── -->
-  <section class="mt-9 sm:mt-10">
-    <div class="flex items-end justify-between mb-3">
-      <h2 class="text-xl sm:text-2xl font-black tracking-tight" data-i18n="account.requests.h2"></h2>
-      <a href="/chat.html" class="text-sm font-semibold text-teal-700 hover:text-teal-800" data-i18n="account.requests.start_new"></a>
+  <!-- ═══════════════════════════════════════════════════════════════
+       MY REQUESTS
+       ═══════════════════════════════════════════════════════════════ -->
+  <section class="mt-10 sm:mt-12">
+    <div class="flex items-end justify-between flex-wrap gap-2 mb-4">
+      <div>
+        <div class="text-[11px] font-extrabold uppercase tracking-[0.18em] brand mb-1" data-i18n="account.requests.eyebrow"></div>
+        <h2 class="text-xl sm:text-2xl font-black tracking-tight" data-i18n="account.requests.h2"></h2>
+      </div>
+      <div class="flex gap-3 text-xs ink-500" id="reqStats"></div>
     </div>
     <div id="reqList" class="space-y-3">
-      <div class="bg-white rounded-2xl border border-slate-200 p-5 text-sm text-slate-500 italic" data-i18n="account.requests.loading"></div>
+      <div class="panel p-5"><div class="skel h-4 w-32 rounded mb-2"></div><div class="skel h-3 w-full rounded"></div></div>
+      <div class="panel p-5"><div class="skel h-4 w-24 rounded mb-2"></div><div class="skel h-3 w-3/4 rounded"></div></div>
     </div>
   </section>
 
-  <!-- ─── Quick categories grid ─── -->
-  <section class="mt-10 sm:mt-12">
-    <h2 class="text-xl sm:text-2xl font-black tracking-tight mb-3" data-i18n="account.categories.h2"></h2>
-    <div id="categoryGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+  <!-- ─── WhatsApp contact disclosure ─── -->
+  <section class="mt-8 panel p-5 flex items-start gap-4 border-teal-200 bg-teal-50">
+    <div class="w-10 h-10 rounded-lg bg-emerald-600 grid place-items-center text-white shrink-0">
+      <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.768.967-.941 1.164-.173.198-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347"/></svg>
+    </div>
+    <div class="flex-1 text-sm ink-900">
+      <div class="font-extrabold mb-0.5" data-i18n="contact.wa.title"></div>
+      <div class="text-xs ink-700 leading-relaxed">
+        <span data-i18n="contact.wa.body"></span>
+        <span id="contactPhone" class="font-mono font-bold" dir="ltr"></span>
+      </div>
+    </div>
   </section>
-
 </main>
 
-<footer class="border-t border-slate-200/70 bg-white/40 backdrop-blur mt-10">
-  <div class="max-w-6xl mx-auto px-5 sm:px-6 py-5 text-[11px] text-slate-500 flex justify-between">
-    <div>© 2026 Saned</div>
-    <div><a href="/privacy.html" class="hover:text-teal-700">Privacy · الخصوصية</a></div>
+<!-- ─── MINISTRY-VISION FOOTER ─── -->
+<footer class="border-t border-slate-200 bg-white mt-10">
+  <div class="max-w-6xl mx-auto px-5 sm:px-6 py-7 grid sm:grid-cols-2 gap-5 items-start">
+    <div>
+      <div class="flex items-center gap-2 mb-1.5">
+        <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-700 to-teal-900 text-white grid place-items-center text-xs font-black">س</div>
+        <div class="text-sm font-extrabold">ساند · Saned</div>
+      </div>
+      <div class="text-xs ink-500 leading-relaxed" data-i18n="footer.ministry_vision"></div>
+    </div>
+    <div class="sm:text-end text-xs ink-500">
+      <div class="space-x-3 space-x-reverse"><a href="/privacy.html" class="hover:brand">الخصوصية · Privacy</a> <a href="/terms.html" class="hover:brand">الشروط · Terms</a></div>
+      <div class="mt-1.5">© 2026 ساند · Saned</div>
+    </div>
   </div>
 </footer>
 
@@ -152,36 +297,37 @@
 <script>
 (async function () {
   const $ = s => document.querySelector(s);
+  const I18N = window.I18N;
   document.getElementById('langBtn').onclick = () => I18N.setLang(I18N.lang === 'ar' ? 'en' : 'ar');
 
-  // ── 1) Authentication gate ─────────────────────────────
+  function escapeHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+  // ── 1) Auth gate ──────────────────────────────────────
   let me = null;
   try {
     const r = await fetch('/api/citizen-auth/me');
-    if (!r.ok) {
-      window.location.href = '/login.html';
-      return;
-    }
+    if (!r.ok) { window.location.href = '/login.html'; return; }
     const d = await r.json();
     me = d.citizen;
     if (d.needs_phone) document.getElementById('phoneBanner').classList.remove('hidden');
   } catch {
-    window.location.href = '/login.html';
-    return;
+    window.location.href = '/login.html'; return;
   }
 
-  // Header card
-  const helloName = me.name || me.email || me.phone || 'مرحباً';
+  // Greeting
+  const helloName = me.name || me.email || me.phone || I18N.t('account.welcome');
   $('#hello').textContent = (I18N.t('account.hello_prefix') || '') + helloName;
   $('#contactSub').textContent = me.phone || me.email || '';
   if (me.avatar_url) $('#avatar').src = me.avatar_url;
+  if (me.phone) $('#contactPhone').textContent = me.phone;
 
   $('#logoutBtn').onclick = async () => {
     await fetch('/api/citizen-auth/logout', { method: 'POST' });
     window.location.href = '/';
   };
 
-  // ── 2) Phone-attach flow ───────────────────────────────
+  // ── 2) Phone-attach (Google-only users) ───────────────
   $('#addPhoneBtn').onclick = () => $('#addPhoneForm').classList.toggle('hidden');
   $('#addPhoneSendBtn').onclick = async () => {
     const phone = $('#addPhoneInput').value.trim();
@@ -201,20 +347,15 @@
   };
   $('#addPhoneVerifyBtn').onclick = async () => {
     const phone = $('#addPhoneInput').value.trim();
-    const code = $('#addPhoneCode').value.trim();
+    const code  = $('#addPhoneCode').value.trim();
     const r = await fetch('/api/citizen-auth/verify-phone', {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ phone, code })
     });
     const d = await r.json();
-    if (!r.ok) {
-      $('#addPhoneMsg').textContent = I18N.t('auth.err.' + d.error) || I18N.t('auth.err.generic');
-      return;
-    }
+    if (!r.ok) { $('#addPhoneMsg').textContent = I18N.t('auth.err.' + d.error) || I18N.t('auth.err.generic'); return; }
     location.reload();
   };
-
-  // Debug shortcuts on the phone-attach panel
   try {
     const h = await fetch('/api/health').then(r => r.json());
     if (h.debug) {
@@ -228,10 +369,7 @@
           body: JSON.stringify({ phone })
         });
         const d = await r.json();
-        if (!r.ok || !d.debug_code) {
-          $('#addPhoneMsg').textContent = `✗ ${d.error || 'no_debug_code'}`;
-          return;
-        }
+        if (!r.ok || !d.debug_code) { $('#addPhoneMsg').textContent = `✗ ${d.error || 'no_debug_code'}`; return; }
         $('#addPhoneOtpRow').classList.remove('hidden');
         $('#addPhoneCode').value = d.debug_code;
         $('#addPhoneMsg').textContent = `✓ code = ${d.debug_code} — verifying…`;
@@ -248,119 +386,272 @@
     }
   } catch {}
 
-  // ── 3) Search ──────────────────────────────────────────
-  const searchInput = $('#searchInput');
-  const resultsBox = $('#searchResults');
-  const searchClear = $('#searchClear');
-  let searchSeq = 0;
-  function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
-
-  async function runSearch(q) {
-    const seq = ++searchSeq;
-    if (!q.trim()) { resultsBox.classList.add('hidden'); resultsBox.innerHTML = ''; return; }
-    const r = await fetch(`/api/catalogue/search?q=${encodeURIComponent(q)}&limit=8`);
-    const d = await r.json();
-    if (seq !== searchSeq) return; // a newer search already started
-    const lang = I18N.lang;
-    const rows = (d.results || []).map(x => {
-      const name = (lang === 'ar' && x.name_ar) ? x.name_ar : (x.name_en || x.name_ar || '—');
-      const entity = (lang === 'ar' && x.entity_ar) ? x.entity_ar : (x.entity_en || '');
-      const fee = x.fee_omr != null ? `${x.fee_omr.toFixed(3)} OMR` : (x.fees_text || '');
-      return `<a href="/chat.html?service=${x.id}" class="block px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-b-0">
-        <div class="font-semibold text-slate-800 text-sm">${escapeHtml(name)}</div>
-        <div class="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
-          <span>${escapeHtml(entity)}</span>${fee ? `<span>·</span><span class="font-semibold text-teal-700">${escapeHtml(fee)}</span>` : ''}
-        </div>
-      </a>`;
-    }).join('');
-    resultsBox.innerHTML = rows ||
-      `<div class="px-4 py-6 text-center text-sm text-slate-500">${I18N.t('account.search.empty')}</div>`;
-    resultsBox.classList.remove('hidden');
+  // ════════════════════════════════════════════════════════
+  // SEARCH (hybrid + filter rail) — mirrors catalogue.html
+  // ════════════════════════════════════════════════════════
+  const PAGE_LIMIT = 12;
+  const state = {
+    q: '', entity: '', beneficiary: '', feeBucket: '', hasDocs: '',
+    sort: 'relevance', offset: 0, total: 0
+  };
+  function feeBucketParams(b) {
+    switch (b) {
+      case '0':       return { fee_min: 0, fee_max: 0 };
+      case 'lt10':    return { fee_max: 9.999, fee_min: 0.001 };
+      case 'm10_50':  return { fee_min: 10, fee_max: 50 };
+      case 'gte50':   return { fee_min: 50 };
+      default:        return {};
+    }
   }
+  function activeFilterCount() {
+    return [state.entity, state.beneficiary, state.feeBucket, state.hasDocs].filter(Boolean).length;
+  }
+  async function loadFilterRail() {
+    try {
+      const [eR, bR] = await Promise.all([
+        fetch('/api/catalogue/entities').then(r => r.json()),
+        fetch('/api/catalogue/beneficiaries').then(r => r.json())
+      ]);
+      window.__entities = eR.entities || [];
+      window.__benefs = bR.beneficiaries || [];
+      renderEntities();
+      renderBeneficiaries();
+    } catch {}
+  }
+  function renderEntities() {
+    const term = $('#entFilter').value.toLowerCase().trim();
+    const list = window.__entities || [];
+    const filtered = term ? list.filter(e => (e.entity_en||'').toLowerCase().includes(term) || (e.entity_ar||'').includes(term)) : list;
+    const lang = I18N.lang;
+    $('#entities').innerHTML = filtered.map(e => {
+      const name = (lang === 'ar' && e.entity_ar) ? e.entity_ar : (e.entity_en || '—');
+      const isActive = e.entity_en === state.entity;
+      return `<button data-ent="${escapeHtml(e.entity_en)}" class="filter-pill ${isActive?'active':''} w-full text-start px-3 py-1.5 rounded-lg bg-white border border-transparent flex items-center justify-between gap-2 text-xs">
+        <span class="truncate" title="${escapeHtml(e.entity_en)}">${escapeHtml(name)}</span>
+        <span class="filter-count text-[10px] font-bold ink-500 bg-slate-100 px-1.5 py-0.5 rounded shrink-0">${e.n}</span>
+      </button>`;
+    }).join('');
+    $('#entities').querySelectorAll('[data-ent]').forEach(b => b.onclick = () => {
+      const v = b.getAttribute('data-ent');
+      state.entity = state.entity === v ? '' : v;
+      state.offset = 0; renderEntities(); $('#entClear').classList.toggle('hidden', !state.entity); run();
+    });
+    $('#entClear').classList.toggle('hidden', !state.entity);
+    $('#entClear').onclick = () => { state.entity = ''; state.offset = 0; renderEntities(); run(); };
+  }
+  function renderBeneficiaries() {
+    const list = window.__benefs || [];
+    $('#beneficiaries').innerHTML = list.map(b => {
+      const isActive = b.beneficiary === state.beneficiary;
+      const labelKey = `catalogue.beneficiary.${(b.beneficiary || '').toLowerCase().replace(/\s+/g, '_')}`;
+      const label = I18N.t(labelKey, b.beneficiary || '—');
+      return `<button data-ben="${escapeHtml(b.beneficiary)}" class="filter-pill ${isActive?'active':''} w-full text-start px-3 py-1.5 rounded-lg bg-white border border-transparent flex items-center justify-between gap-2 text-xs">
+        <span class="truncate">${escapeHtml(label)}</span>
+        <span class="filter-count text-[10px] font-bold ink-500 bg-slate-100 px-1.5 py-0.5 rounded">${b.n}</span>
+      </button>`;
+    }).join('') || `<div class="text-xs ink-500 italic">${I18N.t('catalogue.no_beneficiaries')}</div>`;
+    $('#beneficiaries').querySelectorAll('[data-ben]').forEach(b => b.onclick = () => {
+      const v = b.getAttribute('data-ben');
+      state.beneficiary = state.beneficiary === v ? '' : v;
+      state.offset = 0; renderBeneficiaries(); $('#benClear').classList.toggle('hidden', !state.beneficiary); run();
+    });
+    $('#benClear').classList.toggle('hidden', !state.beneficiary);
+    $('#benClear').onclick = () => { state.beneficiary = ''; state.offset = 0; renderBeneficiaries(); run(); };
+  }
+  document.querySelectorAll('.filter-pill[data-fee]').forEach(b => b.onclick = () => {
+    const v = b.getAttribute('data-fee'); state.feeBucket = state.feeBucket === v ? '' : v; state.offset = 0; syncPills(); run();
+  });
+  document.querySelectorAll('.filter-pill[data-docs]').forEach(b => b.onclick = () => {
+    const v = b.getAttribute('data-docs'); state.hasDocs = state.hasDocs === v ? '' : v; state.offset = 0; syncPills(); run();
+  });
+  function syncPills() {
+    document.querySelectorAll('.filter-pill[data-fee]').forEach(b => b.classList.toggle('active', b.getAttribute('data-fee') === state.feeBucket));
+    document.querySelectorAll('.filter-pill[data-docs]').forEach(b => b.classList.toggle('active', b.getAttribute('data-docs') === state.hasDocs));
+  }
+  $('#sortSel').addEventListener('change', () => { state.sort = $('#sortSel').value; state.offset = 0; run(); });
+  $('#resetAll').addEventListener('click', () => {
+    state.q=''; state.entity=''; state.beneficiary=''; state.feeBucket=''; state.hasDocs=''; state.sort='relevance'; state.offset=0;
+    $('#searchInput').value=''; $('#searchClear').classList.add('hidden');
+    $('#sortSel').value='relevance'; syncPills();
+    renderEntities(); renderBeneficiaries(); run();
+  });
 
-  searchInput.addEventListener('input', debounce(e => {
-    const v = e.target.value.trim();
-    searchClear.classList.toggle('hidden', !v);
-    runSearch(v);
+  $('#searchInput').addEventListener('input', debounce(() => {
+    state.q = $('#searchInput').value.trim(); state.offset = 0;
+    $('#searchClear').classList.toggle('hidden', !state.q); run();
   }, 200));
-  searchClear.onclick = () => { searchInput.value = ''; searchClear.classList.add('hidden'); resultsBox.classList.add('hidden'); searchInput.focus(); };
-  document.addEventListener('click', e => {
-    if (!resultsBox.contains(e.target) && e.target !== searchInput) resultsBox.classList.add('hidden');
-  });
-  document.querySelectorAll('.quick-chip').forEach(b => {
-    b.onclick = () => { searchInput.value = b.dataset.q; searchInput.dispatchEvent(new Event('input')); };
-  });
+  $('#searchClear').addEventListener('click', () => { $('#searchInput').value=''; state.q=''; state.offset=0; $('#searchClear').classList.add('hidden'); $('#searchInput').focus(); run(); });
+  $('#loadMore').addEventListener('click', () => { state.offset += PAGE_LIMIT; run(true); });
 
-  // ── 4) Active requests (citizen view of /api/chat history per session) ──
-  // For now we filter on the server by citizen.phone — uses an existing
-  // chat-side endpoint. (Pre-cookie sessions are still keyed by phone.)
+  function feeBadge(s) {
+    if (s.fee_omr === 0)  return `<span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">${I18N.t('catalogue.fee.free')}</span>`;
+    if (s.fee_omr != null) return `<span class="text-[11px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800">${Number(s.fee_omr).toFixed(3)} OMR</span>`;
+    if (s.fees_text)       return `<span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 ink-700">${escapeHtml(s.fees_text.slice(0, 24))}</span>`;
+    return '';
+  }
+  function timeBadge(s) {
+    const t = (I18N.lang === 'ar' && s.avg_time_ar) ? s.avg_time_ar : s.avg_time_en;
+    return t ? `<span class="text-[11px] ink-500">⏱ ${escapeHtml(t.slice(0, 24))}</span>` : '';
+  }
+  function cardHtml(s) {
+    const lang = I18N.lang;
+    const name = (lang === 'ar' && s.name_ar) ? s.name_ar : (s.name_en || s.name_ar || '—');
+    const entity = (lang === 'ar' && s.entity_ar) ? s.entity_ar : (s.entity_en || '');
+    const desc = (lang === 'ar' && s.description_ar) ? s.description_ar : (s.description_en || '');
+    const tags = (s.matched_by || []).map(t => `<span class="matched-chip matched-${t}">${t}</span>`).join('');
+    return `<article class="svc-card panel p-5 flex flex-col" data-id="${s.id}">
+      <div class="flex items-start gap-2 flex-wrap mb-1.5">
+        <span class="text-[10px] font-extrabold uppercase tracking-wider brand bg-teal-50 px-2 py-0.5 rounded">${escapeHtml(entity)}</span>
+        ${feeBadge(s)}
+        ${tags}
+      </div>
+      <div class="font-bold ink-900 text-sm sm:text-base leading-snug mb-1.5">${escapeHtml(name)}</div>
+      ${desc ? `<div class="text-xs ink-500 leading-relaxed line-clamp-2 mb-3">${escapeHtml(desc.slice(0, 140))}${desc.length > 140 ? '…' : ''}</div>` : '<div class="mb-3"></div>'}
+      <div class="mt-auto flex items-center gap-3 text-[11px] ink-500">
+        ${timeBadge(s)}
+        ${s.doc_count ? `<span>📎 ${s.doc_count} ${I18N.t('catalogue.docs_short')}</span>` : ''}
+      </div>
+      <a href="/apply.html?service=${s.id}"
+         class="mt-3 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-gradient-to-br from-teal-700 to-teal-900 text-white font-bold text-sm hover:shadow-lg transition-all">
+        <span>${I18N.t('account.search.apply_cta')}</span>
+        <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 rtl-flip" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+    </article>`;
+  }
+  function skel() {
+    return Array.from({length: 6}).map(() =>
+      `<div class="panel p-5"><div class="skel h-3 w-24 mb-2 rounded"></div><div class="skel h-5 w-full mb-2 rounded"></div><div class="skel h-3 w-3/4 rounded"></div></div>`
+    ).join('');
+  }
+  async function run(append = false) {
+    if (!append) { $('#results').innerHTML = skel(); $('#emptyState').classList.add('hidden'); state.offset = 0; }
+    $('#resetAll').classList.toggle('hidden', activeFilterCount() === 0 && !state.q);
+    const t0 = performance.now();
+    const params = new URLSearchParams({ q: state.q, limit: String(PAGE_LIMIT), offset: String(state.offset), sort: state.sort });
+    if (state.entity)      params.set('entity', state.entity);
+    if (state.beneficiary) params.set('beneficiary', state.beneficiary);
+    if (state.hasDocs)     params.set('has_docs', state.hasDocs);
+    Object.entries(feeBucketParams(state.feeBucket)).forEach(([k, v]) => params.set(k, String(v)));
+    let data;
+    try {
+      data = await fetch('/api/catalogue/hybrid?' + params).then(r => r.json());
+    } catch (e) { $('#results').innerHTML = ''; $('#emptyState').classList.remove('hidden'); return; }
+    const dt = performance.now() - t0;
+    state.total = data.total || 0;
+    if (data.search?.mode === 'hybrid' && data.search.lanes) {
+      const L = data.search.lanes;
+      $('#lanesBadge').textContent = `FTS ${L.fts} · sem ${L.semantic} · partial ${L.partial}`;
+      $('#lanesBadge').classList.remove('hidden');
+    } else { $('#lanesBadge').classList.add('hidden'); }
+    $('#resultCount').textContent = state.total.toLocaleString();
+    $('#searchTime').textContent = `${dt.toFixed(0)} ms`;
+    const echoBits = [];
+    if (state.q) echoBits.push(`"${state.q}"`);
+    if (state.entity) echoBits.push(state.entity);
+    $('#filterEcho').textContent = echoBits.length ? ' · ' + echoBits.join(' · ') : '';
+    const html = (data.results || []).map(cardHtml).join('');
+    if (append) $('#results').insertAdjacentHTML('beforeend', html);
+    else        $('#results').innerHTML = html;
+    $('#emptyState').classList.toggle('hidden', !!data.results?.length);
+    $('#loadMore').classList.toggle('hidden', state.offset + (data.results?.length || 0) >= state.total);
+  }
+  $('#entFilter').addEventListener('input', () => renderEntities());
+
+  // ════════════════════════════════════════════════════════
+  // MY REQUESTS — polished cards with mini-timeline
+  // ════════════════════════════════════════════════════════
+  const STATUS_ORDER = ['collecting','ready','claimed','awaiting_payment','in_progress','completed'];
+  function relTime(s) {
+    if (!s) return '';
+    const d = new Date(s.replace(' ', 'T') + 'Z');
+    const ms = Date.now() - d.getTime();
+    const mins = Math.round(ms / 60000);
+    if (mins < 60) return I18N.t('account.req.relative.mins', { n: mins });
+    const hrs = Math.round(mins / 60);
+    if (hrs < 24) return I18N.t('account.req.relative.hrs', { n: hrs });
+    const days = Math.round(hrs / 24);
+    return I18N.t('account.req.relative.days', { n: days });
+  }
+  function miniTimeline(status) {
+    const cancelled = ['cancelled_by_citizen','cancelled_by_office'].includes(status);
+    if (cancelled) return `<span class="text-[11px] text-slate-500 italic">${I18N.t('account.status.' + status)}</span>`;
+    const idx = STATUS_ORDER.indexOf(status);
+    const dots = STATUS_ORDER.map((_, i) => {
+      const cls = i < idx ? 'done' : (i === idx ? 'current' : '');
+      return `<div class="mini-tl-dot ${cls}"></div>` + (i < STATUS_ORDER.length - 1 ? `<div class="mini-tl-line ${i < idx ? 'done' : ''}"></div>` : '');
+    }).join('');
+    return `<div class="mini-tl">${dots}</div>`;
+  }
   async function loadRequests() {
     if (!me.phone) {
-      $('#reqList').innerHTML = `<div class="bg-white rounded-2xl border border-slate-200 p-5 text-sm text-slate-500 italic">${I18N.t('account.requests.no_phone')}</div>`;
+      $('#reqList').innerHTML = `<div class="panel p-5 text-sm ink-500 italic">${I18N.t('account.requests.no_phone')}</div>`;
+      $('#kpiRequests').textContent = '0';
       return;
     }
     try {
-      const r = await fetch(`/api/chat/my-requests`);
+      const r = await fetch('/api/chat/my-requests');
       const d = r.ok ? await r.json() : { requests: [] };
       const reqs = d.requests || [];
+      $('#kpiRequests').textContent = reqs.length;
+      const inFlight = reqs.filter(x => !['completed','cancelled_by_citizen','cancelled_by_office'].includes(x.status)).length;
+      const completed = reqs.filter(x => x.status === 'completed').length;
+      $('#reqStats').innerHTML =
+        `<span><b class="ink-900">${inFlight}</b> ${I18N.t('account.req.inflight')}</span>` +
+        ` · <span><b class="ink-900">${completed}</b> ${I18N.t('account.req.done')}</span>`;
+
       if (!reqs.length) {
-        $('#reqList').innerHTML = `<div class="bg-white rounded-2xl border border-slate-200 p-5 text-sm text-slate-500 italic">${I18N.t('account.requests.empty')}</div>`;
+        $('#reqList').innerHTML = `<div class="panel p-8 text-center">
+          <div class="text-4xl mb-2">📋</div>
+          <div class="text-base font-bold ink-700 mb-1">${I18N.t('account.requests.empty.title')}</div>
+          <div class="text-sm ink-500 mb-4">${I18N.t('account.requests.empty.sub')}</div>
+        </div>`;
         return;
       }
+      const lang = I18N.lang;
       $('#reqList').innerHTML = reqs.map(req => {
-        const lang = I18N.lang;
         const name = (lang === 'ar' && req.service_name_ar) ? req.service_name_ar : (req.service_name || '—');
+        const altName = (lang === 'ar') ? (req.service_name || '') : (req.service_name_ar || '');
         const status = (req.status || '').replace(/[^a-z_]/g, '');
-        const chip = `chip-${status.split('_')[0]}`;
+        const chipBase = status === 'awaiting_payment' ? 'awaiting' : status.split('_')[0];
+        const office = (lang === 'ar' && req.office_name_ar) ? req.office_name_ar : (req.office_name_en || '');
         const payChip = req.payment_status === 'awaiting'
           ? `<span class="status-chip chip-awaiting">${I18N.t('account.req.awaiting_payment')}</span>` : '';
-        const paid = req.payment_status === 'paid' ? '✓' : '';
-        return `<a href="/request.html?id=${req.id}" class="block bg-white rounded-2xl border border-slate-200 p-5 hover:border-teal-300 transition">
+        return `<a href="/request.html?id=${req.id}" class="block panel p-5 hover:border-teal-400 hover:shadow-md transition-all">
           <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <div class="text-base font-bold text-slate-800 truncate">${escapeHtml(name)}</div>
-              <div class="mt-1 text-xs text-slate-500">${I18N.t('account.req.id')} #${req.id} · ${escapeHtml(req.created_at?.split(' ')[0] || '')}</div>
+            <div class="min-w-0 flex-1">
+              <div class="text-base font-bold ink-900 leading-snug">${escapeHtml(name)}</div>
+              ${altName ? `<div class="text-xs ink-500 mt-0.5 truncate" dir="${lang === 'ar' ? 'ltr' : 'rtl'}">${escapeHtml(altName)}</div>` : ''}
+              <div class="mt-2 flex items-center gap-3 text-[11px] ink-500 flex-wrap">
+                <span>${I18N.t('account.req.id')} #${req.id}</span>
+                <span>·</span>
+                <span>${escapeHtml(relTime(req.last_event_at || req.created_at))}</span>
+                ${office ? `<span>·</span><span class="truncate max-w-[180px]">${escapeHtml(office)}</span>` : ''}
+              </div>
+              <div class="mt-3">${miniTimeline(req.status)}</div>
             </div>
-            <div class="flex items-center gap-2 shrink-0">
+            <div class="flex flex-col items-end gap-1.5 shrink-0">
               ${payChip}
-              <span class="status-chip ${chip}">${I18N.t('account.status.' + status) || status}</span>
+              <span class="status-chip chip-${chipBase}">${I18N.t('account.status.' + status) || status}</span>
             </div>
           </div>
           ${req.payment_status === 'awaiting' && req.payment_link ? `
-            <div class="mt-3 flex items-center gap-2">
-              <span class="text-sm font-bold text-rose-600">${(req.payment_amount_omr || 0).toFixed(3)} OMR</span>
-              <span class="text-xs text-slate-400">·</span>
-              <span class="text-sm font-semibold text-teal-700 underline">${I18N.t('account.req.pay_now')} →</span>
+            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+              <div>
+                <div class="text-[11px] ink-500 font-semibold">${I18N.t('account.req.amount_due')}</div>
+                <div class="text-base font-black text-rose-700">${(req.payment_amount_omr || 0).toFixed(3)} OMR</div>
+              </div>
+              <span class="text-sm font-bold brand">${I18N.t('account.req.pay_now')} →</span>
             </div>` : ''}
         </a>`;
       }).join('');
     } catch (e) {
-      $('#reqList').innerHTML = `<div class="bg-white rounded-2xl border border-rose-200 p-5 text-sm text-rose-600">${I18N.t('account.requests.error')}</div>`;
+      $('#reqList').innerHTML = `<div class="panel p-5 text-sm text-rose-600 border-rose-200 bg-rose-50">${I18N.t('account.requests.error')}</div>`;
     }
   }
+
+  // ── Boot ──────────────────────────────────────────────
+  loadFilterRail().then(() => run());
   loadRequests();
-
-  // ── 5) Categories grid (top entities) ──────────────────
-  try {
-    const r = await fetch('/api/catalogue/entities');
-    const d = await r.json();
-    const top = (d.entities || []).slice(0, 12);
-    const lang = I18N.lang;
-    $('#categoryGrid').innerHTML = top.map(e => {
-      const name = (lang === 'ar' && e.entity_ar) ? e.entity_ar : (e.entity_en || '—');
-      return `<a href="/catalogue.html?entity=${encodeURIComponent(e.entity_en)}" class="svc-card bg-white rounded-2xl border border-slate-200 p-4 text-center">
-        <div class="text-2xl mb-1.5">🏛️</div>
-        <div class="text-sm font-bold text-slate-800 leading-snug">${escapeHtml(name)}</div>
-        <div class="mt-1 text-[11px] text-slate-500">${e.n} ${I18N.t('account.categories.services_count')}</div>
-      </a>`;
-    }).join('');
-  } catch {}
-
-  function escapeHtml(s) {
-    return String(s || '')
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  }
 })();
 </script>
 </body>
