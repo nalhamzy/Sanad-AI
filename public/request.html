@@ -93,6 +93,17 @@
         </div>
       </div>
 
+      <!-- Office requested more info banner -->
+      <div id="needsInfoBanner" class="hidden mt-5 p-4 rounded-2xl bg-amber-50 border border-amber-300">
+        <div class="flex items-start gap-3">
+          <span class="text-2xl shrink-0">📝</span>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-bold text-amber-900" data-i18n="req.needs_info.title">المكتب يحتاج معلومات إضافيّة</div>
+            <div class="text-xs text-amber-800 mt-0.5" data-i18n="req.needs_info.sub">راجع آخر رسالة من المكتب في الأسفل وردّ هنا أو على واتساب.</div>
+          </div>
+        </div>
+      </div>
+
       <!-- Pay-now CTA -->
       <div id="paymentBlock" class="hidden mt-5 p-5 rounded-2xl bg-gradient-to-br from-rose-50 to-amber-50 border border-rose-200">
         <div class="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -256,6 +267,13 @@
       payChip.classList.add('hidden');
     }
 
+    // Office-requested-more-info banner — visible only while paused
+    const needsInfo = $('#needsInfoBanner');
+    if (needsInfo) {
+      if (req.status === 'needs_more_info') needsInfo.classList.remove('hidden');
+      else                                  needsInfo.classList.add('hidden');
+    }
+
     // Pay-now CTA — only while awaiting; auto-disappears once paid
     const payBlock = $('#paymentBlock');
     if (req.payment_status === 'awaiting' && req.payment_link) {
@@ -294,7 +312,12 @@
     ];
     const order = ['collecting','ready','claimed','awaiting_payment','in_progress','completed'];
     const cancelled = ['cancelled_by_citizen','cancelled_by_office'].includes(req.status);
-    const currentIdx = cancelled ? -1 : order.indexOf(req.status);
+    // 'needs_more_info' isn't its own timeline step — the request is still
+    // "claimed by the office" but paused waiting on the citizen. Treat it
+    // as claimed for the timeline; the chat thread + the new banner below
+    // tell the citizen what's missing.
+    const timelineStatus = req.status === 'needs_more_info' ? 'claimed' : req.status;
+    const currentIdx = cancelled ? -1 : order.indexOf(timelineStatus);
     let timelineHtml = STEPS.map((s, i) => {
       const isDone = !cancelled && (i < currentIdx || (i === currentIdx && req.completed_at));
       const isCurrent = !cancelled && i === currentIdx && !req.completed_at;

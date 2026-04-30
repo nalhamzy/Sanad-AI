@@ -86,6 +86,7 @@
     padding: 12px 14px; cursor: pointer;
     transition: background .14s, transform .1s;
     position: relative;
+    border-inline-start: 3px solid transparent;
   }
   .card:hover { background: var(--surface-3); }
   .card.selected { background: var(--brand-soft); }
@@ -93,6 +94,22 @@
     content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px;
     background: var(--brand); border-radius: 0 3px 3px 0;
   }
+  /* Status-driven card border — gives the office an at-a-glance visual
+     classification without having to read each chip. The colors echo the
+     existing chip-* palette (cyan claimed, amber awaiting-pay, teal
+     in-progress, red needs-info, green completed, slate marketplace). */
+  .card[data-card-status="ready"]            { border-inline-start-color: rgba(245,158,11,.55); }
+  .card[data-card-status="claimed"]          { border-inline-start-color: rgba(6,182,212,.65); }
+  .card[data-card-status="awaiting_payment"] { border-inline-start-color: rgba(217,119,6,.7); }
+  .card[data-card-status="in_progress"]      { border-inline-start-color: rgba(15,118,110,.75); }
+  .card[data-card-status="needs_more_info"]  { border-inline-start-color: rgba(220,38,38,.7); }
+  .card[data-card-status="on_hold"]          { border-inline-start-color: rgba(100,116,139,.6); }
+  .card[data-card-status="completed"]        { border-inline-start-color: rgba(16,185,129,.7); }
+  .card[data-card-status^="cancelled"]       { border-inline-start-color: rgba(220,38,38,.6); opacity:.75; }
+  /* SLA badge — make the countdown chip noticeably bigger so the
+     office sees how much time is left without squinting. */
+  .sla-pill { font-weight: 700; font-size: 11.5px; padding: 4px 10px; }
+  .sla-pill .sla-time { font-size: 12px; letter-spacing: .02em; }
 
   /* KPI pill */
   .kpi {
@@ -970,18 +987,31 @@
       : Number(r.quoted_fee_omr || r.fee_omr || 0);
     const hasOverride = r.office_fee_override != null;
 
+    // Comprehensive status pill — covers EVERY lifecycle state, not just
+    // claimed/in_progress/completed. The card itself gets a left-border
+    // color via data-card-status so the office can scan the board at a
+    // glance and see what's where.
+    const statusMeta = {
+      ready:            { cls:'chip-warn',  icon:'🛒',  key:'status.ready' },
+      claimed:          { cls:'chip-cyan',  icon:'👤',  key:'status.claimed' },
+      awaiting_payment: { cls:'chip-amber', icon:'💳',  key:'status.awaiting_payment' },
+      in_progress:      { cls:'chip-brand', icon:'⚙️', key:'status.in_progress' },
+      needs_more_info:  { cls:'chip-bad',   icon:'❗',  key:'status.needs_more_info' },
+      on_hold:          { cls:'chip-sm',    icon:'⏸',  key:'status.on_hold' },
+      completed:        { cls:'chip-ok',    icon:'✓',  key:'status.completed' },
+      cancelled_by_citizen: { cls:'chip-bad', icon:'✗', key:'status.cancelled' },
+      cancelled_by_office:  { cls:'chip-bad', icon:'✗', key:'status.cancelled' }
+    };
+    const sm = statusMeta[r.status] || statusMeta.ready;
     return `
-      <li class="card" data-req="${r.id}" data-idx="${idx}">
+      <li class="card" data-req="${r.id}" data-idx="${idx}" data-card-status="${r.status}">
         <div class="flex items-start gap-3">
           <div class="avatar avatar-md shrink-0" style="background:${avatarGradient(r.id)}">${r.id % 100}</div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-1.5 flex-wrap">
               <span class="chip ${entChip(ent)} chip-sm">${ent || '—'}</span>
-              ${claimable && !alreadyQuoted ? `<span class="chip chip-warn chip-sm">⏱ ${t('status.ready')}</span>` : ''}
+              <span class="chip ${sm.cls} chip-sm" data-tip="${t(sm.key, r.status)}">${sm.icon} ${t(sm.key, r.status)}</span>
               ${alreadyQuoted ? `<span class="chip chip-cyan chip-sm">⏳ ${t('offer.waiting_citizen')}</span>` : ''}
-              ${r.status === 'in_progress' ? `<span class="chip chip-brand chip-sm">${t('officer.chip.on_portal')}</span>` : ''}
-              ${r.status === 'claimed' ? `<span class="chip chip-cyan chip-sm">${t('status.claimed')}</span>` : ''}
-              ${r.status === 'completed' ? `<span class="chip chip-ok chip-sm">✓ ${t('status.completed')}</span>` : ''}
               ${unread ? `<span class="chip chip-bad chip-sm">${unread} ${t('officer.chip.new')}</span>` : ''}
             </div>
             <div class="mt-1 font-semibold text-[13px] truncate" ${isAr(name)?'dir="rtl"':''}>${name}</div>
@@ -1013,7 +1043,7 @@
                    </div>`
                 : `<span class="text-[11.5px] font-semibold mono" data-tip="${t('offer.my_price')}: ${officeFee.toFixed(3)} + ${t('offer.gov_price')}: ${govFee.toFixed(3)}">${displayFee.toFixed ? displayFee.toFixed(3) : displayFee} ${t('officer.omr')}</span>`
               }
-              ${sla ? `<span class="chip chip-sm sla-pill ${slaChipClass}" data-sla-deadline="${sla.deadlineMs}" data-sla-total="${sla.totalMs}" data-sla-kind="${sla.kind}" data-tip="${t(sla.labelKey)}">⏱ <span class="sla-time mono">${formatMmSs(slaRemaining)}</span></span>` : ''}
+              ${sla ? `<span class="chip chip-sm sla-pill ${slaChipClass}" data-sla-deadline="${sla.deadlineMs}" data-sla-total="${sla.totalMs}" data-sla-kind="${sla.kind}" data-tip="${t(sla.labelKey)}">⏱ <span class="sla-time mono">${formatMmSs(slaRemaining)}</span> · ${t('officer.sla.kind.' + sla.kind)}</span>` : ''}
               <div class="ms-auto flex items-center gap-1">
                 ${claimable
                   ? (alreadyQuoted
@@ -1451,6 +1481,28 @@
 
   function renderContext(r, data) {
     const anon = r.anonymized || !r.citizen_name;
+    // Pull out the citizen's notes + the missing-doc list that the apply
+    // form recorded into state_json — both are critical for the office's
+    // first-glance decision and were previously buried in the raw JSON.
+    let citizenNotes = '', missingSlots = [];
+    try {
+      const sj = typeof r.state_json === 'string' ? JSON.parse(r.state_json) : (r.state_json || {});
+      citizenNotes = (sj.notes || '').toString().trim();
+      missingSlots = Array.isArray(sj.missing_required_slots) ? sj.missing_required_slots : [];
+    } catch {}
+
+    const notesBlock = (citizenNotes || missingSlots.length) ? `
+      <div style="border-top:1px solid var(--line);padding-top:16px">
+        <div class="text-[10px] font-bold uppercase tracking-wider mb-2" style="color:var(--brand-dark)">📝 ${t('officer.citizen_notes','Notes from citizen')}</div>
+        ${citizenNotes ? `<div class="text-[12px] p-2.5 rounded-lg" style="background:var(--brand-soft);color:var(--text);white-space:pre-wrap;line-height:1.5">${escapeHtml(citizenNotes)}</div>` : ''}
+        ${missingSlots.length ? `
+          <div class="mt-2 text-[11px] p-2.5 rounded-lg" style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e">
+            <div class="font-bold mb-1">⚠ ${t('officer.missing_slots','Required documents not provided:')}</div>
+            <ul class="list-disc ms-4">${missingSlots.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul>
+          </div>
+        ` : ''}
+      </div>` : '';
+
     document.getElementById('contextContent').innerHTML = `
       <div>
         <div class="text-[10px] font-bold uppercase tracking-wider mb-2" style="color:var(--text-mute)">${t('chat.title').includes('citizen') || t('chat.title').includes('tizen') ? 'Citizen' : 'المواطن'}</div>
@@ -1462,6 +1514,7 @@
           </div>
         </div>
       </div>
+      ${notesBlock}
       <div style="border-top:1px solid var(--line);padding-top:16px">
         <div class="text-[10px] font-bold uppercase tracking-wider mb-2" style="color:var(--text-mute)">${t('officer.tab.docs')}</div>
         <div class="space-y-1.5 text-[12px]">
@@ -1510,11 +1563,20 @@
       }
     } else if (r.status === 'claimed') {
       btns.push(`<button data-act="send-payment" class="btn btn-primary" style="background:linear-gradient(135deg,#0d9488,#15803d)">💳 ${t('officer.send_payment','Send payment link')}</button>`);
+      btns.push(`<button data-act="request-info" class="btn btn-secondary">📝 ${t('officer.request_info','Request more info')}</button>`);
+      btns.push(`<button data-act="reclassify" class="btn btn-secondary">🔄 ${t('officer.reclassify','Change service')}</button>`);
       btns.push(`<button data-act="release" class="btn btn-secondary">${t('actions.release')}</button>`);
       const total = (r.office_fee_omr || 0) + (r.government_fee_omr || 0);
       btns.push(`<span class="text-[11px] px-2 py-1 rounded-lg" style="background:var(--surface-3);color:var(--text-mute)">
         ${t('officer.locked_total','Locked total')}: <b>${fee(total)}</b>
       </span>`);
+    } else if (r.status === 'needs_more_info') {
+      // Citizen has been pinged; office now waits or follows up. Once the
+      // citizen responds, the office advances to send-payment.
+      btns.push(`<button data-act="send-payment" class="btn btn-primary">💳 ${t('officer.send_payment','Send payment link')}</button>`);
+      btns.push(`<button data-act="reclassify" class="btn btn-secondary">🔄 ${t('officer.reclassify','Change service')}</button>`);
+      btns.push(`<button data-act="release" class="btn btn-secondary">${t('actions.release')}</button>`);
+      btns.push(`<span class="text-[11px] px-2 py-1 rounded-lg" style="background:#fef3c7;color:#92400e">📝 ${t('officer.needs_info_hint','Awaiting citizen response')}</span>`);
     } else if (r.status === 'awaiting_payment') {
       btns.push(`<button data-act="send-payment" class="btn btn-secondary">↻ ${t('officer.resend_payment','Resend link')}</button>`);
       btns.push(`<button data-act="release" class="btn btn-secondary">${t('actions.release')}</button>`);
@@ -1522,6 +1584,7 @@
     } else {
       // in_progress / on_hold / etc. — paid_at is set, full actions available.
       btns.push(`<button data-act="release" class="btn btn-secondary">${t('actions.release')}</button>`);
+      btns.push(`<button data-act="request-info" class="btn btn-secondary">📝 ${t('officer.request_info','Request more info')}</button>`);
       btns.push(`<button data-act="complete" class="btn btn-primary" style="background:linear-gradient(135deg,#10b981,#059669)">✓ ${t('actions.complete')}</button>`);
     }
     host.innerHTML = btns.join('');
@@ -1553,6 +1616,39 @@
           }
         }
         if (a === 'complete') { await api('/api/officer/request/' + r.id + '/complete', { method:'POST' }); Sanad.toast('✓ ' + t('actions.complete'), 'ok'); }
+        if (a === 'request-info') {
+          const reason = prompt(t('officer.request_info.prompt','What information do you need from the citizen? (will be sent verbatim)'));
+          if (reason == null || !reason.trim()) return;
+          // Optional comma-separated list of missing items — keep flow short.
+          const missingRaw = prompt(t('officer.request_info.missing_prompt','Optional: comma-separated list of missing/unclear documents (or leave empty)'), '');
+          const missing = (missingRaw || '').split(',').map(s => s.trim()).filter(Boolean);
+          await api('/api/officer/request/' + r.id + '/request-info',
+                    { method:'POST', headers:{'Content-Type':'application/json'},
+                      body: JSON.stringify({ reason: reason.trim(), missing }) });
+          Sanad.toast('📝 ' + t('officer.request_info.sent','Citizen has been asked for more info'), 'ok', 2400);
+        }
+        if (a === 'reclassify') {
+          // Type-ahead picker via /api/catalogue/hybrid (the same endpoint
+          // the catalogue page hits). Keep it lightweight: prompt() lets
+          // the office paste any keyword; we present top 5 matches with
+          // their service id and ask them to pick one.
+          const q = prompt(t('officer.reclassify.prompt','Search the catalogue for the correct service (Arabic or English keyword)'));
+          if (!q || !q.trim()) return;
+          const sr = await fetch('/api/catalogue/hybrid?q=' + encodeURIComponent(q.trim()) + '&limit=5');
+          const sj = await sr.json();
+          const items = (sj.items || sj.results || []).slice(0, 5);
+          if (!items.length) { Sanad.toast(t('officer.reclassify.none','No matches'), 'warn'); return; }
+          const menu = items.map((s, i) => `${i+1}. [${s.id}] ${s.name_ar || s.name_en} (${s.entity_en || '—'})`).join('\n');
+          const choice = prompt(`${t('officer.reclassify.pick','Pick by number')}\n\n${menu}`, '1');
+          const idx = Number(choice) - 1;
+          if (!(idx >= 0 && idx < items.length)) return;
+          const reason = prompt(t('officer.reclassify.reason','Reason for the change (shown to citizen)'), '');
+          if (reason == null) return;
+          await api('/api/officer/request/' + r.id + '/reclassify',
+                    { method:'POST', headers:{'Content-Type':'application/json'},
+                      body: JSON.stringify({ new_service_id: items[idx].id, reason: reason.trim() || 'service mismatch' }) });
+          Sanad.toast('🔄 ' + t('officer.reclassify.done','Service changed; documents preserved'), 'ok', 2600);
+        }
         await openDetail(r.id);
         await loadInbox();
       } catch (e) { Sanad.toast(e.message, 'err'); }

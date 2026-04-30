@@ -650,6 +650,156 @@ officerRouter.post('/request/:id/document/:docId/reject', async (req, res) => {
   res.json({ ok: true });
 });
 
+// ─── POST /request/:id/request-info ────────────────────────
+// Office tells the citizen "we need more / different documents". Flips
+// status to 'needs_more_info' (which is excluded from the SLA review
+// sweep — the office is no longer holding the citizen up; the citizen
+// is). Sends a structured message into the citizen thread so it shows
+// in /request.html AND on WhatsApp.
+//
+// Body: { reason: "...", missing: ["civil_id","contract"] (optional) }
+// Only the OFFICE that holds the request can call this. Status must be
+// 'claimed' (pre-pay) or 'in_progress' (post-pay) — both are valid
+// "we need more from you" moments.
+officerRouter.post('/request/:id/request-info',
+  requireOfficer({ roles: ['owner', 'manager', 'officer'] }),
+  async (req, res) => {
+    const id = Number(req.params.id);
+    const reason  = String(req.body?.reason  || '').trim();
+    const missing = Array.isArray(req.body?.missing) ? req.body.missing.filter(Boolean).slice(0, 12) : [];
+    if (!reason) return res.status(400).json({ error: 'reason_required' });
+    const { rows } = await db.execute({
+      sql: `SELECT r.session_id, r.office_id, r.status, r.paid_at,
+                   s.name_en AS service_name, s.name_ar AS service_name_ar
+              FROM request r
+              LEFT JOIN service_catalog s ON s.id = r.service_id
+             WHERE r.id=?`,
+      args: [id]
+    });
+    const r = rows[0];
+    if (!r) return res.status(404).json({ error: 'not_found' });
+    if (r.office_id !== req.office.id) return res.status(403).json({ error: 'not_your_request' });
+    const ok = ['claimed','awaiting_payment','in_progress'].includes(r.status);
+    if (!ok) return res.status(409).json({ error: 'bad_state', status: r.status });
+
+    const upd = await db.execute({
+      sql: `UPDATE request
+               SET status='needs_more_info',
+                   last_event_at=datetime('now')
+             WHERE id=? AND office_id=?`,
+      args: [id, req.office.id]
+    });
+    if (!upd.rowsAffected) return res.status(404).json({ error: 'not_found' });
+
+    await db.execute({
+      sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
+            VALUES ('officer', ?, 'request_more_info', 'request', ?, ?)`,
+      args: [req.officer.officer_id, id, JSON.stringify({ from_status: r.status, reason, missing })]
+    });
+
+    // Compose the citizen-facing message. Keep it tight: a one-liner
+    // headline, the office's reason, and an itemised list if `missing`
+    // was provided. WhatsApp / web both render this verbatim.
+    const sname = r.service_name_ar || r.service_name || '';
+    const lines = [
+      `📝 مكتب سند يحتاج معلومات إضافيّة لطلبك "${sname}":`,
+      reason
+    ];
+    if (missing.length) {
+      lines.push('');
+      lines.push('المطلوب:');
+      missing.forEach(m => lines.push(`• ${m}`));
+    }
+    lines.push('');
+    lines.push('برجاء الردّ هنا أو على واتساب بأقرب وقت لاستئناف المعالجة.');
+    await storeMessage({
+      session_id: r.session_id, request_id: id,
+      direction: 'out', actor_type: 'officer',
+      body_text: lines.join('\n'),
+      meta: { officer_id: req.officer.officer_id, missing }
+    });
+    res.json({ ok: true });
+  }
+);
+
+// ─── POST /request/:id/reclassify ──────────────────────────
+// Office decides the citizen actually needs a DIFFERENT service from the
+// catalogue (common: "you applied for X but you really need Y"). The
+// service_id flips, but ALL request_document rows stay attached — they
+// were uploaded against this request, not against the service. Pricing
+// is recomputed from the new service's catalog row + the office's
+// per-service overrides.
+//
+// Body: { new_service_id, reason }
+// Allowed in 'claimed' / 'needs_more_info' (pre-pay reclassification only).
+// We refuse after payment because that would change what the citizen paid for.
+officerRouter.post('/request/:id/reclassify',
+  requireOfficer({ roles: ['owner', 'manager'] }),
+  async (req, res) => {
+    const id = Number(req.params.id);
+    const newServiceId = Number(req.body?.new_service_id || 0);
+    const reason = String(req.body?.reason || '').trim() || 'service mismatch';
+    if (!newServiceId) return res.status(400).json({ error: 'new_service_id_required' });
+
+    const { rows } = await db.execute({
+      sql: `SELECT r.session_id, r.office_id, r.status, r.paid_at, r.service_id AS old_service_id,
+                   s.name_en AS new_service_name, s.name_ar AS new_service_name_ar, s.fee_omr AS new_catalog_fee
+              FROM request r
+              LEFT JOIN service_catalog s ON s.id = ?
+             WHERE r.id=?`,
+      args: [newServiceId, id]
+    });
+    const r = rows[0];
+    if (!r) return res.status(404).json({ error: 'not_found' });
+    if (!r.new_service_name && !r.new_service_name_ar) return res.status(404).json({ error: 'service_not_found' });
+    if (r.office_id !== req.office.id) return res.status(403).json({ error: 'not_your_request' });
+    if (r.paid_at) return res.status(409).json({ error: 'already_paid' });
+    if (!['claimed','needs_more_info'].includes(r.status)) {
+      return res.status(409).json({ error: 'bad_state', status: r.status });
+    }
+
+    // Re-resolve pricing for the new service (per-service override → office
+    // default → 5.0 OMR fallback), then update the request row.
+    const { rows: priceRows } = await db.execute({
+      sql: `SELECT COALESCE(osp.office_fee_omr, off.default_office_fee_omr, 5.0) AS office_fee,
+                   COALESCE(osp.government_fee_omr, ?, 0)                       AS gov_fee
+              FROM office off
+              LEFT JOIN office_service_price osp ON osp.office_id = off.id AND osp.service_id = ?
+             WHERE off.id = ?`,
+      args: [r.new_catalog_fee, newServiceId, req.office.id]
+    });
+    const office_fee = Number(priceRows[0]?.office_fee || 0);
+    const gov_fee    = Number(priceRows[0]?.gov_fee || 0);
+    const total      = office_fee + gov_fee;
+
+    await db.execute({
+      sql: `UPDATE request
+               SET service_id=?, office_fee_omr=?, government_fee_omr=?, quoted_fee_omr=?,
+                   status='claimed',
+                   claim_review_started_at=datetime('now'),
+                   last_event_at=datetime('now')
+             WHERE id=? AND office_id=?`,
+      args: [newServiceId, office_fee, gov_fee, total, id, req.office.id]
+    });
+
+    await db.execute({
+      sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
+            VALUES ('officer', ?, 'request_reclassify', 'request', ?, ?)`,
+      args: [req.officer.officer_id, id,
+             JSON.stringify({ from_service: r.old_service_id, to_service: newServiceId, reason, new_total: total })]
+    });
+
+    const newName = r.new_service_name_ar || r.new_service_name;
+    await storeMessage({
+      session_id: r.session_id, request_id: id,
+      direction: 'out', actor_type: 'officer',
+      body_text: `🔄 المكتب أعاد تصنيف طلبك إلى الخدمة الصحيحة: "${newName}". مستنداتك انتقلت كما هي. السبب: ${reason}.\nالإجمالي الجديد: ${total.toFixed(3)} ر.ع.`,
+      meta: { officer_id: req.officer.officer_id, from_service: r.old_service_id, to_service: newServiceId }
+    });
+    res.json({ ok: true, new_service_id: newServiceId, pricing: { office_fee, government_fee: gov_fee, total } });
+  }
+);
+
 // ─── POST /request/:id/release ─────────────────────────────
 // Office voluntarily releases a request back to the marketplace.
 // In the single-claim model this is the standard "I changed my mind" exit:
@@ -858,7 +1008,10 @@ officerRouter.post('/request/:id/payment/start',
     const r = rows[0];
     if (!r) return res.status(404).json({ error: 'not_found' });
     if (r.office_id !== office_id) return res.status(403).json({ error: 'not_your_request' });
-    if (!['claimed','awaiting_payment'].includes(r.status))
+    // 'needs_more_info' is a valid pre-payment state too — once the citizen
+    // responds, the office can move forward to payment without first having
+    // to re-claim. The response below also flips status='awaiting_payment'.
+    if (!['claimed','awaiting_payment','needs_more_info'].includes(r.status))
       return res.status(409).json({ error: 'bad_state', status: r.status });
     if (r.payment_status === 'paid')
       return res.status(409).json({ error: 'already_paid' });
