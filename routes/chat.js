@@ -220,17 +220,17 @@ chatRouter.get('/my-requests', async (req, res) => {
   // Match by citizen.id (the right way) OR by phone (for legacy rows whose
   // request.citizen_id was never set). Either way, never leak another
   // citizen's data.
+  // ANONYMITY: never expose office identity to the citizen — even when a request
+  // is assigned/completed. The office sees citizen identity (asymmetric).
   const { rows } = await db.execute({
     sql: `
       SELECT r.id, r.status, r.created_at, r.last_event_at,
              r.payment_status, r.payment_amount_omr, r.payment_link, r.paid_at,
              r.quoted_fee_omr, r.office_fee_omr, r.government_fee_omr,
              s.name_en AS service_name, s.name_ar AS service_name_ar,
-             s.entity_en, s.entity_ar,
-             off.name_en AS office_name_en, off.name_ar AS office_name_ar
+             s.entity_en, s.entity_ar
         FROM request r
         LEFT JOIN service_catalog s ON s.id = r.service_id
-        LEFT JOIN office off        ON off.id = r.office_id
        WHERE r.citizen_id = ?
           OR (? IS NOT NULL AND r.session_id = ?)
        ORDER BY r.last_event_at DESC, r.id DESC
@@ -252,6 +252,8 @@ chatRouter.get('/my-request/:id', async (req, res) => {
 
   // Ownership: must be this citizen's request (by citizen_id OR matching
   // wa:<phone> session).
+  // ANONYMITY: no office_name / governorate / rating / completed-count joined
+  // into the citizen-side detail view. The office is never named to the citizen.
   const { rows } = await db.execute({
     sql: `
       SELECT r.id, r.status, r.created_at, r.last_event_at, r.session_id,
@@ -261,13 +263,9 @@ chatRouter.get('/my-request/:id', async (req, res) => {
              r.governorate,
              s.id AS service_id, s.name_en AS service_name, s.name_ar AS service_name_ar,
              s.entity_en, s.entity_ar, s.fee_omr AS catalog_fee_omr,
-             s.avg_time_en, s.avg_time_ar, s.fees_text,
-             off.name_en AS office_name_en, off.name_ar AS office_name_ar,
-             off.governorate AS office_gov, off.rating AS office_rating,
-             off.total_completed AS office_completed
+             s.avg_time_en, s.avg_time_ar, s.fees_text
         FROM request r
         LEFT JOIN service_catalog s ON s.id = r.service_id
-        LEFT JOIN office off        ON off.id = r.office_id
        WHERE r.id = ?
          AND (r.citizen_id = ? OR (? IS NOT NULL AND r.session_id = ?))
        LIMIT 1`,
@@ -326,15 +324,16 @@ chatRouter.get('/:session_id/request/:id/offers', async (req, res) => {
     args: [id, session_id]
   });
   if (!own.length) return res.status(404).json({ error: 'not_found' });
+  // ANONYMITY: never expose office name / governorate / rating to the citizen.
+  // Endpoint shell preserved so legacy v2 UIs don't 404; deletion ships in the
+  // citizen-side offer-surfaces removal step (MARKETPLACE_SCALING.md §15 step 12).
+  // Pricing fields kept since they're catalog-derived under v3 fixed pricing.
   const { rows: offers } = await db.execute({
     sql: `SELECT o.id,
                  o.office_fee_omr, o.government_fee_omr, o.quoted_fee_omr,
-                 o.estimated_hours, o.note_ar, o.note_en,
-                 o.status, o.created_at,
-                 off.id AS office_id, off.name_en, off.name_ar, off.governorate,
-                 off.rating, off.total_completed
+                 o.estimated_hours,
+                 o.status, o.created_at
             FROM request_offer o
-            JOIN office off ON off.id = o.office_id
            WHERE o.request_id=? AND o.status IN ('pending','accepted')
            ORDER BY o.quoted_fee_omr ASC, o.created_at ASC`,
     args: [id]

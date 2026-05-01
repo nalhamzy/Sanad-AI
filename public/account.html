@@ -566,7 +566,8 @@
         const altName = (lang === 'ar') ? (req.service_name || '') : (req.service_name_ar || '');
         const status = (req.status || '').replace(/[^a-z_]/g, '');
         const chipBase = status === 'awaiting_payment' ? 'awaiting' : status.split('_')[0];
-        const office = (lang === 'ar' && req.office_name_ar) ? req.office_name_ar : (req.office_name_en || '');
+        // ANONYMITY: never render an office name on the citizen list. Card shows
+        // service + status only, in line with the platform-anonymous flow.
         const payChip = req.payment_status === 'awaiting'
           ? `<span class="status-chip chip-awaiting">${I18N.t('account.req.awaiting_payment')}</span>` : '';
         return `<a href="/request.html?id=${req.id}" class="block panel p-5 hover:border-teal-400 hover:shadow-md transition-all">
@@ -578,7 +579,6 @@
                 <span>${I18N.t('account.req.id')} #${req.id}</span>
                 <span>·</span>
                 <span>${escapeHtml(relTime(req.last_event_at || req.created_at))}</span>
-                ${office ? `<span>·</span><span class="truncate max-w-[180px]">${escapeHtml(office)}</span>` : ''}
               </div>
               <div class="mt-3">${miniTimeline(req.status)}</div>
             </div>

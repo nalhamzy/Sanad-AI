@@ -151,10 +151,11 @@
           <h2 class="text-lg font-black tracking-tight" id="serviceName">—</h2>
           <div class="mt-1 text-xs ink-500 flex items-center gap-2 flex-wrap">
             <span id="entityName">—</span>
-            <span>·</span>
-            <span data-i18n="pay.order.handled_by">يتولّاه</span>
-            <span class="font-semibold ink-700" id="officeName">—</span>
           </div>
+          <!-- ANONYMITY: office identity is never shown on the citizen payment
+               page (see MARKETPLACE_SCALING.md §11.1). Removed the
+               "handled by <office name>" line that was here pre-v3. -->
+
 
           <div class="mt-5 space-y-2 text-sm">
             <div class="flex items-center justify-between py-1.5 border-b border-slate-100">
@@ -319,7 +320,8 @@
   const lang = I18N.lang;
   $('#serviceName').textContent = (lang === 'ar' && order.service_name_ar) ? order.service_name_ar : (order.service_name || '—');
   $('#entityName').textContent  = (lang === 'ar' && order.entity_ar) ? order.entity_ar : (order.entity_en || '—');
-  $('#officeName').textContent  = (lang === 'ar' && order.office_name_ar) ? order.office_name_ar : (order.office_name_en || '—');
+  // #officeName element removed — anonymity rule. The /api/payments/dummy/session
+  // payload no longer includes office_name_*; nothing to render.
   const fmt = n => (Number(n) || 0).toFixed(3) + ' ر.ع';
   $('#govFee').textContent    = fmt(order.government_fee_omr);
   $('#officeFee').textContent = fmt(order.office_fee_omr);

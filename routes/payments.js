@@ -69,11 +69,12 @@ export async function markRequestPaid(requestId, source = 'webhook') {
   });
 
   // Notify the citizen — chat is now unlocked.
+  // ANONYMITY: never name the office. Use platform voice ("we").
   const lang = (r.lang_pref || 'ar') === 'en' ? 'en' : 'ar';
   const sname = (lang === 'ar' && r.service_name_ar) ? r.service_name_ar : (r.service_name || '');
   const paidMsg = lang === 'ar'
-    ? `✅ تم استلام دفعتك. مكتب سند الذي يتولى طلبك "${sname}" بدأ المعالجة الآن. ستصلك التحديثات عبر هذه المحادثة.`
-    : `✅ Payment received. The Sanad office handling your "${sname}" request has started processing. You'll get updates here.`;
+    ? `✅ تم استلام دفعتك. نُنفّذ معاملتك "${sname}" الآن. ستصلك التحديثات عبر هذه المحادثة.`
+    : `✅ Payment received. We're processing your "${sname}" request now. You'll get updates here.`;
   await storeMessage({
     session_id: r.session_id, request_id: requestId,
     direction: 'out', actor_type: 'bot',
@@ -122,15 +123,16 @@ paymentsRouter.get('/dummy/session/:ref', async (req, res) => {
   if (!dummyAllowed()) return res.status(404).end();
   const ref = String(req.params.ref || '');
   if (!ref.startsWith('req')) return res.status(400).json({ error: 'bad_ref' });
+  // ANONYMITY: payment-page payload never names the office to the citizen.
+  // Pricing breakdown (office vs government fee) is allowed and useful for trust;
+  // office identity is not.
   const { rows } = await db.execute({
     sql: `SELECT r.id, r.payment_amount_omr, r.payment_ref, r.payment_status,
                  r.office_fee_omr, r.government_fee_omr,
                  s.name_en AS service_name, s.name_ar AS service_name_ar,
-                 s.entity_en, s.entity_ar,
-                 off.name_en AS office_name_en, off.name_ar AS office_name_ar
+                 s.entity_en, s.entity_ar
             FROM request r
             LEFT JOIN service_catalog s ON s.id = r.service_id
-            LEFT JOIN office off        ON off.id = r.office_id
            WHERE r.payment_ref = ? LIMIT 1`,
     args: [ref]
   });
@@ -146,8 +148,6 @@ paymentsRouter.get('/dummy/session/:ref', async (req, res) => {
     service_name_ar: r.service_name_ar,
     entity_en: r.entity_en,
     entity_ar: r.entity_ar,
-    office_name_en: r.office_name_en,
-    office_name_ar: r.office_name_ar,
     merchant_ref: ref
   });
 });

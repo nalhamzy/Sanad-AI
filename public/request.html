@@ -287,19 +287,11 @@
       payBlock.classList.add('hidden');
     }
 
-    // Office card — only after a claim happened
+    // ANONYMITY: never render the office card on the citizen-side request
+    // page. The detail API no longer returns office_name_*/governorate/rating
+    // (see routes/chat.js /my-request/:id). Always hide the legacy block.
     const officeBlock = $('#officeBlock');
-    if (req.office_name_en || req.office_name_ar) {
-      officeBlock.classList.remove('hidden');
-      $('#officeName').textContent = (lang === 'ar' && req.office_name_ar) ? req.office_name_ar : (req.office_name_en || '—');
-      const meta = [];
-      if (req.office_gov) meta.push(req.office_gov);
-      if (req.office_rating) meta.push(`★ ${req.office_rating.toFixed(1)}`);
-      if (req.office_completed) meta.push(`${req.office_completed} ${I18N.t('req.office.completed')}`);
-      $('#officeMeta').textContent = meta.join(' · ');
-    } else {
-      officeBlock.classList.add('hidden');
-    }
+    if (officeBlock) officeBlock.classList.add('hidden');
 
     // Timeline — recompute current step every paint
     const STEPS = [

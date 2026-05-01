@@ -183,7 +183,8 @@ debugRouter.post('/simulate/claim/:request_id', requireDebug, async (req, res) =
   await storeMessage({
     session_id: r.session_id, request_id: id,
     direction: 'out', actor_type: 'bot',
-    body_text: `📥 تم استلام طلبك "${r.service_name_ar || r.service_name}" من قِبَل ${office.name_ar || office.name_en}. يراجع الموظف مستنداتك الآن وسيرسل لك رابط الدفع قريباً.`
+    // ANONYMITY: never name the office to the citizen — use platform voice.
+    body_text: `📥 طلبك "${r.service_name_ar || r.service_name}" قيد المراجعة الآن. سنرسل لك رابط الدفع قريباً.`
   });
   res.json({ ok: true, status: newStatus, office_id: office.id, pricing: { office_fee, government_fee: gov_fee, total } });
 });
