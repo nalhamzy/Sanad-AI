@@ -1,0 +1,124 @@
+{
+  "timestamp": "2026-04-30T21:52:12.047Z",
+  "avgScores": {
+    "ux_clarity": 82,
+    "info_density": 79,
+    "bilingual_quality": 85,
+    "production_ready": 76,
+    "overall": 81
+  },
+  "results": [
+    {
+      "id": "home",
+      "url": "/",
+      "focus": "public landing page — first 60-second impression",
+      "status": 200,
+      "grade": {
+        "ux_clarity": 85,
+        "info_density": 80,
+        "bilingual_quality": 90,
+        "production_ready": 75,
+        "overall": 83,
+        "review": "Saned's landing page is visually appealing and functionally clear, but could benefit from minor refinements for full production readiness.",
+        "biggest_strength": "Visual appeal and bilingual support",
+        "biggest_concern": "Minor readiness issues for official review"
+      }
+    },
+    {
+      "id": "catalogue",
+      "url": "/catalogue.html",
+      "focus": "searchable service catalogue (601 services, hybrid search)",
+      "status": 200,
+      "grade": {
+        "ux_clarity": 85,
+        "info_density": 80,
+        "bilingual_quality": 90,
+        "production_ready": 75,
+        "overall": 82,
+        "review": "Saned's service catalogue is well-structured and bilingual, but some untranslated keys and potential performance issues need addressing.",
+        "biggest_strength": "Bilingual support",
+        "biggest_concern": "Untranslated keys and performance"
+      }
+    },
+    {
+      "id": "apply",
+      "url": "/apply.html?service=1",
+      "focus": "form-based apply page (file upload, ministry-grade form)",
+      "status": 200,
+      "grade": {
+        "ux_clarity": 75,
+        "info_density": 80,
+        "bilingual_quality": 70,
+        "production_ready": 65,
+        "overall": 73,
+        "review": "The platform provides a structured and clear interface but requires improvements in bilingual support and readiness for production.",
+        "biggest_strength": "Structured interface",
+        "biggest_concern": "Incomplete bilingual support"
+      }
+    },
+    {
+      "id": "request",
+      "url": "/request.html?id=1",
+      "focus": "citizen-side request tracker with timeline + live polling",
+      "status": 200,
+      "grade": {
+        "ux_clarity": 85,
+        "info_density": 80,
+        "bilingual_quality": 90,
+        "production_ready": 75,
+        "overall": 82,
+        "review": "Saned provides a clear and bilingual interface for tracking government service requests, though some elements may need refinement for production readiness.",
+        "biggest_strength": "Bilingual support",
+        "biggest_concern": "Potential production issues"
+      }
+    },
+    {
+      "id": "account",
+      "url": "/account.html",
+      "focus": "citizen dashboard (auth-gated; expect login redirect)",
+      "status": 200,
+      "grade": {
+        "ux_clarity": 85,
+        "info_density": 80,
+        "bilingual_quality": 75,
+        "production_ready": 70,
+        "overall": 78,
+        "review": "Saned's account dashboard is well-structured and user-friendly, but some untranslated keys and potential layout issues need addressing.",
+        "biggest_strength": "User-friendly layout",
+        "biggest_concern": "Untranslated keys and layout issues"
+      }
+    },
+    {
+      "id": "officer",
+      "url": "/officer.html",
+      "focus": "office dashboard (auth-gated)",
+      "status": 200,
+      "grade": {
+        "ux_clarity": 75,
+        "info_density": 70,
+        "bilingual_quality": 85,
+        "production_ready": 80,
+        "overall": 78,
+        "review": "The dashboard is generally well-structured with clear bilingual support, but some elements could be more intuitive.",
+        "biggest_strength": "Bilingual support",
+        "biggest_concern": "Intuitive navigation"
+      }
+    },
+    {
+      "id": "brochure",
+      "url": "/brochure.html",
+      "focus": "ministry pitch brochure (AR + EN bilingual)",
+      "status": 200,
+      "grade": {
+        "ux_clarity": 85,
+        "info_density": 80,
+        "bilingual_quality": 95,
+        "production_ready": 90,
+        "overall": 88,
+        "review": "Saned's brochure is well-structured, bilingual, and nearly production-ready, though slightly dense in information.",
+        "biggest_strength": "Bilingual presentation",
+        "biggest_concern": "Slight information density"
+      }
+    }
+  ]
+}

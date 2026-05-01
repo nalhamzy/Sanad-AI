@@ -4,6 +4,7 @@ import path from 'path';
 
 // These env vars must be set BEFORE any module imports db/llm.
 process.env.NODE_ENV = 'test';
+process.env.DEBUG_MODE = 'true'; // unlocks dev shortcuts (subscription stub, payment confirm-stub)
 process.env.DB_URL = 'file:./data/sanad-test.db';
 process.env.QWEN_API_KEY = '';          // force heuristic mode for deterministic tests
 process.env.ANTHROPIC_API_KEY = '';     // also stub Anthropic — tests must never hit a real LLM

@@ -93,15 +93,12 @@ describe('HTTP · officer API (cookie auth + offer flow)', () => {
     });
     assert.equal(quoteB.status, 201, 'B quotes');
 
-    // Citizen lists and accepts the cheaper (A).
-    // Under anonymity, the /offers endpoint no longer returns office identity
-    // (no office_id, name, or rating). We verify "A wins" by price + ordering:
-    // A quoted 4.5, B quoted 5.0; the cheaper offer must be on top.
+    // Citizen lists and accepts the cheaper (A)
     const list = await fetchJSON(ctx.origin, `/api/chat/${sid}/request/${request_id}/offers`);
     assert.equal(list.status, 200);
     assert.equal(list.body.offers.length, 2);
     const cheapest = list.body.offers[0]; // sorted asc in endpoint
-    assert.equal(cheapest.quoted_fee_omr, 4.5, 'cheapest offer at top should be A (4.5 OMR)');
+    assert.equal(cheapest.office_id, a.office_id);
 
     const accept = await fetch(
       `${ctx.origin}/api/chat/${sid}/request/${request_id}/offers/${cheapest.id}/accept`,
@@ -144,15 +141,9 @@ describe('HTTP · officer API (cookie auth + offer flow)', () => {
     await fetch(`${ctx.origin}/api/chat/${sid}/request/${request_id}/offers/${offerId}/accept`,
       { method: 'POST' });
 
-    // Chat is gated behind payment under the v3 flow. Office sends the
-    // payment link first; we then mark the request paid via the stub endpoint.
-    await fetch(`${ctx.origin}/api/officer/request/${request_id}/payment/start`, {
-      method: 'POST', headers: { 'content-type': 'application/json', cookie: a.cookie },
-      body: JSON.stringify({})
-    });
-    await fetch(`${ctx.origin}/api/payments/request/${request_id}/confirm-stub`, {
-      method: 'POST', headers: { cookie: a.cookie }
-    });
+    // Pre-payment chat is now gated — flip the request to paid via the
+    // DEBUG_MODE confirm-stub before the office can message.
+    await fetch(`${ctx.origin}/api/payments/request/${request_id}/confirm-stub`, { method: 'POST' });
 
     // Send a chat message — citizen should see it via the session poll.
     const send = await fetch(`${ctx.origin}/api/officer/request/${request_id}/message`, {

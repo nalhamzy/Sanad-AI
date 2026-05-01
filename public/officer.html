@@ -1048,7 +1048,8 @@
                 ${claimable
                   ? (alreadyQuoted
                       ? `<button data-withdraw="${r.id}" class="btn btn-secondary" data-tip="${t('offer.withdraw')}" style="height:28px;padding:0 11px;font-size:11.5px">${t('offer.withdraw')}</button>`
-                      : `<button data-claim="${r.id}" class="btn btn-primary" style="height:28px;padding:0 11px;font-size:11.5px">⚡ ${t('actions.claim')}</button>`)
+                      : `<button data-claim="${r.id}" class="btn btn-primary" style="height:28px;padding:0 13px;font-size:12px;font-weight:800;background:linear-gradient(135deg,#10b981,#0d9488)">⚡ ${t('actions.claim','استلام')}</button>
+                         <button data-flag="${r.id}" class="btn" data-tip="إبلاغ عن مشكلة في الطلب" style="height:28px;width:28px;padding:0;justify-content:center;background:#fffbeb;color:#b45309;border:1px solid #fcd34d">🚩</button>`)
                   : r.status === 'completed'
                     ? `<button data-open="${r.id}" class="btn btn-secondary" style="height:28px;padding:0 11px;font-size:11.5px">${t('actions.open')}</button>`
                     : `<button data-complete="${r.id}" class="btn" data-tip="${t('actions.complete')}" style="height:28px;width:28px;padding:0;justify-content:center;background:rgba(16,185,129,.12);color:rgb(5,120,87)">✓</button>
@@ -1217,6 +1218,42 @@
           await loadInbox();
           if (currentRequestId === Number(id)) closeDetail();
         } catch (err) { Sanad.toast(err.message, 'err'); }
+      });
+    });
+
+    // Inbox marketplace flag button — same flow as the detail-pane action.
+    inbox.querySelectorAll('[data-flag]').forEach(b => {
+      b.addEventListener('click', async e => {
+        e.stopPropagation();
+        const id = b.getAttribute('data-flag');
+        const REASONS = [
+          { code: 'wrong_service', label: 'خدمة خاطئة' },
+          { code: 'fake_docs',     label: 'مستندات مزوّرة / غير واضحة' },
+          { code: 'duplicate',     label: 'طلب مكرر' },
+          { code: 'abusive',       label: 'محتوى مسيء' },
+          { code: 'other',         label: 'أخرى' }
+        ];
+        const menu = REASONS.map((x,i) => `${i+1}. ${x.label}`).join('\n');
+        const pick = prompt(`🚩 سبب الإبلاغ — اختر رقماً:\n\n${menu}`, '1');
+        const idx = Number(pick) - 1;
+        if (!(idx >= 0 && idx < REASONS.length)) return;
+        const note = prompt('ملاحظة (اختياري)', '') || '';
+        try {
+          const resp = await api('/api/officer/request/' + id + '/flag', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason: REASONS[idx].code, note: note.slice(0, 400) })
+          });
+          if (resp.removed) {
+            Sanad.toast(`🚫 الطلب حُذف من السوق (${resp.flag_count} بلاغات)`, 'warn', 3600);
+          } else {
+            Sanad.toast(`🚩 تم الإبلاغ (${resp.flag_count}/${resp.threshold})`, 'info', 2400);
+          }
+          await loadInbox();
+        } catch (err) {
+          if (String(err.message).includes('already_flagged')) {
+            Sanad.toast('سبق أن أبلغ مكتبك عن هذا الطلب', 'warn');
+          } else { Sanad.toast(err.message, 'err'); }
+        }
       });
     });
 
@@ -1553,12 +1590,13 @@
     // awaiting_payment → Resend Payment Link · Release · payment-pending hint
     // in_progress (paid)→ Complete · Release (refund-required hint)
     if (r.anonymized || r.status === 'ready') {
-      btns.push(`<button data-act="claim" class="btn btn-primary">⚡ ${t('actions.claim','Claim')}</button>`);
+      btns.push(`<button data-act="claim" class="btn btn-primary" style="background:linear-gradient(135deg,#10b981,#0d9488);font-weight:800;font-size:14px;padding:10px 18px">⚡ ${t('actions.claim','استلام الطلب')}</button>`);
+      btns.push(`<button data-act="flag" class="btn btn-secondary" data-tip="${t('officer.flag.tip','أبلغ عن مشكلة في الطلب — إذا أبلغ مكتب آخر، يُحذف الطلب تلقائياً')}" style="color:#b45309;border-color:#fcd34d;background:#fffbeb">🚩 ${t('officer.flag','إبلاغ / إرجاع')}</button>`);
       // Show pre-defined pricing the office is locking-in if the citizen pays.
       if (r.catalog_fee_omr != null) {
         const officeFee = (allInbox?.office?.default_office_fee_omr ?? 5);
         btns.push(`<span class="text-[11px] px-2 py-1 rounded-lg" style="background:var(--surface-3);color:var(--text-mute)">
-          ${t('officer.gov_fee','Govt')}: <b>${fee(r.catalog_fee_omr)}</b> + ${t('officer.office_fee','Office')}: <b>${fee(officeFee)}</b>
+          ${t('officer.gov_fee','رسوم الحكومة')}: <b>${fee(r.catalog_fee_omr)}</b> + ${t('officer.office_fee','رسوم المكتب')}: <b>${fee(officeFee)}</b>
         </span>`);
       }
     } else if (r.status === 'claimed') {
@@ -1626,6 +1664,38 @@
                     { method:'POST', headers:{'Content-Type':'application/json'},
                       body: JSON.stringify({ reason: reason.trim(), missing }) });
           Sanad.toast('📝 ' + t('officer.request_info.sent','Citizen has been asked for more info'), 'ok', 2400);
+        }
+        if (a === 'flag') {
+          // Multi-office quality vote. Threshold = 2 distinct office flags →
+          // auto-quarantine. Citizen is then prompted to fix or change service.
+          const REASONS = [
+            { code: 'wrong_service', label: 'خدمة خاطئة' },
+            { code: 'fake_docs',     label: 'مستندات مزوّرة / غير واضحة' },
+            { code: 'duplicate',     label: 'طلب مكرر' },
+            { code: 'abusive',       label: 'محتوى مسيء' },
+            { code: 'other',         label: 'أخرى' }
+          ];
+          const menu = REASONS.map((x,i) => `${i+1}. ${x.label}`).join('\n');
+          const pick = prompt(`🚩 سبب الإبلاغ — اختر رقماً:\n\n${menu}`, '1');
+          const idx = Number(pick) - 1;
+          if (!(idx >= 0 && idx < REASONS.length)) return;
+          const note = prompt('ملاحظة إضافية (اختياري)', '') || '';
+          try {
+            const resp = await api('/api/officer/request/' + r.id + '/flag', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ reason: REASONS[idx].code, note: note.slice(0, 400) })
+            });
+            if (resp.removed) {
+              Sanad.toast(`🚫 تم حذف الطلب من السوق بعد ${resp.flag_count} بلاغات من مكاتب مختلفة`, 'warn', 3600);
+            } else {
+              Sanad.toast(`🚩 تم الإبلاغ — مكاتب أخرى لازالت ترى الطلب (${resp.flag_count}/${resp.threshold})`, 'info', 2600);
+            }
+          } catch (e) {
+            if (String(e.message).includes('already_flagged')) {
+              Sanad.toast('سبق أن أبلغ مكتبك عن هذا الطلب', 'warn');
+            } else { throw e; }
+          }
+          return;
         }
         if (a === 'reclassify') {
           // Type-ahead picker via /api/catalogue/hybrid (the same endpoint

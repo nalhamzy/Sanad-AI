@@ -10,6 +10,16 @@ import { requireCitizen } from '../lib/auth.js';
 const UPLOAD_DIR = path.resolve('./data/uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
+// Allow-list: gov-ID-style documents only. Anything outside this set is
+// rejected so a citizen can't drop an .exe / .bat / .html into the office's
+// inbox. Extension is also re-validated against the MIME family so a
+// "passport.pdf.exe" can't slip through.
+const ALLOWED_MIMES = new Set([
+  'image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif', 'image/webp',
+  'application/pdf'
+]);
+const ALLOWED_EXTS = new Set(['.jpg', '.jpeg', '.png', '.heic', '.heif', '.webp', '.pdf']);
+
 const upload = multer({
   storage: multer.diskStorage({
     destination: (req, _file, cb) => {
@@ -18,12 +28,49 @@ const upload = multer({
       cb(null, dir);
     },
     filename: (_req, file, cb) => {
-      const ext = path.extname(file.originalname || '').toLowerCase().slice(0, 6);
+      // Ignore the citizen-supplied extension entirely — derive from MIME.
+      const mime = (file.mimetype || '').toLowerCase();
+      const ext =
+        mime === 'application/pdf' ? '.pdf' :
+        mime === 'image/png'       ? '.png' :
+        mime === 'image/webp'      ? '.webp' :
+        mime === 'image/heic' || mime === 'image/heif' ? '.heic' :
+        '.jpg';
       cb(null, `${Date.now()}_${crypto.randomBytes(4).toString('hex')}${ext}`);
     }
   }),
-  limits: { fileSize: 10 * 1024 * 1024 }
+  fileFilter: (_req, file, cb) => {
+    const mime = (file.mimetype || '').toLowerCase();
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    if (!ALLOWED_MIMES.has(mime) || (ext && !ALLOWED_EXTS.has(ext))) {
+      const err = new Error('unsupported_file_type');
+      err.code = 'UNSUPPORTED_FILE_TYPE';
+      return cb(err);
+    }
+    cb(null, true);
+  },
+  limits: { fileSize: 10 * 1024 * 1024, files: 20 }
 });
+
+// Translate multer errors into clean JSON for the citizen UI.
+function uploadErrorHandler(err, _req, res, next) {
+  if (!err) return next();
+  if (err.code === 'UNSUPPORTED_FILE_TYPE') {
+    return res.status(400).json({
+      error: 'unsupported_file_type',
+      message_ar: 'نوع الملف غير مدعوم. أرسل صورة (JPG/PNG/HEIC) أو PDF فقط.',
+      message_en: 'Unsupported file type. Send a JPG/PNG/HEIC image or a PDF only.'
+    });
+  }
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({
+      error: 'file_too_large',
+      message_ar: 'الملف أكبر من 10 ميجابايت. اضغطه أو أرسل نسخة أصغر.',
+      message_en: 'File exceeds 10 MB. Compress or send a smaller copy.'
+    });
+  }
+  next(err);
+}
 
 export const chatRouter = Router();
 
@@ -42,7 +89,9 @@ chatRouter.post('/apply',
     req.params.session_id = `citizen-${req.citizen.id}-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
     next();
   },
-  upload.array('files', 20),
+  (req, res, next) => {
+    upload.array('files', 20)(req, res, (err) => err ? uploadErrorHandler(err, req, res, next) : next());
+  },
   async (req, res) => {
     try {
       const citizen = req.citizen;
@@ -150,7 +199,9 @@ chatRouter.post('/apply',
 );
 
 // Create a session id client-side; server just accepts it.
-chatRouter.post('/:session_id', upload.single('file'), async (req, res) => {
+chatRouter.post('/:session_id', (req, res, next) => {
+  upload.single('file')(req, res, (err) => err ? uploadErrorHandler(err, req, res, next) : next());
+}, async (req, res) => {
   const { session_id } = req.params;
   const text = (req.body.text || '').toString();
   const phone = (req.body.phone || '').toString().trim() || null;

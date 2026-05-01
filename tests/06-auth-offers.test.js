@@ -44,14 +44,13 @@ describe('Auth · /signup', () => {
     assert.ok(body.missing.includes('cr_number'));
     assert.ok(body.missing.includes('email'));
     assert.ok(body.missing.includes('full_name'));
-    // password complexity now reports per-rule (min_10_chars / needs_letter / needs_digit / too_common)
-    assert.ok(body.missing.some(m => m.startsWith('password:')), `expected password rule violation, got ${body.missing.join(', ')}`);
+    assert.ok(body.missing.some(m => m.startsWith('password:')));
   });
 
   test('rejects invalid governorate', async () => {
     const { status, body } = await postJSON('/api/auth/signup', {
       office_name_en: 'X', governorate: 'Narnia', cr_number: '1',
-      email: `x${Date.now()}@t.om`, full_name: 'T', password: 'TestPass2026!'
+      email: `x${Date.now()}@t.om`, full_name: 'T', password: 'Saned!Test#2026'
     });
     assert.equal(status, 400);
     assert.equal(body.error, 'bad_governorate');
@@ -61,7 +60,7 @@ describe('Auth · /signup', () => {
     const email = `dup-${Date.now()}@t.om`;
     const base = {
       office_name_en: 'Office', governorate: 'Muscat', cr_number: '11',
-      full_name: 'Owner', password: 'TestPass2026!', email
+      full_name: 'Owner', password: 'Saned!Test#2026', email
     };
     const first = await postJSON('/api/auth/signup', base);
     assert.equal(first.status, 201);
@@ -76,7 +75,7 @@ describe('Auth · /signup', () => {
       body: JSON.stringify({
         office_name_en: 'Pending Office', governorate: 'Dhofar',
         cr_number: '90001', email: `pend-${Date.now()}@t.om`,
-        full_name: 'Pending Owner', password: 'TestPass2026!'
+        full_name: 'Pending Owner', password: 'Saned!Test#2026'
       })
     });
     assert.equal(res.status, 201);
@@ -91,7 +90,7 @@ describe('Auth · /signup', () => {
 // ─── Login / me / logout ───────────────────────────────────
 describe('Auth · /login + /me + /logout', () => {
   const email = `login-${Date.now()}@t.om`;
-  const password = 'TestPass2026!';
+  const password = 'Saned!Test#2026';
   let cookie;
 
   test('signup establishes session', async () => {
@@ -148,7 +147,7 @@ describe('Auth · pending-review office is gated from /api/officer/*', () => {
       body: JSON.stringify({
         office_name_en: 'Gated Office', governorate: 'Al Wusta',
         cr_number: '9003', email: `gate-${Date.now()}@t.om`,
-        full_name: 'Gate Owner', password: 'TestPass2026!'
+        full_name: 'Gate Owner', password: 'Saned!Test#2026'
       })
     });
     const cookie = takeCookie(r);
@@ -171,7 +170,7 @@ describe('Platform-admin · approve / reject / suspend', () => {
       body: JSON.stringify({
         office_name_en: 'Approve Me', governorate: 'Muscat',
         cr_number: '9100', email: `app-${Date.now()}@t.om`,
-        full_name: 'Owner', password: 'TestPass2026!'
+        full_name: 'Owner', password: 'Saned!Test#2026'
       })
     });
     const { officer } = await signup.json();
@@ -194,7 +193,7 @@ describe('Platform-admin · approve / reject / suspend', () => {
       body: JSON.stringify({
         office_name_en: 'Reject Me', governorate: 'Muscat',
         cr_number: '9101', email: `rej-${Date.now()}@t.om`,
-        full_name: 'Owner', password: 'TestPass2026!'
+        full_name: 'Owner', password: 'Saned!Test#2026'
       })
     });
     const { officer } = await signup.json();
@@ -251,26 +250,26 @@ describe('Office · profile + team + invite + change-password', () => {
     const me = await registerAndApproveOffice(ctx.origin);
     const inviteEmail = `inv-${Date.now()}@t.om`;
     const r = await postJSON('/api/office/team/invite',
-      { email: inviteEmail, full_name: 'Invited Mgr', role: 'manager', initial_password: 'temp12345' },
+      { email: inviteEmail, full_name: 'Invited Mgr', role: 'manager', initial_password: 'TempInvite#2026' },
       { cookie: me.cookie });
     assert.equal(r.status, 201);
     assert.ok(r.body.officer_id);
 
     // Duplicate invite same email → 409
     const dup = await postJSON('/api/office/team/invite',
-      { email: inviteEmail, full_name: 'Dup', role: 'officer', initial_password: 'temp12345' },
+      { email: inviteEmail, full_name: 'Dup', role: 'officer', initial_password: 'TempInvite#2026' },
       { cookie: me.cookie });
     assert.equal(dup.status, 409);
 
     // New officer can log in with that temp password
-    const login = await postJSON('/api/auth/login', { email: inviteEmail, password: 'temp12345' });
+    const login = await postJSON('/api/auth/login', { email: inviteEmail, password: 'TempInvite#2026' });
     assert.equal(login.status, 200);
   });
 
   test('team list shows both owner and invitee', async () => {
     const me = await registerAndApproveOffice(ctx.origin);
     await postJSON('/api/office/team/invite',
-      { email: `t-${Date.now()}@t.om`, full_name: 'T', role: 'officer', initial_password: 'temp12345' },
+      { email: `t-${Date.now()}@t.om`, full_name: 'T', role: 'officer', initial_password: 'TempInvite#2026' },
       { cookie: me.cookie });
     const { body } = await fetchJSON(ctx.origin, '/api/office/team', { headers: { cookie: me.cookie } });
     assert.ok(body.officers.length >= 2);
@@ -280,11 +279,11 @@ describe('Office · profile + team + invite + change-password', () => {
   test('change-password verifies old password', async () => {
     const me = await registerAndApproveOffice(ctx.origin);
     const wrong = await postJSON('/api/office/change-password',
-      { old_password: 'nope', new_password: 'NewPass2026!' }, { cookie: me.cookie });
+      { old_password: 'nope', new_password: 'newpass123' }, { cookie: me.cookie });
     assert.equal(wrong.status, 401);
 
     const ok = await postJSON('/api/office/change-password',
-      { old_password: 'TestPass2026!', new_password: 'NewPass2026!' }, { cookie: me.cookie });
+      { old_password: 'Saned!Test#2026', new_password: 'newpass123' }, { cookie: me.cookie });
     assert.equal(ok.status, 200);
   });
 });
@@ -341,11 +340,11 @@ describe('Offers · submit / update / withdraw', () => {
     // Invite a regular officer
     const email = `basic-${Date.now()}@t.om`;
     await postJSON('/api/office/team/invite',
-      { email, full_name: 'Basic', role: 'officer', initial_password: 'temp12345' },
+      { email, full_name: 'Basic', role: 'officer', initial_password: 'TempInvite#2026' },
       { cookie: me.cookie });
     const login = await fetch(ctx.origin + '/api/auth/login', {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email, password: 'temp12345' })
+      body: JSON.stringify({ email, password: 'TempInvite#2026' })
     });
     const basicCookie = takeCookie(login);
     const { request_id } = await createReadyRequest(ctx.origin);

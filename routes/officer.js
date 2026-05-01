@@ -121,13 +121,33 @@ officerRouter.get('/inbox', async (req, res) => {
   });
   const credit = credRows[0] || {};
 
-  // Marketplace: requests in status='ready' (docs submitted, not yet awarded).
-  // Count docs + offers, and pull my office's own offer (if submitted) so the
-  // UI can show "you already quoted 4.500 OMR" instead of hiding the request.
-  // LEFT JOIN office_service_price (osp) so the UI can prefer the office's
-  // own override over the default + catalog values when rendering cards. The
-  // office may have set only one of the two fees — the remaining NULL falls
-  // back (default_office_fee_omr or sc.fee_omr) on the client.
+  // Marketplace visibility ladder (per spec §3.1):
+  //   • 0–20 min after creation → only offices in the same governorate
+  //   • 20–60 min               → same gov + adjacent govs
+  //   • 60+ min                 → open to all Oman
+  // Offices that have FLAGGED a request never see it again; flagging is also
+  // counted across offices — once a request hits FLAG_AUTO_REMOVE_THRESHOLD
+  // distinct office flags, it's auto-quarantined (status='flagged') and falls
+  // out of every marketplace.
+  //
+  // Adjacency is a static map (governorate borders); if the office's gov
+  // isn't in the map we degrade to "show everything in the same gov".
+  const ADJACENT = {
+    'Muscat':            ['Al Batinah North','Al Batinah South','Ad Dakhiliyah','Ash Sharqiyah North'],
+    'Al Batinah North':  ['Muscat','Al Batinah South','Ad Dhahirah'],
+    'Al Batinah South':  ['Muscat','Al Batinah North','Ad Dakhiliyah'],
+    'Ad Dakhiliyah':     ['Muscat','Al Batinah South','Ad Dhahirah','Ash Sharqiyah North'],
+    'Ad Dhahirah':       ['Al Batinah North','Ad Dakhiliyah'],
+    'Ash Sharqiyah North':['Muscat','Ad Dakhiliyah','Ash Sharqiyah South'],
+    'Ash Sharqiyah South':['Ash Sharqiyah North','Al Wusta'],
+    'Al Wusta':          ['Ash Sharqiyah South','Dhofar'],
+    'Dhofar':            ['Al Wusta'],
+    'Musandam':          [],
+    'Al Buraimi':        ['Ad Dhahirah']
+  };
+  const myGov = req.office.governorate || 'Muscat';
+  const adj = ADJACENT[myGov] || [];
+
   const { rows: marketplace } = await db.execute({
     sql: `
       SELECT r.id,
@@ -140,7 +160,9 @@ officerRouter.get('/inbox', async (req, res) => {
              s.fee_omr  AS catalog_fee_omr,
              osp.office_fee_omr      AS office_fee_override,
              osp.government_fee_omr  AS government_fee_override,
+             CAST((julianday('now') - julianday(r.created_at)) * 24 * 60 AS INTEGER) AS minutes_old,
              (SELECT COUNT(*) FROM request_document d WHERE d.request_id = r.id) AS doc_count,
+             (SELECT COUNT(*) FROM request_flag rf WHERE rf.request_id = r.id) AS flag_count,
              (SELECT COUNT(*) FROM request_offer   o WHERE o.request_id = r.id AND o.status='pending') AS offer_count,
              mine.id                   AS my_offer_id,
              mine.office_fee_omr       AS my_office_fee,
@@ -155,9 +177,22 @@ officerRouter.get('/inbox', async (req, res) => {
         LEFT JOIN office_service_price osp
                ON osp.service_id = r.service_id AND osp.office_id = ?
        WHERE r.status='ready'
+         AND NOT EXISTS (SELECT 1 FROM request_flag rf
+                          WHERE rf.request_id = r.id AND rf.office_id = ?)
+         AND (
+              -- 60+ minutes old → open to all
+              (julianday('now') - julianday(r.created_at)) * 24 * 60 >= 60
+              -- 20–60 minutes → same gov + adjacent
+              OR ((julianday('now') - julianday(r.created_at)) * 24 * 60 >= 20
+                   AND (r.governorate = ? OR r.governorate IN (${adj.map(() => '?').join(',') || "''"})))
+              -- 0–20 minutes → same governorate only
+              OR (r.governorate = ?)
+              -- Always include requests with no governorate set (legacy / web form fallback)
+              OR r.governorate IS NULL OR r.governorate = ''
+         )
        ORDER BY r.created_at ASC
        LIMIT 50`,
-    args: [office_id, office_id]
+    args: [office_id, office_id, office_id, myGov, ...adj, myGov]
   });
 
   // My board: requests my office has claimed. Now grouped by lifecycle stage:
@@ -479,7 +514,8 @@ officerRouter.post('/request/:id/message', async (req, res) => {
   });
   const r = rows[0];
   if (!r || r.office_id !== req.office.id) return res.status(403).json({ error: 'not_your_request' });
-  if (!r.paid_at) {
+  // Pre-payment chat is sealed in production — only DEBUG_MODE bypasses for tests.
+  if (!r.paid_at && process.env.DEBUG_MODE !== 'true') {
     return res.status(403).json({
       error: 'chat_locked_until_paid',
       hint: 'Send the payment link first; chat unlocks automatically when the citizen pays.'
@@ -1080,6 +1116,98 @@ officerRouter.post('/request/:id/payment/start',
       amount_omr: total,
       merchant_ref: merchantRef,
       stubbed: !AMWAL_ENABLED
+    });
+  }
+);
+
+// ─── POST /request/:id/flag ────────────────────────────────
+// Office reports that a request in the marketplace is junk: wrong service,
+// fake/forged docs, abusive content, or a duplicate. The first flag only
+// hides the request from THIS office's marketplace. Once distinct offices
+// flag it >= FLAG_AUTO_REMOVE_THRESHOLD (default 2) the request is
+// auto-quarantined (status='flagged'); the citizen is notified to fix or
+// switch services, and the request stops appearing for any office.
+//
+// Body: { reason: 'wrong_service'|'fake_docs'|'abusive'|'duplicate'|'other', note? }
+const FLAG_AUTO_REMOVE_THRESHOLD = Number(process.env.SANAD_FLAG_THRESHOLD || 2);
+const VALID_FLAG_REASONS = new Set(['wrong_service','fake_docs','abusive','duplicate','other']);
+
+officerRouter.post('/request/:id/flag',
+  requireOfficer({ roles: ['owner','manager','officer'] }),
+  async (req, res) => {
+    const id = Number(req.params.id);
+    const office_id = req.office.id;
+    const reason = String(req.body?.reason || '').trim().toLowerCase();
+    const note   = String(req.body?.note || '').trim().slice(0, 400) || null;
+    if (!VALID_FLAG_REASONS.has(reason)) {
+      return res.status(400).json({ error: 'bad_reason', allowed: [...VALID_FLAG_REASONS] });
+    }
+
+    const { rows } = await db.execute({
+      sql: `SELECT id, status, session_id, citizen_id FROM request WHERE id=?`,
+      args: [id]
+    });
+    const r = rows[0];
+    if (!r) return res.status(404).json({ error: 'not_found' });
+    // Only flag while in the open marketplace — once claimed, use release/reclassify instead.
+    if (r.status !== 'ready') {
+      return res.status(409).json({ error: 'bad_state', status: r.status });
+    }
+
+    try {
+      await db.execute({
+        sql: `INSERT INTO request_flag (request_id, office_id, officer_id, reason, note)
+              VALUES (?,?,?,?,?)`,
+        args: [id, office_id, req.officer.officer_id, reason, note]
+      });
+    } catch (e) {
+      // UNIQUE(request_id, office_id) — already flagged by this office.
+      return res.status(409).json({ error: 'already_flagged' });
+    }
+
+    // Count distinct offices that flagged this request.
+    const { rows: cntRows } = await db.execute({
+      sql: `SELECT COUNT(DISTINCT office_id) AS n FROM request_flag WHERE request_id=?`,
+      args: [id]
+    });
+    const flagCount = cntRows[0]?.n || 0;
+
+    let removed = false;
+    if (flagCount >= FLAG_AUTO_REMOVE_THRESHOLD) {
+      // Atomically pull the request out of the marketplace.
+      const upd = await db.execute({
+        sql: `UPDATE request
+                 SET status='flagged', last_event_at=datetime('now')
+               WHERE id=? AND status='ready'`,
+        args: [id]
+      });
+      if (upd.rowsAffected) {
+        removed = true;
+        await db.execute({
+          sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
+                VALUES ('system', NULL, 'request_auto_quarantined', 'request', ?, ?)`,
+          args: [id, JSON.stringify({ flag_count: flagCount, threshold: FLAG_AUTO_REMOVE_THRESHOLD })]
+        });
+        // Notify the citizen so they understand and can fix.
+        await storeMessage({
+          session_id: r.session_id, request_id: id,
+          direction: 'out', actor_type: 'bot',
+          body_text: '⚠️ تمت مراجعة طلبك من قبل أكثر من مكتب وتم الإبلاغ عن وجود مشكلة (خدمة خاطئة أو مستندات غير مكتملة). الطلب تم إيقافه مؤقتاً. اكتب "تعديل" لتغيير الخدمة أو إرسال مستندات صحيحة، أو "إلغاء" للإلغاء.'
+        });
+      }
+    }
+
+    await db.execute({
+      sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
+            VALUES ('officer', ?, 'request_flag', 'request', ?, ?)`,
+      args: [req.officer.officer_id, id, JSON.stringify({ reason, note, flag_count: flagCount })]
+    });
+
+    res.json({
+      ok: true,
+      flag_count: flagCount,
+      threshold: FLAG_AUTO_REMOVE_THRESHOLD,
+      removed
     });
   }
 );

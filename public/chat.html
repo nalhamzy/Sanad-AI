@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Chat with Saned · ساند</title>
-<meta name="description" content="Tell Saned what government service you need. We'll prepare your file and dispatch it to a licensed Sanad office."/>
+<title>محادثة مع ساند · Saned</title>
+<meta name="description" content="أخبر ساند بالخدمة الحكومية التي تحتاجها — نُجهّز ملفك ونرسله إلى أحد مكاتب سند المرخّصة."/>
 <meta name="theme-color" content="#075e54"/>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
 <link rel="apple-touch-icon" href="/favicon.svg"/>
@@ -26,6 +26,17 @@
   .err-banner.show{display:block}
   /* Dev sidebar hidden by default for citizens. Add ?dev=1 to the URL to show. */
   body:not(.dev-mode) .dev-only { display: none !important; }
+  /* ── Prominent service-pick chips (the critical CTA bar) ────────── */
+  .qa-bar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;background:linear-gradient(180deg,#ecfdf5,#fff);border-bottom:1px solid #d1fae5}
+  .qa-chip{display:inline-flex;align-items:center;gap:6px;padding:10px 14px;border-radius:999px;background:#fff;border:2px solid #14b8a6;color:#065f46;font-weight:700;font-size:14px;cursor:pointer;transition:all .15s;box-shadow:0 1px 2px rgba(20,184,166,.18)}
+  .qa-chip:hover{background:#14b8a6;color:#fff;transform:translateY(-1px);box-shadow:0 4px 10px rgba(20,184,166,.35)}
+  .qa-title{flex-basis:100%;font-size:12px;font-weight:800;color:#065f46;margin-bottom:4px;letter-spacing:.02em}
+  /* ── Big labelled send button — primary CTA on every screen ──────── */
+  .btn-send{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;background:linear-gradient(135deg,#10b981,#0d9488);color:#fff;font-weight:800;font-size:14px;border:none;box-shadow:0 4px 12px rgba(16,185,129,.35);cursor:pointer;transition:all .15s}
+  .btn-send:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(16,185,129,.45);filter:brightness(1.05)}
+  .btn-send:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+  .attach-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 12px;border-radius:999px;background:#f1f5f9;color:#0f766e;font-weight:700;font-size:13px;cursor:pointer;border:1px solid #cbd5e1}
+  .attach-btn:hover{background:#e2e8f0}
 </style>
 </head>
 <body>
@@ -69,6 +80,18 @@
       <button id="llmHintClose" class="text-amber-700 hover:text-amber-900">×</button>
     </div>
 
+    <!-- Quick-pick service chips — the prominent CTA bar.
+         Auto-hides once the citizen has started a flow. -->
+    <div id="quickActions" class="qa-bar shrink-0">
+      <div class="qa-title">⚡ ابدأ بنقرة واحدة — اختر الخدمة المطلوبة</div>
+      <button class="qa-chip" data-q="أبغى أجدد رخصة القيادة">🚗 تجديد رخصة القيادة</button>
+      <button class="qa-chip" data-q="أبغى أجدد ملكية السيارة">🪪 تجديد الملكية</button>
+      <button class="qa-chip" data-q="أبغى أصدر سجل تجاري جديد">🏢 إصدار سجل تجاري</button>
+      <button class="qa-chip" data-q="أبغى إصدار جواز سفر">🛂 إصدار جواز السفر</button>
+      <button class="qa-chip" data-q="أبغى إصدار البطاقة المدنية">🆔 البطاقة المدنية</button>
+      <button class="qa-chip" data-q="ما الخدمات المتاحة؟">📋 كل الخدمات</button>
+    </div>
+
     <!-- Log -->
     <div id="log" class="chat-bg flex-1 overflow-y-auto p-4 flex flex-col gap-2"></div>
 
@@ -79,18 +102,18 @@
     </div>
 
     <!-- Composer -->
-    <form id="sendForm" class="p-2.5 bg-[#f0f2f5] border-t border-slate-200 flex items-center gap-2 shrink-0">
-      <label class="p-2 rounded-full hover:bg-slate-200 cursor-pointer" title="attach">
-        📎
-        <input id="fileInput" type="file" accept="image/*,application/pdf" class="hidden"/>
+    <form id="sendForm" class="p-3 bg-[#f0f2f5] border-t border-slate-200 flex items-center gap-2 shrink-0">
+      <label class="attach-btn" title="إرفاق صورة أو PDF">
+        📎 <span class="hidden sm:inline">إرفاق</span>
+        <input id="fileInput" type="file" accept="image/jpeg,image/png,image/heic,image/webp,application/pdf" class="hidden"/>
       </label>
       <span id="filePill" class="hidden items-center gap-1 text-xs px-2 py-1 rounded-full bg-teal-100 text-teal-800 max-w-[180px] truncate"></span>
       <input id="input" type="text" autocomplete="off"
-             class="flex-1 px-4 py-2.5 rounded-full bg-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-400"
-             placeholder="Type a message…"/>
-      <button type="submit" aria-label="send"
-              class="wa-green w-10 h-10 rounded-full grid place-items-center hover:brightness-110">
-        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+             class="flex-1 px-4 py-3 rounded-full bg-white text-base focus:outline-none focus:ring-2 focus:ring-teal-400 border border-slate-200"
+             placeholder="اكتب طلبك هنا…"/>
+      <button type="submit" aria-label="إرسال" class="btn-send">
+        <span>إرسال</span>
+        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24" style="transform:scaleX(-1)"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
       </button>
     </form>
   </section>
@@ -293,8 +316,10 @@ window.addEventListener('unhandledrejection', e => {
       const msgs = r.messages || [];
       if (msgs.length === 0) {
         daySep();
-        bubble('🤖 ' + (typeof t === 'function' ? t('chat.welcome') : 'Welcome — tell me what government service you need.'), 'bot', { time: hhmm() });
+        bubble('👋 أهلاً! أنا **ساند**، مساعدك الذكي للخدمات الحكومية.\n\nاختر خدمة من الأعلى، أو اكتب ما تحتاجه — أُجهّز ملفك وأرسله إلى أحد مكاتب سند المرخّصة لينجز المعاملة عنك.', 'bot', { time: hhmm() });
       } else {
+        // Returning user already past the start → hide the quick-pick bar.
+        document.getElementById('quickActions')?.classList.add('hidden');
         for (const m of msgs) {
           const kind = m.actor_type === 'citizen' ? 'out'
                      : m.actor_type === 'bot'     ? 'bot'
@@ -393,8 +418,22 @@ window.addEventListener('unhandledrejection', e => {
 
   // Soft reset — keeps the chat history but pops the bot back to idle
   document.getElementById('newSvcBtn').addEventListener('click', async () => {
-    input.value = 'new service';
+    input.value = 'خدمة أخرى';
     form.dispatchEvent(new Event('submit', { cancelable: true }));
+    document.getElementById('quickActions')?.classList.remove('hidden');
+  });
+
+  // Quick-pick service chips: one click → fills the input + sends.
+  // The bar is the FIRST thing a citizen sees so the next action is obvious.
+  // We hide it after the first turn (the conversation has started); the
+  // ↻ "خدمة أخرى" button in the header brings it back if the citizen wants
+  // to start over.
+  document.getElementById('quickActions')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.qa-chip');
+    if (!btn) return;
+    input.value = btn.dataset.q || btn.textContent.trim();
+    form.dispatchEvent(new Event('submit', { cancelable: true }));
+    document.getElementById('quickActions').classList.add('hidden');
   });
 
   document.getElementById('langBtn').addEventListener('click', () => {
@@ -406,8 +445,14 @@ window.addEventListener('unhandledrejection', e => {
   setInterval(poll, 2500);
   loadHealth();
   loadHistory();
-  // Apply i18n placeholder after init
-  setTimeout(() => input.setAttribute('placeholder', (typeof t === 'function' ? t('chat.input_placeholder') : 'Type a message…')), 50);
+  // Force AR-first placeholder; user can flip via the lang button.
+  setTimeout(() => {
+    if (window.I18N && I18N.lang === 'en') {
+      input.setAttribute('placeholder', 'Type your request here…');
+    } else {
+      input.setAttribute('placeholder', 'اكتب طلبك هنا…');
+    }
+  }, 50);
 })();
 </script>
 </body>
