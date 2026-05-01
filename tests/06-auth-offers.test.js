@@ -50,7 +50,7 @@ describe('Auth · /signup', () => {
   test('rejects invalid governorate', async () => {
     const { status, body } = await postJSON('/api/auth/signup', {
       office_name_en: 'X', governorate: 'Narnia', cr_number: '1',
-      email: `x${Date.now()}@t.om`, full_name: 'T', password: 'Saned!Test#2026'
+      email: `x${Date.now()}@t.om`, full_name: 'T', password: 'TestPass2026!'
     });
     assert.equal(status, 400);
     assert.equal(body.error, 'bad_governorate');
@@ -60,7 +60,7 @@ describe('Auth · /signup', () => {
     const email = `dup-${Date.now()}@t.om`;
     const base = {
       office_name_en: 'Office', governorate: 'Muscat', cr_number: '11',
-      full_name: 'Owner', password: 'Saned!Test#2026', email
+      full_name: 'Owner', password: 'TestPass2026!', email
     };
     const first = await postJSON('/api/auth/signup', base);
     assert.equal(first.status, 201);
@@ -75,7 +75,7 @@ describe('Auth · /signup', () => {
       body: JSON.stringify({
         office_name_en: 'Pending Office', governorate: 'Dhofar',
         cr_number: '90001', email: `pend-${Date.now()}@t.om`,
-        full_name: 'Pending Owner', password: 'Saned!Test#2026'
+        full_name: 'Pending Owner', password: 'TestPass2026!'
       })
     });
     assert.equal(res.status, 201);
@@ -90,7 +90,7 @@ describe('Auth · /signup', () => {
 // ─── Login / me / logout ───────────────────────────────────
 describe('Auth · /login + /me + /logout', () => {
   const email = `login-${Date.now()}@t.om`;
-  const password = 'Saned!Test#2026';
+  const password = 'TestPass2026!';
   let cookie;
 
   test('signup establishes session', async () => {
@@ -147,7 +147,7 @@ describe('Auth · pending-review office is gated from /api/officer/*', () => {
       body: JSON.stringify({
         office_name_en: 'Gated Office', governorate: 'Al Wusta',
         cr_number: '9003', email: `gate-${Date.now()}@t.om`,
-        full_name: 'Gate Owner', password: 'Saned!Test#2026'
+        full_name: 'Gate Owner', password: 'TestPass2026!'
       })
     });
     const cookie = takeCookie(r);
@@ -170,7 +170,7 @@ describe('Platform-admin · approve / reject / suspend', () => {
       body: JSON.stringify({
         office_name_en: 'Approve Me', governorate: 'Muscat',
         cr_number: '9100', email: `app-${Date.now()}@t.om`,
-        full_name: 'Owner', password: 'Saned!Test#2026'
+        full_name: 'Owner', password: 'TestPass2026!'
       })
     });
     const { officer } = await signup.json();
@@ -193,7 +193,7 @@ describe('Platform-admin · approve / reject / suspend', () => {
       body: JSON.stringify({
         office_name_en: 'Reject Me', governorate: 'Muscat',
         cr_number: '9101', email: `rej-${Date.now()}@t.om`,
-        full_name: 'Owner', password: 'Saned!Test#2026'
+        full_name: 'Owner', password: 'TestPass2026!'
       })
     });
     const { officer } = await signup.json();
@@ -283,7 +283,7 @@ describe('Office · profile + team + invite + change-password', () => {
     assert.equal(wrong.status, 401);
 
     const ok = await postJSON('/api/office/change-password',
-      { old_password: 'Saned!Test#2026', new_password: 'newpass123' }, { cookie: me.cookie });
+      { old_password: 'TestPass2026!', new_password: 'newpass123' }, { cookie: me.cookie });
     assert.equal(ok.status, 200);
   });
 });

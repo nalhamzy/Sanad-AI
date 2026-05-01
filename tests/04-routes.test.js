@@ -93,12 +93,14 @@ describe('HTTP · officer API (cookie auth + offer flow)', () => {
     });
     assert.equal(quoteB.status, 201, 'B quotes');
 
-    // Citizen lists and accepts the cheaper (A)
+    // Citizen lists and accepts the cheaper offer.
+    // /offers is anonymized — office identity is hidden. We rely on price:
+    // A quoted 4.5 (cheaper), B quoted 5.0 → cheapest.id wins.
     const list = await fetchJSON(ctx.origin, `/api/chat/${sid}/request/${request_id}/offers`);
     assert.equal(list.status, 200);
     assert.equal(list.body.offers.length, 2);
     const cheapest = list.body.offers[0]; // sorted asc in endpoint
-    assert.equal(cheapest.office_id, a.office_id);
+    assert.equal(cheapest.quoted_fee_omr, 4.5);
 
     const accept = await fetch(
       `${ctx.origin}/api/chat/${sid}/request/${request_id}/offers/${cheapest.id}/accept`,
