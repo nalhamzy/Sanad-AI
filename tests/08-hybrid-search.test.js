@@ -17,13 +17,15 @@ describe('hybrid_search — FTS + filters + RRF (no LLM)', () => {
     // Wipe + seed fixture
     await db.execute(`DELETE FROM service_catalog`);
     const rows = [
-      { id: 9001, name_en: 'Renew Civil ID',            entity_en: 'Royal Oman Police',     beneficiary: 'Citizen', payment_method: 'Online',  channels: 'web,app',    fee_omr: 3,    is_launch: 1, blob: 'renew civil id card rop identity national bataqa madaniya' },
-      { id: 9002, name_en: 'Renew Passport',            entity_en: 'Royal Oman Police',     beneficiary: 'Citizen', payment_method: 'On-site', channels: 'counter',    fee_omr: 20,   is_launch: 1, blob: 'renew passport jawaz safar travel' },
-      { id: 9003, name_en: 'Issue New Passport',        entity_en: 'Royal Oman Police',     beneficiary: 'Citizen', payment_method: 'On-site', channels: 'counter',    fee_omr: 20,   is_launch: 0, blob: 'issue new passport jawaz' },
-      { id: 9004, name_en: 'Commercial Registration',   entity_en: 'MOCIIP',                beneficiary: 'Business',payment_method: 'Online',  channels: 'web',        fee_omr: 18,   is_launch: 1, blob: 'commercial registration cr sijill tijari' },
-      { id: 9005, name_en: 'Fish Transport Licence',    entity_en: 'Ministry of Agriculture',beneficiary: 'Business',payment_method: 'Online', channels: 'web',        fee_omr: 11,   is_launch: 0, blob: 'fish transport licence aquaculture' },
-      { id: 9006, name_en: 'Free Health Card',          entity_en: 'Ministry of Health',    beneficiary: 'Citizen', payment_method: 'None',    channels: 'web,counter',fee_omr: 0,    is_launch: 0, blob: 'health card free medical' },
-      { id: 9007, name_en: 'Driving Licence Renewal',   entity_en: 'Royal Oman Police',     beneficiary: 'Citizen', payment_method: 'On-site', channels: 'counter',    fee_omr: 5.5,  is_launch: 1, blob: 'driving licence renew rukhsa qiyada' }
+      // Beneficiary values mirror the catalog format ("G2C"/"G2B" tags) so the
+      // hybrid_search.js filter map (Citizen→g2c/الأفراد, Business→g2b/الأعمال) hits.
+      { id: 9001, name_en: 'Renew Civil ID',            entity_en: 'Royal Oman Police',     beneficiary: 'G2C', payment_method: 'Online',  channels: 'web,app',    fee_omr: 3,    is_launch: 1, blob: 'renew civil id card rop identity national bataqa madaniya' },
+      { id: 9002, name_en: 'Renew Passport',            entity_en: 'Royal Oman Police',     beneficiary: 'G2C', payment_method: 'On-site', channels: 'counter',    fee_omr: 20,   is_launch: 1, blob: 'renew passport jawaz safar travel' },
+      { id: 9003, name_en: 'Issue New Passport',        entity_en: 'Royal Oman Police',     beneficiary: 'G2C', payment_method: 'On-site', channels: 'counter',    fee_omr: 20,   is_launch: 0, blob: 'issue new passport jawaz' },
+      { id: 9004, name_en: 'Commercial Registration',   entity_en: 'MOCIIP',                beneficiary: 'G2B', payment_method: 'Online',  channels: 'web',        fee_omr: 18,   is_launch: 1, blob: 'commercial registration cr sijill tijari' },
+      { id: 9005, name_en: 'Fish Transport Licence',    entity_en: 'Ministry of Agriculture',beneficiary: 'G2B',payment_method: 'Online', channels: 'web',        fee_omr: 11,   is_launch: 0, blob: 'fish transport licence aquaculture' },
+      { id: 9006, name_en: 'Free Health Card',          entity_en: 'Ministry of Health',    beneficiary: 'G2C', payment_method: 'None',    channels: 'web,counter',fee_omr: 0,    is_launch: 0, blob: 'health card free medical' },
+      { id: 9007, name_en: 'Driving Licence Renewal',   entity_en: 'Royal Oman Police',     beneficiary: 'G2C', payment_method: 'On-site', channels: 'counter',    fee_omr: 5.5,  is_launch: 1, blob: 'driving licence renew rukhsa qiyada' }
     ];
     for (const r of rows) {
       await db.execute({

@@ -141,6 +141,16 @@ describe('HTTP · officer API (cookie auth + offer flow)', () => {
     await fetch(`${ctx.origin}/api/chat/${sid}/request/${request_id}/offers/${offerId}/accept`,
       { method: 'POST' });
 
+    // Chat is gated behind payment under the v3 flow. Office sends the
+    // payment link first; we then mark the request paid via the stub endpoint.
+    await fetch(`${ctx.origin}/api/officer/request/${request_id}/payment/start`, {
+      method: 'POST', headers: { 'content-type': 'application/json', cookie: a.cookie },
+      body: JSON.stringify({})
+    });
+    await fetch(`${ctx.origin}/api/payments/request/${request_id}/confirm-stub`, {
+      method: 'POST', headers: { cookie: a.cookie }
+    });
+
     // Send a chat message — citizen should see it via the session poll.
     const send = await fetch(`${ctx.origin}/api/officer/request/${request_id}/message`, {
       method: 'POST',

@@ -67,7 +67,7 @@ export async function registerAndApproveOffice(origin, overrides = {}) {
     phone: '+96890000000',
     email: `owner-${stamp}@test.om`,
     full_name: 'Test Owner',
-    password: 'password123',
+    password: 'TestPass2026!',  // satisfies password-complexity rules in routes/auth.js
     ...overrides
   };
   const r = await fetch(origin + '/api/auth/signup', {

@@ -44,10 +44,13 @@ describe('matchService() — launch services', () => {
     assert.equal(m?.source, 'launch');
     assert.equal(m?.code, 'drivers_licence_renewal');
   });
-  test('"تجديد جواز" (shortened) → passport_renewal', async () => {
-    const m = await matchService('تجديد جواز');
+  // passport_renewal + civil_id_renewal were intentionally removed from
+  // LAUNCH_SERVICES per lib/agent.js system prompt (catalogue gap honesty).
+  // Replaced with a regression for mulkiya which IS still a launch service.
+  test('"تجديد ملكية" → mulkiya_renewal', async () => {
+    const m = await matchService('تجديد ملكية');
     assert.equal(m?.source, 'launch');
-    assert.equal(m?.code, 'passport_renewal');
+    assert.equal(m?.code, 'mulkiya_renewal');
   });
 });
 
