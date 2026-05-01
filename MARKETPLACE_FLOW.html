@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title>Saned · Marketplace Flow v3 (Office-Review)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .ar { font-family: 'Noto Kufi Arabic', sans-serif; }
+    svg text { user-select: none; }
+    .state-box { transition: filter .15s; cursor: help; }
+    .state-box:hover { filter: brightness(.96) drop-shadow(0 2px 4px rgba(0,0,0,.12)); }
+    .legend-swatch { display:inline-block; width:14px; height:14px; border-radius:3px; vertical-align:middle; margin-right:6px; border:1px solid; }
+    details summary { cursor: pointer; }
+    details summary::-webkit-details-marker { display:none; }
+    details summary::before { content: '▸'; display:inline-block; width:1em; transition: transform .15s; color:#64748b; }
+    details[open] summary::before { transform: rotate(90deg); }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+<header class="px-8 py-5 bg-white border-b shadow-sm">
+  <div class="flex items-baseline justify-between flex-wrap gap-2">
+    <div>
+      <h1 class="text-2xl font-bold">Saned · Marketplace Flow <span class="text-base font-normal text-slate-500">v3 — Office-Review Model</span></h1>
+      <p class="text-sm text-slate-600 mt-1">Citizen submits → office checks out (FCFS) → 15-min review → payment → 45-min completion. Citizen never sees the office.</p>
+    </div>
+    <div class="text-xs text-slate-500">
+      <div class="ar text-right">المواطن لا يختار المكتب · الأسعار ثابتة · المكتب يراجع ويُرسل رابط الدفع</div>
+      <div>Generated from <code class="bg-slate-100 px-1 rounded">MARKETPLACE_SCALING.md</code></div>
+    </div>
+  </div>
+  <div class="mt-3 flex flex-wrap gap-3 text-xs">
+    <span class="inline-flex items-center"><span class="legend-swatch" style="background:#cffafe; border-color:#06b6d4"></span> Citizen action / state</span>
+    <span class="inline-flex items-center"><span class="legend-swatch" style="background:#ffedd5; border-color:#f97316"></span> Office action / state</span>
+    <span class="inline-flex items-center"><span class="legend-swatch" style="background:#f1f5f9; border-color:#94a3b8"></span> System / SLA / pool</span>
+    <span class="inline-flex items-center"><span class="legend-swatch" style="background:#dcfce7; border-color:#22c55e"></span> Terminal — success</span>
+    <span class="inline-flex items-center"><span class="legend-swatch" style="background:#fee2e2; border-color:#ef4444"></span> Terminal — rejected/cancelled</span>
+    <span class="inline-flex items-center"><span class="legend-swatch" style="background:#ede9fe; border-color:#8b5cf6"></span> Start (citizen submits)</span>
+    <span class="inline-flex items-center text-slate-600">Arrow color = who triggers the transition</span>
+  </div>
+</header>
+
+<div class="grid grid-cols-12 gap-4 p-4 max-w-[1800px] mx-auto">
+
+  <!-- MAIN DIAGRAM -->
+  <main class="col-span-12 xl:col-span-9 bg-white rounded-lg border p-2 overflow-auto">
+    <svg viewBox="0 0 1300 1280" width="100%" style="min-width:1100px;">
+      <defs>
+        <!-- Arrow markers -->
+        <marker id="ah-citizen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#0891b2"/>
+        </marker>
+        <marker id="ah-office" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#ea580c"/>
+        </marker>
+        <marker id="ah-system" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+        </marker>
+      </defs>
+
+      <!-- ========================== STATES ========================== -->
+
+      <!-- Row A: Start -->
+      <g class="state-box">
+        <title>Citizen submits a request via /chat.html, /apply.html, or WhatsApp bot. Documents collected, fees fixed at catalog (5 + 15 = 20 OMR default).</title>
+        <rect x="540" y="20" width="220" height="64" rx="10" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+        <text x="650" y="44" text-anchor="middle" font-weight="700" font-size="15" fill="#5b21b6">Citizen submits</text>
+        <text x="650" y="64" text-anchor="middle" font-size="13" fill="#5b21b6" class="ar">المواطن يُقدّم الطلب</text>
+        <text x="650" y="79" text-anchor="middle" font-size="10" fill="#64748b">/apply.html · /chat.html · WhatsApp</text>
+      </g>
+
+      <!-- Row B: pending_review -->
+      <g class="state-box">
+        <title>Request is in the pool. Any eligible online office in the visibility tier can check out. Inbox sorted by rank_score (rating, completion rate, abandonment rate).</title>
+        <rect x="540" y="135" width="220" height="64" rx="10" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+        <text x="650" y="159" text-anchor="middle" font-weight="700" font-size="15" fill="#334155">pending_review</text>
+        <text x="650" y="179" text-anchor="middle" font-size="13" fill="#334155" class="ar">في قائمة المراجعة</text>
+        <text x="650" y="194" text-anchor="middle" font-size="10" fill="#64748b">in pool · waiting for office</text>
+      </g>
+
+      <!-- Row C: under_review -->
+      <g class="state-box">
+        <title>An office has checked out (atomic FCFS UPDATE). 15-minute review clock starts. Office must take one of three actions before timeout.</title>
+        <rect x="540" y="245" width="220" height="64" rx="10" fill="#ffedd5" stroke="#f97316" stroke-width="2.5"/>
+        <text x="650" y="269" text-anchor="middle" font-weight="700" font-size="15" fill="#9a3412">under_review</text>
+        <text x="650" y="289" text-anchor="middle" font-size="13" fill="#9a3412" class="ar">قيد المراجعة من المكتب</text>
+        <text x="650" y="304" text-anchor="middle" font-size="10" fill="#9a3412" font-weight="600">⏱ 15-min review clock</text>
+      </g>
+
+      <!-- Row D: 4 outcomes from under_review -->
+      <!-- D1 awaiting_documents -->
+      <g class="state-box">
+        <title>Office asked the citizen for missing/clearer docs. Same office retains the claim; review clock pauses. Citizen has 24h to upload. On submit: returns to under_review with fresh 15-min clock.</title>
+        <rect x="50" y="395" width="220" height="64" rx="10" fill="#cffafe" stroke="#06b6d4" stroke-width="2"/>
+        <text x="160" y="419" text-anchor="middle" font-weight="700" font-size="15" fill="#155e75">awaiting_documents</text>
+        <text x="160" y="439" text-anchor="middle" font-size="13" fill="#155e75" class="ar">مستندات إضافية مطلوبة</text>
+        <text x="160" y="454" text-anchor="middle" font-size="10" fill="#155e75" font-weight="600">⏱ 24-h citizen clock</text>
+      </g>
+
+      <!-- D2 awaiting_payment -->
+      <g class="state-box">
+        <title>Office approved & sent the payment link. Citizen has 15 minutes to pay 20.000 OMR (catalog fixed). On timeout: returns to pending_review pool.</title>
+        <rect x="540" y="395" width="220" height="64" rx="10" fill="#cffafe" stroke="#06b6d4" stroke-width="2"/>
+        <text x="650" y="419" text-anchor="middle" font-weight="700" font-size="15" fill="#155e75">awaiting_payment</text>
+        <text x="650" y="439" text-anchor="middle" font-size="13" fill="#155e75" class="ar">بانتظار الدفع</text>
+        <text x="650" y="454" text-anchor="middle" font-size="10" fill="#155e75" font-weight="600">⏱ 15-min citizen clock · 20 OMR</text>
+      </g>
+
+      <!-- D3 rejected_by_office -->
+      <g class="state-box">
+        <title>Office hard-rejected the request as invalid (e.g. wrong service, suspected fraud, incomplete and unfixable). Terminal. Citizen notified with reason; can re-apply as a new request.</title>
+        <rect x="1030" y="395" width="220" height="64" rx="10" fill="#fee2e2" stroke="#ef4444" stroke-width="2"/>
+        <text x="1140" y="419" text-anchor="middle" font-weight="700" font-size="15" fill="#991b1b">rejected_by_office ✗</text>
+        <text x="1140" y="439" text-anchor="middle" font-size="13" fill="#991b1b" class="ar">طلب مرفوض</text>
+        <text x="1140" y="454" text-anchor="middle" font-size="10" fill="#991b1b">terminal · citizen may re-apply</text>
+      </g>
+
+      <!-- Row E: in_progress -->
+      <g class="state-box">
+        <title>Citizen has paid; office is now executing the gov-portal work. 45-minute completion clock. Office can hold (pause clock) or complete.</title>
+        <rect x="540" y="555" width="220" height="64" rx="10" fill="#ffedd5" stroke="#f97316" stroke-width="2.5"/>
+        <text x="650" y="579" text-anchor="middle" font-weight="700" font-size="15" fill="#9a3412">in_progress</text>
+        <text x="650" y="599" text-anchor="middle" font-size="13" fill="#9a3412" class="ar">جاري التنفيذ</text>
+        <text x="650" y="614" text-anchor="middle" font-size="10" fill="#9a3412" font-weight="600">⏱ 45-min completion clock</text>
+      </g>
+
+      <!-- Row F: on_hold + completed -->
+      <g class="state-box">
+        <title>Office paused mid-completion (portal down, citizen OTP pending, manual review). 4-hour hold cap. Auto-resume after cap; if still stuck, request transfers to next office.</title>
+        <rect x="280" y="710" width="220" height="64" rx="10" fill="#ffedd5" stroke="#f97316" stroke-width="2"/>
+        <text x="390" y="734" text-anchor="middle" font-weight="700" font-size="15" fill="#9a3412">on_hold</text>
+        <text x="390" y="754" text-anchor="middle" font-size="13" fill="#9a3412" class="ar">موقوف مؤقتاً</text>
+        <text x="390" y="769" text-anchor="middle" font-size="10" fill="#9a3412" font-weight="600">⏸ 4-h hold cap</text>
+      </g>
+
+      <g class="state-box">
+        <title>Request fully delivered. Citizen receives anonymous receipt naming the platform + government entity (never the office).</title>
+        <rect x="540" y="710" width="220" height="64" rx="10" fill="#dcfce7" stroke="#22c55e" stroke-width="2.5"/>
+        <text x="650" y="734" text-anchor="middle" font-weight="700" font-size="15" fill="#14532d">completed ✓</text>
+        <text x="650" y="754" text-anchor="middle" font-size="13" fill="#14532d" class="ar">اكتمل الطلب</text>
+        <text x="650" y="769" text-anchor="middle" font-size="10" fill="#14532d">terminal · success</text>
+      </g>
+
+      <!-- ========================== ARROWS ========================== -->
+
+      <!-- Citizen submits → pending_review -->
+      <line x1="650" y1="84" x2="650" y2="135" stroke="#0891b2" stroke-width="2.2" marker-end="url(#ah-citizen)"/>
+      <text x="660" y="115" font-size="11" fill="#0891b2" font-weight="600">submit</text>
+
+      <!-- pending_review → under_review (FCFS office checkout) -->
+      <line x1="650" y1="199" x2="650" y2="245" stroke="#ea580c" stroke-width="2.2" marker-end="url(#ah-office)"/>
+      <text x="660" y="225" font-size="11" fill="#ea580c" font-weight="600">checkout (FCFS atomic)</text>
+
+      <!-- under_review → awaiting_documents (3b) -->
+      <path d="M 540 290 L 350 290 L 270 395" stroke="#ea580c" stroke-width="2" fill="none" marker-end="url(#ah-office)"/>
+      <text x="320" y="280" font-size="11" fill="#ea580c" font-weight="600">request docs (3b)</text>
+
+      <!-- under_review → awaiting_payment (3a) -->
+      <line x1="650" y1="309" x2="650" y2="395" stroke="#ea580c" stroke-width="2.5" marker-end="url(#ah-office)"/>
+      <text x="660" y="350" font-size="11" fill="#ea580c" font-weight="700">send-payment (3a)</text>
+      <text x="660" y="365" font-size="10" fill="#ea580c">↓ approved & link sent</text>
+
+      <!-- under_review → rejected_by_office (3c hard) -->
+      <path d="M 760 290 L 950 290 L 1030 395" stroke="#ea580c" stroke-width="2" fill="none" marker-end="url(#ah-office)"/>
+      <text x="820" y="280" font-size="11" fill="#ea580c" font-weight="600">reject (3c hard)</text>
+
+      <!-- under_review → pending_review BACK ARROW (release 3c soft + 15-min review timeout) -->
+      <path d="M 540 277 C 380 277, 280 230, 280 167 L 540 167" stroke="#64748b" stroke-width="2" fill="none" stroke-dasharray="6,4" marker-end="url(#ah-system)"/>
+      <text x="290" y="220" font-size="10" fill="#64748b" font-weight="600">release (3c soft) · 5-min cooldown</text>
+      <text x="290" y="234" font-size="10" fill="#64748b">OR ⏱ 15-min review timeout · auto-release</text>
+
+      <!-- awaiting_documents → under_review (citizen submits new docs) -->
+      <path d="M 270 395 C 320 350, 480 320, 540 295" stroke="#0891b2" stroke-width="2" fill="none" marker-end="url(#ah-citizen)"/>
+      <text x="320" y="370" font-size="10" fill="#0891b2" font-weight="600">citizen submits docs · fresh 15-min</text>
+
+      <!-- awaiting_documents → pending_review (24h timeout) -->
+      <path d="M 160 395 C 160 280, 200 200, 540 167" stroke="#64748b" stroke-width="1.6" fill="none" stroke-dasharray="4,3" marker-end="url(#ah-system)"/>
+      <text x="50" y="320" font-size="10" fill="#64748b">⏱ 24-h doc-fix</text>
+      <text x="50" y="334" font-size="10" fill="#64748b">timeout · re-pool</text>
+
+      <!-- awaiting_payment → in_progress (paid) -->
+      <line x1="650" y1="459" x2="650" y2="555" stroke="#0891b2" stroke-width="2.5" marker-end="url(#ah-citizen)"/>
+      <text x="660" y="500" font-size="11" fill="#0891b2" font-weight="700">citizen pays</text>
+      <text x="660" y="515" font-size="10" fill="#0891b2">Amwal webhook · status flips</text>
+
+      <!-- awaiting_payment → pending_review (15-min payment timeout) -->
+      <path d="M 540 427 C 420 427, 380 250, 540 175" stroke="#64748b" stroke-width="1.6" fill="none" stroke-dasharray="4,3" marker-end="url(#ah-system)"/>
+      <text x="395" y="380" font-size="10" fill="#64748b" font-weight="600">⏱ 15-min payment timeout</text>
+      <text x="395" y="393" font-size="10" fill="#64748b">re-pool · citizen notified</text>
+
+      <!-- in_progress → completed -->
+      <line x1="650" y1="619" x2="650" y2="710" stroke="#ea580c" stroke-width="2.5" marker-end="url(#ah-office)"/>
+      <text x="660" y="660" font-size="11" fill="#ea580c" font-weight="700">complete</text>
+      <text x="660" y="675" font-size="10" fill="#ea580c">receipt sent (anonymous)</text>
+
+      <!-- in_progress ↔ on_hold -->
+      <path d="M 540 590 L 500 710" stroke="#ea580c" stroke-width="2" fill="none" marker-end="url(#ah-office)"/>
+      <text x="450" y="650" font-size="10" fill="#ea580c" font-weight="600">hold (reason)</text>
+      <path d="M 500 730 C 540 690, 600 620, 540 600" stroke="#ea580c" stroke-width="2" fill="none" marker-end="url(#ah-office)"/>
+      <text x="450" y="700" font-size="10" fill="#ea580c">resume · clock continues</text>
+
+      <!-- in_progress → pending_review (45-min completion timeout · silent transfer) -->
+      <path d="M 760 587 C 1000 587, 1100 350, 880 175 L 760 175" stroke="#64748b" stroke-width="1.8" fill="none" stroke-dasharray="6,4" marker-end="url(#ah-system)"/>
+      <text x="900" y="430" font-size="10" fill="#64748b" font-weight="700">⏱ 45-min completion timeout</text>
+      <text x="900" y="444" font-size="10" fill="#64748b">silent transfer · payment preserved</text>
+      <text x="900" y="458" font-size="10" fill="#64748b">citizen sees no change · work_breach++</text>
+
+      <!-- on_hold auto-resume after 4h cap -->
+      <text x="280" y="800" font-size="10" fill="#64748b">⏱ 4-h hold cap → auto-resume</text>
+      <text x="280" y="812" font-size="10" fill="#64748b">if still stuck → transfer (silent)</text>
+
+      <!-- ============== CANCEL PATHS (separate panel) ============== -->
+      <g transform="translate(0, 870)">
+        <line x1="40" y1="0" x2="1260" y2="0" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="40" y="-5" font-size="11" fill="#64748b" font-weight="600">CANCEL & REFUND PATHS</text>
+        <text x="40" y="20" font-size="10" fill="#64748b">Citizen can cancel from any pre-payment state for free; post-payment goes through the refund decision flow.</text>
+
+        <!-- Pre-pay cancel -->
+        <g class="state-box">
+          <title>Citizen cancels before paying. Always free, no refund logic — no money taken. Office gets a request.cancelled_by_citizen SSE event; no abandonment penalty.</title>
+          <rect x="40" y="40" width="220" height="60" rx="10" fill="#cffafe" stroke="#06b6d4" stroke-width="2"/>
+          <text x="150" y="62" text-anchor="middle" font-weight="700" font-size="14" fill="#155e75">Citizen cancel · pre-pay</text>
+          <text x="150" y="80" text-anchor="middle" font-size="12" fill="#155e75" class="ar">إلغاء قبل الدفع</text>
+          <text x="150" y="94" text-anchor="middle" font-size="10" fill="#155e75">free · no refund flow</text>
+        </g>
+
+        <line x1="260" y1="70" x2="320" y2="70" stroke="#0891b2" stroke-width="2" marker-end="url(#ah-citizen)"/>
+
+        <g class="state-box">
+          <title>Terminal cancellation. Sibling office_release_cooldown rows swept. No money was taken.</title>
+          <rect x="320" y="40" width="220" height="60" rx="10" fill="#fee2e2" stroke="#ef4444" stroke-width="2"/>
+          <text x="430" y="62" text-anchor="middle" font-weight="700" font-size="14" fill="#991b1b">cancelled_by_citizen ✗</text>
+          <text x="430" y="80" text-anchor="middle" font-size="12" fill="#991b1b" class="ar">ألغاه المواطن</text>
+          <text x="430" y="94" text-anchor="middle" font-size="10" fill="#991b1b">terminal</text>
+        </g>
+
+        <!-- Post-pay cancel -->
+        <g class="state-box">
+          <title>Citizen cancels after payment. Status → refund_pending. Office decides: approve full / approve partial / reject. Admin can override within 7 days.</title>
+          <rect x="600" y="40" width="220" height="60" rx="10" fill="#cffafe" stroke="#06b6d4" stroke-width="2"/>
+          <text x="710" y="62" text-anchor="middle" font-weight="700" font-size="14" fill="#155e75">Citizen cancel · post-pay</text>
+          <text x="710" y="80" text-anchor="middle" font-size="12" fill="#155e75" class="ar">إلغاء بعد الدفع</text>
+          <text x="710" y="94" text-anchor="middle" font-size="10" fill="#155e75">→ refund flow</text>
+        </g>
+
+        <line x1="820" y1="70" x2="880" y2="70" stroke="#0891b2" stroke-width="2" marker-end="url(#ah-citizen)"/>
+
+        <g class="state-box">
+          <title>Office reviews cancel request. Yellow banner in officer dashboard. Three decisions: approve_full, approve_partial (officer enters amount), reject.</title>
+          <rect x="880" y="40" width="220" height="60" rx="10" fill="#ffedd5" stroke="#f97316" stroke-width="2"/>
+          <text x="990" y="62" text-anchor="middle" font-weight="700" font-size="14" fill="#9a3412">refund_pending</text>
+          <text x="990" y="80" text-anchor="middle" font-size="12" fill="#9a3412" class="ar">قرار الاسترداد</text>
+          <text x="990" y="94" text-anchor="middle" font-size="10" fill="#9a3412">office decides · admin can override</text>
+        </g>
+
+        <!-- refund_pending → 3 outcomes -->
+        <g class="state-box">
+          <title>Office approved full refund. 100% refund via Amwal. Status → refunded.</title>
+          <rect x="600" y="135" width="180" height="50" rx="10" fill="#dcfce7" stroke="#22c55e" stroke-width="2"/>
+          <text x="690" y="155" text-anchor="middle" font-weight="700" font-size="13" fill="#14532d">refunded (full) ✓</text>
+          <text x="690" y="173" text-anchor="middle" font-size="11" fill="#14532d" class="ar">استرداد كامل</text>
+        </g>
+
+        <g class="state-box">
+          <title>Partial refund — work was partially done. Officer enters amount, capped at total. Status → completed (with refund_status='approved_partial').</title>
+          <rect x="800" y="135" width="180" height="50" rx="10" fill="#dcfce7" stroke="#22c55e" stroke-width="2"/>
+          <text x="890" y="155" text-anchor="middle" font-weight="700" font-size="13" fill="#14532d">completed (partial)</text>
+          <text x="890" y="173" text-anchor="middle" font-size="11" fill="#14532d" class="ar">اكتمال جزئي</text>
+        </g>
+
+        <g class="state-box">
+          <title>Office rejected the cancel — work was already done. Status → in_progress. Citizen can escalate to admin.</title>
+          <rect x="1000" y="135" width="180" height="50" rx="10" fill="#ffedd5" stroke="#f97316" stroke-width="2"/>
+          <text x="1090" y="155" text-anchor="middle" font-weight="700" font-size="13" fill="#9a3412">→ in_progress</text>
+          <text x="1090" y="173" text-anchor="middle" font-size="11" fill="#9a3412" class="ar">رُفض الإلغاء</text>
+        </g>
+
+        <line x1="950" y1="100" x2="690" y2="135" stroke="#ea580c" stroke-width="1.6" marker-end="url(#ah-office)"/>
+        <line x1="990" y1="100" x2="890" y2="135" stroke="#ea580c" stroke-width="1.6" marker-end="url(#ah-office)"/>
+        <line x1="1030" y1="100" x2="1090" y2="135" stroke="#ea580c" stroke-width="1.6" marker-end="url(#ah-office)"/>
+        <text x="600" y="125" font-size="9" fill="#ea580c" font-weight="600">approve full</text>
+        <text x="800" y="125" font-size="9" fill="#ea580c" font-weight="600">approve partial</text>
+        <text x="1030" y="125" font-size="9" fill="#ea580c" font-weight="600">reject</text>
+
+        <!-- Citizen anonymity reminder -->
+        <g transform="translate(40, 220)">
+          <rect width="520" height="80" rx="10" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="14" y="22" font-size="13" font-weight="700" fill="#78350f">⚠ Citizen-side anonymity rule</text>
+          <text x="14" y="42" font-size="11" fill="#78350f">Citizen NEVER sees the office name/identity. SLA-driven transfers (45-min</text>
+          <text x="14" y="56" font-size="11" fill="#78350f">post-pay completion timeout) are completely silent — status display unchanged.</text>
+          <text x="14" y="70" font-size="11" fill="#78350f" class="ar">المواطن لا يرى هوية المكتب · التحويلات عبر SLA صامتة تماماً</text>
+        </g>
+
+        <!-- Discipline mechanism note -->
+        <g transform="translate(600, 220)">
+          <rect width="600" height="80" rx="10" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+          <text x="14" y="22" font-size="13" font-weight="700" fill="#075985">Discipline (no credits in MVP)</text>
+          <text x="14" y="42" font-size="11" fill="#075985">(a) Capacity caps invisibility-throttle bad offices · (b) Reputation-driven inbox sort:</text>
+          <text x="14" y="56" font-size="11" fill="#075985">  abandonment_rate, completion_rate, time_to_payment, citizen rating · (c) Auto-suspension:</text>
+          <text x="14" y="70" font-size="11" fill="#075985">  3 review breaches OR 1 work breach in 7d → 24-h pause · 5+ → manual review.</text>
+        </g>
+
+      </g><!-- end cancel panel -->
+
+    </svg>
+  </main>
+
+  <!-- SIDEBAR -->
+  <aside class="col-span-12 xl:col-span-3 space-y-3">
+
+    <!-- State definitions -->
+    <details open class="bg-white rounded-lg border p-4">
+      <summary class="font-semibold text-slate-900">State definitions</summary>
+      <dl class="text-sm space-y-2 mt-3">
+        <div><dt class="font-semibold text-purple-700">Citizen submits</dt><dd class="text-slate-600">Bot/form intake — fees fixed at catalog snapshot (5 + 15 = 20 OMR default).</dd></div>
+        <div><dt class="font-semibold text-slate-700">pending_review</dt><dd class="text-slate-600">In pool. Eligible online offices in the visibility tier compete via FCFS atomic UPDATE.</dd></div>
+        <div><dt class="font-semibold text-orange-700">under_review</dt><dd class="text-slate-600">Office holds the claim. <b>15-min</b> clock for one of three actions.</dd></div>
+        <div><dt class="font-semibold text-cyan-700">awaiting_documents</dt><dd class="text-slate-600">Office requested missing/clearer docs. Same office retains claim, citizen has <b>24h</b>.</dd></div>
+        <div><dt class="font-semibold text-cyan-700">awaiting_payment</dt><dd class="text-slate-600">Payment link sent. Citizen has <b>15min</b> to pay 20 OMR.</dd></div>
+        <div><dt class="font-semibold text-orange-700">in_progress</dt><dd class="text-slate-600">Citizen paid. Office has <b>45min</b> for gov-portal work.</dd></div>
+        <div><dt class="font-semibold text-orange-700">on_hold</dt><dd class="text-slate-600">Office paused (portal down / OTP / etc.). <b>4h</b> max; clock resumes from snapshot.</dd></div>
+        <div><dt class="font-semibold text-green-700">completed ✓</dt><dd class="text-slate-600">Done. Anonymous receipt to citizen.</dd></div>
+        <div><dt class="font-semibold text-red-700">rejected_by_office ✗</dt><dd class="text-slate-600">Hard reject (fraud / wrong service / unfixable). Citizen may re-apply.</dd></div>
+        <div><dt class="font-semibold text-red-700">cancelled_by_citizen ✗</dt><dd class="text-slate-600">Pre-pay cancel. Free, no refund flow.</dd></div>
+        <div><dt class="font-semibold text-orange-700">refund_pending</dt><dd class="text-slate-600">Post-pay cancel. Office decides; admin can override in 7d.</dd></div>
+        <div><dt class="font-semibold text-green-700">refunded ✓</dt><dd class="text-slate-600">Refund processed (full or partial).</dd></div>
+      </dl>
+    </details>
+
+    <!-- Three locked rules -->
+    <details open class="bg-white rounded-lg border p-4">
+      <summary class="font-semibold text-slate-900">Three locked rules</summary>
+      <ol class="text-sm mt-3 space-y-2 list-decimal list-inside text-slate-700">
+        <li><b>Fixed pricing</b> — catalog: <code class="bg-slate-100 px-1 rounded">office_fee=5</code> + <code class="bg-slate-100 px-1 rounded">government_fee=15</code> default. No bidding.</li>
+        <li><b>Citizen sees status, not options</b> — no office picker, no offer comparison, no marketplace UI on citizen side.</li>
+        <li><b>Citizen anonymity</b> — receipts, status updates, chat thread, SLA transfers all use platform voice. Office name never on citizen surface.</li>
+      </ol>
+    </details>
+
+    <!-- Discipline -->
+    <details class="bg-white rounded-lg border p-4">
+      <summary class="font-semibold text-slate-900">Discipline (no credits in MVP)</summary>
+      <ul class="text-sm mt-3 space-y-2 text-slate-700">
+        <li><b>Capacity caps</b>: Starter 3 / Pro 12 / Enterprise ∞. At cap → invisible to marketplace.</li>
+        <li><b>Reputation ranking</b>: rating × 4 + completion_rate × 2 − abandonment_rate × 4 − work_breaches × 1.5 + …</li>
+        <li><b>Auto-suspension</b>: 3 review breaches OR 1 work breach / 7d → 24-h pause. 5+ → hard suspend, manual review.</li>
+        <li><span class="text-slate-500">credit_ledger + credits_remaining columns kept dormant for re-introduction without migration.</span></li>
+      </ul>
+    </details>
+
+    <!-- Open questions -->
+    <details open class="bg-amber-50 rounded-lg border border-amber-300 p-4">
+      <summary class="font-semibold text-amber-900">Open questions for Ali</summary>
+      <ol class="text-sm mt-3 space-y-2 list-decimal list-inside text-amber-900">
+        <li><b>Suspension thresholds</b> — 3 review breaches OR 1 work breach in 7d → 24-h pause? 5+ → hard suspend?</li>
+        <li><b>Doc-fix clock</b> — 24h citizen window?</li>
+        <li><b>Hold cap</b> — 4h, then auto-resume?</li>
+        <li><b>Hold reasons enum</b> — portal_down / citizen_otp_pending / citizen_unreachable / manual_review_needed + free-text note?</li>
+        <li><b>Soft-release cooldown</b> — 5 min same-office cannot re-claim?</li>
+        <li><b>Soft-release reputation weight</b> — counts as 0.5 vs 1.0 for SLA timeouts?</li>
+        <li><b>Hard-reject reasons</b> — enum: incomplete_unfixable / wrong_service / suspected_fraud / other + free-text?</li>
+        <li><b>After hard reject</b> — citizen re-applies as new request (no auto-resume)?</li>
+        <li><b>15-min review timeout</b> — no right-of-first-refusal next cycle?</li>
+        <li><b>Push dispatcher</b> — kill it (recommended)? Replace with ranked inbox sort only?</li>
+        <li><b>Released-to-pool cycle limit</b> — after 5 bounces or 2h → admin alert?</li>
+        <li><b>awaiting_documents</b> — same office retains claim, fresh 15-min on resubmit?</li>
+        <li><b>awaiting_documents UX</b> — structured checklist + free-text note (both)?</li>
+        <li><b>on_hold display</b> — citizen sees vague status only (anonymity)?</li>
+        <li><b>Payment timeout</b> — return to pool, re-pool message to citizen?</li>
+        <li><b>Multi-office abandonment</b> — 3 consecutive review timeouts → admin alert + downweight?</li>
+        <li><b>Refund partial amount</b> — office enters, capped at total; admin override in 7d?</li>
+        <li><b>Status rename</b> — keep DB values 'ready'/'claimed'; rename only in citizen copy?</li>
+        <li><b>Hard-reject from awaiting_documents</b> — allowed if new docs reveal fraud/wrong service?</li>
+        <li><b>expired_payment re-pool</b> — pure FCFS, no first-refusal for previous office?</li>
+      </ol>
+      <p class="mt-3 text-xs text-amber-800">Full table with recommendations in <code class="bg-amber-100 px-1 rounded">MARKETPLACE_SCALING.md §17</code>.</p>
+    </details>
+
+    <!-- Actor key reminder -->
+    <div class="bg-white rounded-lg border p-4 text-xs text-slate-600">
+      <div class="font-semibold text-slate-800 mb-2">Arrow color guide</div>
+      <div class="space-y-1">
+        <div><span style="color:#0891b2;font-weight:700">━━▶</span> Citizen action</div>
+        <div><span style="color:#ea580c;font-weight:700">━━▶</span> Office action</div>
+        <div><span style="color:#64748b;font-weight:700">┄┄▶</span> System / SLA (timeouts shown dashed)</div>
+      </div>
+    </div>
+
+  </aside>
+</div>
+
+<footer class="text-xs text-slate-500 px-8 py-4 border-t bg-white">
+  <div class="flex justify-between flex-wrap gap-2">
+    <div>Hover any state box to see its full description.</div>
+    <div>Saned · Marketplace Flow v3 · single-file viz · Tailwind via CDN</div>
+  </div>
+</footer>
+
+</body>
+</html>
