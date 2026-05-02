@@ -643,6 +643,51 @@ officerRouter.post('/request/:id/complete', async (req, res) => {
   res.json({ ok: true });
 });
 
+// ─── Per-document un-reject — recovery from a misclick ──────
+// If the office rejected a doc by mistake, this restores it to 'pending'
+// (or 'verified' if accept=1), wipes the reject_reason, sends a calm AR
+// note to the citizen so they don't keep scrambling for a replacement, and
+// leaves the request status untouched. Audit-logged for accountability.
+officerRouter.post('/request/:id/document/:docId/unreject', async (req, res) => {
+  const id = Number(req.params.id);
+  const docId = Number(req.params.docId);
+  const accept = !!req.body?.accept; // optional: also verify on un-reject
+  const { rows } = await db.execute({
+    sql: `SELECT r.office_id, r.session_id, d.status AS doc_status, d.label, d.doc_code
+            FROM request r
+            JOIN request_document d ON d.id=? AND d.request_id=r.id
+           WHERE r.id=?`,
+    args: [docId, id]
+  });
+  if (!rows[0]) return res.status(404).json({ error: 'not_found' });
+  if (rows[0].office_id !== req.office.id) return res.status(403).json({ error: 'not_your_request' });
+  if (rows[0].doc_status !== 'rejected') {
+    return res.status(409).json({ error: 'not_rejected', current: rows[0].doc_status });
+  }
+  const newStatus = accept ? 'verified' : 'pending';
+  await db.execute({
+    sql: `UPDATE request_document
+             SET status=?, reject_reason=NULL,
+                 verified_by=?, verified_at=datetime('now')
+           WHERE id=? AND request_id=?`,
+    args: [newStatus, req.officer.officer_id, docId, id]
+  });
+  await db.execute({
+    sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
+          VALUES ('officer', ?, 'document_unreject', 'request_document', ?, ?)`,
+    args: [req.officer.officer_id, docId, JSON.stringify({ request_id: id, new_status: newStatus })]
+  });
+  // Tell the citizen so they don't keep hunting for a replacement they
+  // already submitted. Bot voice (not officer) — this is a correction.
+  await storeMessage({
+    session_id: rows[0].session_id, request_id: id,
+    direction: 'out', actor_type: 'bot',
+    body_text: `↩ تراجع المكتب عن رفض المستند "${rows[0].label || rows[0].doc_code}". لا حاجة لإعادة الإرسال.`,
+    meta: { officer_id: req.officer.officer_id, doc_id: docId, action: 'unreject' }
+  });
+  res.json({ ok: true, new_status: newStatus });
+});
+
 // ─── Per-document verify / reject ──────────────────────────
 officerRouter.post('/request/:id/document/:docId/verify', async (req, res) => {
   const id = Number(req.params.id);
@@ -662,6 +707,39 @@ officerRouter.post('/request/:id/document/:docId/verify', async (req, res) => {
   if (!r.rowsAffected) return res.status(404).json({ error: 'not_found' });
   res.json({ ok: true });
 });
+
+// ── Anti-leak text sanitizer ─────────────────────────────────
+// Pre-payment free-text from the office → citizen is the only loophole that
+// could let an office bypass the privacy wall ("call me on +968…", "deal
+// directly: example.com/pay"). We strip phone numbers, URLs, emails, and
+// social handles from any office-supplied free text BEFORE it lands in the
+// citizen's thread. Returns { clean, scrubbed: bool, hits: string[] } so the
+// caller can reject when sanitisation would gut the message entirely.
+function sanitizeOfficeText(raw) {
+  let s = String(raw || '');
+  const hits = [];
+  // E.164 / Oman 8-digit / generic 6-15 digit phone runs (with optional + or
+  // separators).  Catches "+96890…", "00968…", "9099 1234", "tel: 96890…".
+  s = s.replace(/(?:\+?\d[\d\s().-]{6,18}\d)/g, (m) => {
+    const digits = m.replace(/\D/g, '');
+    if (digits.length >= 7 && digits.length <= 15) { hits.push('phone'); return '[رقم محذوف]'; }
+    return m;
+  });
+  // URLs
+  s = s.replace(/\b((?:https?:\/\/|www\.)\S+|\b[a-z0-9-]+\.(?:com|net|org|io|me|app|sa|ae|om|ly|to)\b\S*)/gi,
+                () => { hits.push('url'); return '[رابط محذوف]'; });
+  // Emails
+  s = s.replace(/\b[\w.+-]+@[\w-]+\.[\w.-]+\b/g, () => { hits.push('email'); return '[بريد محذوف]'; });
+  // Social handles (@username) — only on word boundary, not inside emails.
+  s = s.replace(/(^|\s)@([A-Za-z0-9_؀-ۿ]{3,30})/g, (_m, p) => {
+    hits.push('handle'); return `${p}[حساب محذوف]`;
+  });
+  // Common WhatsApp / Telegram nudges
+  s = s.replace(/\b(whats?app|واتس|تلجرام|telegram|skype|wechat)\b/gi, () => {
+    hits.push('platform'); return '[خدمة محذوفة]';
+  });
+  return { clean: s.trim(), scrubbed: hits.length > 0, hits: [...new Set(hits)] };
+}
 
 // Reject a single document → flips the request to 'needs_more_info' so the
 // office's queue knows it's parked on the citizen, sends a structured AR
@@ -683,7 +761,12 @@ officerRouter.post('/request/:id/document/:docId/reject', async (req, res) => {
   const id = Number(req.params.id);
   const docId = Number(req.params.docId);
   const rawReason = String(req.body?.reason || '').trim();
-  const note = String(req.body?.note || '').trim().slice(0, 400);
+  const rawNote = String(req.body?.note || '').trim().slice(0, 400);
+  // Sanitise the free-text note before it ever reaches the citizen — strips
+  // phone numbers, URLs, emails, social handles. Prevents an office from
+  // smuggling "WhatsApp me on +968…" through the structured-reason loophole.
+  const noteSan = sanitizeOfficeText(rawNote);
+  const note = noteSan.clean;
   // Map structured reason code to a user-facing message; if the caller
   // sent a free-text reason (old UI), fall through and use it as the note.
   const isCode = Object.prototype.hasOwnProperty.call(REJECT_REASONS_AR, rawReason);
@@ -771,13 +854,37 @@ officerRouter.post('/request/:id/document/:docId/reject', async (req, res) => {
 // Only the OFFICE that holds the request can call this. Status must be
 // 'claimed' (pre-pay) or 'in_progress' (post-pay) — both are valid
 // "we need more from you" moments.
+// Pre-pay request-info is rate-limited per request to discourage an office
+// from using it as a back-channel for free-form chat. Post-pay paid_at gates
+// fall away (full chat is open by then anyway).
+const REQUEST_INFO_PREPAY_LIMIT = Number(process.env.SANAD_REQ_INFO_PREPAY_LIMIT || 2);
+
 officerRouter.post('/request/:id/request-info',
   requireOfficer({ roles: ['owner', 'manager', 'officer'] }),
   async (req, res) => {
     const id = Number(req.params.id);
-    const reason  = String(req.body?.reason  || '').trim();
-    const missing = Array.isArray(req.body?.missing) ? req.body.missing.filter(Boolean).slice(0, 12) : [];
-    if (!reason) return res.status(400).json({ error: 'reason_required' });
+    const rawReason  = String(req.body?.reason  || '').trim();
+    // Sanitize: strip phone numbers / URLs / emails / handles before the
+    // reason is forwarded to the citizen. If the message is now empty after
+    // scrubbing, refuse — that's a sign the office tried to send only
+    // contact info.
+    const sanReason = sanitizeOfficeText(rawReason);
+    const reason = sanReason.clean;
+    if (!reason) {
+      return res.status(400).json({
+        error: 'reason_required',
+        hint: sanReason.scrubbed ? 'message contained only contact info / URLs and was blocked' : undefined,
+        scrubbed: sanReason.hits
+      });
+    }
+    // Sanitise each missing-doc bullet too — same surface for abuse.
+    const missing = Array.isArray(req.body?.missing)
+      ? req.body.missing
+          .map(s => sanitizeOfficeText(String(s || '')).clean)
+          .filter(Boolean)
+          .slice(0, 12)
+      : [];
+
     const { rows } = await db.execute({
       sql: `SELECT r.session_id, r.office_id, r.status, r.paid_at,
                    s.name_en AS service_name, s.name_ar AS service_name_ar
@@ -789,8 +896,25 @@ officerRouter.post('/request/:id/request-info',
     const r = rows[0];
     if (!r) return res.status(404).json({ error: 'not_found' });
     if (r.office_id !== req.office.id) return res.status(403).json({ error: 'not_your_request' });
-    const ok = ['claimed','awaiting_payment','in_progress'].includes(r.status);
+    const ok = ['claimed','awaiting_payment','in_progress','needs_more_info'].includes(r.status);
     if (!ok) return res.status(409).json({ error: 'bad_state', status: r.status });
+
+    // Rate-limit pre-payment: cap at REQUEST_INFO_PREPAY_LIMIT distinct
+    // request-info messages per request. Doesn't apply post-pay.
+    if (!r.paid_at) {
+      const { rows: c } = await db.execute({
+        sql: `SELECT COUNT(*) AS n FROM audit_log
+               WHERE action='request_more_info' AND target_type='request' AND target_id=?`,
+        args: [id]
+      });
+      if ((c[0]?.n || 0) >= REQUEST_INFO_PREPAY_LIMIT) {
+        return res.status(429).json({
+          error: 'pre_pay_limit_reached',
+          limit: REQUEST_INFO_PREPAY_LIMIT,
+          hint: 'Send the payment link or release the request — pre-pay clarifications are capped.'
+        });
+      }
+    }
 
     const upd = await db.execute({
       sql: `UPDATE request
@@ -848,7 +972,9 @@ officerRouter.post('/request/:id/reclassify',
   async (req, res) => {
     const id = Number(req.params.id);
     const newServiceId = Number(req.body?.new_service_id || 0);
-    const reason = String(req.body?.reason || '').trim() || 'service mismatch';
+    // Strip phones / URLs / handles from the office-supplied reason.
+    const sanReason = sanitizeOfficeText(String(req.body?.reason || ''));
+    const reason = sanReason.clean || 'service mismatch';
     if (!newServiceId) return res.status(400).json({ error: 'new_service_id_required' });
 
     const { rows } = await db.execute({
@@ -882,31 +1008,54 @@ officerRouter.post('/request/:id/reclassify',
     const gov_fee    = Number(priceRows[0]?.gov_fee || 0);
     const total      = office_fee + gov_fee;
 
+    // Reclassify proposes a NEW service + price; the citizen must accept it
+    // before any of the office's downstream actions (payment link) become
+    // valid. Status goes to 'awaiting_reclassify_ack' to make this gate
+    // explicit. The original service_id is preserved alongside in
+    // pending_service_id so the citizen can see the diff and decline cleanly.
     await db.execute({
       sql: `UPDATE request
-               SET service_id=?, office_fee_omr=?, government_fee_omr=?, quoted_fee_omr=?,
-                   status='claimed',
-                   claim_review_started_at=datetime('now'),
+               SET pending_service_id=?,
+                   pending_office_fee_omr=?, pending_government_fee_omr=?, pending_quoted_fee_omr=?,
+                   pending_reclassify_reason=?,
+                   pending_reclassify_at=datetime('now'),
+                   status='awaiting_reclassify_ack',
                    last_event_at=datetime('now')
              WHERE id=? AND office_id=?`,
-      args: [newServiceId, office_fee, gov_fee, total, id, req.office.id]
+      args: [newServiceId, office_fee, gov_fee, total, reason, id, req.office.id]
     });
 
     await db.execute({
       sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
-            VALUES ('officer', ?, 'request_reclassify', 'request', ?, ?)`,
+            VALUES ('officer', ?, 'request_reclassify_proposed', 'request', ?, ?)`,
       args: [req.officer.officer_id, id,
              JSON.stringify({ from_service: r.old_service_id, to_service: newServiceId, reason, new_total: total })]
     });
 
     const newName = r.new_service_name_ar || r.new_service_name;
+    const oldTotal = (Number(r.office_fee_omr) || 0) + (Number(r.government_fee_omr) || 0);
     await storeMessage({
       session_id: r.session_id, request_id: id,
       direction: 'out', actor_type: 'officer',
-      body_text: `🔄 المكتب أعاد تصنيف طلبك إلى الخدمة الصحيحة: "${newName}". مستنداتك انتقلت كما هي. السبب: ${reason}.\nالإجمالي الجديد: ${total.toFixed(3)} ر.ع.`,
-      meta: { officer_id: req.officer.officer_id, from_service: r.old_service_id, to_service: newServiceId }
+      body_text:
+        `🔄 المكتب يقترح تغيير خدمتك إلى:\n` +
+        `**${newName}**\n` +
+        `الإجمالي الجديد: **${total.toFixed(3)} ر.ع** (السابق: ${oldTotal.toFixed(3)} ر.ع)\n` +
+        `السبب: ${reason}\n\n` +
+        `مستنداتك تنتقل كما هي. للموافقة اكتب **موافق** أو **نعم**. للرفض اكتب **رفض** أو **لا**.\n` +
+        `(لن نُطبّق التغيير ولن نُرسل رابط دفع قبل موافقتك.)`,
+      meta: {
+        officer_id: req.officer.officer_id,
+        from_service: r.old_service_id, to_service: newServiceId,
+        new_total: total, reclassify_pending: true
+      }
     });
-    res.json({ ok: true, new_service_id: newServiceId, pricing: { office_fee, government_fee: gov_fee, total } });
+    res.json({
+      ok: true, status: 'awaiting_reclassify_ack',
+      new_service_id: newServiceId,
+      pricing: { office_fee, government_fee: gov_fee, total },
+      sanitized_reason: sanReason.scrubbed
+    });
   }
 );
 
@@ -1121,8 +1270,17 @@ officerRouter.post('/request/:id/payment/start',
     // 'needs_more_info' is a valid pre-payment state too — once the citizen
     // responds, the office can move forward to payment without first having
     // to re-claim. The response below also flips status='awaiting_payment'.
-    if (!['claimed','awaiting_payment','needs_more_info'].includes(r.status))
+    if (!['claimed','awaiting_payment','needs_more_info'].includes(r.status)) {
+      // Specifically surface awaiting_reclassify_ack so the office knows
+      // they're blocked on the citizen's accept/decline of their proposal.
+      if (r.status === 'awaiting_reclassify_ack') {
+        return res.status(409).json({
+          error: 'awaiting_reclassify_ack',
+          hint: 'لا يمكن إرسال رابط الدفع قبل قبول المواطن لتغيير الخدمة المقترح.'
+        });
+      }
       return res.status(409).json({ error: 'bad_state', status: r.status });
+    }
     if (r.payment_status === 'paid')
       return res.status(409).json({ error: 'already_paid' });
 
