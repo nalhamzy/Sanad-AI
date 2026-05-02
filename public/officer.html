@@ -2868,7 +2868,12 @@
       await openDetail(rcCurrentRequest.id);
       await loadInbox();
     } catch (e) {
-      Sanad.toast('فشل الإرسال: ' + e.message, 'err', 3200);
+      // The api() helper now puts the server's AR hint in e.message; show it
+      // verbatim so the office knows what to fix (already paid, wrong state,
+      // service not found, etc.).
+      const msg = e.body?.hint || e.message || 'فشل الإرسال';
+      Sanad.toast('❌ ' + msg, 'err', 4200);
+      console.error('[reclassify]', e);
     }
   });
   document.getElementById('reclassifyOverlay').addEventListener('click', e => {

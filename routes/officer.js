@@ -986,28 +986,83 @@ officerRouter.post('/request/:id/request-info',
 officerRouter.post('/request/:id/reclassify',
   requireOfficer({ roles: ['owner', 'manager'] }),
   async (req, res) => {
+    try {
     const id = Number(req.params.id);
     const newServiceId = Number(req.body?.new_service_id || 0);
     // Strip phones / URLs / handles from the office-supplied reason.
     const sanReason = sanitizeOfficeText(String(req.body?.reason || ''));
     const reason = sanReason.clean || 'service mismatch';
-    if (!newServiceId) return res.status(400).json({ error: 'new_service_id_required' });
+    if (!newServiceId) {
+      return res.status(400).json({
+        error: 'new_service_id_required',
+        hint: 'اختر خدمة من الكتالوج أولاً.'
+      });
+    }
 
-    const { rows } = await db.execute({
-      sql: `SELECT r.session_id, r.office_id, r.status, r.paid_at, r.service_id AS old_service_id,
-                   s.name_en AS new_service_name, s.name_ar AS new_service_name_ar, s.fee_omr AS new_catalog_fee
-              FROM request r
-              LEFT JOIN service_catalog s ON s.id = ?
-             WHERE r.id=?`,
-      args: [newServiceId, id]
-    });
-    const r = rows[0];
-    if (!r) return res.status(404).json({ error: 'not_found' });
-    if (!r.new_service_name && !r.new_service_name_ar) return res.status(404).json({ error: 'service_not_found' });
-    if (r.office_id !== req.office.id) return res.status(403).json({ error: 'not_your_request' });
-    if (r.paid_at) return res.status(409).json({ error: 'already_paid' });
-    if (!['claimed','needs_more_info'].includes(r.status)) {
-      return res.status(409).json({ error: 'bad_state', status: r.status });
+    let r;
+    try {
+      const out = await db.execute({
+        sql: `SELECT r.session_id, r.office_id, r.status, r.paid_at, r.service_id AS old_service_id,
+                     r.payment_status, r.office_fee_omr AS old_office_fee, r.government_fee_omr AS old_gov_fee,
+                     s.name_en AS new_service_name, s.name_ar AS new_service_name_ar, s.fee_omr AS new_catalog_fee
+                FROM request r
+                LEFT JOIN service_catalog s ON s.id = ?
+               WHERE r.id=?`,
+        args: [newServiceId, id]
+      });
+      r = out.rows[0];
+    } catch (dbErr) {
+      console.error('[reclassify] db error', dbErr);
+      return res.status(500).json({ error: 'db_error', hint: 'تعذّر قراءة الطلب — حاول مجدداً.' });
+    }
+    if (!r) {
+      return res.status(404).json({ error: 'not_found', hint: 'الطلب لم يعد موجوداً — أعد تحميل الصفحة.' });
+    }
+    if (!r.new_service_name && !r.new_service_name_ar) {
+      return res.status(404).json({
+        error: 'service_not_found',
+        hint: `الخدمة #${newServiceId} غير موجودة في الكتالوج — أعد البحث.`
+      });
+    }
+    if (r.office_id !== req.office.id) {
+      return res.status(403).json({ error: 'not_your_request', hint: 'هذا الطلب ليس بعهدة مكتبك.' });
+    }
+    if (r.paid_at || r.payment_status === 'paid') {
+      return res.status(409).json({
+        error: 'already_paid',
+        hint: 'لا يمكن تغيير الخدمة بعد الدفع — استخدم "إرجاع للسوق" مع طلب استرداد.'
+      });
+    }
+    // Pre-pay states that allow reclassify. We deliberately INCLUDE
+    // 'awaiting_payment' (the previously-sent payment link gets rolled
+    // back below) and 'awaiting_reclassify_ack' (the new proposal
+    // replaces the previous one).
+    const reclassifiable = ['claimed','needs_more_info','awaiting_payment','awaiting_reclassify_ack'];
+    if (!reclassifiable.includes(r.status)) {
+      const hints = {
+        completed: 'الطلب منجز — لا يمكن تغيير الخدمة.',
+        cancelled: 'الطلب ملغى.',
+        cancelled_by_office: 'الطلب ملغى من المكتب.',
+        cancelled_by_citizen: 'الطلب ملغى من المواطن.',
+        flagged: 'الطلب مُبلَّغ عنه ولا يمكن تعديله.',
+        in_progress: 'العمل بدأ بعد الدفع — استخدم "إرجاع للسوق" مع طلب استرداد للتغيير.',
+        ready: 'الطلب لم يُستلم بعد — استلمه أولاً.'
+      };
+      return res.status(409).json({
+        error: 'bad_state', status: r.status,
+        hint: hints[r.status] || `حالة غير مسموحة لتغيير الخدمة: ${r.status}`
+      });
+    }
+    // If the office had already sent a payment link, roll it back so the
+    // citizen can't pay for the OLD service while a new one is pending.
+    if (r.status === 'awaiting_payment') {
+      await db.execute({
+        sql: `UPDATE request
+                 SET payment_status='none', payment_link=NULL, payment_ref=NULL,
+                     payment_amount_omr=NULL, payment_provider=NULL, payment_session_id=NULL
+               WHERE id=? AND payment_status='awaiting'`,
+        args: [id]
+      });
     }
 
     // Re-resolve pricing for the new service (per-service override → office
@@ -1084,6 +1139,14 @@ officerRouter.post('/request/:id/reclassify',
       pricing: { office_fee, government_fee: gov_fee, total },
       sanitized_reason: sanReason.scrubbed
     });
+    } catch (e) {
+      console.error('[reclassify] error', e);
+      res.status(500).json({
+        error: 'reclassify_failed',
+        detail: e.message,
+        hint: 'تعذّر إرسال الاقتراح — حاول مرة أخرى.'
+      });
+    }
   }
 );
 
