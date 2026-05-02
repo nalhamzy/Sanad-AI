@@ -1075,7 +1075,16 @@
     const mine = allMine.filter(isActive);
     const mineDone = allMine.filter(x => x.status === 'completed');
     const mkt  = allInbox.marketplace || [];
-    const today = iso => iso && new Date(iso).toDateString() === new Date().toDateString();
+    // SQLite's datetime('now') returns UTC strings without the 'Z' suffix,
+    // which browsers (Chrome/Safari/Firefox) parse as LOCAL TIME by default.
+    // Append 'Z' so Date treats it as UTC consistently. Without this, a
+    // request completed shortly before/after midnight UTC would land in the
+    // wrong calendar day for an Oman-local user.
+    const parseUtc = iso => iso ? new Date(String(iso).replace(' ', 'T') + (String(iso).endsWith('Z') ? '' : 'Z')) : null;
+    const today = iso => {
+      const d = parseUtc(iso);
+      return d && d.toDateString() === new Date().toDateString();
+    };
     document.getElementById('kpi_claimed').textContent = mine.filter(x => today(x.claimed_at)).length;
     document.getElementById('kpi_done').textContent = mineDone.filter(x => today(x.completed_at || x.created_at)).length;
     document.getElementById('kpi_inflight').textContent = mine.filter(x => x.status === 'in_progress' || x.status === 'claimed').length;
@@ -1083,14 +1092,18 @@
     const money = mine.filter(x => today(x.claimed_at)).reduce((a, b) => a + (b.fee_omr || 0) * 0.1, 0);
     document.getElementById('kpi_money').textContent = money.toFixed(3);
     const set = (sel, v) => { const el = document.querySelector(sel); if (el) el.textContent = v; };
-    // Sidebar counters reflect ACTIVE only — completed and other terminal
-    // states no longer inflate the "طلباتي" badge.
+    // Sidebar counters reflect ACTIVE only for طلباتي / السوق — completed
+    // and other terminal states no longer inflate those badges. The 'done'
+    // counter now shows TOTAL visible completed (last 30 days, capped by
+    // server) — not just today's, since the sidebar label is just 'مكتمل'
+    // with no time qualifier and the previous "today only" filter was
+    // dropping legitimate completions across the local-vs-UTC day boundary.
     set('[data-count="all"]', mine.length + mkt.length);
     set('[data-count="ready"]', mkt.length);
     set('[data-count="mine"]', mine.length);
     set('[data-count="waiting"]', mine.filter(x => x.status === 'claimed' || x.status === 'needs_more_info').length);
     set('[data-count="sla"]', 0);
-    set('[data-count="done"]', mineDone.filter(x => today(x.completed_at)).length);
+    set('[data-count="done"]', mineDone.length);
   }
 
   function highlightFilter() {
