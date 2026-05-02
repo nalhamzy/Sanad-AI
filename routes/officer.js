@@ -1281,8 +1281,18 @@ officerRouter.post('/request/:id/payment/start',
       args: [id]
     });
     const r = rows[0];
-    if (!r) return res.status(404).json({ error: 'not_found' });
-    if (r.office_id !== office_id) return res.status(403).json({ error: 'not_your_request' });
+    if (!r) {
+      return res.status(404).json({
+        error: 'not_found',
+        hint: 'الطلب لم يعد موجوداً (قد يكون أُرجع للسوق أو حُذف). أعد تحميل الصفحة.'
+      });
+    }
+    if (r.office_id !== office_id) {
+      return res.status(403).json({
+        error: 'not_your_request',
+        hint: 'هذا الطلب لم يعد بعهدة مكتبك. أعد تحميل الصفحة.'
+      });
+    }
     // 'needs_more_info' is a valid pre-payment state too — once the citizen
     // responds, the office can move forward to payment without first having
     // to re-claim. The response below also flips status='awaiting_payment'.
@@ -1312,15 +1322,58 @@ officerRouter.post('/request/:id/payment/start',
     }
 
     const total = Number(r.payment_amount_omr) || (Number(r.office_fee_omr) || 0) + (Number(r.government_fee_omr) || 0);
-    if (!(total > 0)) return res.status(400).json({ error: 'bad_amount' });
+    if (!(total > 0)) {
+      return res.status(400).json({
+        error: 'bad_amount',
+        hint: 'لم يُحدَّد مبلغ — تأكّد من أن الخدمة لها رسوم في الكتالوج أو حدِّد رسوم المكتب من الإعدادات.'
+      });
+    }
+    // Thawani requires a minimum of 100 baisa (0.100 OMR). Surface a clean
+    // error before we even hit the gateway.
+    if (total < 0.1) {
+      return res.status(400).json({
+        error: 'amount_too_small',
+        hint: 'الحد الأدنى للدفع 0.100 ر.ع — راجع تسعيرة الخدمة.'
+      });
+    }
 
     const merchantRef = newMerchantRef(`req${id}`);
-    const link = await createPaymentLink({
-      amountOmr: total,
-      merchantReference: merchantRef,
-      customerEmail: r.citizen_email || `citizen-${id}@saned.local`,
-      description: `Saned · ${r.service_name || r.service_name_ar || 'Sanad request'} (req #${id})`
-    });
+    let link;
+    try {
+      link = await createPaymentLink({
+        amountOmr: total,
+        merchantReference: merchantRef,
+        customerEmail: r.citizen_email || `citizen-${id}@saned.local`,
+        description: `Saned · ${r.service_name || r.service_name_ar || 'Sanad request'} (req #${id})`
+      });
+    } catch (gwErr) {
+      // Gateway failure (Thawani API down / bad keys / rejected payload).
+      // Log the full error to Render logs for diagnosis, then surface a
+      // clean JSON error to the UI so the toast says something useful.
+      console.error('[payment/start] gateway error', {
+        request_id: id, merchantRef, amount_omr: total, error: gwErr.message
+      });
+      // In test/debug mode, fall back to the local stub URL so the office
+      // can keep testing. Production refuses cleanly.
+      const allowFallback = process.env.DEBUG_MODE === 'true' || process.env.SANAD_TEST_PAY === 'true';
+      if (allowFallback) {
+        const PUBLIC_BASE = (process.env.PUBLIC_BASE_URL || `https://${req.get('host')}`).replace(/\/+$/, '');
+        link = {
+          provider: 'stub',
+          url: `${PUBLIC_BASE}/pay.html?ref=${encodeURIComponent(merchantRef)}`,
+          merchantReference: merchantRef,
+          amwalOrderId: `stub-${merchantRef}`,
+          stubbed: true
+        };
+        console.warn('[payment/start] falling back to stub link due to gateway error');
+      } else {
+        return res.status(502).json({
+          error: 'payment_gateway_unavailable',
+          detail: gwErr.message,
+          hint: 'بوابة الدفع لم تستجب — حاول بعد دقيقة، أو تواصل مع الدعم.'
+        });
+      }
+    }
 
     // Stash provider + gateway session_id so the webhook / success-redirect
     // verifier can retrieve and confirm the payment before we mark it paid.

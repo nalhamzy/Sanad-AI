@@ -943,12 +943,23 @@
     if (res.status === 403) {
       const body = await res.json().catch(() => ({}));
       if (body.error === 'office_not_active') {
-        // Redirect to a friendly "pending review" view.
         showPendingReview(body.office_status);
         throw new Error('office_' + body.office_status);
       }
     }
-    if (!res.ok) throw new Error(res.status + ' ' + await res.text().catch(()=>''));
+    if (!res.ok) {
+      // Surface server-supplied AR hints when present so toasts show
+      // something readable instead of the raw JSON. Falls back to the
+      // status code + error code.
+      const body = await res.json().catch(() => null);
+      if (body && (body.hint || body.error)) {
+        const err = new Error(body.hint || body.error);
+        err.status = res.status;
+        err.body = body;
+        throw err;
+      }
+      throw new Error(res.status + ' ' + await res.text().catch(() => ''));
+    }
     return res.json();
   }
 
@@ -2142,16 +2153,35 @@
           Sanad.toast(`✅ ${t('officer.claimed_ok','Claimed')} · ${fee(resp.pricing?.total)}`, 'ok', 2400);
         }
         if (a === 'send-payment') {
-          const resp = await api('/api/officer/request/' + r.id + '/payment/start', { method: 'POST' });
-          const msg = resp.reused
-            ? `${t('officer.payment_resent','Payment link resent')} · ${fee(resp.amount_omr)}`
-            : `💳 ${t('officer.payment_sent','Payment link sent to citizen')} · ${fee(resp.amount_omr)}`;
-          Sanad.toast(msg, 'ok', 2600);
-          // Surface the link in the action area so the office can copy it
-          // (e.g. for SMS or follow-up email).
-          if (resp.payment_link) {
-            try { await navigator.clipboard.writeText(resp.payment_link); Sanad.toast(t('officer.link_copied','Payment link copied to clipboard'), 'info', 1800); } catch {}
+          try {
+            const resp = await api('/api/officer/request/' + r.id + '/payment/start', { method: 'POST' });
+            const msg = resp.reused
+              ? `↻ أُعيد إرسال رابط الدفع · ${fee(resp.amount_omr)}`
+              : `💳 أُرسل رابط الدفع للمواطن · ${fee(resp.amount_omr)}`;
+            Sanad.toast(msg, 'ok', 2800);
+            if (resp.stubbed) {
+              Sanad.toast('⚠ بوابة الدفع غير مهيّأة — استُخدم رابط اختباري', 'warn', 3600);
+            }
+            if (resp.payment_link) {
+              try {
+                await navigator.clipboard.writeText(resp.payment_link);
+                Sanad.toast('📋 الرابط نُسخ إلى الحافظة', 'info', 1800);
+              } catch {}
+            }
+          } catch (err) {
+            // Show the AR hint from the server when present (e.g. amount_too_small,
+            // payment_gateway_unavailable, awaiting_reclassify_ack). Otherwise show
+            // the error code in a more friendly way.
+            const msg = err.body?.hint
+                     || (err.status === 404 ? 'الطلب لم يعد موجوداً — أعد تحميل الصفحة'
+                       : err.status === 403 ? 'لا تملك صلاحية على هذا الطلب'
+                       : err.status === 502 ? 'بوابة الدفع لم تستجب — حاول لاحقاً'
+                       : err.status === 400 ? 'تعذّر إرسال رابط الدفع: تحقّق من تسعيرة الخدمة'
+                       : ('فشل إرسال رابط الدفع: ' + (err.message || '')));
+            Sanad.toast('❌ ' + msg, 'err', 4200);
+            console.error('[send-payment]', err);
           }
+          return;
         }
         if (a === 'release') {
           const resp = await api('/api/officer/request/' + r.id + '/release', { method:'POST' });
