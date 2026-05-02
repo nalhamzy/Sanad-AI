@@ -789,20 +789,28 @@
     </div>
     <!-- Search + filters bar -->
     <div class="px-5 py-3 flex flex-col gap-2 shrink-0" style="border-bottom:1px solid var(--line);background:var(--surface-2)">
-      <input id="rcSearch" class="input w-full" placeholder="ابحث في الكتالوج (اكتب كلمة مفتاحية بالعربية أو الإنجليزية)…"/>
-      <div class="flex items-center gap-2 flex-wrap text-[12px]">
-        <select id="rcEntity" class="input" style="height:32px;font-size:12px;min-width:160px">
-          <option value="">كل الجهات</option>
-        </select>
-        <select id="rcBeneficiary" class="input" style="height:32px;font-size:12px">
+      <div class="flex items-center gap-2">
+        <input id="rcSearch" class="input flex-1" placeholder="ابحث (اختياري) — أو تصفّح القائمة بالأسفل"/>
+        <select id="rcBeneficiary" class="input" style="height:36px;font-size:12px;width:140px">
           <option value="">للجميع</option>
           <option value="Citizen">للأفراد</option>
           <option value="Business">للشركات</option>
         </select>
-        <label class="flex items-center gap-1.5 px-2"><input id="rcFree" type="checkbox"/> مجانية فقط</label>
-        <label class="flex items-center gap-1.5 px-2"><input id="rcLaunch" type="checkbox"/> الخدمات المعتمدة</label>
-        <span class="ms-auto text-[11px]" id="rcCount" style="color:var(--text-mute)"></span>
+        <label class="text-[12px] flex items-center gap-1.5 px-2 cursor-pointer"><input id="rcFree" type="checkbox"/> مجانية</label>
+        <label class="text-[12px] flex items-center gap-1.5 px-2 cursor-pointer"><input id="rcLaunch" type="checkbox"/> معتمدة</label>
+        <span class="text-[11px]" id="rcCount" style="color:var(--text-mute);min-width:80px;text-align:end"></span>
       </div>
+      <!-- Entity quick-pick chips — auto-populated from /api/catalogue/entities,
+           showing top 12 by service count. Click to filter. The selected chip
+           highlights green; click again to clear. -->
+      <div class="flex items-center gap-1.5 flex-wrap">
+        <span class="text-[10.5px] font-bold uppercase tracking-wider me-1" style="color:var(--text-mute)">الجهة</span>
+        <button class="filter-chip rc-entity-chip" data-entity="">كل الجهات</button>
+        <span id="rcEntityChips" class="contents"></span>
+        <button id="rcEntityMore" class="chip surface-hover cursor-pointer hidden" style="font-size:11px">أكثر…</button>
+      </div>
+      <!-- Hidden legacy dropdown (kept for now since the JS reads its value) -->
+      <select id="rcEntity" class="hidden"><option value="">كل الجهات</option></select>
     </div>
     <!-- Results list -->
     <div id="rcResults" class="flex-1 overflow-y-auto p-3" style="background:var(--surface)"></div>
@@ -2602,6 +2610,73 @@
   let rcSelected = null;
   let rcCurrentRequest = null;
 
+  // Cached entity list so we don't re-fetch each time the modal opens.
+  let _rcEntities = null;
+  let _rcShowAllEntities = false;
+  // Same Arabic shorthand as the inbox toolbar.
+  const RC_ENTITY_AR_OVERRIDES = {
+    'Royal Oman Police': 'شرطة عُمان',
+    'Ministry of Health': 'الصحة',
+    'Ministry of Labour': 'العمل',
+    'Ministry of Commerce, Industry and Investment Promotion': 'التجارة',
+    'Ministry of Housing and Urban Planning': 'الإسكان',
+    'Ministry of Transport, Communications and IT': 'النقل',
+    'Muscat Municipality': 'بلدية مسقط',
+    'Civil Status': 'الأحوال المدنية'
+  };
+
+  function renderRcEntityChips() {
+    const host = document.getElementById('rcEntityChips');
+    if (!host || !_rcEntities) return;
+    const cur = document.getElementById('rcEntity').value || '';
+    const top = _rcShowAllEntities ? _rcEntities : _rcEntities.slice(0, 12);
+    host.innerHTML = top.map(e => {
+      const en = e.entity_en || '';
+      const arOverride = RC_ENTITY_AR_OVERRIDES[en];
+      const label = arOverride || e.entity_ar || en || '—';
+      const active = cur === en;
+      return `<button class="filter-chip rc-entity-chip${active ? ' active' : ''}" data-entity="${escapeHtml(en)}" data-tip="${escapeHtml(en)}">
+        ${escapeHtml(label)} <span class="opacity-60">·${e.n}</span>
+      </button>`;
+    }).join('');
+    // "all" chip active state
+    document.querySelectorAll('.rc-entity-chip[data-entity=""]').forEach(b => {
+      b.classList.toggle('active', !cur);
+    });
+    // "more" toggle
+    const more = document.getElementById('rcEntityMore');
+    if (_rcEntities.length > 12) {
+      more.classList.remove('hidden');
+      more.textContent = _rcShowAllEntities ? 'أقل…' : `أكثر… (${_rcEntities.length - 12})`;
+    } else {
+      more.classList.add('hidden');
+    }
+    // Wire chip clicks every render (cheap; entity list is < 50 items).
+    host.querySelectorAll('.rc-entity-chip').forEach(b => {
+      b.addEventListener('click', () => {
+        document.getElementById('rcEntity').value = b.getAttribute('data-entity');
+        renderRcEntityChips();
+        rcRunSearch();
+      });
+    });
+  }
+
+  async function loadRcEntities() {
+    if (_rcEntities) return;
+    try {
+      const j = await (await fetch('/api/catalogue/entities')).json();
+      _rcEntities = (j.entities || []).filter(e => e.entity_en || e.entity_ar);
+      // Sync the legacy hidden <select> options for the existing JS that reads .value
+      const sel = document.getElementById('rcEntity');
+      sel.innerHTML = '<option value="">كل الجهات</option>' + _rcEntities.map(e =>
+        `<option value="${escapeHtml(e.entity_en || '')}">${escapeHtml(e.entity_ar || e.entity_en || '')} (${e.n})</option>`
+      ).join('');
+    } catch (e) {
+      console.warn('[reclassify] entity load failed', e);
+      _rcEntities = [];
+    }
+  }
+
   function openReclassifyModal(r) {
     rcCurrentRequest = r;
     rcSelected = null;
@@ -2611,22 +2686,16 @@
     document.getElementById('rcBeneficiary').value = '';
     document.getElementById('rcFree').checked = false;
     document.getElementById('rcLaunch').checked = false;
-    document.getElementById('rcResults').innerHTML = '<div class="p-4 text-center text-[12px]" style="color:var(--text-mute)">اكتب كلمة في خانة البحث لعرض النتائج</div>';
+    document.getElementById('rcResults').innerHTML = '<div class="p-4 text-center text-[12px]" style="color:var(--text-mute)">… يحمّل القائمة</div>';
     document.getElementById('rcPreview').classList.add('hidden');
     document.getElementById('reclassifyOverlay').classList.remove('hidden');
-    // Lazy-load entities into the dropdown.
-    if (!document.getElementById('rcEntity').dataset.loaded) {
-      fetch('/api/catalogue/entities').then(r => r.json()).then(j => {
-        const sel = document.getElementById('rcEntity');
-        (j.entities || []).slice(0, 30).forEach(e => {
-          const opt = document.createElement('option');
-          opt.value = e.entity_en || e.name || '';
-          opt.textContent = (e.entity_ar || e.entity_en || '') + ` (${e.n || 0})`;
-          sel.appendChild(opt);
-        });
-        sel.dataset.loaded = '1';
-      }).catch(() => {});
-    }
+    // Load entities (once) + run an immediate browse so the office sees a
+    // filled-out list the moment the modal opens — no need to type anything
+    // to start. Filtering by clicking an entity chip refines from there.
+    loadRcEntities().then(() => {
+      renderRcEntityChips();
+      rcRunSearch();
+    });
     setTimeout(() => document.getElementById('rcSearch').focus(), 50);
   }
 
@@ -2657,7 +2726,19 @@
       const items = j.items || j.results || j.services || [];
       document.getElementById('rcCount').textContent = items.length ? `${items.length} نتيجة` : '';
       if (!items.length) {
-        res.innerHTML = '<div class="p-4 text-center text-[12px]" style="color:var(--text-mute)">لا توجد نتائج — جرّب كلمة أخرى أو خفّف الفلاتر</div>';
+        res.innerHTML = `<div class="p-6 text-center text-[12px]" style="color:var(--text-mute)">
+          <div style="font-size:32px;margin-bottom:8px">🔍</div>
+          <div>لا توجد نتائج بهذه الفلاتر.</div>
+          <button class="chip surface-hover cursor-pointer mt-3" onclick="(function(){
+            document.getElementById('rcSearch').value='';
+            document.getElementById('rcEntity').value='';
+            document.getElementById('rcBeneficiary').value='';
+            document.getElementById('rcFree').checked=false;
+            document.getElementById('rcLaunch').checked=false;
+            window.renderRcEntityChips && window.renderRcEntityChips();
+            window.rcRunSearch && window.rcRunSearch();
+          })()">↺ إزالة كل الفلاتر</button>
+        </div>`;
         return;
       }
       res.innerHTML = items.map(s => {
@@ -2714,6 +2795,10 @@
   document.getElementById('rcBeneficiary').addEventListener('change', rcRunSearch);
   document.getElementById('rcFree').addEventListener('change', rcRunSearch);
   document.getElementById('rcLaunch').addEventListener('change', rcRunSearch);
+  document.getElementById('rcEntityMore').addEventListener('click', () => {
+    _rcShowAllEntities = !_rcShowAllEntities;
+    renderRcEntityChips();
+  });
   document.getElementById('rcSendBtn').addEventListener('click', async () => {
     if (!rcSelected) { Sanad.toast('اختر خدمة أولاً', 'warn'); return; }
     const reason = document.getElementById('rcReason').value.trim();
@@ -2882,6 +2967,8 @@
   window.openReclassifyModal = openReclassifyModal;
   window.openReqInfoModal = openReqInfoModal;
   window.riAddCustomDoc = riAddCustomDoc;
+  window.rcRunSearch = rcRunSearch;
+  window.renderRcEntityChips = renderRcEntityChips;
 
   // Expose doc-tile inline onclick handlers to the global scope. The doc
   // grid is rendered with `onclick="verifyDoc(…)"` strings, which only
