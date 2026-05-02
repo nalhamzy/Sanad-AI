@@ -1306,6 +1306,10 @@ officerRouter.post('/request/:id/payment/start',
       description: `Saned · ${r.service_name || r.service_name_ar || 'Sanad request'} (req #${id})`
     });
 
+    // Stash provider + gateway session_id so the webhook / success-redirect
+    // verifier can retrieve and confirm the payment before we mark it paid.
+    const provider = link.provider || (link.stubbed ? 'stub' : 'amwal');
+    const sessionId = link.session_id || link.amwalOrderId || null;
     await db.execute({
       sql: `UPDATE request
                SET status='awaiting_payment',
@@ -1313,14 +1317,16 @@ officerRouter.post('/request/:id/payment/start',
                    payment_link=?,
                    payment_ref=?,
                    payment_amount_omr=?,
+                   payment_provider=?,
+                   payment_session_id=?,
                    last_event_at=datetime('now')
              WHERE id=?`,
-      args: [link.url, merchantRef, total, id]
+      args: [link.url, merchantRef, total, provider, sessionId, id]
     });
     await db.execute({
       sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
             VALUES ('officer', ?, 'payment_start', 'request', ?, ?)`,
-      args: [req.officer.officer_id, id, JSON.stringify({ amount_omr: total, merchant_ref: merchantRef, stubbed: !AMWAL_ENABLED })]
+      args: [req.officer.officer_id, id, JSON.stringify({ amount_omr: total, merchant_ref: merchantRef, provider, session_id: sessionId, stubbed: !AMWAL_ENABLED && !link.session_id })]
     });
 
     // Notify the citizen (web + WhatsApp). Same bot voice — preserves the

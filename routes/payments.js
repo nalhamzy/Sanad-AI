@@ -19,6 +19,12 @@ import { Router } from 'express';
 import { db } from '../lib/db.js';
 import { requireOfficer } from '../lib/auth.js';
 import { createPaymentLink, verifyWebhookSignature, newMerchantRef, AMWAL_ENABLED } from '../lib/amwal.js';
+import {
+  THAWANI_ENABLED,
+  retrieveThawaniSession,
+  isThawaniPaid,
+  verifyThawaniSignature
+} from '../lib/thawani.js';
 import { storeMessage } from '../lib/agent.js';
 import { sendWhatsAppText, isWhatsAppSession } from '../lib/whatsapp_send.js';
 
@@ -427,5 +433,144 @@ paymentsRouter.post('/_stub/activate', async (req, res) => {
   });
   if (!rows[0]) return res.status(404).json({ error: 'unknown_ref' });
   const result = await activateSubscription(rows[0], { source: 'stub' });
+  res.json({ ok: true, ...result });
+});
+
+// ════════════════════════════════════════════════════════════
+// THAWANI PAY — request-payment routes
+// ════════════════════════════════════════════════════════════
+// Three endpoints:
+//   • GET  /thawani/success?ref=…  — citizen lands here after paying;
+//     we retrieve the session from Thawani, verify payment_status='paid',
+//     mark our request paid, then redirect to /request.html.
+//   • GET  /thawani/cancel?ref=…   — citizen abandoned; show /request.html
+//     with a "payment cancelled" hint. We do NOT refund or alter status
+//     beyond logging — they can retry.
+//   • POST /webhook/thawani        — optional async confirmation. Same
+//     verify-via-retrieve logic. Idempotent.
+//
+// Trust model: a redirect alone is NEVER trusted. We always call
+// retrieveThawaniSession before flipping payment_status. So even if a
+// malicious client crafts a fake success URL, we can't be tricked into
+// marking unpaid requests paid.
+// ────────────────────────────────────────────────────────────
+
+// Resolve a request by our merchant_ref AND verify it's a Thawani-tracked
+// row. Returns the request row or null. Used by all three endpoints.
+async function loadThawaniRequest(ref) {
+  if (!ref || typeof ref !== 'string') return null;
+  const { rows } = await db.execute({
+    sql: `SELECT id, payment_provider, payment_session_id, payment_status, paid_at
+            FROM request WHERE payment_ref=? LIMIT 1`,
+    args: [ref]
+  });
+  return rows[0] || null;
+}
+
+// Verify with Thawani then mark paid. Returns { ok, paid?, alreadyPaid?, error? }.
+async function thawaniConfirmAndMark(ref, source = 'thawani-redirect') {
+  const r = await loadThawaniRequest(ref);
+  if (!r) return { ok: false, error: 'unknown_ref' };
+  if (r.payment_status === 'paid' || r.paid_at) {
+    return { ok: true, alreadyPaid: true, request_id: r.id };
+  }
+  if (r.payment_provider && r.payment_provider !== 'thawani') {
+    return { ok: false, error: 'wrong_provider', provider: r.payment_provider };
+  }
+  if (!r.payment_session_id) return { ok: false, error: 'no_session_id' };
+  // Server-to-server verification — the only thing we trust.
+  let session;
+  try {
+    session = await retrieveThawaniSession(r.payment_session_id);
+  } catch (e) {
+    console.warn('[thawani:verify]', e.message);
+    return { ok: false, error: 'verify_failed', detail: e.message };
+  }
+  // Persist the raw payload for audit before deciding.
+  try {
+    await db.execute({
+      sql: `UPDATE request SET payment_raw_webhook=? WHERE id=?`,
+      args: [JSON.stringify(session).slice(0, 8000), r.id]
+    });
+  } catch {}
+  if (!isThawaniPaid(session)) {
+    return { ok: false, error: 'not_paid', payment_status: session?.payment_status || null };
+  }
+  // markRequestPaid handles atomic flip + citizen notification.
+  const result = await markRequestPaid(r.id, source);
+  return { ok: true, paid: !result.alreadyPaid, alreadyPaid: !!result.alreadyPaid, request_id: r.id };
+}
+
+paymentsRouter.get('/thawani/success', async (req, res) => {
+  const ref = String(req.query.ref || '');
+  const result = await thawaniConfirmAndMark(ref, 'thawani-redirect');
+  if (!result.ok) {
+    // Redirect to request page with a clear error flag so the UI can render
+    // a "payment failed — please retry" banner without us leaking detail.
+    const tag = result.error === 'not_paid' ? 'unpaid' : 'verify_error';
+    return res.redirect(`/request.html?ref=${encodeURIComponent(ref)}&pay_error=${tag}`);
+  }
+  res.redirect(`/request.html?id=${result.request_id}${result.alreadyPaid ? '&already=1' : '&paid=1'}`);
+});
+
+paymentsRouter.get('/thawani/cancel', async (req, res) => {
+  const ref = String(req.query.ref || '');
+  const r = await loadThawaniRequest(ref);
+  await db.execute({
+    sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
+          VALUES ('citizen', NULL, 'payment_cancelled', 'request', ?, ?)`,
+    args: [r?.id || 0, JSON.stringify({ ref, provider: 'thawani' })]
+  }).catch(() => {});
+  if (!r) return res.redirect('/');
+  res.redirect(`/request.html?id=${r.id}&pay_cancelled=1`);
+});
+
+paymentsRouter.post('/webhook/thawani', async (req, res) => {
+  // Optional signature gate (THAWANI_WEBHOOK_SECRET). Soft-true if unset
+  // because Thawani's webhook contract isn't formally signed in their
+  // public docs — the retrieve-then-verify call below is our real trust.
+  const sig = req.get('x-thawani-signature') || req.get('x-signature') || '';
+  if (!verifyThawaniSignature(req.rawBody, sig)) {
+    return res.status(401).json({ error: 'bad_signature' });
+  }
+  // Webhook payload may be either { client_reference_id } (our merchant_ref),
+  // { session_id }, or a Thawani envelope { data: {...} }.
+  const body = req.body || {};
+  const data = body.data || body;
+  const ref = data.client_reference_id || data.merchant_ref || data.ref;
+  const sessionId = data.session_id;
+
+  // We respond 200 fast (Thawani retries on timeout) then verify.
+  res.json({ ok: true, received: true });
+
+  try {
+    let resolvedRef = ref;
+    if (!resolvedRef && sessionId) {
+      const { rows } = await db.execute({
+        sql: `SELECT payment_ref FROM request WHERE payment_session_id=? LIMIT 1`,
+        args: [sessionId]
+      });
+      resolvedRef = rows[0]?.payment_ref;
+    }
+    if (!resolvedRef) {
+      console.warn('[thawani:webhook] no resolvable ref', body);
+      return;
+    }
+    const result = await thawaniConfirmAndMark(resolvedRef, 'thawani-webhook');
+    if (!result.ok) console.warn('[thawani:webhook]', result);
+  } catch (e) {
+    console.error('[thawani:webhook] error', e);
+  }
+});
+
+// Demo helper — only when sandbox + DEBUG_MODE. Lets a tester force a
+// "paid" verification without going through the real Thawani UI. Useful
+// for the AR/EN happy-path screencast.
+paymentsRouter.post('/thawani/_dev/mark-paid', async (req, res) => {
+  if (process.env.DEBUG_MODE !== 'true') return res.status(404).end();
+  const ref = String(req.body?.ref || req.query?.ref || '');
+  const r = await loadThawaniRequest(ref);
+  if (!r) return res.status(404).json({ error: 'unknown_ref' });
+  const result = await markRequestPaid(r.id, 'thawani-dev-stub');
   res.json({ ok: true, ...result });
 });

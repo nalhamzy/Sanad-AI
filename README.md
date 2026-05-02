@@ -335,6 +335,33 @@ The agent code is **identical** on both channels — the channel adapter lives i
 
 ---
 
+## 8.1 · Thawani Pay
+
+Thawani is the preferred payment provider for the pilot. It auto-takes over when its keys are present (the `createPaymentLink` dispatcher in `lib/amwal.js` checks Thawani first, then Amwal, then a local stub).
+
+### Demo / sandbox setup
+Add to your `.env` (or Render env):
+```
+THAWANI_SECRET_KEY      = rRQ26GcsZzoEhbrP2HZvLYDbn9C9et   # public sandbox secret
+THAWANI_PUBLISHABLE_KEY = HGvTMLDssJghr9tlN9gr4DVYt0qyBy   # public sandbox publishable
+THAWANI_ENV             = sandbox                          # or 'production'
+PUBLIC_BASE_URL         = https://<your-render-host>
+THAWANI_WEBHOOK_SECRET  = (optional, only set if you've configured a signed webhook on Thawani's dashboard)
+```
+
+The sandbox keys above are Thawani's documented public test keys. Replace with the real merchant secret + publishable when you onboard. `THAWANI_ENV=production` flips the base URL to `https://checkout.thawani.om`.
+
+### Flow
+1. Officer presses 💳 إرسال رابط الدفع → server creates a Thawani checkout session (`POST /api/v1/checkout/session`, amounts in baisa) and stores `payment_session_id`.
+2. The citizen receives `https://uatcheckout.thawani.om/pay/{session_id}?key=…` via WhatsApp / web chat.
+3. After payment Thawani redirects to `/api/payments/thawani/success?ref=…`. The server **calls `GET /checkout/session/{id}` to verify `payment_status='paid'` before flipping our request to paid**. A naked redirect alone is never trusted.
+4. Optional: Thawani's webhook (if configured on their dashboard) hits `POST /api/payments/webhook/thawani` and runs the same verify-and-mark.
+
+### Demo helper
+With `DEBUG_MODE=true`, `POST /api/payments/thawani/_dev/mark-paid?ref=…` skips the gateway and marks paid directly — useful for the screencast / pilot dry-runs.
+
+---
+
 ## 9 · Deploy
 
 ### Render (recommended for v0.1)
