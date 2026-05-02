@@ -1879,9 +1879,21 @@
                       data-tip="قبول داخلي — لا تنبيه للمواطن، فقط للسجل"
                       style="height:28px;font-size:11.5px;font-weight:700;background:rgba(16,185,129,.18);color:rgb(5,120,87);border-color:rgba(16,185,129,.4)">✓ قبول</button>
               <button class="btn btn-secondary flex-1" onclick="rejectDoc(${d.id})" ${d.status==='rejected'?'disabled':''}
-                      data-tip="رفض المستند — يُبلَّغ المواطن ويُطلب إعادة الإرسال"
-                      style="height:28px;font-size:11.5px;font-weight:700;background:#fee2e2;color:#991b1b;border-color:#fca5a5">✕ رفض</button>
+                      data-tip="رفض مع اختيار سبب من قائمة"
+                      style="height:28px;font-size:11.5px;font-weight:700;background:#fee2e2;color:#991b1b;border-color:#fca5a5">✕ رفض…</button>
             </div>
+            ${d.status !== 'verified' && d.status !== 'rejected' ? `
+            <div class="flex gap-1 mt-1.5 flex-wrap" data-tip="رفض سريع — نقرة واحدة وتُرسَل رسالة محدّدة للمواطن">
+              <button onclick="quickReject(${d.id}, 'blurry')"
+                      style="flex:1;min-width:0;height:24px;font-size:10.5px;padding:0 6px;border-radius:6px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;cursor:pointer;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
+                      title="غير واضحة">🌫 غير واضحة</button>
+              <button onclick="quickReject(${d.id}, 'missing_side')"
+                      style="flex:1;min-width:0;height:24px;font-size:10.5px;padding:0 6px;border-radius:6px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;cursor:pointer;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
+                      title="ناقص الوجه الآخر">↻ الوجه الآخر</button>
+              <button onclick="quickReject(${d.id}, 'expired')"
+                      style="flex:1;min-width:0;height:24px;font-size:10.5px;padding:0 6px;border-radius:6px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;cursor:pointer;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
+                      title="منتهي الصلاحية">⏱ منتهي</button>
+            </div>` : ''}
             ${d.status === 'rejected' ? `
               <div class="text-[10.5px] mt-1.5" style="color:#92400e;background:#fef3c7;padding:4px 8px;border-radius:6px">⏳ بانتظار إعادة الإرسال من المواطن</div>
               <button class="btn btn-secondary mt-1.5 w-full" onclick="unrejectDoc(${d.id})"
@@ -1957,6 +1969,48 @@
       await loadInbox();
     } catch (e) { Sanad.toast('فشل إلغاء الرفض', 'err'); }
   }
+  // Quick-reject — one tap, no modal. Used by the inline chips on each
+  // doc tile for the three most common reasons. Same backend endpoint as
+  // the modal-driven rejectDoc(); the citizen receives the same templated
+  // AR message with the canonical reason text.
+  async function quickReject(docId, reasonCode) {
+    if (!currentRequestId) return;
+    const REASON_LABELS = {
+      blurry:       'غير واضحة',
+      missing_side: 'ينقصها الوجه الآخر',
+      expired:      'منتهي الصلاحية'
+    };
+    const label = REASON_LABELS[reasonCode] || reasonCode;
+    if (!confirm(`رفض المستند بسبب "${label}"؟\nسيُبلَّغ المواطن ويُطلب منه إعادة الإرسال.`)) return;
+    // Optimistic chip flip — instant feedback while the round-trip lands.
+    try {
+      const tile = document.querySelector(`button[onclick*="quickReject(${docId}"]`)?.closest('.doc');
+      if (tile) {
+        const chip = tile.querySelector('.chip');
+        if (chip) {
+          chip.className = 'chip chip-bad chip-sm';
+          chip.style.position = 'absolute';
+          chip.style.top = '10px';
+          chip.style.right = '10px';
+          chip.textContent = 'rejected';
+        }
+      }
+    } catch {}
+    try {
+      await api(`/api/officer/request/${currentRequestId}/document/${docId}/reject`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ reason: reasonCode })
+      });
+      Sanad.toast(`✕ تم الرفض (${label}) — المواطن أُخطر`, 'ok', 2400);
+      await openDetail(currentRequestId);
+      await loadInbox();
+    } catch (e) {
+      Sanad.toast('فشل الرفض: ' + (e.message || ''), 'err', 3200);
+      await openDetail(currentRequestId);
+    }
+  }
+
   async function rejectDoc(docId) {
     if (!currentRequestId) return;
     const menu = REJECT_REASONS_AR.map((x,i) => `${i+1}. ${x.label}`).join('\n');
@@ -2976,6 +3030,7 @@
   window.verifyDoc = verifyDoc;
   window.rejectDoc = rejectDoc;
   window.unrejectDoc = unrejectDoc;
+  window.quickReject = quickReject;
   window.closeReclassify = () => document.getElementById('reclassifyOverlay')?.classList.add('hidden');
   window.closeReqInfo    = () => document.getElementById('reqInfoOverlay')?.classList.add('hidden');
   window.riAddCustomDoc  = () => { try { riAddCustomDoc(); } catch {} };
