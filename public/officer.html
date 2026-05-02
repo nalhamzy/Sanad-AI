@@ -2926,24 +2926,37 @@
         </div>`;
         return;
       }
-      res.innerHTML = items.map(s => {
+      // Filter out any item missing a usable numeric id — shouldn't happen
+      // with the current API but keeps a future shape change from rendering
+      // unclickable rows that look right but post NaN to the server.
+      const validItems = items.filter(s => Number.isFinite(Number(s.id)) && Number(s.id) > 0);
+      if (!validItems.length) {
+        res.innerHTML = '<div class="p-6 text-center text-[12px]" style="color:var(--bad)">⚠ النتائج غير صالحة — حدّث الصفحة.</div>';
+        return;
+      }
+      res.innerHTML = validItems.map(s => {
+        const idNum = Number(s.id);
         const fee = s.fee_omr != null ? `${Number(s.fee_omr).toFixed(3)} ر.ع` : 'حسب الجهة';
-        return `<button class="rc-item w-full text-start p-3 mb-2 rounded-lg" data-id="${s.id}"
+        return `<button type="button" class="rc-item w-full text-start p-3 mb-2 rounded-lg" data-id="${idNum}"
                        data-name-ar="${escapeHtml(s.name_ar || '')}"
                        data-name-en="${escapeHtml(s.name_en || '')}"
                        data-entity-ar="${escapeHtml(s.entity_ar || '')}"
                        data-entity-en="${escapeHtml(s.entity_en || '')}"
                        data-fee="${s.fee_omr ?? ''}"
                        style="background:var(--surface-3);border:1px solid var(--line);transition:all .12s">
-          <div class="flex items-start gap-2">
+          <div class="flex items-start gap-2 pointer-events-none">
             <div class="flex-1 min-w-0">
               <div class="font-bold text-[13px] truncate">${escapeHtml(s.name_ar || s.name_en || '—')}</div>
               <div class="text-[11px] mt-0.5" style="color:var(--text-mute)">${escapeHtml(s.entity_ar || s.entity_en || '')}</div>
+              <div class="text-[10px] mt-0.5 mono" style="color:var(--text-mute);opacity:.6">#${idNum}</div>
             </div>
             <span class="chip chip-sm" style="white-space:nowrap">${fee}</span>
           </div>
         </button>`;
       }).join('');
+      // pointer-events:none on the inner div ensures the click target is
+      // ALWAYS the button (and ALWAYS has the right dataset), regardless of
+      // where in the card the user taps.
       res.querySelectorAll('.rc-item').forEach(b => b.addEventListener('click', () => rcSelect(b)));
     } catch (e) {
       res.innerHTML = `<div class="p-4 text-center text-[12px]" style="color:var(--bad)">فشل البحث: ${escapeHtml(e.message)}</div>`;
@@ -2952,8 +2965,17 @@
 
   function rcSelect(btn) {
     const ds = btn.dataset;
+    const parsedId = Number(ds.id);
+    if (!Number.isFinite(parsedId) || parsedId <= 0) {
+      // Defensive: should never happen since /api/catalogue/hybrid always
+      // returns a numeric id. Log loudly so a future API shape change is
+      // visible instead of silently failing as "no service selected".
+      console.error('[rcSelect] invalid id from button.dataset', ds);
+      Sanad.toast('❌ تعذّر تحديد رقم الخدمة من القائمة — حدّث الصفحة وحاول مجدداً', 'err', 4200);
+      return;
+    }
     rcSelected = {
-      id: Number(ds.id),
+      id: parsedId,
       name_ar: ds.nameAr, name_en: ds.nameEn,
       entity_ar: ds.entityAr, entity_en: ds.entityEn,
       fee_omr: ds.fee ? Number(ds.fee) : null
@@ -2985,7 +3007,18 @@
     renderRcEntityChips();
   });
   document.getElementById('rcSendBtn').addEventListener('click', async () => {
-    if (!rcSelected) { Sanad.toast('اختر خدمة أولاً', 'warn'); return; }
+    // Three-layer guard: rcSelected must exist, its id must be a finite
+    // positive number, and the request being reclassified must still be
+    // the one the modal opened on.
+    if (!rcSelected || !Number.isFinite(rcSelected.id) || rcSelected.id <= 0) {
+      Sanad.toast('اختر خدمة من القائمة بالأسفل قبل الإرسال', 'warn', 2800);
+      console.warn('[reclassify send] rcSelected invalid', rcSelected);
+      return;
+    }
+    if (!rcCurrentRequest?.id) {
+      Sanad.toast('الطلب لم يعد محدّداً — أغلق النافذة وحاول مجدداً', 'err', 3200);
+      return;
+    }
     const reason = document.getElementById('rcReason').value.trim();
     try {
       const resp = await api(`/api/officer/request/${rcCurrentRequest.id}/reclassify`, {
