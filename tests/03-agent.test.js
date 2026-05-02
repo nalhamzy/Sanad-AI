@@ -107,12 +107,14 @@ describe('runTurn() — regression guards (stuck state + dialect)', () => {
       session_id: s, user_text: '',
       attachment: { url: '/u/random.jpg', mime: 'image/jpeg', size: 128 }
     });
-    // Should be a helpful "tell me the service first" or collecting (if context matched)
-    assert.ok(out.reply.length > 10);
-    assert.ok(
-      /(استلمت|received|خدمة|service)/i.test(out.reply),
-      'reply should handle the upload gracefully: ' + out.reply.slice(0, 80)
-    );
+    // After the universal burst aggregator landed, the immediate reply for
+    // any attachment turn is suppressed and emitted ~1.8s later via the
+    // drain timer. The test now asserts the regression behaviour at the
+    // STATE level: idle stayed idle (no service card spuriously surfaced)
+    // and no rogue request_id was created.
+    assert.equal(out.state.status, 'idle', 'idle attach should not trigger a service card');
+    assert.equal(out.request_id, undefined, 'no request should be created for an idle bare-file upload');
+    // Reply is intentionally deferred — drainBurst will fire it later.
   });
 });
 
