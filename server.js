@@ -98,7 +98,13 @@ app.use('/api/catalogue', catalogueRouter);
 app.use('/api/annotator', originGuard, annotatorRouter);
 
 // Health
-app.get('/api/health', (_req, res) => res.json({ ok: true, llm: LLM_ENABLED, debug: DEBUG }));
+app.get('/api/health', (_req, res) => res.json({
+  ok: true,
+  llm: LLM_ENABLED,
+  debug: DEBUG,
+  whatsapp: !!(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID),
+  test_mirror: !!(process.env.SANAD_TEST_PHONE || '').trim()
+}));
 
 // SPA fallback — any route not starting with /api goes to index.html
 app.get(/^\/(?!api|uploads).*/, (_req, res) => {

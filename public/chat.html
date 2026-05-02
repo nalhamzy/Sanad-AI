@@ -283,6 +283,17 @@ window.addEventListener('unhandledrejection', e => {
       // necessarily want) to know which LLM provider is behind the curtain.
       // The full subprocessor list is on /privacy.html for those who do.
       llmState.textContent = h.llm ? (typeof t==='function' ? t('chat.ai_on', 'AI on') : 'AI on') : (typeof t==='function' ? t('chat.ai_fallback', 'fallback') : 'fallback');
+      // Test-mirror banner — shows when SANAD_TEST_PHONE + WhatsApp creds are
+      // both set on the server. Tells the user every bot reply is also being
+      // pushed to the configured WhatsApp number.
+      if (h.test_mirror && h.whatsapp && !document.getElementById('testMirrorBanner')) {
+        const b = document.createElement('div');
+        b.id = 'testMirrorBanner';
+        b.className = 'shrink-0';
+        b.style.cssText = 'background:linear-gradient(135deg,#fdf4ff,#fae8ff);border-bottom:1px solid #e9d5ff;color:#6b21a8;padding:8px 14px;font-size:12px;font-weight:600;text-align:center';
+        b.innerHTML = '🧪 وضع الاختبار: كل الردود تُرسَل أيضاً إلى رقم الواتساب المُسجَّل على الخادم';
+        document.querySelector('header.wa-dark')?.after(b);
+      }
       const mode = document.getElementById('llmMode');
       const hint = document.getElementById('llmHint');
       if (h.llm) {
