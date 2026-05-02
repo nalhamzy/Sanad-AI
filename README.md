@@ -345,7 +345,7 @@ Add to your `.env` (or Render env):
 THAWANI_SECRET_KEY      = rRQ26GcsZzoEhbrP2HZvLYDbn9C9et   # public sandbox secret
 THAWANI_PUBLISHABLE_KEY = HGvTMLDssJghr9tlN9gr4DVYt0qyBy   # public sandbox publishable
 THAWANI_ENV             = sandbox                          # or 'production'
-PUBLIC_BASE_URL         = https://<your-render-host>
+PUBLIC_BASE_URL         = https://sanad-ai.onrender.com
 THAWANI_WEBHOOK_SECRET  = (optional, only set if you've configured a signed webhook on Thawani's dashboard)
 ```
 

@@ -34,6 +34,30 @@ services:
         value: claude-opus-4-5
       - key: SANAD_AGENT_V2
         value: "true"
+      # ── Public base URL — used to build Thawani success/cancel URLs,
+      # WhatsApp webhook URL, and any redirect that needs an absolute origin.
+      # Update this if your Render host gets a hash suffix or you point a
+      # custom domain at the service.
+      - key: PUBLIC_BASE_URL
+        value: https://sanad-ai.onrender.com
+      # ── Thawani Pay (sandbox-by-default; flip to production after onboarding).
+      # The keys below are Thawani's public sandbox test keys — safe to commit.
+      # Replace via the Render dashboard with your real merchant credentials
+      # once issued, and bump THAWANI_ENV to `production`.
+      - key: THAWANI_ENV
+        value: sandbox
+      - key: THAWANI_SECRET_KEY
+        value: rRQ26GcsZzoEhbrP2HZvLYDbn9C9et
+      - key: THAWANI_PUBLISHABLE_KEY
+        value: HGvTMLDssJghr9tlN9gr4DVYt0qyBy
+      - key: THAWANI_WEBHOOK_SECRET   # optional; only set if you wired a signed webhook on Thawani's dashboard
+        sync: false
+      # ── Test mirror — every outbound bot/officer message on a web session
+      # also lands on this WhatsApp number. Lets you drive a session from any
+      # browser while the conversation lands on your phone in real time.
+      # Requires WHATSAPP_* creds above to be set, otherwise it's a no-op.
+      - key: SANAD_TEST_PHONE
+        value: "+96892888715"
     disk:
       name: sanad-data
       mountPath: /opt/render/project/src/data
