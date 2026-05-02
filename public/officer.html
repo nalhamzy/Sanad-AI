@@ -1742,10 +1742,18 @@
         document.getElementById('slaBar').style.display = 'none';
       }
 
+      // Defensive defaults — the marketplace (anonymized) response shape
+      // doesn't include `messages` or `chat_unlocked`. Without these
+      // fallbacks the renderers crash with "Cannot read properties of
+      // undefined (reading 'filter')".
+      const docs = Array.isArray(data.documents) ? data.documents : [];
+      const msgs = Array.isArray(data.messages)  ? data.messages  : [];
+      const chatUnlocked = data.chat_unlocked !== false && !data.anonymized;
+
       renderOverview(r);
-      renderDocs(data.documents);
-      renderTimeline(r, data.messages);
-      renderContext(r, data);
+      renderDocs(docs);
+      renderTimeline(r, msgs);
+      renderContext(r, { ...data, documents: docs, messages: msgs });
       renderActions(r);
       document.getElementById('shortcutsBar').classList.toggle('hidden', !r.officer_id);
 
@@ -1755,7 +1763,7 @@
       document.getElementById('sc_portal').onclick = () => window.open('https://www.rop.gov.om', '_blank');
       document.getElementById('sc_otp').onclick = openOtpWindow;
 
-      renderChat(data.messages, data.chat_unlocked !== false);
+      renderChat(msgs, chatUnlocked);
       switchTab('docs');
     } catch (e) {
       // Surface the actual reason: server-supplied AR hint (when present)
@@ -1810,6 +1818,7 @@
   }
 
   function renderDocs(docs) {
+    docs = Array.isArray(docs) ? docs : [];
     document.getElementById('docsPillCount').textContent = docs.length;
     if (!docs.length) {
       document.getElementById('docsGrid').innerHTML = `<div class="col-span-full empty">
@@ -2044,7 +2053,9 @@
     events.push({ t:r.created_at, label: I18N.lang === 'ar' ? 'تم إنشاء الطلب' : 'Request created', icon:'🌱' });
     if (r.claimed_at) events.push({ t:r.claimed_at, label: I18N.lang === 'ar' ? 'تم الاستلام من قِبل المكتب' : 'Claimed by officer', icon:'👤' });
     if (r.completed_at) events.push({ t:r.completed_at, label:t('status.completed'), icon:'✅' });
-    const msgCount = messages.filter(m => m.actor_type === 'citizen').length;
+    // messages can be undefined for the anonymized marketplace response.
+    const msgs = Array.isArray(messages) ? messages : [];
+    const msgCount = msgs.filter(m => m.actor_type === 'citizen').length;
     events.push({ t:r.last_event_at || r.created_at, label:`${msgCount} citizen messages`, icon:'💬' });
     document.getElementById('timelineContent').innerHTML = `
       <div style="position:relative;padding-inline-start:24px;border-inline-start:2px solid var(--line)">
@@ -2096,7 +2107,7 @@
       <div style="border-top:1px solid var(--line);padding-top:16px">
         <div class="text-[10px] font-bold uppercase tracking-wider mb-2" style="color:var(--text-mute)">${t('officer.tab.docs')}</div>
         <div class="space-y-1.5 text-[12px]">
-          ${data.documents.map(d => `
+          ${(Array.isArray(data.documents) ? data.documents : []).map(d => `
             <div class="flex items-center gap-2">
               <span class="w-1.5 h-1.5 rounded-full" style="background:${d.status==='verified'?'var(--ok)':d.status==='rejected'?'var(--bad)':'var(--text-mute)'}"></span>
               <span class="truncate flex-1">${d.label || d.doc_code}</span>
@@ -2364,6 +2375,7 @@
     return el;
   }
   function renderChat(messages, chatUnlocked) {
+    messages = Array.isArray(messages) ? messages : [];
     const chat = document.getElementById('chatPane');
     chat.innerHTML = '';
     // Pre-payment lock banner. The server already returns an empty messages
@@ -2405,7 +2417,8 @@
     try {
       const r = await api('/api/officer/request/' + currentRequestId);
       const chat = document.getElementById('chatPane');
-      for (const m of r.messages) {
+      const msgs = Array.isArray(r.messages) ? r.messages : [];
+      for (const m of msgs) {
         if (m.id > lastChatMsgId) {
           chat.appendChild(msgBubble(m));
           if (m.actor_type === 'citizen' && !chatDrawerOpen) {
