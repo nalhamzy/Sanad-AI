@@ -1338,13 +1338,20 @@ officerRouter.post('/request/:id/payment/start',
     }
 
     const merchantRef = newMerchantRef(`req${id}`);
+    // Build the public base URL from the incoming request when possible —
+    // self-correcting so the success_url is always on the same origin the
+    // office was browsing, even if PUBLIC_BASE_URL env is stale.
+    const reqProto = (req.headers['x-forwarded-proto'] || req.protocol || 'https');
+    const reqHost  = req.get('host');
+    const publicBase = reqHost ? `${reqProto}://${reqHost}` : (process.env.PUBLIC_BASE_URL || '');
     let link;
     try {
       link = await createPaymentLink({
         amountOmr: total,
         merchantReference: merchantRef,
         customerEmail: r.citizen_email || `citizen-${id}@saned.local`,
-        description: `Saned · ${r.service_name || r.service_name_ar || 'Sanad request'} (req #${id})`
+        description: `Saned · ${r.service_name || r.service_name_ar || 'Sanad request'} (req #${id})`,
+        publicBase
       });
     } catch (gwErr) {
       // Gateway failure (Thawani API down / bad keys / rejected payload).
@@ -1357,10 +1364,13 @@ officerRouter.post('/request/:id/payment/start',
       // can keep testing. Production refuses cleanly.
       const allowFallback = process.env.DEBUG_MODE === 'true' || process.env.SANAD_TEST_PAY === 'true';
       if (allowFallback) {
-        const PUBLIC_BASE = (process.env.PUBLIC_BASE_URL || `https://${req.get('host')}`).replace(/\/+$/, '');
+        // Always use the request's own origin for the stub URL so the link
+        // resolves back to whatever host the office is currently browsing
+        // (no dependency on a possibly-stale PUBLIC_BASE_URL).
+        const stubBase = (publicBase || process.env.PUBLIC_BASE_URL || '').replace(/\/+$/, '');
         link = {
           provider: 'stub',
-          url: `${PUBLIC_BASE}/pay.html?ref=${encodeURIComponent(merchantRef)}`,
+          url: `${stubBase}/pay.html?ref=${encodeURIComponent(merchantRef)}`,
           merchantReference: merchantRef,
           amwalOrderId: `stub-${merchantRef}`,
           stubbed: true
