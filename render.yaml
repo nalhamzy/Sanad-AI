@@ -39,7 +39,7 @@ services:
       # Update this if your Render host gets a hash suffix or you point a
       # custom domain at the service.
       - key: PUBLIC_BASE_URL
-        value: https://sanad-ai.onrender.com
+        value: https://saned.ai
       # ── Thawani Pay (sandbox-by-default; flip to production after onboarding).
       # The keys below are Thawani's public sandbox test keys — safe to commit.
       # Replace via the Render dashboard with your real merchant credentials
