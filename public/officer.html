@@ -388,75 +388,51 @@
         </div>
 
         <nav class="flex-1 overflow-y-auto scroll-y px-2 pb-4">
+          <!-- Two clean modes — replaces the old 6-button mish-mash.
+               Sub-filters (waiting / SLA / completed) are exposed as
+               sub-toggles ONLY when طلباتي is the active mode, so the
+               sidebar never shows shortcuts that don't apply to what's
+               currently visible. -->
           <div class="sh" data-i18n="officer.sh.queue">القائمة</div>
-          <button data-filter="all" class="filter-btn">
-            <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="16" width="18" height="4" rx="1"/></svg>
-            <span data-i18n="officer.filter.all">كل الطلبات</span>
-            <span class="filter-count" data-count="all">—</span>
-          </button>
           <button data-filter="ready" class="filter-btn">
-            <span class="w-2 h-2 rounded-full" style="background:var(--warn)"></span>
-            <span data-i18n="officer.marketplace">سوق الطلبات</span>
+            <span style="font-size:14px">🛒</span>
+            <span>سوق الطلبات</span>
             <span class="filter-count" data-count="ready">—</span>
           </button>
           <button data-filter="mine" class="filter-btn">
-            <span class="w-2 h-2 rounded-full" style="background:var(--brand)"></span>
-            <span data-i18n="officer.filter.mine">طلباتي</span>
+            <span style="font-size:14px">📋</span>
+            <span>طلباتي</span>
             <span class="filter-count" data-count="mine">—</span>
           </button>
-          <button data-filter="waiting" class="filter-btn">
-            <span class="w-2 h-2 rounded-full pulse-dot" style="background:var(--warn)"></span>
-            <span data-i18n="officer.filter.waiting">بانتظار المواطن</span>
-            <span class="filter-count" data-count="waiting">—</span>
-          </button>
-          <button data-filter="sla" class="filter-btn">
-            <span class="w-2 h-2 rounded-full" style="background:var(--bad)"></span>
-            <span data-i18n="officer.filter.sla">قرب انتهاء المهلة</span>
-            <span class="filter-count" data-count="sla">—</span>
-          </button>
-          <button data-filter="done" class="filter-btn">
-            <span class="w-2 h-2 rounded-full" style="background:var(--ok)"></span>
-            <span data-i18n="status.completed">مكتمل</span>
-            <span class="filter-count" data-count="done">—</span>
-          </button>
+          <!-- Sub-modes that only make sense inside طلباتي. CSS hides them
+               unless the parent .filter-btn[data-filter="mine"] is active. -->
+          <div id="mineSubFilters" class="hidden" style="margin-inline-start:14px;border-inline-start:1px solid var(--line);padding-inline-start:6px;margin-top:2px">
+            <button data-filter="waiting" class="filter-btn" style="font-size:11.5px">
+              <span class="w-1.5 h-1.5 rounded-full pulse-dot" style="background:var(--warn)"></span>
+              <span>بانتظار المواطن</span>
+              <span class="filter-count" data-count="waiting">—</span>
+            </button>
+            <button data-filter="sla" class="filter-btn" style="font-size:11.5px">
+              <span class="w-1.5 h-1.5 rounded-full" style="background:var(--bad)"></span>
+              <span>قرب انتهاء المهلة</span>
+              <span class="filter-count" data-count="sla">—</span>
+            </button>
+            <button data-filter="done" class="filter-btn" style="font-size:11.5px">
+              <span class="w-1.5 h-1.5 rounded-full" style="background:var(--ok)"></span>
+              <span>مكتمل</span>
+              <span class="filter-count" data-count="done">—</span>
+            </button>
+          </div>
 
-          <div class="sh mt-4">By entity</div>
-          <button class="filter-btn">
-            <span class="chip chip-rose chip-sm">ROP</span>
-          </button>
-          <button class="filter-btn">
-            <span class="chip chip-indigo chip-sm">MOCIIP</span>
-          </button>
-          <button class="filter-btn">
-            <span class="chip chip-amber chip-sm">MOH</span>
-          </button>
-          <button class="filter-btn">
-            <span class="chip chip-violet chip-sm">Civil Status</span>
-          </button>
-
-          <div class="sh mt-4" data-i18n="officer.sidebar.views">العروض</div>
-          <button class="filter-btn" style="color:var(--text-mute);font-style:italic">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-            <span data-i18n="officer.sidebar.new_view">عرض محفوظ جديد</span>
-          </button>
-
-          <div class="sh mt-4" data-i18n="officer.sidebar.navigate">التنقّل</div>
-          <a href="/" class="filter-btn">
-            <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9v9a2 2 0 01-2 2h-4v-6H10v6H6a2 2 0 01-2-2v-9z"/></svg>
-            <span data-i18n="officer.sidebar.landing">الصفحة الرئيسية</span>
-          </a>
+          <div class="sh mt-4">التنقّل</div>
           <a href="/chat.html" target="_blank" class="filter-btn">
             <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-1.9 5.4 8.5 8.5 0 01-14.2-3A8.5 8.5 0 0111 3a8.5 8.5 0 018.1 6"/></svg>
-            <span data-i18n="officer.sidebar.citizen_chat">محادثة المواطن</span>
+            <span>محادثة المواطن (تجربة)</span>
             <span style="margin-inline-start:auto;color:var(--text-mute)">↗</span>
           </a>
           <a href="/catalogue.html" class="filter-btn">
             <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20V3H6.5A2.5 2.5 0 004 5.5v14z"/></svg>
-            <span data-i18n="officer.sidebar.catalogue">دليل الخدمات</span>
-          </a>
-          <a href="/admin.html" class="filter-btn">
-            <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18M7 15l3-3 4 4 6-7"/></svg>
-            <span data-i18n="officer.sidebar.admin">الإدارة</span>
+            <span>دليل الخدمات</span>
           </a>
         </nav>
 
@@ -524,17 +500,26 @@
           <button id="filterReset" class="chip surface-hover cursor-pointer shrink-0" data-tip="إعادة ضبط كل الفلاتر">↺ إعادة ضبط</button>
           <span id="filterCounter" class="ms-auto text-[12px]" style="color:var(--text-mute)"></span>
         </div>
-        <!-- Row 2: facet chips — multi-select toggles. Active chips persist across reloads via localStorage. -->
+        <!-- Row 2 — entity chips (auto-populated from currently visible
+             requests so the office always sees the relevant ministries up
+             front, no dropdown needed). Multi-select OR. -->
         <div class="flex items-center gap-1.5 flex-wrap">
-          <span class="text-[10.5px] font-bold uppercase tracking-wider me-1" style="color:var(--text-mute)">الحالة</span>
-          <button class="filter-chip" data-facet="status" data-val="ready">سوق الطلبات</button>
-          <button class="filter-chip" data-facet="status" data-val="claimed">قيد المراجعة</button>
-          <button class="filter-chip" data-facet="status" data-val="needs_more_info">بانتظار المواطن</button>
-          <button class="filter-chip" data-facet="status" data-val="awaiting_payment">بانتظار الدفع</button>
-          <button class="filter-chip" data-facet="status" data-val="in_progress">قيد التنفيذ</button>
-          <button class="filter-chip" data-facet="status" data-val="completed">مكتمل</button>
-
-          <span class="filter-sep"></span>
+          <span class="text-[10.5px] font-bold uppercase tracking-wider me-1" style="color:var(--text-mute)">الجهة</span>
+          <span id="entityChips" class="contents"></span>
+        </div>
+        <!-- Row 3 — status (mine-mode only) + age + signals. The status row
+             auto-hides when 🛒 سوق الطلبات is active, since unclaimed cards
+             are all `ready` and a status filter would be pointless. -->
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <span id="statusGroup" class="contents">
+            <span class="text-[10.5px] font-bold uppercase tracking-wider me-1" style="color:var(--text-mute)">الحالة</span>
+            <button class="filter-chip" data-facet="status" data-val="claimed">قيد المراجعة</button>
+            <button class="filter-chip" data-facet="status" data-val="needs_more_info">بانتظار المواطن</button>
+            <button class="filter-chip" data-facet="status" data-val="awaiting_payment">بانتظار الدفع</button>
+            <button class="filter-chip" data-facet="status" data-val="in_progress">قيد التنفيذ</button>
+            <button class="filter-chip" data-facet="status" data-val="completed">مكتمل</button>
+            <span class="filter-sep"></span>
+          </span>
           <span class="text-[10.5px] font-bold uppercase tracking-wider mx-1" style="color:var(--text-mute)">المدة</span>
           <button class="filter-chip" data-facet="age" data-val="today">اليوم</button>
           <button class="filter-chip" data-facet="age" data-val="7d">٧ أيام</button>
@@ -544,17 +529,14 @@
           <span class="text-[10.5px] font-bold uppercase tracking-wider mx-1" style="color:var(--text-mute)">إشارات</span>
           <button class="filter-chip" data-facet="signal" data-val="fresh_reply" data-tip="طلبات فيها ردّ من المواطن لم تُفتح بعد">💬 ردّ جديد</button>
           <button class="filter-chip" data-facet="signal" data-val="rejected_doc" data-tip="طلبات فيها مستند مرفوض بانتظار إعادة الإرسال">✕ مستند مرفوض</button>
-          <button class="filter-chip" data-facet="signal" data-val="paid"   data-tip="مدفوع — الدردشة الكاملة مفتوحة">💰 مدفوع</button>
+          <button class="filter-chip" data-facet="signal" data-val="paid" data-tip="مدفوع — الدردشة الكاملة مفتوحة">💰 مدفوع</button>
           <button class="filter-chip" data-facet="signal" data-val="sla_warn" data-tip="مهلة سند تنتهي خلال دقيقتين">⚠ مهلة قريبة</button>
 
           <span class="filter-sep"></span>
           <button id="filterMoreBtn" class="chip surface-hover cursor-pointer">⚙ تصفية متقدمة</button>
         </div>
-        <!-- Row 3 (collapsed by default): advanced filters — entity dropdown + governorate dropdown + fee range -->
+        <!-- Row 4 (collapsed): governorate + fee range. Entity moved to Row 2 chips. -->
         <div id="filterAdvanced" class="hidden flex items-center gap-2 flex-wrap pt-1">
-          <select id="filterEntity" class="input" style="height:32px;font-size:12px;min-width:160px">
-            <option value="">كل الجهات</option>
-          </select>
           <select id="filterGov" class="input" style="height:32px;font-size:12px">
             <option value="">كل المحافظات</option>
             <option value="Muscat">مسقط</option>
@@ -577,6 +559,7 @@
             ر.ع
           </label>
         </div>
+        <select id="filterEntity" class="hidden"><option value=""></option></select>
       </div>
 
       <!-- Panes -->
@@ -937,7 +920,11 @@
   let lastChatMsgId = 0;
   let selectedCardIdx = 0;
   let filterText = '';
-  let filterMode = 'all';
+  // Default to 'mine' — matches the new sidebar (no "all" option). Persisted
+  // to localStorage so reloads keep the office's last view.
+  let filterMode = (() => {
+    try { return localStorage.getItem('sanad.officer.mode') || 'mine'; } catch { return 'mine'; }
+  })();
   let allInbox = { me: {}, marketplace: [], mine: [] };
   let soundOn = localStorage.getItem('sanad.sound') !== 'off';
   let viewMode = localStorage.getItem('sanad.view') || 'grid'; // 'grid' | 'list'
@@ -1082,15 +1069,21 @@
   }
 
   // ── Standard filter state — persisted to localStorage so it survives reloads.
-  // Each facet (status / age / signal) is a Set of toggled values; multiple
-  // values within a facet OR together; facets AND together. Sidebar quick-
-  // filters (filterMode) layer on top as a coarse pre-filter.
+  // Each facet (status / age / signal / entity) is a Set of toggled values;
+  // multiple values within a facet OR together; facets AND together. Sidebar
+  // quick-filters (filterMode) layer on top as a coarse pre-filter.
   const filterState = (function loadFilterState() {
     try {
       const raw = localStorage.getItem('sanad.officer.filters');
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const v = JSON.parse(raw);
+        // Migrate from previous shape where entity was a single string.
+        if (typeof v.entity === 'string') v.entity = v.entity ? [v.entity] : [];
+        if (!Array.isArray(v.entity)) v.entity = [];
+        return Object.assign({ status: [], age: [], signal: [], entity: [], gov: '', feeMin: '', feeMax: '', sort: 'newest' }, v);
+      }
     } catch {}
-    return { status: [], age: [], signal: [], entity: '', gov: '', feeMin: '', feeMax: '', sort: 'newest' };
+    return { status: [], age: [], signal: [], entity: [], gov: '', feeMin: '', feeMax: '', sort: 'newest' };
   })();
   function saveFilterState() {
     try { localStorage.setItem('sanad.officer.filters', JSON.stringify(filterState)); } catch {}
@@ -1157,7 +1150,10 @@
         return true;
       }));
     }
-    if (fs.entity) list = list.filter(r => (r.entity_en || '').toLowerCase() === fs.entity.toLowerCase());
+    if (fs.entity && fs.entity.length) {
+      const set = new Set(fs.entity.map(s => s.toLowerCase()));
+      list = list.filter(r => set.has((r.entity_en || '').toLowerCase()));
+    }
     if (fs.gov)    list = list.filter(r => (r.governorate || '') === fs.gov);
     if (fs.feeMin !== '' && fs.feeMin != null) {
       const min = Number(fs.feeMin);
@@ -1194,32 +1190,75 @@
     return list;
   }
 
-  function renderEntityDropdown() {
-    const sel = document.getElementById('filterEntity');
-    if (!sel || sel.dataset.loaded === '1') return;
-    // Pull the currently visible entities so the dropdown reflects the office's
-    // actual catalogue surface.
-    const entities = new Set();
-    [...(allInbox.mine || []), ...(allInbox.marketplace || [])].forEach(r => {
-      if (r.entity_en) entities.add(r.entity_en);
+  // Entity chips: render one chip per entity that appears in the current
+  // pool. Truncated label + counter so the row stays compact even when the
+  // office handles 10+ ministries. Click toggles entity in/out of the
+  // multi-select; same persistence rules as other facets.
+  const ENTITY_AR_OVERRIDES = {
+    'Royal Oman Police': 'شرطة عُمان',
+    'Ministry of Health': 'الصحة',
+    'Ministry of Labour': 'العمل',
+    'Ministry of Commerce, Industry and Investment Promotion': 'التجارة',
+    'Ministry of Housing and Urban Planning': 'الإسكان',
+    'Ministry of Transport, Communications and IT': 'النقل',
+    'Muscat Municipality': 'بلدية مسقط',
+    'Civil Status': 'الأحوال المدنية'
+  };
+  function renderEntityChips() {
+    const host = document.getElementById('entityChips');
+    if (!host) return;
+    // Pool depends on active sidebar mode (so chips don't include entities
+    // that aren't actually filterable in the current view).
+    const pool = filterMode === 'ready'
+      ? (allInbox.marketplace || [])
+      : filterMode === 'mine'
+        ? (allInbox.mine || [])
+        : [...(allInbox.mine || []), ...(allInbox.marketplace || [])];
+    const counts = new Map();
+    pool.forEach(r => {
+      if (!r.entity_en) return;
+      counts.set(r.entity_en, (counts.get(r.entity_en) || 0) + 1);
     });
-    [...entities].sort().forEach(e => {
-      const o = document.createElement('option');
-      o.value = e; o.textContent = e;
-      sel.appendChild(o);
+    const entries = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+    if (!entries.length) {
+      host.innerHTML = '<span class="text-[11px]" style="color:var(--text-mute)">—</span>';
+      return;
+    }
+    const chips = entries.map(([ent, n]) => {
+      const label = ENTITY_AR_OVERRIDES[ent] || ent.replace(/^Ministry of\s+/i, '');
+      const active = filterState.entity.includes(ent);
+      return `<button class="filter-chip${active ? ' active' : ''}" data-facet="entity" data-val="${escapeHtml(ent)}" data-tip="${escapeHtml(ent)}">
+        ${escapeHtml(label)} <span class="opacity-60">·${n}</span>
+      </button>`;
+    }).join('');
+    host.innerHTML = chips;
+    host.querySelectorAll('.filter-chip').forEach(b => {
+      b.addEventListener('click', () => {
+        toggleFacet('entity', b.getAttribute('data-val'));
+        renderEntityChips();
+        selectedCardIdx = 0;
+        loadInbox();
+      });
     });
-    sel.dataset.loaded = '1';
-    sel.value = filterState.entity || '';
+  }
+
+  function applyContextualToolbar() {
+    // Hide the status group when in 🛒 marketplace mode (all unclaimed cards
+    // are 'ready' — status filter would be a no-op). Show in طلباتي / all.
+    const sg = document.getElementById('statusGroup');
+    if (sg) sg.style.display = (filterMode === 'ready') ? 'none' : '';
+    // Show sub-filters under طلباتي only when that mode is active.
+    const sub = document.getElementById('mineSubFilters');
+    if (sub) sub.classList.toggle('hidden', filterMode !== 'mine' && !['waiting','sla','done'].includes(filterMode));
   }
   function syncFilterControls() {
     document.getElementById('filterSort').value = filterState.sort || 'newest';
-    document.getElementById('filterEntity').value = filterState.entity || '';
     document.getElementById('filterGov').value = filterState.gov || '';
     document.getElementById('filterFeeMin').value = filterState.feeMin ?? '';
     document.getElementById('filterFeeMax').value = filterState.feeMax ?? '';
     paintFacets();
     // Show advanced row when any advanced filter is set.
-    const advActive = filterState.entity || filterState.gov || filterState.feeMin || filterState.feeMax;
+    const advActive = filterState.gov || filterState.feeMin || filterState.feeMax;
     if (advActive) document.getElementById('filterAdvanced')?.classList.remove('hidden');
   }
   function updateFilterCounter(visible, total) {
@@ -1463,7 +1502,8 @@
     updateKPIs();
     highlightFilter();
 
-    renderEntityDropdown();
+    renderEntityChips();
+    applyContextualToolbar();
     syncFilterControls();
     const totalRequests = (allInbox.mine || []).length + (allInbox.marketplace || []).length;
     const list = currentList();
@@ -1849,11 +1889,26 @@
   // they've already reviewed before sending the payment link.
   async function verifyDoc(docId) {
     if (!currentRequestId) return;
+    // Optimistic chip flip — the doc tile turns green immediately so the
+    // office gets a visual confirmation while the network round-trip lands.
+    try {
+      const tile = document.querySelector(`[onclick*="verifyDoc(${docId})"]`)?.closest('.doc');
+      if (tile) {
+        const chip = tile.querySelector('.chip');
+        if (chip) { chip.className = 'chip chip-ok chip-sm'; chip.style.position = 'absolute'; chip.style.top = '10px'; chip.style.right = '10px'; chip.textContent = 'verified'; }
+        const verifyBtn = tile.querySelector('button[onclick*="verifyDoc"]');
+        if (verifyBtn) verifyBtn.disabled = true;
+      }
+    } catch {}
     try {
       await api(`/api/officer/request/${currentRequestId}/document/${docId}/verify`, { method: 'POST' });
-      Sanad.toast('✓ تم القبول داخلياً (المواطن لم يُبلَّغ)', 'ok', 2200);
-      openRequest(currentRequestId);
-    } catch (e) { Sanad.toast('فشل القبول', 'err'); }
+      Sanad.toast('✓ تم القبول الداخلي — المواطن لم يُبلَّغ', 'ok', 2200);
+      await openDetail(currentRequestId);
+      await loadInbox();
+    } catch (e) {
+      Sanad.toast('فشل القبول: ' + (e.message || ''), 'err', 3200);
+      await openDetail(currentRequestId); // re-fetch to roll back optimistic state
+    }
   }
   // Reject = public action: notifies citizen with a structured reason and
   // re-opens the slot. Citizen can then upload a replacement which will
@@ -1879,7 +1934,8 @@
         body: JSON.stringify({ accept })
       });
       Sanad.toast(accept ? '✓ ألغي الرفض وقُبل المستند' : '↩ ألغي الرفض — المواطن أُخطر', 'ok', 2400);
-      openRequest(currentRequestId);
+      await openDetail(currentRequestId);
+      await loadInbox();
     } catch (e) { Sanad.toast('فشل إلغاء الرفض', 'err'); }
   }
   async function rejectDoc(docId) {
@@ -1900,7 +1956,8 @@
         body: JSON.stringify({ reason: code, note: (note || '').slice(0, 400) })
       });
       Sanad.toast('✕ تم الرفض — المواطن أُخطر وفتح طلب إعادة الإرسال', 'ok', 2600);
-      openRequest(currentRequestId);
+      await openDetail(currentRequestId);
+      await loadInbox();
     } catch (e) { Sanad.toast('فشل الرفض', 'err'); }
   }
 
@@ -2294,7 +2351,12 @@
 
   // ─ Filters ─
   document.getElementById('filterInput').addEventListener('input', e => { filterText = e.target.value; selectedCardIdx = 0; loadInbox(); });
-  document.querySelectorAll('[data-filter]').forEach(b => b.addEventListener('click', () => { filterMode = b.getAttribute('data-filter'); selectedCardIdx = 0; loadInbox(); }));
+  document.querySelectorAll('[data-filter]').forEach(b => b.addEventListener('click', () => {
+    filterMode = b.getAttribute('data-filter');
+    try { localStorage.setItem('sanad.officer.mode', filterMode); } catch {}
+    selectedCardIdx = 0;
+    loadInbox();
+  }));
 
   // ── Standard filter toolbar wires ───────────────────────────
   document.querySelectorAll('.filter-chip[data-facet]').forEach(b => {
@@ -2308,9 +2370,6 @@
   document.getElementById('filterSort').addEventListener('change', e => {
     filterState.sort = e.target.value; saveFilterState(); loadInbox();
   });
-  document.getElementById('filterEntity').addEventListener('change', e => {
-    filterState.entity = e.target.value; saveFilterState(); loadInbox();
-  });
   document.getElementById('filterGov').addEventListener('change', e => {
     filterState.gov = e.target.value; saveFilterState(); loadInbox();
   });
@@ -2322,7 +2381,7 @@
   });
   document.getElementById('filterReset').addEventListener('click', () => {
     filterState.status = []; filterState.age = []; filterState.signal = [];
-    filterState.entity = ''; filterState.gov = '';
+    filterState.entity = []; filterState.gov = '';
     filterState.feeMin = ''; filterState.feeMax = '';
     filterState.sort = 'newest';
     document.getElementById('filterInput').value = '';
