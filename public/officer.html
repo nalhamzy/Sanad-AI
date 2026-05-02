@@ -1758,7 +1758,12 @@
       renderChat(data.messages, data.chat_unlocked !== false);
       switchTab('docs');
     } catch (e) {
-      Sanad.toast('Open failed', 'err');
+      // Surface the actual reason: server-supplied AR hint (when present)
+      // or the JS error message + line. Logged in full to console for
+      // diagnosis. The previous opaque 'Open failed' hid the real cause.
+      const hint = e.body?.hint || e.message || 'تعذّر فتح الطلب';
+      Sanad.toast('❌ ' + hint, 'err', 4800);
+      console.error('[openDetail]', e, e.stack);
     }
   }
 
