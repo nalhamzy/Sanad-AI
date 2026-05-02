@@ -103,7 +103,10 @@ app.get('/api/health', (_req, res) => res.json({
   llm: LLM_ENABLED,
   debug: DEBUG,
   whatsapp: !!(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID),
-  test_mirror: !!(process.env.SANAD_TEST_PHONE || '').trim()
+  test_mirror: !!(process.env.SANAD_TEST_PHONE || '').trim(),
+  test_pay:    DEBUG || process.env.SANAD_TEST_PAY === 'true',
+  thawani:     !!(process.env.THAWANI_SECRET_KEY && process.env.THAWANI_PUBLISHABLE_KEY),
+  thawani_env: process.env.THAWANI_ENV || 'sandbox'
 }));
 
 // SPA fallback — any route not starting with /api goes to index.html

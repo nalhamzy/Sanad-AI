@@ -208,12 +208,19 @@ officerRouter.get('/inbox', async (req, res) => {
              r.claimed_at, r.created_at, r.last_event_at,
              r.payment_status, r.payment_link, r.payment_amount_omr, r.paid_at,
              r.claim_review_started_at,
+             r.last_citizen_reply_at, r.last_office_view_at,
+             /* fresh_reply = citizen replied AFTER the office's last view */
+             CASE
+               WHEN r.last_citizen_reply_at IS NOT NULL
+                    AND (r.last_office_view_at IS NULL OR r.last_citizen_reply_at > r.last_office_view_at)
+               THEN 1 ELSE 0
+             END AS fresh_reply,
              s.name_en AS service_name, s.name_ar AS service_name_ar
         FROM request r
         LEFT JOIN service_catalog s ON s.id = r.service_id
        WHERE r.office_id = ?
          AND r.status NOT IN ('completed','cancelled_by_citizen','cancelled_by_office')
-       ORDER BY r.last_event_at DESC
+       ORDER BY fresh_reply DESC, r.last_event_at DESC
        LIMIT 100`,
     args: [office_id]
   });
@@ -357,6 +364,15 @@ officerRouter.get('/request/:id', async (req, res) => {
            ORDER BY id ASC`,
     args: [id, r.session_id]
   })).rows;
+  // Stamp the office's "last view" so the inbox can stop flagging this
+  // request as having an unread citizen reply.
+  try {
+    await db.execute({
+      sql: `UPDATE request SET last_office_view_at = datetime('now') WHERE id=? AND office_id=?`,
+      args: [id, office_id]
+    });
+  } catch {}
+
   // Strip citizen_id / session_id from the response — they aren't needed on
   // the client and leaking session_id would let an office forge citizen-side
   // accept calls.

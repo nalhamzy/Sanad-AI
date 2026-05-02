@@ -96,8 +96,13 @@ export async function markRequestPaid(requestId, source = 'webhook') {
 // Citizen confirms payment (used by /request.html if the gateway redirects
 // back without a webhook in dev). DEBUG-mode shortcut — production trusts the
 // webhook only. Returns 403 outside DEBUG_MODE.
+// Marks a request paid without going through any gateway. Available in
+// DEBUG_MODE OR when SANAD_TEST_PAY=true (a narrow kill-switch that doesn't
+// open up the rest of the debug surface). Use during pilot demos so the
+// post-pay flow can be exercised without typing card numbers.
 paymentsRouter.post('/request/:id/confirm-stub', async (req, res) => {
-  if (process.env.DEBUG_MODE !== 'true') return res.status(403).json({ error: 'debug_only' });
+  const allowed = process.env.DEBUG_MODE === 'true' || process.env.SANAD_TEST_PAY === 'true';
+  if (!allowed) return res.status(403).json({ error: 'test_pay_disabled' });
   const id = Number(req.params.id);
   const result = await markRequestPaid(id, 'stub-confirm');
   res.json(result);

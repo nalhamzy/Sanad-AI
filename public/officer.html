@@ -117,6 +117,7 @@
   .step-pill[data-state="blocked"]{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
   .step-pill[data-state="blocked"] .step-num{background:#dc2626;color:#fff;border-color:transparent}
   .step-arrow{color:var(--text-mute);font-size:18px;font-weight:300;line-height:1}
+  @keyframes pulseFresh { 0%,100%{ box-shadow:0 0 0 0 rgba(16,185,129,.6) } 50%{ box-shadow:0 0 0 6px rgba(16,185,129,0) } }
   /* Big primary CTA in the strip */
   .cta-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 24px;border-radius:14px;background:linear-gradient(135deg,#10b981,#0d9488);color:#fff;font-weight:800;font-size:14px;border:none;box-shadow:0 4px 14px rgba(16,185,129,.3);cursor:pointer;transition:all .15s;min-width:200px}
   .cta-primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(16,185,129,.4);filter:brightness(1.06)}
@@ -728,6 +729,121 @@
   </div>
 </div>
 
+<!-- ═════════════════════════════════════════════════════════
+     CHANGE-OF-SERVICE PICKER (reclassify) — replaces the old prompt()
+     One-stop catalogue picker with live search + filters. Officer can:
+       • type a keyword (debounced 250 ms hybrid search)
+       • narrow by entity / beneficiary / launch / free
+       • see the side-by-side OLD vs NEW pricing before sending
+       • write a reason (sanitised server-side; no phones/URLs)
+     The proposal goes to the citizen and waits for موافق/رفض.
+     ═════════════════════════════════════════════════════════ -->
+<div id="reclassifyOverlay" class="hidden fixed inset-0 z-50 overlay grid place-items-center p-4">
+  <div class="surface-pop w-full max-w-3xl max-h-[90vh] overflow-hidden scale-in flex flex-col">
+    <div class="px-5 py-3 flex items-center gap-2" style="border-bottom:1px solid var(--line)">
+      <div class="font-bold text-[14px]">🔄 اقتراح تغيير الخدمة</div>
+      <span class="text-[11px]" style="color:var(--text-mute)">— يحتاج موافقة المواطن قبل أن يُطبَّق</span>
+      <button class="icon-btn ms-auto" onclick="closeReclassify()">✕</button>
+    </div>
+    <!-- Search + filters bar -->
+    <div class="px-5 py-3 flex flex-col gap-2 shrink-0" style="border-bottom:1px solid var(--line);background:var(--surface-2)">
+      <input id="rcSearch" class="input w-full" placeholder="ابحث في الكتالوج (اكتب كلمة مفتاحية بالعربية أو الإنجليزية)…"/>
+      <div class="flex items-center gap-2 flex-wrap text-[12px]">
+        <select id="rcEntity" class="input" style="height:32px;font-size:12px;min-width:160px">
+          <option value="">كل الجهات</option>
+        </select>
+        <select id="rcBeneficiary" class="input" style="height:32px;font-size:12px">
+          <option value="">للجميع</option>
+          <option value="Citizen">للأفراد</option>
+          <option value="Business">للشركات</option>
+        </select>
+        <label class="flex items-center gap-1.5 px-2"><input id="rcFree" type="checkbox"/> مجانية فقط</label>
+        <label class="flex items-center gap-1.5 px-2"><input id="rcLaunch" type="checkbox"/> الخدمات المعتمدة</label>
+        <span class="ms-auto text-[11px]" id="rcCount" style="color:var(--text-mute)"></span>
+      </div>
+    </div>
+    <!-- Results list -->
+    <div id="rcResults" class="flex-1 overflow-y-auto p-3" style="background:var(--surface)"></div>
+    <!-- Selected preview + reason + send -->
+    <div id="rcPreview" class="hidden p-4 shrink-0" style="border-top:1px solid var(--line);background:linear-gradient(180deg,#ecfdf5,#fff)">
+      <div class="text-[11px] font-bold uppercase tracking-wider mb-2" style="color:#065f46">الخدمة المختارة</div>
+      <div id="rcSelectedCard" class="p-3 rounded-lg mb-3" style="background:#fff;border:1px solid #5eead4"></div>
+      <div class="grid grid-cols-2 gap-3 text-[12px] mb-3">
+        <div class="p-2 rounded-lg" style="background:#f1f5f9">
+          <div class="text-[10px] font-bold uppercase" style="color:var(--text-mute)">الإجمالي السابق</div>
+          <div id="rcOldTotal" class="text-[15px] font-extrabold mt-1">—</div>
+        </div>
+        <div class="p-2 rounded-lg" style="background:#d1fae5">
+          <div class="text-[10px] font-bold uppercase" style="color:#065f46">الإجمالي الجديد</div>
+          <div id="rcNewTotal" class="text-[15px] font-extrabold mt-1" style="color:#065f46">—</div>
+        </div>
+      </div>
+      <textarea id="rcReason" class="input w-full" rows="2"
+        placeholder="اكتب سبب التغيير (يظهر للمواطن — أرقام الهاتف والروابط ستُحذف تلقائياً)"></textarea>
+      <div class="flex items-center justify-end gap-2 mt-3">
+        <button type="button" class="btn btn-secondary" onclick="closeReclassify()">إلغاء</button>
+        <button type="button" id="rcSendBtn" class="btn btn-primary" style="background:linear-gradient(135deg,#0d9488,#15803d);font-weight:800">
+          📤 إرسال الاقتراح للمواطن
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════
+     REQUEST-MORE-INFO BUILDER — replaces the old two-prompt flow
+     The office picks, per-document, what's wrong (blurry, missing back,
+     expired, needs signature, …). They can also add MISSING documents
+     by either ticking common gov-doc types or typing a custom one.
+     One templated AR message goes out to the citizen with bulleted
+     actionable items, not free-form prose.
+     ═════════════════════════════════════════════════════════ -->
+<div id="reqInfoOverlay" class="hidden fixed inset-0 z-50 overlay grid place-items-center p-4">
+  <div class="surface-pop w-full max-w-2xl max-h-[90vh] overflow-hidden scale-in flex flex-col">
+    <div class="px-5 py-3 flex items-center gap-2" style="border-bottom:1px solid var(--line)">
+      <div class="font-bold text-[14px]">📝 طلب توضيح / مستندات إضافية</div>
+      <button class="icon-btn ms-auto" onclick="closeReqInfo()">✕</button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-5 space-y-4 text-[13px]">
+      <!-- Per-existing-doc issue picker -->
+      <section>
+        <div class="text-[11px] font-bold uppercase tracking-wider mb-2" style="color:var(--brand-dark)">مشاكل في المستندات المرفوعة</div>
+        <div id="riExistingDocs" class="space-y-2"></div>
+      </section>
+      <!-- Add missing doc types -->
+      <section>
+        <div class="text-[11px] font-bold uppercase tracking-wider mb-2" style="color:var(--brand-dark)">مستندات إضافية مطلوبة</div>
+        <div class="grid grid-cols-2 gap-2 text-[12px]" id="riCommonDocs">
+          <!-- options injected from JS so labels stay in one place -->
+        </div>
+        <div class="mt-3">
+          <label class="block mb-1 font-semibold text-[12px]">إضافة مستند آخر (اختياري)</label>
+          <div class="flex gap-2">
+            <input id="riCustomDoc" class="input flex-1" placeholder="مثال: شهادة عدم محكومية، توكيل موقّع…"/>
+            <button type="button" class="btn btn-secondary" onclick="riAddCustomDoc()">+ إضافة</button>
+          </div>
+          <div id="riCustomList" class="mt-2 flex flex-wrap gap-1.5"></div>
+        </div>
+      </section>
+      <!-- Cover note -->
+      <section>
+        <label class="block mb-1 font-semibold text-[12px]">رسالة موجزة للمواطن (اختياري)</label>
+        <textarea id="riNote" class="input w-full" rows="2"
+          placeholder="مثال: نحتاج هذه التعديلات لإكمال معاملتك. (أرقام الهاتف والروابط ستُحذف تلقائياً)"></textarea>
+        <div class="text-[10.5px] mt-1" style="color:var(--text-mute)">
+          ⚠ مقفل قبل الدفع: 2 طلب توضيح كحد أقصى لكل طلب. هذه ميزة لمنع الاتصال خارج المنصة.
+        </div>
+      </section>
+    </div>
+    <div class="px-5 py-3 flex items-center justify-end gap-2 shrink-0" style="border-top:1px solid var(--line);background:var(--surface-2)">
+      <button type="button" class="btn btn-secondary" onclick="closeReqInfo()">إلغاء</button>
+      <button type="button" id="riSendBtn" class="btn btn-primary" style="background:linear-gradient(135deg,#0d9488,#15803d);font-weight:800">
+        📤 إرسال للمواطن
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- HELP -->
 <div id="helpOverlay" class="hidden fixed inset-0 z-50 overlay grid place-items-center p-4">
   <div class="surface-pop w-full max-w-md overflow-hidden scale-in">
@@ -1062,6 +1178,7 @@
               <span class="chip ${sm.cls} chip-sm" data-tip="${t(sm.key, r.status)}">${sm.icon} ${t(sm.key, r.status)}</span>
               ${alreadyQuoted ? `<span class="chip chip-cyan chip-sm">⏳ ${t('offer.waiting_citizen')}</span>` : ''}
               ${unread ? `<span class="chip chip-bad chip-sm">${unread} ${t('officer.chip.new')}</span>` : ''}
+              ${r.fresh_reply ? `<span class="chip chip-sm" style="background:linear-gradient(135deg,#10b981,#0d9488);color:#fff;font-weight:800;animation:pulseFresh 1.6s ease-in-out infinite">💬 ردّ جديد</span>` : ''}
             </div>
             <div class="mt-1 font-semibold text-[13px] truncate" ${isAr(name)?'dir="rtl"':''}>${name}</div>
             <div class="mt-1 flex items-center gap-2 text-[11px]" style="color:var(--text-mute)">
@@ -1745,6 +1862,9 @@
     } else if (r.status === 'awaiting_payment') {
       primary = `<button data-act="send-payment" class="cta-primary" style="background:linear-gradient(135deg,#f59e0b,#d97706)">↻ <span>إعادة إرسال رابط الدفع</span></button>`;
       hint = `⏳ بانتظار سداد المواطن — الدردشة الكاملة تُفتح فور الدفع`;
+      if (window.__sanadTestPay) {
+        secondaryBtns.push(`<button data-act="mark-paid-test" class="cta-secondary" style="color:#0e7490;border-color:#67e8f9;background:#ecfeff" data-tip="اختبار: قفز بوابة الدفع وضع كمدفوع">🧪 اختبار: تأكيد الدفع</button>`);
+      }
       secondaryBtns.push(`<button data-act="release" class="cta-secondary cta-danger">↩ إرجاع</button>`);
     } else if (r.status === 'in_progress' || (r.paid_at && r.status !== 'completed')) {
       primary = `<button data-act="complete" class="cta-primary" style="background:linear-gradient(135deg,#10b981,#059669)">✓ <span>إنهاء المعاملة</span></button>`;
@@ -1793,15 +1913,16 @@
         }
         if (a === 'complete') { await api('/api/officer/request/' + r.id + '/complete', { method:'POST' }); Sanad.toast('✓ ' + t('actions.complete'), 'ok'); }
         if (a === 'request-info') {
-          const reason = prompt(t('officer.request_info.prompt','What information do you need from the citizen? (will be sent verbatim)'));
-          if (reason == null || !reason.trim()) return;
-          // Optional comma-separated list of missing items — keep flow short.
-          const missingRaw = prompt(t('officer.request_info.missing_prompt','Optional: comma-separated list of missing/unclear documents (or leave empty)'), '');
-          const missing = (missingRaw || '').split(',').map(s => s.trim()).filter(Boolean);
-          await api('/api/officer/request/' + r.id + '/request-info',
-                    { method:'POST', headers:{'Content-Type':'application/json'},
-                      body: JSON.stringify({ reason: reason.trim(), missing }) });
-          Sanad.toast('📝 ' + t('officer.request_info.sent','Citizen has been asked for more info'), 'ok', 2400);
+          openReqInfoModal(r);
+          return;
+        }
+        if (a === 'mark-paid-test') {
+          // DEBUG/test only — flips paid_at without going through Thawani.
+          // Lets you exercise the post-pay flow end-to-end on the test phone
+          // without typing card numbers.
+          if (!confirm('وضع الاختبار: تأكيد دفع R-' + r.id + ' بدون بوابة؟')) return;
+          await api('/api/payments/request/' + r.id + '/confirm-stub', { method: 'POST' });
+          Sanad.toast('💰 طلب R-' + r.id + ' وُسم كمدفوع (اختبار)', 'ok', 2400);
         }
         if (a === 'flag') {
           // Multi-office quality vote. Threshold = 2 distinct office flags →
@@ -1836,26 +1957,8 @@
           return;
         }
         if (a === 'reclassify') {
-          // Type-ahead picker via /api/catalogue/hybrid (the same endpoint
-          // the catalogue page hits). Keep it lightweight: prompt() lets
-          // the office paste any keyword; we present top 5 matches with
-          // their service id and ask them to pick one.
-          const q = prompt(t('officer.reclassify.prompt','Search the catalogue for the correct service (Arabic or English keyword)'));
-          if (!q || !q.trim()) return;
-          const sr = await fetch('/api/catalogue/hybrid?q=' + encodeURIComponent(q.trim()) + '&limit=5');
-          const sj = await sr.json();
-          const items = (sj.items || sj.results || []).slice(0, 5);
-          if (!items.length) { Sanad.toast(t('officer.reclassify.none','No matches'), 'warn'); return; }
-          const menu = items.map((s, i) => `${i+1}. [${s.id}] ${s.name_ar || s.name_en} (${s.entity_en || '—'})`).join('\n');
-          const choice = prompt(`${t('officer.reclassify.pick','Pick by number')}\n\n${menu}`, '1');
-          const idx = Number(choice) - 1;
-          if (!(idx >= 0 && idx < items.length)) return;
-          const reason = prompt(t('officer.reclassify.reason','Reason for the change (shown to citizen)'), '');
-          if (reason == null) return;
-          await api('/api/officer/request/' + r.id + '/reclassify',
-                    { method:'POST', headers:{'Content-Type':'application/json'},
-                      body: JSON.stringify({ new_service_id: items[idx].id, reason: reason.trim() || 'service mismatch' }) });
-          Sanad.toast('🔄 ' + t('officer.reclassify.done','Service changed; documents preserved'), 'ok', 2600);
+          openReclassifyModal(r);
+          return;
         }
         await openDetail(r.id);
         await loadInbox();
@@ -2171,12 +2274,309 @@
     applyViewMode();
     loadInbox();
   })();
+
+  // ════════════════════════════════════════════════════════════
+  // RECLASSIFY MODAL — proper service picker with search + filters
+  // ════════════════════════════════════════════════════════════
+  let rcSelected = null;
+  let rcCurrentRequest = null;
+
+  function openReclassifyModal(r) {
+    rcCurrentRequest = r;
+    rcSelected = null;
+    document.getElementById('rcSearch').value = '';
+    document.getElementById('rcReason').value = '';
+    document.getElementById('rcEntity').value = '';
+    document.getElementById('rcBeneficiary').value = '';
+    document.getElementById('rcFree').checked = false;
+    document.getElementById('rcLaunch').checked = false;
+    document.getElementById('rcResults').innerHTML = '<div class="p-4 text-center text-[12px]" style="color:var(--text-mute)">اكتب كلمة في خانة البحث لعرض النتائج</div>';
+    document.getElementById('rcPreview').classList.add('hidden');
+    document.getElementById('reclassifyOverlay').classList.remove('hidden');
+    // Lazy-load entities into the dropdown.
+    if (!document.getElementById('rcEntity').dataset.loaded) {
+      fetch('/api/catalogue/entities').then(r => r.json()).then(j => {
+        const sel = document.getElementById('rcEntity');
+        (j.entities || []).slice(0, 30).forEach(e => {
+          const opt = document.createElement('option');
+          opt.value = e.entity_en || e.name || '';
+          opt.textContent = (e.entity_ar || e.entity_en || '') + ` (${e.n || 0})`;
+          sel.appendChild(opt);
+        });
+        sel.dataset.loaded = '1';
+      }).catch(() => {});
+    }
+    setTimeout(() => document.getElementById('rcSearch').focus(), 50);
+  }
+
+  let rcSearchTimer = null;
+  function rcQueueSearch() {
+    if (rcSearchTimer) clearTimeout(rcSearchTimer);
+    rcSearchTimer = setTimeout(rcRunSearch, 250);
+  }
+
+  async function rcRunSearch() {
+    const q = document.getElementById('rcSearch').value.trim();
+    const entity = document.getElementById('rcEntity').value;
+    const benef = document.getElementById('rcBeneficiary').value;
+    const free = document.getElementById('rcFree').checked;
+    const isLaunch = document.getElementById('rcLaunch').checked;
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (entity) params.set('entity', entity);
+    if (benef) params.set('beneficiary', benef);
+    if (free) params.set('free', '1');
+    if (isLaunch) params.set('is_launch', '1');
+    params.set('limit', '25');
+    const res = document.getElementById('rcResults');
+    res.innerHTML = '<div class="p-4 text-center text-[12px]" style="color:var(--text-mute)">… يبحث</div>';
+    try {
+      const r = await fetch('/api/catalogue/hybrid?' + params);
+      const j = await r.json();
+      const items = j.items || j.results || j.services || [];
+      document.getElementById('rcCount').textContent = items.length ? `${items.length} نتيجة` : '';
+      if (!items.length) {
+        res.innerHTML = '<div class="p-4 text-center text-[12px]" style="color:var(--text-mute)">لا توجد نتائج — جرّب كلمة أخرى أو خفّف الفلاتر</div>';
+        return;
+      }
+      res.innerHTML = items.map(s => {
+        const fee = s.fee_omr != null ? `${Number(s.fee_omr).toFixed(3)} ر.ع` : 'حسب الجهة';
+        return `<button class="rc-item w-full text-start p-3 mb-2 rounded-lg" data-id="${s.id}"
+                       data-name-ar="${escapeHtml(s.name_ar || '')}"
+                       data-name-en="${escapeHtml(s.name_en || '')}"
+                       data-entity-ar="${escapeHtml(s.entity_ar || '')}"
+                       data-entity-en="${escapeHtml(s.entity_en || '')}"
+                       data-fee="${s.fee_omr ?? ''}"
+                       style="background:var(--surface-3);border:1px solid var(--line);transition:all .12s">
+          <div class="flex items-start gap-2">
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-[13px] truncate">${escapeHtml(s.name_ar || s.name_en || '—')}</div>
+              <div class="text-[11px] mt-0.5" style="color:var(--text-mute)">${escapeHtml(s.entity_ar || s.entity_en || '')}</div>
+            </div>
+            <span class="chip chip-sm" style="white-space:nowrap">${fee}</span>
+          </div>
+        </button>`;
+      }).join('');
+      res.querySelectorAll('.rc-item').forEach(b => b.addEventListener('click', () => rcSelect(b)));
+    } catch (e) {
+      res.innerHTML = `<div class="p-4 text-center text-[12px]" style="color:var(--bad)">فشل البحث: ${escapeHtml(e.message)}</div>`;
+    }
+  }
+
+  function rcSelect(btn) {
+    const ds = btn.dataset;
+    rcSelected = {
+      id: Number(ds.id),
+      name_ar: ds.nameAr, name_en: ds.nameEn,
+      entity_ar: ds.entityAr, entity_en: ds.entityEn,
+      fee_omr: ds.fee ? Number(ds.fee) : null
+    };
+    document.querySelectorAll('.rc-item').forEach(x => x.style.borderColor = 'var(--line)');
+    btn.style.borderColor = '#10b981';
+    btn.style.background = '#ecfdf5';
+    document.getElementById('rcSelectedCard').innerHTML = `
+      <div class="font-bold">${escapeHtml(rcSelected.name_ar || rcSelected.name_en)}</div>
+      <div class="text-[11px] mt-0.5" style="color:var(--text-mute)">${escapeHtml(rcSelected.entity_ar || rcSelected.entity_en || '')}</div>`;
+    const old_office = Number(rcCurrentRequest?.office_fee_omr || 0);
+    const old_gov    = Number(rcCurrentRequest?.government_fee_omr || 0);
+    const oldTotal   = old_office + old_gov;
+    const officeDefault = Number(allInbox?.office?.default_office_fee_omr ?? 5);
+    const newGov = rcSelected.fee_omr != null ? rcSelected.fee_omr : 0;
+    const newTotal = officeDefault + newGov;
+    document.getElementById('rcOldTotal').textContent = oldTotal ? oldTotal.toFixed(3) + ' ر.ع' : '—';
+    document.getElementById('rcNewTotal').textContent = newTotal.toFixed(3) + ' ر.ع' + (rcSelected.fee_omr == null ? ' (تقريبي)' : '');
+    document.getElementById('rcPreview').classList.remove('hidden');
+  }
+
+  document.getElementById('rcSearch').addEventListener('input', rcQueueSearch);
+  document.getElementById('rcEntity').addEventListener('change', rcRunSearch);
+  document.getElementById('rcBeneficiary').addEventListener('change', rcRunSearch);
+  document.getElementById('rcFree').addEventListener('change', rcRunSearch);
+  document.getElementById('rcLaunch').addEventListener('change', rcRunSearch);
+  document.getElementById('rcSendBtn').addEventListener('click', async () => {
+    if (!rcSelected) { Sanad.toast('اختر خدمة أولاً', 'warn'); return; }
+    const reason = document.getElementById('rcReason').value.trim();
+    try {
+      const resp = await api(`/api/officer/request/${rcCurrentRequest.id}/reclassify`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_service_id: rcSelected.id, reason: reason || 'service mismatch' })
+      });
+      Sanad.toast(resp.sanitized_reason
+        ? '🔄 أُرسل الاقتراح (حُذفت روابط/أرقام من السبب)'
+        : '🔄 أُرسل الاقتراح للمواطن — بانتظار قبوله', 'ok', 2800);
+      closeReclassify();
+      await openDetail(rcCurrentRequest.id);
+      await loadInbox();
+    } catch (e) {
+      Sanad.toast('فشل الإرسال: ' + e.message, 'err', 3200);
+    }
+  });
+  document.getElementById('reclassifyOverlay').addEventListener('click', e => {
+    if (e.target.id === 'reclassifyOverlay') closeReclassify();
+  });
+
+  // ════════════════════════════════════════════════════════════
+  // REQUEST-INFO MODAL — per-doc issue picker + missing-doc selector
+  // ════════════════════════════════════════════════════════════
+  // Common gov-doc types the office can ask for in one click.
+  const RI_COMMON_DOCS = [
+    { code: 'civil_id_back',   label: 'الوجه الخلفي للبطاقة المدنية' },
+    { code: 'civil_id_clear',  label: 'صورة بطاقة مدنية واضحة' },
+    { code: 'passport_photo_page', label: 'صفحة الجواز الرئيسية' },
+    { code: 'photo',           label: 'صورة شخصية بخلفية بيضاء' },
+    { code: 'medical_form',    label: 'استمارة فحص طبي معتمدة' },
+    { code: 'sponsor_letter',  label: 'خطاب من الكفيل' },
+    { code: 'authorization',   label: 'توكيل موقّع' },
+    { code: 'tenancy_contract',label: 'عقد إيجار/سكن' },
+    { code: 'bank_statement',  label: 'كشف حساب بنكي' },
+    { code: 'no_objection',    label: 'شهادة عدم ممانعة' }
+  ];
+  // Per-existing-doc issue types.
+  const RI_DOC_ISSUES = [
+    { code: '',              label: '— لا مشكلة —' },
+    { code: 'blurry',        label: 'الصورة غير واضحة' },
+    { code: 'missing_back',  label: 'ينقصها الوجه الخلفي' },
+    { code: 'missing_front', label: 'ينقصها الوجه الأمامي' },
+    { code: 'expired',       label: 'منتهي الصلاحية' },
+    { code: 'wrong_doc',     label: 'مستند خاطئ — أرفق غير المطلوب' },
+    { code: 'unsigned',      label: 'يحتاج توقيعاً معتمداً' },
+    { code: 'cropped',       label: 'مقصوص — لا تظهر كامل الحواف' },
+    { code: 'low_quality',   label: 'دقة منخفضة' },
+    { code: 'other',         label: 'أخرى (اكتب التفاصيل)' }
+  ];
+
+  let riCurrentRequest = null;
+  let riCurrentDocs = [];
+  let riCustomDocs = [];
+
+  async function openReqInfoModal(r) {
+    riCurrentRequest = r;
+    riCustomDocs = [];
+    document.getElementById('riCustomList').innerHTML = '';
+    document.getElementById('riCustomDoc').value = '';
+    document.getElementById('riNote').value = '';
+    // Pull current docs for the request so the office can flag specific ones.
+    try {
+      const detail = await api('/api/officer/request/' + r.id);
+      riCurrentDocs = detail.documents || [];
+    } catch { riCurrentDocs = []; }
+    document.getElementById('riExistingDocs').innerHTML = riCurrentDocs.length
+      ? riCurrentDocs.map((d, i) => `
+          <div class="p-2.5 rounded-lg" style="background:var(--surface-3);border:1px solid var(--line)">
+            <div class="flex items-center gap-2 mb-1.5">
+              <span class="chip chip-sm ${d.status==='verified'?'chip-ok':d.status==='rejected'?'chip-bad':''}">${d.status}</span>
+              <span class="font-semibold text-[12.5px] truncate">${escapeHtml(d.label || d.doc_code)}</span>
+            </div>
+            <select class="input ri-doc-issue" data-doc-id="${d.id}" data-doc-label="${escapeHtml(d.label || d.doc_code)}" style="height:32px;font-size:12px;width:100%">
+              ${RI_DOC_ISSUES.map(o => `<option value="${o.code}">${o.label}</option>`).join('')}
+            </select>
+            <input class="input ri-doc-other mt-1.5 hidden" data-doc-id="${d.id}"
+                   placeholder="اكتب المشكلة بالعربية (يظهر للمواطن)" style="font-size:12px"/>
+          </div>`).join('')
+      : '<div class="text-[12px] p-2" style="color:var(--text-mute)">لا توجد مستندات مرفوعة بعد.</div>';
+    document.getElementById('riCommonDocs').innerHTML = RI_COMMON_DOCS.map(d =>
+      `<label class="flex items-center gap-2 p-2 rounded-lg" style="background:var(--surface-3);border:1px solid var(--line);cursor:pointer">
+        <input type="checkbox" class="ri-common" data-code="${d.code}" data-label="${escapeHtml(d.label)}"/>
+        <span>${d.label}</span>
+      </label>`).join('');
+    // Show "other" textbox when "other" is picked.
+    document.querySelectorAll('.ri-doc-issue').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const other = document.querySelector(`.ri-doc-other[data-doc-id="${sel.dataset.docId}"]`);
+        if (other) other.classList.toggle('hidden', sel.value !== 'other');
+      });
+    });
+    document.getElementById('reqInfoOverlay').classList.remove('hidden');
+  }
+
+  function riAddCustomDoc() {
+    const v = document.getElementById('riCustomDoc').value.trim();
+    if (!v) return;
+    if (riCustomDocs.includes(v)) { document.getElementById('riCustomDoc').value = ''; return; }
+    riCustomDocs.push(v);
+    document.getElementById('riCustomDoc').value = '';
+    renderRiCustomList();
+  }
+  function renderRiCustomList() {
+    document.getElementById('riCustomList').innerHTML = riCustomDocs.map((s, i) =>
+      `<span class="chip chip-sm" style="background:#ecfdf5;color:#065f46;cursor:pointer" onclick="riRemoveCustom(${i})">
+        ${escapeHtml(s)} ✕
+      </span>`).join('');
+  }
+  window.riRemoveCustom = (i) => { riCustomDocs.splice(i, 1); renderRiCustomList(); };
+
+  document.getElementById('riSendBtn').addEventListener('click', async () => {
+    if (!riCurrentRequest) return;
+    // Build a structured "missing" array from the selections.
+    const items = [];
+    // Per-existing-doc issues.
+    document.querySelectorAll('.ri-doc-issue').forEach(sel => {
+      if (!sel.value) return;
+      const docLabel = sel.dataset.docLabel;
+      const issueLabel = (RI_DOC_ISSUES.find(o => o.code === sel.value) || {}).label || sel.value;
+      let line = `${docLabel}: ${issueLabel}`;
+      if (sel.value === 'other') {
+        const other = document.querySelector(`.ri-doc-other[data-doc-id="${sel.dataset.docId}"]`);
+        if (other && other.value.trim()) line = `${docLabel}: ${other.value.trim()}`;
+      }
+      items.push(line);
+    });
+    // Common doc tickboxes.
+    document.querySelectorAll('.ri-common:checked').forEach(cb => items.push(cb.dataset.label));
+    // Custom items.
+    riCustomDocs.forEach(s => items.push(s));
+
+    if (!items.length && !document.getElementById('riNote').value.trim()) {
+      Sanad.toast('اختر مشكلة في مستند أو مستنداً مفقوداً على الأقل', 'warn', 2400);
+      return;
+    }
+    const note = document.getElementById('riNote').value.trim();
+    // Compose the reason headline (server still sanitises).
+    const reason = note || 'نحتاج التعديلات التالية لإكمال معاملتك:';
+    try {
+      const resp = await api(`/api/officer/request/${riCurrentRequest.id}/request-info`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason, missing: items })
+      });
+      Sanad.toast('📝 أُرسل التوضيح للمواطن — سيُخطر بالتفاصيل وقائمة المطلوب', 'ok', 2800);
+      closeReqInfo();
+      await openDetail(riCurrentRequest.id);
+      await loadInbox();
+    } catch (e) {
+      const m = e.message || '';
+      if (m.includes('pre_pay_limit_reached')) {
+        Sanad.toast('وصلت للحد الأقصى لطلبات التوضيح قبل الدفع — أرسل رابط الدفع أو حرّر الطلب', 'warn', 3600);
+      } else if (m.includes('reason_required')) {
+        Sanad.toast('السبب فارغ بعد إزالة الأرقام/الروابط', 'warn', 2800);
+      } else {
+        Sanad.toast('فشل الإرسال: ' + m, 'err', 3200);
+      }
+    }
+  });
+  document.getElementById('reqInfoOverlay').addEventListener('click', e => {
+    if (e.target.id === 'reqInfoOverlay') closeReqInfo();
+  });
+
+  // Expose
+  window.openReclassifyModal = openReclassifyModal;
+  window.openReqInfoModal = openReqInfoModal;
+  window.riAddCustomDoc = riAddCustomDoc;
+
   // Expose doc-tile inline onclick handlers to the global scope. The doc
   // grid is rendered with `onclick="verifyDoc(…)"` strings, which only
   // resolve against window.* — not the IIFE's lexical scope.
   window.verifyDoc = verifyDoc;
   window.rejectDoc = rejectDoc;
   window.unrejectDoc = unrejectDoc;
+  window.closeReclassify = () => document.getElementById('reclassifyOverlay')?.classList.add('hidden');
+  window.closeReqInfo    = () => document.getElementById('reqInfoOverlay')?.classList.add('hidden');
+  window.riAddCustomDoc  = () => { try { riAddCustomDoc(); } catch {} };
+
+  // Read /api/health → expose feature flags for the buttons that conditionally render.
+  fetch('/api/health').then(r => r.json()).then(h => {
+    window.__sanadTestPay = !!h?.test_pay;
+    window.__sanadHealth  = h || {};
+  }).catch(() => {});
 })();
 </script>
 </body>

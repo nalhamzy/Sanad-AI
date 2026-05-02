@@ -74,7 +74,7 @@ function rrfFuse(lanes) {
 // Build the WHERE clause + args for the citizen-side filter set. Designed
 // to be ANDed with whatever id-filter the search lanes produce (or used
 // alone in browse-mode).
-function buildFilterClause({ entity, beneficiary, feeMin, feeMax, hasDocs }) {
+function buildFilterClause({ entity, beneficiary, feeMin, feeMax, hasDocs, isLaunch, freeOnly }) {
   const where = ['s.is_active = 1'];
   const args = [];
   if (entity) { where.push(`s.entity_en = ?`); args.push(entity); }
@@ -87,6 +87,8 @@ function buildFilterClause({ entity, beneficiary, feeMin, feeMax, hasDocs }) {
   if (feeMax != null && !Number.isNaN(feeMax)) { where.push(`s.fee_omr <= ?`); args.push(feeMax); }
   if (hasDocs === 'yes') where.push(`COALESCE(s.required_documents_json,'') NOT IN ('','[]','null')`);
   if (hasDocs === 'no')  where.push(`COALESCE(s.required_documents_json,'') IN ('','[]','null')`);
+  if (isLaunch) where.push(`s.is_launch = 1`);
+  if (freeOnly) where.push(`s.fee_omr = 0`);
   return { clause: `WHERE ${where.join(' AND ')}`, args };
 }
 
@@ -124,7 +126,9 @@ catalogueRouter.get('/hybrid', async (req, res) => {
   const offset     = Math.max(Number(req.query.offset || 0), 0);
   const sort       = (req.query.sort || (q ? 'relevance' : 'name')).toString();
 
-  const filters = { entity, beneficiary, feeMin, feeMax, hasDocs };
+  const isLaunch = req.query.is_launch === '1' || req.query.is_launch === 'true';
+  const freeOnly = req.query.free === '1' || req.query.free === 'true';
+  const filters = { entity, beneficiary, feeMin, feeMax, hasDocs, isLaunch, freeOnly };
   const { clause: filterClause, args: filterArgs } = buildFilterClause(filters);
 
   try {
