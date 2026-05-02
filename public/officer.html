@@ -106,6 +106,26 @@
   .card[data-card-status="on_hold"]          { border-inline-start-color: rgba(100,116,139,.6); }
   .card[data-card-status="completed"]        { border-inline-start-color: rgba(16,185,129,.7); }
   .card[data-card-status^="cancelled"]       { border-inline-start-color: rgba(220,38,38,.6); opacity:.75; }
+
+  /* ── Progressive step strip ── */
+  .step-pill{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;background:var(--surface-3);color:var(--text-mute);font-size:12px;font-weight:600;transition:all .2s;border:1px solid transparent}
+  .step-pill .step-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;background:var(--surface);color:var(--text-mute);font-size:11px;font-weight:800;border:1px solid var(--line)}
+  .step-pill[data-state="active"]{background:linear-gradient(135deg,#ecfeff,#d1fae5);color:#065f46;border-color:#5eead4;box-shadow:0 2px 8px rgba(20,184,166,.18)}
+  .step-pill[data-state="active"] .step-num{background:linear-gradient(135deg,#10b981,#0d9488);color:#fff;border-color:transparent}
+  .step-pill[data-state="done"]{background:rgba(16,185,129,.12);color:#065f46}
+  .step-pill[data-state="done"] .step-num{background:#10b981;color:#fff;border-color:transparent}
+  .step-pill[data-state="blocked"]{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
+  .step-pill[data-state="blocked"] .step-num{background:#dc2626;color:#fff;border-color:transparent}
+  .step-arrow{color:var(--text-mute);font-size:18px;font-weight:300;line-height:1}
+  /* Big primary CTA in the strip */
+  .cta-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 24px;border-radius:14px;background:linear-gradient(135deg,#10b981,#0d9488);color:#fff;font-weight:800;font-size:14px;border:none;box-shadow:0 4px 14px rgba(16,185,129,.3);cursor:pointer;transition:all .15s;min-width:200px}
+  .cta-primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(16,185,129,.4);filter:brightness(1.06)}
+  .cta-primary[disabled]{opacity:.55;cursor:not-allowed;box-shadow:none;transform:none}
+  .cta-secondary{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:12px;background:var(--surface-3);color:var(--text);font-weight:600;font-size:12.5px;border:1px solid var(--line);cursor:pointer;transition:all .15s}
+  .cta-secondary:hover{background:var(--surface-2);border-color:var(--brand)}
+  .cta-warn{color:#b45309;background:#fffbeb;border-color:#fcd34d}
+  .cta-danger{color:#991b1b;background:#fee2e2;border-color:#fca5a5}
+  .cta-hint{font-size:11.5px;color:var(--text-mute);margin-inline-end:8px}
   /* SLA badge — make the countdown chip noticeably bigger so the
      office sees how much time is left without squinting. */
   .sla-pill { font-weight: 700; font-size: 11.5px; padding: 4px 10px; }
@@ -551,7 +571,36 @@
                 <!-- SLA progress bar -->
                 <div class="bar mt-2" style="max-width:260px" id="slaBar"><div class="bar-fill" id="slaFill" style="width:0"></div></div>
               </div>
-              <div class="flex items-center gap-1.5" id="detailActions"></div>
+            </div>
+
+            <!-- PROGRESSIVE STEP STRIP — Review → Payment → Work → Done.
+                 The current step is highlighted; the primary CTA below is
+                 the action that advances to the NEXT step. Replaces the old
+                 cramped action cluster. -->
+            <div id="stepStrip" class="px-5 py-3 flex items-center gap-2 shrink-0" style="border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--surface),var(--surface-2))">
+              <div class="step-pill" data-step="review">
+                <span class="step-num">1</span><span class="step-label">مراجعة المستندات</span>
+              </div>
+              <div class="step-arrow">›</div>
+              <div class="step-pill" data-step="payment">
+                <span class="step-num">2</span><span class="step-label">إرسال رابط الدفع</span>
+              </div>
+              <div class="step-arrow">›</div>
+              <div class="step-pill" data-step="work">
+                <span class="step-num">3</span><span class="step-label">تنفيذ المعاملة</span>
+              </div>
+              <div class="step-arrow">›</div>
+              <div class="step-pill" data-step="done">
+                <span class="step-num">✓</span><span class="step-label">إنجاز</span>
+              </div>
+              <div class="ms-auto" id="detailActionsSecondary"></div>
+            </div>
+
+            <!-- PRIMARY CTA STRIP — one big, centered button that advances
+                 the request to the next step. Sits right above the tabs so
+                 it's the single most-visible action on the page. -->
+            <div id="primaryCtaStrip" class="px-5 py-3 flex items-center justify-center gap-3 shrink-0" style="border-bottom:1px solid var(--line);background:var(--surface)">
+              <div id="detailActions" class="flex items-center justify-center gap-2 flex-wrap" style="min-height:42px"></div>
             </div>
 
             <!-- SHORTCUTS BAR -->
@@ -1457,9 +1506,15 @@
               <a class="btn btn-secondary" href="${url}" target="_blank" rel="noopener" style="height:28px;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 10px;text-decoration:none" title="Open in new tab">↗</a>
             </div>
             <div class="flex gap-1.5 mt-1.5">
-              <button class="btn btn-secondary flex-1" onclick="verifyDoc(${d.id})" ${d.status==='verified'?'disabled':''} style="height:26px;font-size:11px;background:rgba(16,185,129,.15);color:rgb(5,120,87)">✓ Verify</button>
-              <button class="btn btn-secondary flex-1" onclick="rejectDoc(${d.id})" ${d.status==='rejected'?'disabled':''} style="height:26px;font-size:11px">✕ Reject</button>
+              <button class="btn btn-secondary flex-1" onclick="verifyDoc(${d.id})" ${d.status==='verified'?'disabled':''}
+                      data-tip="قبول داخلي — لا تنبيه للمواطن، فقط للسجل"
+                      style="height:28px;font-size:11.5px;font-weight:700;background:rgba(16,185,129,.18);color:rgb(5,120,87);border-color:rgba(16,185,129,.4)">✓ قبول</button>
+              <button class="btn btn-secondary flex-1" onclick="rejectDoc(${d.id})" ${d.status==='rejected'?'disabled':''}
+                      data-tip="رفض المستند — يُبلَّغ المواطن ويُطلب إعادة الإرسال"
+                      style="height:28px;font-size:11.5px;font-weight:700;background:#fee2e2;color:#991b1b;border-color:#fca5a5">✕ رفض</button>
             </div>
+            ${d.status === 'rejected' ? '<div class="text-[10.5px] mt-1.5" style="color:#92400e;background:#fef3c7;padding:4px 8px;border-radius:6px">⏳ بانتظار إعادة الإرسال من المواطن</div>' : ''}
+            ${d.status === 'replaced' ? '<div class="text-[10.5px] mt-1.5" style="color:var(--text-mute)">↻ نسخة سابقة — استُبدلت</div>' : ''}
           </div>
         </div>`;
     }).join('');
@@ -1475,27 +1530,48 @@
   function escapeHtml(s) {
     return String(s||'').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
   }
+  // Verify = internal "I've checked, looks good" — silent, no citizen
+  // notification. Just turns the chip green so the office knows which docs
+  // they've already reviewed before sending the payment link.
   async function verifyDoc(docId) {
     if (!currentRequestId) return;
     try {
       await api(`/api/officer/request/${currentRequestId}/document/${docId}/verify`, { method: 'POST' });
-      Sanad.toast('Document verified', 'ok');
+      Sanad.toast('✓ تم القبول داخلياً (المواطن لم يُبلَّغ)', 'ok', 2200);
       openRequest(currentRequestId);
-    } catch (e) { Sanad.toast('Verify failed', 'err'); }
+    } catch (e) { Sanad.toast('فشل القبول', 'err'); }
   }
+  // Reject = public action: notifies citizen with a structured reason and
+  // re-opens the slot. Citizen can then upload a replacement which will
+  // automatically take this slot's place (lib/agent.js handleInFlight).
+  const REJECT_REASONS_AR = [
+    { code: 'blurry',       label: 'الصورة غير واضحة' },
+    { code: 'wrong_doc',    label: 'مستند خاطئ — أرفقت غير المطلوب' },
+    { code: 'expired',      label: 'منتهي الصلاحية' },
+    { code: 'missing_side', label: 'ناقص الوجه الآخر (أمامي/خلفي)' },
+    { code: 'cropped',      label: 'مقصوص — لا تظهر كامل الحواف' },
+    { code: 'other',        label: 'أخرى (أكتب التفاصيل)' }
+  ];
   async function rejectDoc(docId) {
     if (!currentRequestId) return;
-    const reason = prompt('Reason for rejection (shown to the citizen):');
-    if (reason === null) return; // cancelled
+    const menu = REJECT_REASONS_AR.map((x,i) => `${i+1}. ${x.label}`).join('\n');
+    const pick = prompt(`✕ سبب رفض المستند — اختر رقماً:\n\n${menu}\n\n(يُرسَل التنبيه للمواطن مع طلب إعادة الإرسال)`, '1');
+    const idx = Number(pick) - 1;
+    if (!(idx >= 0 && idx < REJECT_REASONS_AR.length)) return;
+    const code = REJECT_REASONS_AR[idx].code;
+    const note = (code === 'other')
+      ? prompt('اكتب السبب بالعربية (يظهر للمواطن):', '')
+      : prompt('ملاحظة إضافية (اختياري)', '') || '';
+    if (code === 'other' && !note) return;
     try {
       await api(`/api/officer/request/${currentRequestId}/document/${docId}/reject`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ reason })
+        body: JSON.stringify({ reason: code, note: (note || '').slice(0, 400) })
       });
-      Sanad.toast('Document rejected — citizen notified', 'ok');
+      Sanad.toast('✕ تم الرفض — المواطن أُخطر وفتح طلب إعادة الإرسال', 'ok', 2600);
       openRequest(currentRequestId);
-    } catch (e) { Sanad.toast('Reject failed', 'err'); }
+    } catch (e) { Sanad.toast('فشل الرفض', 'err'); }
   }
 
   function renderTimeline(r, messages) {
@@ -1579,54 +1655,96 @@
       </div>`;
   }
 
+  // Map request status → which step is active in the progress strip.
+  // The strip is purely visual; the actual gate logic lives below.
+  function setStepStrip(status, paid) {
+    const states = { review: 'todo', payment: 'todo', work: 'todo', done: 'todo' };
+    if (status === 'ready') {
+      // Pre-claim — strip is shown but all steps are pending. Highlight first.
+      states.review = 'active';
+    } else if (status === 'claimed') {
+      states.review = 'active';
+    } else if (status === 'needs_more_info') {
+      states.review = 'blocked'; // waiting on citizen
+    } else if (status === 'awaiting_payment') {
+      states.review = 'done';
+      states.payment = 'active';
+    } else if (status === 'in_progress' || paid) {
+      states.review = 'done';
+      states.payment = 'done';
+      states.work = 'active';
+    } else if (status === 'completed') {
+      states.review = 'done';
+      states.payment = 'done';
+      states.work = 'done';
+      states.done = 'active';
+    } else if (status === 'flagged' || (status || '').startsWith('cancelled')) {
+      states.review = 'blocked';
+    }
+    document.querySelectorAll('#stepStrip .step-pill').forEach(p => {
+      const k = p.getAttribute('data-step');
+      p.setAttribute('data-state', states[k] || 'todo');
+    });
+  }
+
   function renderActions(r) {
     const host = document.getElementById('detailActions');
-    const btns = [];
+    const sec  = document.getElementById('detailActionsSecondary');
     const fee = (n) => `${Number(n||0).toFixed(3)} ${t('officer.omr')}`;
 
-    // ── State machine in a single place ─────────────────────
-    // ready       → Claim atomically (locks request to this office)
-    // claimed     → Send Payment Link · Release
-    // awaiting_payment → Resend Payment Link · Release · payment-pending hint
-    // in_progress (paid)→ Complete · Release (refund-required hint)
+    setStepStrip(r.status, !!r.paid_at);
+
+    // ── Lifecycle → primary CTA (the ONE button that moves the request
+    //    to the next step) + a secondary toolbar with side actions.
+    let primary = '';
+    let hint = '';
+    const secondaryBtns = [];
+
     if (r.anonymized || r.status === 'ready') {
-      btns.push(`<button data-act="claim" class="btn btn-primary" style="background:linear-gradient(135deg,#10b981,#0d9488);font-weight:800;font-size:14px;padding:10px 18px">⚡ ${t('actions.claim','استلام الطلب')}</button>`);
-      btns.push(`<button data-act="flag" class="btn btn-secondary" data-tip="${t('officer.flag.tip','أبلغ عن مشكلة في الطلب — إذا أبلغ مكتب آخر، يُحذف الطلب تلقائياً')}" style="color:#b45309;border-color:#fcd34d;background:#fffbeb">🚩 ${t('officer.flag','إبلاغ / إرجاع')}</button>`);
-      // Show pre-defined pricing the office is locking-in if the citizen pays.
+      primary = `<button data-act="claim" class="cta-primary">⚡ <span>استلام الطلب</span> <span style="opacity:.85;font-weight:600">·</span> <span style="font-weight:600">Claim</span></button>`;
       if (r.catalog_fee_omr != null) {
         const officeFee = (allInbox?.office?.default_office_fee_omr ?? 5);
-        btns.push(`<span class="text-[11px] px-2 py-1 rounded-lg" style="background:var(--surface-3);color:var(--text-mute)">
-          ${t('officer.gov_fee','رسوم الحكومة')}: <b>${fee(r.catalog_fee_omr)}</b> + ${t('officer.office_fee','رسوم المكتب')}: <b>${fee(officeFee)}</b>
-        </span>`);
+        hint = `سيُقفل التسعير عند الاستلام: حكومة <b>${fee(r.catalog_fee_omr)}</b> + مكتب <b>${fee(officeFee)}</b>`;
       }
+      secondaryBtns.push(`<button data-act="flag" class="cta-secondary cta-warn" data-tip="إبلاغ عن مشكلة — إذا أبلغ مكتبان يُحذف الطلب تلقائياً">🚩 إبلاغ</button>`);
     } else if (r.status === 'claimed') {
-      btns.push(`<button data-act="send-payment" class="btn btn-primary" style="background:linear-gradient(135deg,#0d9488,#15803d)">💳 ${t('officer.send_payment','Send payment link')}</button>`);
-      btns.push(`<button data-act="request-info" class="btn btn-secondary">📝 ${t('officer.request_info','Request more info')}</button>`);
-      btns.push(`<button data-act="reclassify" class="btn btn-secondary">🔄 ${t('officer.reclassify','Change service')}</button>`);
-      btns.push(`<button data-act="release" class="btn btn-secondary">${t('actions.release')}</button>`);
+      // Encourage doc review first; the CTA is "send payment" but a hint
+      // appears if the office hasn't accepted/rejected any docs yet.
+      primary = `<button data-act="send-payment" class="cta-primary">💳 <span>إرسال رابط الدفع للمواطن</span></button>`;
       const total = (r.office_fee_omr || 0) + (r.government_fee_omr || 0);
-      btns.push(`<span class="text-[11px] px-2 py-1 rounded-lg" style="background:var(--surface-3);color:var(--text-mute)">
-        ${t('officer.locked_total','Locked total')}: <b>${fee(total)}</b>
-      </span>`);
+      hint = `الإجمالي المقفل: <b>${fee(total)}</b> — راجع المستندات قبل إرسال رابط الدفع`;
+      secondaryBtns.push(`<button data-act="request-info" class="cta-secondary">📝 طلب توضيح</button>`);
+      secondaryBtns.push(`<button data-act="reclassify" class="cta-secondary">🔄 تغيير الخدمة</button>`);
+      secondaryBtns.push(`<button data-act="release" class="cta-secondary cta-danger">↩ إرجاع للسوق</button>`);
     } else if (r.status === 'needs_more_info') {
-      // Citizen has been pinged; office now waits or follows up. Once the
-      // citizen responds, the office advances to send-payment.
-      btns.push(`<button data-act="send-payment" class="btn btn-primary">💳 ${t('officer.send_payment','Send payment link')}</button>`);
-      btns.push(`<button data-act="reclassify" class="btn btn-secondary">🔄 ${t('officer.reclassify','Change service')}</button>`);
-      btns.push(`<button data-act="release" class="btn btn-secondary">${t('actions.release')}</button>`);
-      btns.push(`<span class="text-[11px] px-2 py-1 rounded-lg" style="background:#fef3c7;color:#92400e">📝 ${t('officer.needs_info_hint','Awaiting citizen response')}</span>`);
+      primary = `<button data-act="send-payment" class="cta-primary">💳 <span>إرسال رابط الدفع</span></button>`;
+      hint = `⏳ بانتظار ردّ المواطن (مستند جديد أو ردّ نصي). يمكنك المتابعة فور تجاوبه.`;
+      secondaryBtns.push(`<button data-act="request-info" class="cta-secondary">📝 طلب آخر</button>`);
+      secondaryBtns.push(`<button data-act="reclassify" class="cta-secondary">🔄 تغيير الخدمة</button>`);
+      secondaryBtns.push(`<button data-act="release" class="cta-secondary cta-danger">↩ إرجاع للسوق</button>`);
     } else if (r.status === 'awaiting_payment') {
-      btns.push(`<button data-act="send-payment" class="btn btn-secondary">↻ ${t('officer.resend_payment','Resend link')}</button>`);
-      btns.push(`<button data-act="release" class="btn btn-secondary">${t('actions.release')}</button>`);
-      btns.push(`<span class="text-[11px] px-2 py-1 rounded-lg" style="background:#fee2e2;color:#991b1b">⏳ ${t('officer.awaiting_pay_hint','Waiting for citizen payment')}</span>`);
+      primary = `<button data-act="send-payment" class="cta-primary" style="background:linear-gradient(135deg,#f59e0b,#d97706)">↻ <span>إعادة إرسال رابط الدفع</span></button>`;
+      hint = `⏳ بانتظار سداد المواطن — الدردشة الكاملة تُفتح فور الدفع`;
+      secondaryBtns.push(`<button data-act="release" class="cta-secondary cta-danger">↩ إرجاع</button>`);
+    } else if (r.status === 'in_progress' || (r.paid_at && r.status !== 'completed')) {
+      primary = `<button data-act="complete" class="cta-primary" style="background:linear-gradient(135deg,#10b981,#059669)">✓ <span>إنهاء المعاملة</span></button>`;
+      hint = `الدفع مستلم — أكمل المعاملة على البوابة الحكومية ثم اضغط إنهاء`;
+      secondaryBtns.push(`<button data-act="request-info" class="cta-secondary">📝 طلب توضيح</button>`);
+      secondaryBtns.push(`<button data-act="release" class="cta-secondary cta-danger">↩ إرجاع (يحتاج استرداد)</button>`);
+    } else if (r.status === 'completed') {
+      primary = `<button class="cta-primary" disabled style="background:#10b981">✓ <span>منجز</span></button>`;
+      hint = `المعاملة مكتملة — ${r.completed_at || ''}`;
     } else {
-      // in_progress / on_hold / etc. — paid_at is set, full actions available.
-      btns.push(`<button data-act="release" class="btn btn-secondary">${t('actions.release')}</button>`);
-      btns.push(`<button data-act="request-info" class="btn btn-secondary">📝 ${t('officer.request_info','Request more info')}</button>`);
-      btns.push(`<button data-act="complete" class="btn btn-primary" style="background:linear-gradient(135deg,#10b981,#059669)">✓ ${t('actions.complete')}</button>`);
+      // on_hold / cancelled / flagged
+      primary = `<span class="cta-secondary cta-danger">${r.status}</span>`;
     }
-    host.innerHTML = btns.join('');
-    host.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', async () => {
+
+    host.innerHTML = `
+      ${primary}
+      ${hint ? `<div class="cta-hint" style="text-align:center">${hint}</div>` : ''}
+    `;
+    sec.innerHTML = secondaryBtns.join('');
+    [...host.querySelectorAll('[data-act]'), ...sec.querySelectorAll('[data-act]')].forEach(b => b.addEventListener('click', async () => {
       const a = b.getAttribute('data-act');
       try {
         if (a === 'claim') {
@@ -1781,25 +1899,31 @@
     // Pre-payment lock banner. The server already returns an empty messages
     // array when chat_unlocked is false, but we surface the WHY explicitly
     // so the officer doesn't think the chat is empty by accident.
+    // Pre-payment: free-text chat is locked (officer can't badger the citizen)
+    // BUT citizen replies + structured prompts (doc rejections, request-info,
+    // payment link) flow normally so the workflow can progress. We show a
+    // single banner explaining the partial-lock + still render messages.
     if (chatUnlocked === false) {
       const banner = document.createElement('div');
-      banner.className = 'p-4 m-2 rounded-xl text-center';
-      banner.style.cssText = 'background:#fef3c7;border:1px solid #fcd34d;color:#92400e;font-size:13px';
-      banner.innerHTML = `🔒 <b>${t('officer.chat_locked','Chat locked until payment')}</b><br/>
-        <span style="font-weight:500">${t('officer.chat_locked_hint',"Send the payment link first. The citizen's chat history unlocks automatically once they pay.")}</span>`;
+      banner.className = 'p-3 m-2 rounded-xl';
+      banner.style.cssText = 'background:#fef3c7;border:1px solid #fcd34d;color:#92400e;font-size:12.5px;line-height:1.5';
+      banner.innerHTML = `🔒 <b>الدردشة الحرة مقفلة حتى الدفع</b><br/>
+        <span style="font-weight:500">يمكنك قراءة ردود المواطن واستخدام الإجراءات المنظَّمة (رفض مستند · طلب توضيح · إرسال رابط الدفع). الدردشة الحرة تُفتح تلقائياً عند سداد المواطن.</span>`;
       chat.appendChild(banner);
-      // Disable the input area too.
-      const input = document.getElementById('chatInput');
-      const sendBtn = document.getElementById('chatSend');
-      if (input) { input.disabled = true; input.placeholder = t('officer.chat_locked','Chat locked until payment'); }
-      if (sendBtn) { sendBtn.disabled = true; sendBtn.style.opacity = '.5'; }
-      return;
     }
-    // Re-enable input when unlocked.
-    const input = document.getElementById('chatInput');
-    const sendBtn = document.getElementById('chatSend');
-    if (input) { input.disabled = false; input.placeholder = t('officer.chat_placeholder','Type a message…'); }
-    if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = '1'; }
+    // Disable / enable the free-text composer based on the gate.
+    const input  = document.getElementById('officerInput');
+    const form   = document.getElementById('officerSend');
+    const sendBtn = form?.querySelector('button[type="submit"]');
+    if (chatUnlocked === false) {
+      if (input)   { input.disabled = true;  input.placeholder = '🔒 يفتح بعد الدفع — استخدم الإجراءات أعلاه'; }
+      if (sendBtn) { sendBtn.disabled = true; sendBtn.style.opacity = '.45'; }
+    } else {
+      if (input)   { input.disabled = false; input.placeholder = t('officer.chat.reply_placeholder','اكتب رداً…'); }
+      if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = '1'; }
+    }
+    // Always render whatever messages exist. Pre-pay this is just citizen
+    // replies + bot/system breadcrumbs; post-pay it's the full thread.
     for (const m of messages) {
       chat.appendChild(msgBubble(m));
       lastChatMsgId = Math.max(lastChatMsgId, m.id);

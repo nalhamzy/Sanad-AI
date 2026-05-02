@@ -339,16 +339,24 @@ officerRouter.get('/request/:id', async (req, res) => {
             FROM request_document WHERE request_id=? ORDER BY id ASC`,
     args: [id]
   });
+  // Pre-payment vs post-payment chat semantics:
+  //   • Sending office → citizen free-text is gated on paid_at (POST /message
+  //     enforces it). This prevents the office from badgering the citizen.
+  //   • READING messages is NOT gated — the office must see the citizen's
+  //     replies to structured prompts ("upload this doc", "we need X") so
+  //     they can actually progress the request. Without this, when the
+  //     citizen replies "give me an hour, I'll upload tonight" the office
+  //     can't see it and the whole flow stalls.
+  // chat_unlocked still flips at paid_at — the UI uses it to enable the
+  // free-text composer.
   const chatUnlocked = !!r.paid_at;
-  const messages = chatUnlocked
-    ? (await db.execute({
-        sql: `SELECT id, direction, actor_type, body_text, media_url, created_at
-                FROM message
-               WHERE request_id=? OR session_id=?
-               ORDER BY id ASC`,
-        args: [id, r.session_id]
-      })).rows
-    : [];
+  const messages = (await db.execute({
+    sql: `SELECT id, direction, actor_type, body_text, media_url, created_at
+            FROM message
+           WHERE request_id=? OR session_id=?
+           ORDER BY id ASC`,
+    args: [id, r.session_id]
+  })).rows;
   // Strip citizen_id / session_id from the response — they aren't needed on
   // the client and leaking session_id would let an office forge citizen-side
   // accept calls.
@@ -655,35 +663,101 @@ officerRouter.post('/request/:id/document/:docId/verify', async (req, res) => {
   res.json({ ok: true });
 });
 
+// Reject a single document → flips the request to 'needs_more_info' so the
+// office's queue knows it's parked on the citizen, sends a structured AR
+// message describing exactly what's wrong, and tags the slot so the citizen's
+// next upload auto-replaces this rejected doc.
+//
+// Body: { reason: 'blurry'|'wrong_doc'|'expired'|'missing_side'|'other', note? }
+// Free-text 'reason' (legacy) still accepted and stored as note.
+const REJECT_REASONS_AR = {
+  blurry:        'الصورة غير واضحة — يرجى إعادة التصوير بإضاءة جيدة.',
+  wrong_doc:     'المستند المرفوع لا يطابق المطلوب — يرجى إرفاق المستند الصحيح.',
+  expired:       'المستند منتهي الصلاحية — نحتاج نسخة سارية المفعول.',
+  missing_side:  'نحتاج صورة الوجه الآخر من المستند (أمامي + خلفي).',
+  cropped:       'المستند مقصوص — يرجى إعادة الالتقاط بحيث تظهر كامل الحواف.',
+  other:         ''
+};
+
 officerRouter.post('/request/:id/document/:docId/reject', async (req, res) => {
   const id = Number(req.params.id);
   const docId = Number(req.params.docId);
-  const reason = String(req.body?.reason || '').trim() || 'no reason given';
+  const rawReason = String(req.body?.reason || '').trim();
+  const note = String(req.body?.note || '').trim().slice(0, 400);
+  // Map structured reason code to a user-facing message; if the caller
+  // sent a free-text reason (old UI), fall through and use it as the note.
+  const isCode = Object.prototype.hasOwnProperty.call(REJECT_REASONS_AR, rawReason);
+  const reasonCode = isCode ? rawReason : 'other';
+  const reasonText = isCode ? REJECT_REASONS_AR[rawReason] : '';
+  const finalNote   = note || (isCode ? '' : rawReason) || 'no reason given';
+
   const { rows } = await db.execute({
-    sql: `SELECT office_id, session_id FROM request WHERE id=?`, args: [id]
+    sql: `SELECT r.office_id, r.session_id, r.status, r.paid_at,
+                 c.phone AS citizen_phone, c.language_pref
+            FROM request r LEFT JOIN citizen c ON c.id = r.citizen_id
+           WHERE r.id=?`,
+    args: [id]
   });
   if (!rows[0] || rows[0].office_id !== req.office.id)
     return res.status(403).json({ error: 'not_your_request' });
-  const r = await db.execute({
+
+  const upd = await db.execute({
     sql: `UPDATE request_document
              SET status='rejected', verified_by=?, verified_at=datetime('now'),
                  reject_reason=?
            WHERE id=? AND request_id=?`,
-    args: [req.officer.officer_id, reason, docId, id]
+    args: [req.officer.officer_id, finalNote, docId, id]
   });
-  if (!r.rowsAffected) return res.status(404).json({ error: 'not_found' });
+  if (!upd.rowsAffected) return res.status(404).json({ error: 'not_found' });
+
+  // Flip the request to needs_more_info so the office's "active SLA timer"
+  // doesn't tick down on the citizen's pause + the inbox bucket reflects
+  // reality. Skip for terminal states.
+  if (!['completed','cancelled','flagged'].includes(rows[0].status)) {
+    await db.execute({
+      sql: `UPDATE request
+               SET status='needs_more_info', last_event_at=datetime('now')
+             WHERE id=? AND status NOT IN ('completed','cancelled','flagged')`,
+      args: [id]
+    });
+  }
+
+  await db.execute({
+    sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
+          VALUES ('officer', ?, 'document_reject', 'request_document', ?, ?)`,
+    args: [req.officer.officer_id, docId, JSON.stringify({ request_id: id, reason: reasonCode, note: finalNote })]
+  });
+
   const { rows: dr } = await db.execute({
     sql: `SELECT label, doc_code FROM request_document WHERE id=?`, args: [docId]
   });
-  if (dr[0]) {
-    await storeMessage({
-      session_id: rows[0].session_id, request_id: id,
-      direction: 'out', actor_type: 'officer',
-      body_text: `⚠️ الموظف رفض مستند "${dr[0].label || dr[0].doc_code}" — السبب: ${reason}. برجاء إعادة الإرسال.`,
-      meta: { officer_id: req.officer.officer_id, rejected_doc_id: docId }
-    });
+  const docLabel = dr[0]?.label || dr[0]?.doc_code || 'المستند';
+  const lines = [
+    `⚠️ المستند "${docLabel}" بحاجة لإعادة إرسال.`,
+    reasonText || finalNote
+  ];
+  if (note && reasonText) lines.push(note);
+  lines.push('');
+  lines.push('📎 ارسل النسخة الصحيحة هنا (صورة أو PDF) ليستلمها الموظف. أو اكتب رداً (مثل "سأرسلها خلال ساعة") وسنخبر المكتب.');
+
+  await storeMessage({
+    session_id: rows[0].session_id, request_id: id,
+    direction: 'out', actor_type: 'officer',
+    body_text: lines.join('\n'),
+    meta: {
+      officer_id: req.officer.officer_id,
+      rejected_doc_id: docId,
+      rejected_doc_code: dr[0]?.doc_code || null,
+      reason_code: reasonCode
+    }
+  });
+  // Push to WhatsApp when the citizen is on that channel.
+  if (isWhatsAppSession(rows[0].session_id)) {
+    const phone = rows[0].citizen_phone || rows[0].session_id.replace(/^wa:/, '');
+    sendWhatsAppText(phone, lines.join('\n')).catch(() => {});
   }
-  res.json({ ok: true });
+
+  res.json({ ok: true, status: 'needs_more_info', reason_code: reasonCode });
 });
 
 // ─── POST /request/:id/request-info ────────────────────────
