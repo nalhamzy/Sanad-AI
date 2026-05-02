@@ -2327,21 +2327,41 @@
 
   async function openOtpWindow() {
     if (!currentRequestId) return;
-    await api('/api/officer/request/' + currentRequestId + '/otp-window', { method:'POST' });
+    // Snapshot the request id so the poll loop can detect the user
+    // switching to a different request mid-window and bail cleanly,
+    // instead of leaking a setInterval that silently polls /otp on the
+    // OLD request for up to 70s.
+    const otpRequestId = currentRequestId;
+    try {
+      await api('/api/officer/request/' + otpRequestId + '/otp-window', { method:'POST' });
+    } catch (e) {
+      Sanad.toast('❌ ' + (e.body?.hint || 'فشل فتح نافذة الرمز'), 'err', 3000);
+      return;
+    }
     const el = document.getElementById('otpStatus');
     el.textContent = t('officer.waiting_citizen');
     Sanad.toast(t('officer.otp_window_opened', 'OTP window opened (60s)'), 'info', 2400);
     const start = Date.now();
     const h = setInterval(async () => {
-      if (Date.now() - start > 70000 || currentRequestId == null) { clearInterval(h); return; }
+      // Three exit conditions: window expired (60s + 10s slack), the
+      // detail pane closed (currentRequestId nulled), or the user opened
+      // a different request (id changed). All three stop polling.
+      if (Date.now() - start > 70000 || currentRequestId !== otpRequestId) {
+        clearInterval(h);
+        return;
+      }
       try {
-        const r = await api('/api/officer/request/' + currentRequestId + '/otp');
+        const r = await api('/api/officer/request/' + otpRequestId + '/otp');
         if (r.otp && r.otp.code && r.otp.consumed_at) {
           clearInterval(h);
-          el.textContent = '✅ ' + r.otp.code;
-          try { await navigator.clipboard.writeText(r.otp.code); } catch {}
-          Sanad.toast('OTP ' + r.otp.code + ' copied', 'ok', 4000);
-          if (soundOn) Sanad.ping();
+          // Final guard — render only if still on the same request
+          // (user may have flipped just as the OTP arrived).
+          if (currentRequestId === otpRequestId) {
+            el.textContent = '✅ ' + r.otp.code;
+            try { await navigator.clipboard.writeText(r.otp.code); } catch {}
+            Sanad.toast('OTP ' + r.otp.code + ' copied', 'ok', 4000);
+            if (soundOn) Sanad.ping();
+          }
         }
       } catch {}
     }, 1500);
@@ -2439,14 +2459,28 @@
     if (!currentRequestId) return;
     const text = document.getElementById('officerInput').value.trim();
     if (!text) return;
-    await fetch('/api/officer/request/' + currentRequestId + '/message', {
-      method:'POST',
-      credentials: 'include',
-      headers:{'content-type':'application/json'},
-      body: JSON.stringify({ text })
-    });
-    document.getElementById('officerInput').value = '';
-    await pollChat();
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+    try {
+      // Use api() so 401 → login redirect, 403 → office_not_active, and
+      // server-supplied AR hints land in toasts (was bare fetch + silent).
+      await api('/api/officer/request/' + currentRequestId + '/message', {
+        method: 'POST',
+        body: JSON.stringify({ text })
+      });
+      document.getElementById('officerInput').value = '';
+      await pollChat();
+    } catch (err) {
+      const hint = err.body?.hint || (
+        err.body?.error === 'chat_locked_until_paid'
+          ? 'الدردشة مغلقة حتى يتم الدفع — استخدم الإجراءات المنظَّمة'
+          : (err.message || 'فشل إرسال الرسالة')
+      );
+      Sanad.toast('❌ ' + hint, 'err', 3600);
+      console.error('[chat send]', err);
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
+    }
   });
   document.querySelectorAll('.canned').forEach(b => b.addEventListener('click', () => {
     document.getElementById('officerInput').value = b.textContent.trim();
