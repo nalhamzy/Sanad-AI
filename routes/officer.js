@@ -219,7 +219,18 @@ officerRouter.get('/inbox', async (req, res) => {
         FROM request r
         LEFT JOIN service_catalog s ON s.id = r.service_id
        WHERE r.office_id = ?
-         AND r.status NOT IN ('completed','cancelled_by_citizen','cancelled_by_office')
+         /* Include the last 30 days of TERMINAL rows too (completed,
+            cancelled, flagged) so the client's 'done' filter and KPIs
+            ('kpi_done', sidebar [data-count="done"]) show real numbers.
+            The client filters terminals out of the default views via
+            isActive(). */
+         AND (
+           r.status NOT IN ('completed','cancelled','cancelled_by_citizen','cancelled_by_office','flagged','rejected_by_office')
+           OR (
+             r.status IN ('completed','cancelled','cancelled_by_citizen','cancelled_by_office','flagged','rejected_by_office')
+             AND COALESCE(r.completed_at, r.cancelled_at, r.last_event_at, r.created_at) >= datetime('now', '-30 days')
+           )
+         )
        ORDER BY fresh_reply DESC, r.last_event_at DESC
        LIMIT 100`,
     args: [office_id]

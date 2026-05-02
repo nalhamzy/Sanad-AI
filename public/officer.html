@@ -1062,23 +1062,35 @@
   });
 
   // ─ KPIs / counts ─
+  // Hard guard — even if the server somehow returned a terminal-state
+  // request in `mine`, the client will not count or display it.
+  const TERMINAL_STATUSES = new Set(['completed','cancelled','cancelled_by_citizen','cancelled_by_office','flagged','rejected_by_office']);
+  function isActive(r) { return !TERMINAL_STATUSES.has(r.status); }
+
   function updateKPIs() {
-    const mine = allInbox.mine || [];
-    const mkt = allInbox.marketplace || [];
+    // Filter out any terminal-state row defensively — server already excludes
+    // them (routes/officer.js inbox WHERE clause), but if a stale cache or
+    // race ever leaked one through, the count still stays honest.
+    const allMine = allInbox.mine || [];
+    const mine = allMine.filter(isActive);
+    const mineDone = allMine.filter(x => x.status === 'completed');
+    const mkt  = allInbox.marketplace || [];
     const today = iso => iso && new Date(iso).toDateString() === new Date().toDateString();
     document.getElementById('kpi_claimed').textContent = mine.filter(x => today(x.claimed_at)).length;
-    document.getElementById('kpi_done').textContent = mine.filter(x => x.status === 'completed' && today(x.completed_at || x.created_at)).length;
+    document.getElementById('kpi_done').textContent = mineDone.filter(x => today(x.completed_at || x.created_at)).length;
     document.getElementById('kpi_inflight').textContent = mine.filter(x => x.status === 'in_progress' || x.status === 'claimed').length;
     document.getElementById('kpi_mkt').textContent = mkt.length;
     const money = mine.filter(x => today(x.claimed_at)).reduce((a, b) => a + (b.fee_omr || 0) * 0.1, 0);
     document.getElementById('kpi_money').textContent = money.toFixed(3);
     const set = (sel, v) => { const el = document.querySelector(sel); if (el) el.textContent = v; };
+    // Sidebar counters reflect ACTIVE only — completed and other terminal
+    // states no longer inflate the "طلباتي" badge.
     set('[data-count="all"]', mine.length + mkt.length);
     set('[data-count="ready"]', mkt.length);
     set('[data-count="mine"]', mine.length);
-    set('[data-count="waiting"]', mine.filter(x => x.status === 'claimed').length);
+    set('[data-count="waiting"]', mine.filter(x => x.status === 'claimed' || x.status === 'needs_more_info').length);
     set('[data-count="sla"]', 0);
-    set('[data-count="done"]', mine.filter(x => x.status === 'completed' && today(x.completed_at)).length);
+    set('[data-count="done"]', mineDone.filter(x => today(x.completed_at)).length);
   }
 
   function highlightFilter() {
@@ -1122,7 +1134,11 @@
   }
 
   function currentList() {
-    const mine = allInbox.mine || [];
+    // Defensive: drop terminal-state rows so the inbox never shows or counts
+    // a completed/cancelled/flagged request unless the user explicitly asks
+    // for the 'done' sub-filter.
+    const allMine = allInbox.mine || [];
+    const mine = allMine.filter(isActive);
     const mkt = allInbox.marketplace || [];
     // Quick-filter (sidebar) → coarse pre-filter pool.
     let list;
@@ -1135,7 +1151,7 @@
       const remain = s.deadlineMs - Date.now();
       return remain >= 0 && remain < 120_000; // < 2 min
     });
-    else if (filterMode === 'done') list = mine.filter(x => x.status === 'completed');
+    else if (filterMode === 'done') list = allMine.filter(x => x.status === 'completed');
     else list = mine.concat(mkt);
 
     // Facet filters
@@ -1617,7 +1633,13 @@
       b.addEventListener('click', async e => {
         e.stopPropagation();
         const id = b.getAttribute('data-complete');
-        if (!confirm('Mark R-' + id + ' as complete?')) return;
+        const ok = await Sanad.dialog.confirm({
+          title: 'إنهاء المعاملة',
+          body: `هل أنجزت المعاملة على البوابة الحكومية وترغب في إغلاق الطلب رقم R-${id}؟`,
+          okText: '✓ نعم، أنهِ المعاملة',
+          cancelText: 'تراجع'
+        });
+        if (!ok) return;
         try {
           await api('/api/officer/request/' + id + '/complete', { method:'POST' });
           Sanad.toast('✓ Completed R-' + id, 'ok');
@@ -1644,22 +1666,29 @@
       b.addEventListener('click', async e => {
         e.stopPropagation();
         const id = b.getAttribute('data-flag');
-        const REASONS = [
-          { code: 'wrong_service', label: 'خدمة خاطئة' },
-          { code: 'fake_docs',     label: 'مستندات مزوّرة / غير واضحة' },
-          { code: 'duplicate',     label: 'طلب مكرر' },
-          { code: 'abusive',       label: 'محتوى مسيء' },
-          { code: 'other',         label: 'أخرى' }
+        const FLAG_REASONS = [
+          { code: 'wrong_service', label: '🔄 خدمة خاطئة',                         kind: 'normal' },
+          { code: 'fake_docs',     label: '⚠ مستندات مزوّرة / غير واضحة',         kind: 'danger' },
+          { code: 'duplicate',     label: '📑 طلب مكرر',                           kind: 'normal' },
+          { code: 'abusive',       label: '🚫 محتوى مسيء',                         kind: 'danger' },
+          { code: 'other',         label: '🚩 أخرى',                              kind: 'normal' }
         ];
-        const menu = REASONS.map((x,i) => `${i+1}. ${x.label}`).join('\n');
-        const pick = prompt(`🚩 سبب الإبلاغ — اختر رقماً:\n\n${menu}`, '1');
-        const idx = Number(pick) - 1;
-        if (!(idx >= 0 && idx < REASONS.length)) return;
-        const note = prompt('ملاحظة (اختياري)', '') || '';
+        const reason = await Sanad.dialog.choice({
+          title: '🚩 إبلاغ عن الطلب',
+          body: 'اختر السبب — إذا أبلغ مكتب آخر عن نفس الطلب، يُحذف تلقائياً من السوق.',
+          options: FLAG_REASONS
+        });
+        if (!reason) return;
+        const note = await Sanad.dialog.text({
+          title: 'ملاحظة (اختياري)',
+          placeholder: 'أضف تفاصيل تساعد فريق المراجعة',
+          okText: 'إرسال البلاغ'
+        });
+        if (note === null) return;
         try {
           const resp = await api('/api/officer/request/' + id + '/flag', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reason: REASONS[idx].code, note: note.slice(0, 400) })
+            body: JSON.stringify({ reason, note: (note || '').slice(0, 400) })
           });
           if (resp.removed) {
             Sanad.toast(`🚫 الطلب حُذف من السوق (${resp.flag_count} بلاغات)`, 'warn', 3600);
@@ -1971,7 +2000,16 @@
   // replacement.
   async function unrejectDoc(docId) {
     if (!currentRequestId) return;
-    const accept = confirm('هل تقبل المستند مباشرة؟\n• OK = إلغاء الرفض + قبول داخلي\n• Cancel = إلغاء الرفض فقط (يعود إلى "قيد المراجعة")');
+    const choice = await Sanad.dialog.choice({
+      title: '↩ إلغاء الرفض',
+      body: 'تراجع عن الرفض — اختر إذا كنت تريد قبول المستند مباشرة أم فقط إعادته إلى "قيد المراجعة".',
+      options: [
+        { code: 'accept', label: '✓ إلغاء الرفض + قبول مباشر',  kind: 'primary' },
+        { code: 'reopen', label: '↩ إلغاء الرفض فقط',            kind: 'normal'  }
+      ]
+    });
+    if (!choice) return;
+    const accept = choice === 'accept';
     try {
       await api(`/api/officer/request/${currentRequestId}/document/${docId}/unreject`, {
         method: 'POST',
@@ -1995,7 +2033,14 @@
       expired:      'منتهي الصلاحية'
     };
     const label = REASON_LABELS[reasonCode] || reasonCode;
-    if (!confirm(`رفض المستند بسبب "${label}"؟\nسيُبلَّغ المواطن ويُطلب منه إعادة الإرسال.`)) return;
+    const ok = await Sanad.dialog.confirm({
+      title: 'تأكيد الرفض',
+      body: `رفض المستند بسبب: "${label}"\n\nسيُبلَّغ المواطن ويُطلب منه إعادة الإرسال.`,
+      okText: '✕ نعم، ارفض',
+      cancelText: 'تراجع',
+      danger: true
+    });
+    if (!ok) return;
     // Optimistic chip flip — instant feedback while the round-trip lands.
     try {
       const tile = document.querySelector(`button[onclick*="quickReject(${docId}"]`)?.closest('.doc');
@@ -2027,15 +2072,35 @@
 
   async function rejectDoc(docId) {
     if (!currentRequestId) return;
-    const menu = REJECT_REASONS_AR.map((x,i) => `${i+1}. ${x.label}`).join('\n');
-    const pick = prompt(`✕ سبب رفض المستند — اختر رقماً:\n\n${menu}\n\n(يُرسَل التنبيه للمواطن مع طلب إعادة الإرسال)`, '1');
-    const idx = Number(pick) - 1;
-    if (!(idx >= 0 && idx < REJECT_REASONS_AR.length)) return;
-    const code = REJECT_REASONS_AR[idx].code;
-    const note = (code === 'other')
-      ? prompt('اكتب السبب بالعربية (يظهر للمواطن):', '')
-      : prompt('ملاحظة إضافية (اختياري)', '') || '';
-    if (code === 'other' && !note) return;
+    const code = await Sanad.dialog.choice({
+      title: '✕ رفض المستند',
+      body: 'اختر السبب — يُرسَل تنبيه للمواطن مع طلب إعادة الإرسال.',
+      options: REJECT_REASONS_AR.map(x => ({
+        code: x.code,
+        label: x.label,
+        kind: x.code === 'other' ? 'normal' : 'danger'
+      }))
+    });
+    if (!code) return;
+    let note;
+    if (code === 'other') {
+      note = await Sanad.dialog.text({
+        title: 'تفاصيل الرفض',
+        body: 'اكتب السبب بالعربية — سيظهر للمواطن (الأرقام والروابط ستُحذف تلقائياً).',
+        placeholder: 'مثال: المستند ليس مختوماً من الجهة المختصة',
+        multiline: true,
+        required: true,
+        okText: 'إرسال الرفض'
+      });
+      if (!note) return;
+    } else {
+      note = await Sanad.dialog.text({
+        title: 'ملاحظة إضافية (اختياري)',
+        placeholder: 'اتركها فارغة إذا لم تحتج إلى تفاصيل إضافية',
+        okText: 'إرسال الرفض'
+      });
+      if (note === null) return;
+    }
     try {
       await api(`/api/officer/request/${currentRequestId}/document/${docId}/reject`, {
         method: 'POST',
@@ -2045,7 +2110,9 @@
       Sanad.toast('✕ تم الرفض — المواطن أُخطر وفتح طلب إعادة الإرسال', 'ok', 2600);
       await openDetail(currentRequestId);
       await loadInbox();
-    } catch (e) { Sanad.toast('فشل الرفض', 'err'); }
+    } catch (e) {
+      Sanad.toast('❌ ' + (e.body?.hint || e.message || 'فشل الرفض'), 'err', 3200);
+    }
   }
 
   function renderTimeline(r, messages) {
@@ -2277,31 +2344,42 @@
         }
         if (a === 'mark-paid-test') {
           // DEBUG/test only — flips paid_at without going through Thawani.
-          // Lets you exercise the post-pay flow end-to-end on the test phone
-          // without typing card numbers.
-          if (!confirm('وضع الاختبار: تأكيد دفع R-' + r.id + ' بدون بوابة؟')) return;
+          const ok = await Sanad.dialog.confirm({
+            title: '🧪 وضع الاختبار',
+            body: `تأكيد دفع R-${r.id} بدون بوابة الدفع الفعلية؟ سيُفتح الدردشة الكاملة وتنتقل المعاملة إلى "قيد التنفيذ".`,
+            okText: '💰 نعم، ضع كمدفوع',
+            cancelText: 'تراجع'
+          });
+          if (!ok) return;
           await api('/api/payments/request/' + r.id + '/confirm-stub', { method: 'POST' });
           Sanad.toast('💰 طلب R-' + r.id + ' وُسم كمدفوع (اختبار)', 'ok', 2400);
         }
         if (a === 'flag') {
           // Multi-office quality vote. Threshold = 2 distinct office flags →
           // auto-quarantine. Citizen is then prompted to fix or change service.
-          const REASONS = [
-            { code: 'wrong_service', label: 'خدمة خاطئة' },
-            { code: 'fake_docs',     label: 'مستندات مزوّرة / غير واضحة' },
-            { code: 'duplicate',     label: 'طلب مكرر' },
-            { code: 'abusive',       label: 'محتوى مسيء' },
-            { code: 'other',         label: 'أخرى' }
+          const FLAG_REASONS = [
+            { code: 'wrong_service', label: '🔄 خدمة خاطئة',                  kind: 'normal' },
+            { code: 'fake_docs',     label: '⚠ مستندات مزوّرة / غير واضحة',  kind: 'danger' },
+            { code: 'duplicate',     label: '📑 طلب مكرر',                    kind: 'normal' },
+            { code: 'abusive',       label: '🚫 محتوى مسيء',                  kind: 'danger' },
+            { code: 'other',         label: '🚩 أخرى',                       kind: 'normal' }
           ];
-          const menu = REASONS.map((x,i) => `${i+1}. ${x.label}`).join('\n');
-          const pick = prompt(`🚩 سبب الإبلاغ — اختر رقماً:\n\n${menu}`, '1');
-          const idx = Number(pick) - 1;
-          if (!(idx >= 0 && idx < REASONS.length)) return;
-          const note = prompt('ملاحظة إضافية (اختياري)', '') || '';
+          const reason = await Sanad.dialog.choice({
+            title: '🚩 إبلاغ عن الطلب',
+            body: 'اختر السبب — إذا أبلغ مكتب آخر عن نفس الطلب، يُحذف تلقائياً.',
+            options: FLAG_REASONS
+          });
+          if (!reason) return;
+          const note = await Sanad.dialog.text({
+            title: 'ملاحظة (اختياري)',
+            placeholder: 'تفاصيل تساعد فريق المراجعة',
+            okText: 'إرسال البلاغ'
+          });
+          if (note === null) return;
           try {
             const resp = await api('/api/officer/request/' + r.id + '/flag', {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ reason: REASONS[idx].code, note: note.slice(0, 400) })
+              body: JSON.stringify({ reason, note: (note || '').slice(0, 400) })
             });
             if (resp.removed) {
               Sanad.toast(`🚫 تم حذف الطلب من السوق بعد ${resp.flag_count} بلاغات من مكاتب مختلفة`, 'warn', 3600);
