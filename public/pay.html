@@ -246,6 +246,15 @@
               <span id="payBtnText" data-i18n="pay.btn.confirm">ادفع</span>
               <span id="payBtnAmount" class="mono">—</span>
             </button>
+            <!-- Fake-purchase button — only visible when the server is in
+                 test mode (DEBUG_MODE or SANAD_TEST_PAY). Skips card
+                 validation and POSTs straight to /confirm-stub which
+                 flips the request to paid. The script below auto-hides
+                 it when /api/health.test_pay is false. -->
+            <button type="button" id="fakePayBtn" class="hidden mt-2"
+                    style="width:100%;height:42px;border-radius:12px;background:linear-gradient(135deg,#6366f1,#0e7c86);color:#fff;font-weight:800;font-size:13px;border:0;cursor:pointer;box-shadow:0 4px 12px rgba(14,124,134,.3)">
+              🧪 محاكاة دفع ناجح (وضع الاختبار) · Simulate successful payment
+            </button>
             <p id="payErr" class="hidden text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg p-2.5"></p>
           </form>
         </div>
@@ -389,6 +398,47 @@
       btn.disabled = false;
     }
   });
+
+  // ── Fake-purchase button ──────────────────────────────
+  // Visible only when the server reports test_pay=true (i.e. DEBUG_MODE
+  // or SANAD_TEST_PAY env is set). Skips the dummy card form entirely
+  // and POSTs to /confirm-stub which marks the request paid via the
+  // same code path as a real successful payment. Useful for screencasts
+  // and the test phone (+96892888715) flow.
+  fetch('/api/health').then(r => r.json()).then(h => {
+    if (!h?.test_pay) return;
+    const btn = document.getElementById('fakePayBtn');
+    if (!btn) return;
+    btn.classList.remove('hidden');
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      btn.textContent = '… يتمّ تأكيد الدفع';
+      // Resolve request id from the merchant ref. /api/payments/dummy/session/:ref
+      // returns the request_id we need to POST to.
+      try {
+        const sess = await (await fetch(`/api/payments/dummy/session/${encodeURIComponent(ref)}`)).json();
+        const reqId = sess.request_id;
+        if (!reqId) throw new Error('no_request_id');
+        const r = await fetch(`/api/payments/request/${reqId}/confirm-stub`, { method: 'POST' });
+        if (!r.ok) {
+          const body = await r.json().catch(() => ({}));
+          throw new Error(body.hint || body.error || `HTTP ${r.status}`);
+        }
+        // Mirror the success UI.
+        $('#checkout').classList.add('hidden');
+        $('#successBox').classList.remove('hidden');
+        $('#successRef').textContent = `رقم العملية · ${ref} (محاكاة)`;
+        const goto = `/request.html?id=${reqId}&paid=1`;
+        $('#successBackBtn').href = goto;
+        setTimeout(() => { window.location.href = goto; }, 2200);
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = '🧪 محاكاة دفع ناجح (وضع الاختبار)';
+        $('#payErr').textContent = 'فشلت المحاكاة: ' + (e.message || '');
+        $('#payErr').classList.remove('hidden');
+      }
+    });
+  }).catch(() => {});
 })();
 </script>
 </body>

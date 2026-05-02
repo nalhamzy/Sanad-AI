@@ -2246,10 +2246,11 @@
                 Sanad.toast('📋 الرابط نُسخ إلى الحافظة', 'info', 1800);
               } catch {}
             }
+            // Refresh detail + inbox so the status chip + step strip flip
+            // to "بانتظار الدفع" instead of staying on "قيد المراجعة".
+            await openDetail(r.id);
+            await loadInbox();
           } catch (err) {
-            // Show the AR hint from the server when present (e.g. amount_too_small,
-            // payment_gateway_unavailable, awaiting_reclassify_ack). Otherwise show
-            // the error code in a more friendly way.
             const msg = err.body?.hint
                      || (err.status === 404 ? 'الطلب لم يعد موجوداً — أعد تحميل الصفحة'
                        : err.status === 403 ? 'لا تملك صلاحية على هذا الطلب'
