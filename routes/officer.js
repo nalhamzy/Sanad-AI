@@ -1050,22 +1050,34 @@ officerRouter.post('/request/:id/reclassify',
 
     const newName = r.new_service_name_ar || r.new_service_name;
     const oldTotal = (Number(r.office_fee_omr) || 0) + (Number(r.government_fee_omr) || 0);
+    const proposalBody =
+      `🔄 المكتب يقترح تغيير خدمتك إلى:\n` +
+      `**${newName}**\n` +
+      `الإجمالي الجديد: **${total.toFixed(3)} ر.ع** (السابق: ${oldTotal.toFixed(3)} ر.ع)\n` +
+      `السبب: ${reason}\n\n` +
+      `مستنداتك تنتقل كما هي. اضغط الزر للموافقة أو الرفض (أو اكتب **موافق** / **رفض**).\n` +
+      `(لن نُطبّق التغيير ولن نُرسل رابط دفع قبل موافقتك.)`;
     await storeMessage({
       session_id: r.session_id, request_id: id,
       direction: 'out', actor_type: 'officer',
-      body_text:
-        `🔄 المكتب يقترح تغيير خدمتك إلى:\n` +
-        `**${newName}**\n` +
-        `الإجمالي الجديد: **${total.toFixed(3)} ر.ع** (السابق: ${oldTotal.toFixed(3)} ر.ع)\n` +
-        `السبب: ${reason}\n\n` +
-        `مستنداتك تنتقل كما هي. للموافقة اكتب **موافق** أو **نعم**. للرفض اكتب **رفض** أو **لا**.\n` +
-        `(لن نُطبّق التغيير ولن نُرسل رابط دفع قبل موافقتك.)`,
+      body_text: proposalBody,
       meta: {
         officer_id: req.officer.officer_id,
         from_service: r.old_service_id, to_service: newServiceId,
         new_total: total, reclassify_pending: true
       }
     });
+    // WhatsApp interactive buttons — only when the citizen is on WhatsApp.
+    // Web sessions get the same flow via the bot bubble + the citizen
+    // typing موافق/رفض (or a future web-side button row).
+    if (isWhatsAppSession(r.session_id)) {
+      const phone = r.session_id.replace(/^wa:/, '');
+      const { sendWhatsAppButtons } = await import('../lib/whatsapp_send.js');
+      sendWhatsAppButtons(phone, proposalBody, [
+        { id: 'reclassify:accept', title: '✅ موافق' },
+        { id: 'reclassify:reject', title: '❌ رفض' }
+      ]).catch(e => console.warn('[reclassify wa-btns]', e.message));
+    }
     res.json({
       ok: true, status: 'awaiting_reclassify_ack',
       new_service_id: newServiceId,
@@ -1423,7 +1435,15 @@ officerRouter.post('/request/:id/payment/start',
     });
     if (isWhatsAppSession(r.session_id)) {
       const phone = r.citizen_phone || r.session_id.replace(/^wa:/, '');
-      sendWhatsAppText(phone, payMsg).catch(() => {});
+      // Use a CTA URL button so the citizen taps "💳 ادفع الآن" instead of
+      // long-pressing the URL. Helper falls back to plain-text + URL on any
+      // Meta API rejection (template-window edge case, account not yet
+      // verified for cta_url, etc.) so the link always lands.
+      const { sendWhatsAppCTAUrl } = await import('../lib/whatsapp_send.js');
+      const ctaBody = lang === 'ar'
+        ? `💳 طلبك "${sname}" جاهز للبدء.\nالمبلغ الإجمالي: ${total.toFixed(3)} OMR`
+        : `💳 Your "${sname}" request is ready. Total: ${total.toFixed(3)} OMR`;
+      sendWhatsAppCTAUrl(phone, ctaBody, '💳 ادفع الآن', link.url).catch(() => {});
     }
 
     res.json({

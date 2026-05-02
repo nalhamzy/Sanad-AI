@@ -61,7 +61,28 @@ whatsappRouter.post('/webhook', async (req, res) => {
     if (!msg) return;
 
     const from = msg.from;                                 // E.164 phone
-    const text = msg.text?.body || msg.button?.text || '';
+    // Three text-bearing message types: plain text, template-button reply
+    // (msg.button), and interactive button/list reply (msg.interactive).
+    // Each surfaces a different field. Map button payloads to canonical
+    // tokens the agent's regex matchers recognise:
+    //   reclassify:accept → 'موافق'
+    //   reclassify:reject → 'رفض'
+    //   burst:done        → 'تم'
+    //   burst:more        → 'سأرسل المزيد'
+    let interactiveText = '';
+    if (msg.interactive?.type === 'button_reply') {
+      const id = msg.interactive.button_reply.id || '';
+      const title = msg.interactive.button_reply.title || '';
+      if (id === 'reclassify:accept') interactiveText = 'موافق';
+      else if (id === 'reclassify:reject') interactiveText = 'رفض';
+      else if (id === 'burst:done')   interactiveText = 'تم';
+      else if (id === 'burst:more')   interactiveText = 'سأرسل المزيد';
+      else interactiveText = title; // generic — just forward what was tapped
+    } else if (msg.interactive?.type === 'list_reply') {
+      // List picks: forward the row id so list-driven flows can dispatch.
+      interactiveText = msg.interactive.list_reply.id || msg.interactive.list_reply.title || '';
+    }
+    const text = msg.text?.body || msg.button?.text || interactiveText || '';
     const media = msg.image || msg.document || null;
     // Media captions live on the media object itself. Use filename as a
     // secondary hint for documents (WhatsApp preserves the original name).
