@@ -118,6 +118,12 @@
   .step-pill[data-state="blocked"] .step-num{background:#dc2626;color:#fff;border-color:transparent}
   .step-arrow{color:var(--text-mute);font-size:18px;font-weight:300;line-height:1}
   @keyframes pulseFresh { 0%,100%{ box-shadow:0 0 0 0 rgba(16,185,129,.6) } 50%{ box-shadow:0 0 0 6px rgba(16,185,129,0) } }
+  /* ── Standard filter toolbar (officer + catalogue share this) ── */
+  .filter-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:999px;background:var(--surface-3);color:var(--text-mute);font-size:11.5px;font-weight:600;cursor:pointer;border:1px solid var(--line);transition:all .12s}
+  .filter-chip:hover{background:var(--surface-2);color:var(--text);border-color:var(--brand)}
+  .filter-chip.active{background:linear-gradient(135deg,#10b981,#0d9488);color:#fff;border-color:transparent;box-shadow:0 2px 6px rgba(16,185,129,.3)}
+  .filter-chip.active:hover{filter:brightness(1.06)}
+  .filter-sep{width:1px;height:18px;background:var(--line);margin:0 4px}
   /* Big primary CTA in the strip */
   .cta-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 24px;border-radius:14px;background:linear-gradient(135deg,#10b981,#0d9488);color:#fff;font-weight:800;font-size:14px;border:none;box-shadow:0 4px 14px rgba(16,185,129,.3);cursor:pointer;transition:all .15s;min-width:200px}
   .cta-primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(16,185,129,.4);filter:brightness(1.06)}
@@ -498,26 +504,79 @@
         </div>
       </div>
 
-      <!-- Filter bar -->
-      <div class="flex items-center gap-2 px-5 pb-3 overflow-x-auto scroll-x">
-        <div class="relative shrink-0">
-          <svg class="w-3.5 h-3.5 absolute" style="top:10px;left:11px;color:var(--text-mute)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
-          <input id="filterInput" class="input" style="width:288px;padding-inline-start:34px" data-i18n-ph="officer.filter_placeholder" placeholder="ابحث حسب الخدمة، المواطن، الجهة…"/>
-          <span class="absolute kbd" style="top:8px;right:10px">/</span>
+      <!-- ── Filter toolbar (standardised — same shape on /catalogue.html) ── -->
+      <div class="filterbar px-5 pb-3 flex flex-col gap-2">
+        <!-- Row 1: search + sort + reset + counter -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <div class="relative shrink-0">
+            <svg class="w-3.5 h-3.5 absolute" style="top:10px;left:11px;color:var(--text-mute)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
+            <input id="filterInput" class="input" style="width:320px;padding-inline-start:34px" placeholder="بحث: خدمة، جهة، رقم طلب، ملاحظة…"/>
+            <span class="absolute kbd" style="top:8px;right:10px">/</span>
+          </div>
+          <select id="filterSort" class="input" style="height:32px;font-size:12px">
+            <option value="fresh_first">💬 الردود الجديدة أولاً</option>
+            <option value="newest" selected>🆕 الأحدث</option>
+            <option value="oldest">⏱ الأقدم</option>
+            <option value="sla_urgent">⚠ مهلة سند قريبة</option>
+            <option value="fee_high">💰 الأعلى رسوماً</option>
+            <option value="fee_low">💰 الأقل رسوماً</option>
+          </select>
+          <button id="filterReset" class="chip surface-hover cursor-pointer shrink-0" data-tip="إعادة ضبط كل الفلاتر">↺ إعادة ضبط</button>
+          <span id="filterCounter" class="ms-auto text-[12px]" style="color:var(--text-mute)"></span>
         </div>
-        <button class="chip shrink-0 surface-hover cursor-pointer">
-          <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-          <span data-i18n="officer.filterbar.today">اليوم</span>
-        </button>
-        <button class="chip chip-amber shrink-0 cursor-pointer">
-          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
-          <span data-i18n="officer.filterbar.vip">مميّز</span>
-        </button>
-        <button class="chip chip-bad shrink-0 cursor-pointer">
-          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm0 6v6m0 3v.01"/></svg>
-          <span data-i18n="officer.filterbar.urgent">عاجل</span>
-        </button>
-        <span class="ms-auto hint shrink-0"><span data-i18n="officer.filterbar.sort">ترتيب</span>: <b style="color:var(--text)" data-i18n="officer.filterbar.newest">الأحدث</b></span>
+        <!-- Row 2: facet chips — multi-select toggles. Active chips persist across reloads via localStorage. -->
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <span class="text-[10.5px] font-bold uppercase tracking-wider me-1" style="color:var(--text-mute)">الحالة</span>
+          <button class="filter-chip" data-facet="status" data-val="ready">سوق الطلبات</button>
+          <button class="filter-chip" data-facet="status" data-val="claimed">قيد المراجعة</button>
+          <button class="filter-chip" data-facet="status" data-val="needs_more_info">بانتظار المواطن</button>
+          <button class="filter-chip" data-facet="status" data-val="awaiting_payment">بانتظار الدفع</button>
+          <button class="filter-chip" data-facet="status" data-val="in_progress">قيد التنفيذ</button>
+          <button class="filter-chip" data-facet="status" data-val="completed">مكتمل</button>
+
+          <span class="filter-sep"></span>
+          <span class="text-[10.5px] font-bold uppercase tracking-wider mx-1" style="color:var(--text-mute)">المدة</span>
+          <button class="filter-chip" data-facet="age" data-val="today">اليوم</button>
+          <button class="filter-chip" data-facet="age" data-val="7d">٧ أيام</button>
+          <button class="filter-chip" data-facet="age" data-val="30d">٣٠ يوم</button>
+
+          <span class="filter-sep"></span>
+          <span class="text-[10.5px] font-bold uppercase tracking-wider mx-1" style="color:var(--text-mute)">إشارات</span>
+          <button class="filter-chip" data-facet="signal" data-val="fresh_reply" data-tip="طلبات فيها ردّ من المواطن لم تُفتح بعد">💬 ردّ جديد</button>
+          <button class="filter-chip" data-facet="signal" data-val="rejected_doc" data-tip="طلبات فيها مستند مرفوض بانتظار إعادة الإرسال">✕ مستند مرفوض</button>
+          <button class="filter-chip" data-facet="signal" data-val="paid"   data-tip="مدفوع — الدردشة الكاملة مفتوحة">💰 مدفوع</button>
+          <button class="filter-chip" data-facet="signal" data-val="sla_warn" data-tip="مهلة سند تنتهي خلال دقيقتين">⚠ مهلة قريبة</button>
+
+          <span class="filter-sep"></span>
+          <button id="filterMoreBtn" class="chip surface-hover cursor-pointer">⚙ تصفية متقدمة</button>
+        </div>
+        <!-- Row 3 (collapsed by default): advanced filters — entity dropdown + governorate dropdown + fee range -->
+        <div id="filterAdvanced" class="hidden flex items-center gap-2 flex-wrap pt-1">
+          <select id="filterEntity" class="input" style="height:32px;font-size:12px;min-width:160px">
+            <option value="">كل الجهات</option>
+          </select>
+          <select id="filterGov" class="input" style="height:32px;font-size:12px">
+            <option value="">كل المحافظات</option>
+            <option value="Muscat">مسقط</option>
+            <option value="Al Batinah North">الباطنة شمال</option>
+            <option value="Al Batinah South">الباطنة جنوب</option>
+            <option value="Ad Dakhiliyah">الداخلية</option>
+            <option value="Ad Dhahirah">الظاهرة</option>
+            <option value="Ash Sharqiyah North">الشرقية شمال</option>
+            <option value="Ash Sharqiyah South">الشرقية جنوب</option>
+            <option value="Al Wusta">الوسطى</option>
+            <option value="Dhofar">ظفار</option>
+            <option value="Musandam">مسندم</option>
+            <option value="Al Buraimi">البريمي</option>
+          </select>
+          <label class="text-[12px] flex items-center gap-1">
+            رسوم
+            <input id="filterFeeMin" class="input" type="number" min="0" step="0.5" placeholder="من" style="width:72px;height:32px;font-size:12px"/>
+            <span style="color:var(--text-mute)">—</span>
+            <input id="filterFeeMax" class="input" type="number" min="0" step="0.5" placeholder="إلى" style="width:72px;height:32px;font-size:12px"/>
+            ر.ع
+          </label>
+        </div>
       </div>
 
       <!-- Panes -->
@@ -1022,22 +1081,152 @@
     document.getElementById('inboxTitle').textContent = t(keys[filterMode] || 'officer.title.all');
   }
 
+  // ── Standard filter state — persisted to localStorage so it survives reloads.
+  // Each facet (status / age / signal) is a Set of toggled values; multiple
+  // values within a facet OR together; facets AND together. Sidebar quick-
+  // filters (filterMode) layer on top as a coarse pre-filter.
+  const filterState = (function loadFilterState() {
+    try {
+      const raw = localStorage.getItem('sanad.officer.filters');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return { status: [], age: [], signal: [], entity: '', gov: '', feeMin: '', feeMax: '', sort: 'newest' };
+  })();
+  function saveFilterState() {
+    try { localStorage.setItem('sanad.officer.filters', JSON.stringify(filterState)); } catch {}
+  }
+  function toggleFacet(facet, val) {
+    const arr = filterState[facet];
+    const i = arr.indexOf(val);
+    if (i >= 0) arr.splice(i, 1); else arr.push(val);
+    saveFilterState();
+  }
+  function paintFacets() {
+    document.querySelectorAll('.filter-chip[data-facet]').forEach(b => {
+      const f = b.getAttribute('data-facet');
+      const v = b.getAttribute('data-val');
+      b.classList.toggle('active', (filterState[f] || []).includes(v));
+    });
+  }
+
   function currentList() {
     const mine = allInbox.mine || [];
     const mkt = allInbox.marketplace || [];
-    let list = [];
-    if (filterMode === 'all') list = mine.concat(mkt);
-    else if (filterMode === 'ready') list = mkt;
+    // Quick-filter (sidebar) → coarse pre-filter pool.
+    let list;
+    if (filterMode === 'ready') list = mkt;
     else if (filterMode === 'mine') list = mine;
-    else if (filterMode === 'waiting') list = mine.filter(x => x.status === 'claimed');
-    else if (filterMode === 'sla') list = [];
+    else if (filterMode === 'waiting') list = mine.filter(x => x.status === 'claimed' || x.status === 'needs_more_info');
+    else if (filterMode === 'sla') list = mine.filter(x => {
+      const s = slaInfo(x);
+      if (!s) return false;
+      const remain = s.deadlineMs - Date.now();
+      return remain >= 0 && remain < 120_000; // < 2 min
+    });
     else if (filterMode === 'done') list = mine.filter(x => x.status === 'completed');
-    else list = mkt;
+    else list = mine.concat(mkt);
+
+    // Facet filters
+    const fs = filterState;
+    if (fs.status.length) list = list.filter(r => fs.status.includes(r.status));
+    if (fs.age.length) {
+      const cutoffs = { today: 1, '7d': 7, '30d': 30 };
+      const now = Date.now();
+      list = list.filter(r => fs.age.some(k => {
+        const days = cutoffs[k] || 9999;
+        const created = r.created_at ? new Date(r.created_at.replace(' ','T')+'Z').getTime() : 0;
+        return (now - created) < days * 24 * 3600 * 1000;
+      }));
+    }
+    if (fs.signal.length) {
+      list = list.filter(r => fs.signal.every(sig => {
+        if (sig === 'fresh_reply') return !!r.fresh_reply;
+        if (sig === 'paid')        return !!r.paid_at;
+        if (sig === 'rejected_doc') {
+          // Approximate at the inbox level: status==='needs_more_info' is a
+          // strong proxy. (The detail GET reveals exact rejected docs; we
+          // don't pre-fetch them for every card.)
+          return r.status === 'needs_more_info';
+        }
+        if (sig === 'sla_warn') {
+          const s = slaInfo(r);
+          if (!s) return false;
+          const remain = s.deadlineMs - Date.now();
+          return remain >= 0 && remain < 120_000;
+        }
+        return true;
+      }));
+    }
+    if (fs.entity) list = list.filter(r => (r.entity_en || '').toLowerCase() === fs.entity.toLowerCase());
+    if (fs.gov)    list = list.filter(r => (r.governorate || '') === fs.gov);
+    if (fs.feeMin !== '' && fs.feeMin != null) {
+      const min = Number(fs.feeMin);
+      list = list.filter(r => Number(r.quoted_fee_omr || r.catalog_fee_omr || 0) >= min);
+    }
+    if (fs.feeMax !== '' && fs.feeMax != null) {
+      const max = Number(fs.feeMax);
+      list = list.filter(r => Number(r.quoted_fee_omr || r.catalog_fee_omr || 0) <= max);
+    }
+    // Free-text search across the most useful fields.
     if (filterText) {
       const q = filterText.toLowerCase();
-      list = list.filter(r => [r.service_name, r.service_name_ar, r.entity_en, r.governorate, String(r.id)].filter(Boolean).join(' ').toLowerCase().includes(q));
+      list = list.filter(r => [
+        r.service_name, r.service_name_ar, r.entity_en, r.entity_ar,
+        r.governorate, String(r.id), r.note, r.payment_ref
+      ].filter(Boolean).join(' ').toLowerCase().includes(q));
     }
+    // Sort
+    const sortFn = {
+      newest:    (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0),
+      oldest:    (a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0),
+      fee_high:  (a, b) => Number(b.quoted_fee_omr || b.catalog_fee_omr || 0) - Number(a.quoted_fee_omr || a.catalog_fee_omr || 0),
+      fee_low:   (a, b) => Number(a.quoted_fee_omr || a.catalog_fee_omr || 0) - Number(b.quoted_fee_omr || b.catalog_fee_omr || 0),
+      fresh_first: (a, b) => (b.fresh_reply ? 1 : 0) - (a.fresh_reply ? 1 : 0)
+                          || new Date(b.last_event_at || 0) - new Date(a.last_event_at || 0),
+      sla_urgent: (a, b) => {
+        const sa = slaInfo(a), sb = slaInfo(b);
+        const remA = sa ? Math.max(0, sa.deadlineMs - Date.now()) : Infinity;
+        const remB = sb ? Math.max(0, sb.deadlineMs - Date.now()) : Infinity;
+        return remA - remB;
+      }
+    }[fs.sort] || sortFn.newest;
+    list = [...list].sort(sortFn);
     return list;
+  }
+
+  function renderEntityDropdown() {
+    const sel = document.getElementById('filterEntity');
+    if (!sel || sel.dataset.loaded === '1') return;
+    // Pull the currently visible entities so the dropdown reflects the office's
+    // actual catalogue surface.
+    const entities = new Set();
+    [...(allInbox.mine || []), ...(allInbox.marketplace || [])].forEach(r => {
+      if (r.entity_en) entities.add(r.entity_en);
+    });
+    [...entities].sort().forEach(e => {
+      const o = document.createElement('option');
+      o.value = e; o.textContent = e;
+      sel.appendChild(o);
+    });
+    sel.dataset.loaded = '1';
+    sel.value = filterState.entity || '';
+  }
+  function syncFilterControls() {
+    document.getElementById('filterSort').value = filterState.sort || 'newest';
+    document.getElementById('filterEntity').value = filterState.entity || '';
+    document.getElementById('filterGov').value = filterState.gov || '';
+    document.getElementById('filterFeeMin').value = filterState.feeMin ?? '';
+    document.getElementById('filterFeeMax').value = filterState.feeMax ?? '';
+    paintFacets();
+    // Show advanced row when any advanced filter is set.
+    const advActive = filterState.entity || filterState.gov || filterState.feeMin || filterState.feeMax;
+    if (advActive) document.getElementById('filterAdvanced')?.classList.remove('hidden');
+  }
+  function updateFilterCounter(visible, total) {
+    const el = document.getElementById('filterCounter');
+    if (!el) return;
+    if (visible === total) { el.textContent = `${total} طلب`; }
+    else { el.textContent = `${visible} من ${total} طلب — فلاتر مفعّلة`; }
   }
 
   // ─ SLA helpers ─
@@ -1274,8 +1463,12 @@
     updateKPIs();
     highlightFilter();
 
+    renderEntityDropdown();
+    syncFilterControls();
+    const totalRequests = (allInbox.mine || []).length + (allInbox.marketplace || []).length;
     const list = currentList();
     document.getElementById('inboxCount').textContent = list.length;
+    updateFilterCounter(list.length, totalRequests);
     const inbox = document.getElementById('inbox');
     if (!list.length) {
       inbox.innerHTML = `<div class="empty" style="padding:40px 24px">
@@ -2102,6 +2295,45 @@
   // ─ Filters ─
   document.getElementById('filterInput').addEventListener('input', e => { filterText = e.target.value; selectedCardIdx = 0; loadInbox(); });
   document.querySelectorAll('[data-filter]').forEach(b => b.addEventListener('click', () => { filterMode = b.getAttribute('data-filter'); selectedCardIdx = 0; loadInbox(); }));
+
+  // ── Standard filter toolbar wires ───────────────────────────
+  document.querySelectorAll('.filter-chip[data-facet]').forEach(b => {
+    b.addEventListener('click', () => {
+      toggleFacet(b.getAttribute('data-facet'), b.getAttribute('data-val'));
+      paintFacets();
+      selectedCardIdx = 0;
+      loadInbox();
+    });
+  });
+  document.getElementById('filterSort').addEventListener('change', e => {
+    filterState.sort = e.target.value; saveFilterState(); loadInbox();
+  });
+  document.getElementById('filterEntity').addEventListener('change', e => {
+    filterState.entity = e.target.value; saveFilterState(); loadInbox();
+  });
+  document.getElementById('filterGov').addEventListener('change', e => {
+    filterState.gov = e.target.value; saveFilterState(); loadInbox();
+  });
+  document.getElementById('filterFeeMin').addEventListener('input', e => {
+    filterState.feeMin = e.target.value; saveFilterState(); loadInbox();
+  });
+  document.getElementById('filterFeeMax').addEventListener('input', e => {
+    filterState.feeMax = e.target.value; saveFilterState(); loadInbox();
+  });
+  document.getElementById('filterReset').addEventListener('click', () => {
+    filterState.status = []; filterState.age = []; filterState.signal = [];
+    filterState.entity = ''; filterState.gov = '';
+    filterState.feeMin = ''; filterState.feeMax = '';
+    filterState.sort = 'newest';
+    document.getElementById('filterInput').value = '';
+    filterText = '';
+    saveFilterState();
+    loadInbox();
+    Sanad.toast('↺ تمت إعادة ضبط الفلاتر', 'info', 1600);
+  });
+  document.getElementById('filterMoreBtn').addEventListener('click', () => {
+    document.getElementById('filterAdvanced').classList.toggle('hidden');
+  });
   document.getElementById('refreshBtn').addEventListener('click', loadInbox);
   document.getElementById('vmGrid').addEventListener('click', () => setViewMode('grid'));
   document.getElementById('vmList').addEventListener('click', () => setViewMode('list'));
