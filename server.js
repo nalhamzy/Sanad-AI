@@ -14,7 +14,7 @@ import { annotatorRouter } from './routes/annotator.js';
 import { authRouter } from './routes/auth.js';
 import { officeRouter } from './routes/office.js';
 import { platformAdminRouter } from './routes/platform_admin.js';
-import { paymentsRouter } from './routes/payments.js';
+import { paymentsRouter } from './features/payment-checkout/index.js';
 import { citizenAuthRouter } from './routes/citizen_auth.js';
 import { attachSession, attachCitizenSession } from './lib/auth.js';
 import { originCheck } from './lib/csrf.js';

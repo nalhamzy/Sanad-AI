@@ -16,17 +16,18 @@
 //   (one grant per subscription purchase).
 
 import { Router } from 'express';
-import { db } from '../lib/db.js';
-import { requireOfficer } from '../lib/auth.js';
-import { createPaymentLink, verifyWebhookSignature, newMerchantRef, AMWAL_ENABLED } from '../lib/amwal.js';
+import { db } from '../../lib/db.js';
+import { requireOfficer } from '../../lib/auth.js';
+import { createPaymentLink, verifyWebhookSignature, newMerchantRef, AMWAL_ENABLED } from './providers/amwal.js';
 import {
   THAWANI_ENABLED,
   retrieveThawaniSession,
   isThawaniPaid,
   verifyThawaniSignature
-} from '../lib/thawani.js';
-import { storeMessage } from '../lib/agent.js';
-import { sendWhatsAppText, isWhatsAppSession } from '../lib/whatsapp_send.js';
+} from './providers/thawani.js';
+import { storeMessage } from '../../lib/agent.js';
+import { sendWhatsAppText, isWhatsAppSession } from '../../lib/whatsapp_send.js';
+import { audit } from '../../lib/officer_helpers.js';
 
 export const paymentsRouter = Router();
 
@@ -68,10 +69,12 @@ export async function markRequestPaid(requestId, source = 'webhook') {
   });
   if (!upd.rowsAffected) return { error: 'bad_state' };
 
-  await db.execute({
-    sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
-          VALUES ('system', NULL, 'request_paid', 'request', ?, ?)`,
-    args: [requestId, JSON.stringify({ source, amount_omr: r.payment_amount_omr, ref: r.payment_ref })]
+  await audit({
+    actor: { type: 'system', id: null },
+    action: 'request_paid',
+    target: 'request',
+    targetId: requestId,
+    diff: { source, amount_omr: r.payment_amount_omr, ref: r.payment_ref }
   });
 
   // Notify the citizen — chat is now unlocked.
@@ -244,10 +247,12 @@ async function activateSubscription(subRow, rawWebhook = null) {
           VALUES (?, NULL, ?, ?, 'subscription_grant', ?)`,
     args: [subRow.office_id, subRow.id, credits, balance]
   });
-  await db.execute({
-    sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
-          VALUES ('system', NULL, 'grant_credits', 'office', ?, ?)`,
-    args: [subRow.office_id, JSON.stringify({ credits, subscription_id: subRow.id, amount_omr: subRow.amount_omr })]
+  await audit({
+    actor: { type: 'system', id: null },
+    action: 'grant_credits',
+    target: 'office',
+    targetId: subRow.office_id,
+    diff: { credits, subscription_id: subRow.id, amount_omr: subRow.amount_omr }
   });
   return { granted: credits, balance };
 }
@@ -297,11 +302,12 @@ paymentsRouter.post(
         args: [office_id, PACK.code, PACK.amount_omr, PACK.credits,
                link.merchantReference, link.amwalOrderId, link.url]
       });
-      await db.execute({
-        sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
-              VALUES ('officer', ?, 'checkout_start', 'office_subscription', ?, ?)`,
-        args: [req.officer.officer_id, Number(ins.lastInsertRowid),
-               JSON.stringify({ merchantRef, amount_omr: PACK.amount_omr })]
+      await audit({
+        actor: { type: 'officer', id: req.officer.officer_id },
+        action: 'checkout_start',
+        target: 'office_subscription',
+        targetId: Number(ins.lastInsertRowid),
+        diff: { merchantRef, amount_omr: PACK.amount_omr }
       });
       res.json({ url: link.url, merchant_ref: link.merchantReference, stubbed: !AMWAL_ENABLED });
     } catch (e) {
@@ -521,10 +527,12 @@ paymentsRouter.get('/thawani/success', async (req, res) => {
 paymentsRouter.get('/thawani/cancel', async (req, res) => {
   const ref = String(req.query.ref || '');
   const r = await loadThawaniRequest(ref);
-  await db.execute({
-    sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
-          VALUES ('citizen', NULL, 'payment_cancelled', 'request', ?, ?)`,
-    args: [r?.id || 0, JSON.stringify({ ref, provider: 'thawani' })]
+  await audit({
+    actor: { type: 'citizen', id: null },
+    action: 'payment_cancelled',
+    target: 'request',
+    targetId: r?.id || 0,
+    diff: { ref, provider: 'thawani' }
   }).catch(() => {});
   if (!r) return res.redirect('/');
   res.redirect(`/request.html?id=${r.id}&pay_cancelled=1`);
