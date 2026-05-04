@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { db } from '../lib/db.js';
 import { LLM_ENABLED, LLM_PROVIDER, LLM_MODEL } from '../lib/llm.js';
 import { storeMessage } from '../lib/agent.js';
-import { markRequestPaid } from './payments.js';
+import { markRequestPaid } from '../features/payment-checkout/index.js';
 
 export const debugRouter = Router();
 

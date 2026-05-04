@@ -562,8 +562,9 @@
       }
       const lang = I18N.lang;
       $('#reqList').innerHTML = reqs.map(req => {
-        const name = (lang === 'ar' && req.service_name_ar) ? req.service_name_ar : (req.service_name || '—');
-        const altName = (lang === 'ar') ? (req.service_name || '') : (req.service_name_ar || '');
+        const name = (lang === 'ar')
+          ? (req.service_name_ar || req.service_name || '—')
+          : (req.service_name || req.service_name_ar || '—');
         const status = (req.status || '').replace(/[^a-z_]/g, '');
         const chipBase = status === 'awaiting_payment' ? 'awaiting' : status.split('_')[0];
         // ANONYMITY: never render an office name on the citizen list. Card shows
@@ -574,7 +575,6 @@
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0 flex-1">
               <div class="text-base font-bold ink-900 leading-snug">${escapeHtml(name)}</div>
-              ${altName ? `<div class="text-xs ink-500 mt-0.5 truncate" dir="${lang === 'ar' ? 'ltr' : 'rtl'}">${escapeHtml(altName)}</div>` : ''}
               <div class="mt-2 flex items-center gap-3 text-[11px] ink-500 flex-wrap">
                 <span>${I18N.t('account.req.id')} #${req.id}</span>
                 <span>·</span>

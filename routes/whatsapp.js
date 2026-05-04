@@ -15,23 +15,17 @@ const APP_SECRET = process.env.WHATSAPP_APP_SECRET || '';
 
 let warnedNoSecret = false;
 
-// Validates Meta's X-Hub-Signature-256 (HMAC-SHA256 of raw body). Returns
-// true when the signature is valid, OR when no APP_SECRET is configured
-// (dev / web-only mode). Returns false on a present-but-bad signature.
-function verifySignature(req) {
-  if (!APP_SECRET) {
-    if (!warnedNoSecret) {
-      console.warn('[whatsapp] WHATSAPP_APP_SECRET is empty — signature verification DISABLED. Set it before going live.');
-      warnedNoSecret = true;
-    }
-    return true;
-  }
-  const header = req.get('x-hub-signature-256') || '';
-  if (!header.startsWith('sha256=')) return false;
-  const provided = header.slice('sha256='.length);
+// Pure HMAC verifier — extracted so it can be unit-tested without mocking
+// Express. Returns true when the secret is empty (soft / dev mode), false on
+// any malformed or wrong signature, true on a valid one. Length-equal guard
+// before timingSafeEqual avoids the throw on mismatched buffer sizes.
+export function verifyMetaSignature(rawBody, signatureHeader, secret) {
+  if (!secret) return true; // soft mode — set WHATSAPP_APP_SECRET before going live
+  if (!signatureHeader || !signatureHeader.startsWith('sha256=')) return false;
+  const provided = signatureHeader.slice('sha256='.length);
   const expected = crypto
-    .createHmac('sha256', APP_SECRET)
-    .update(req.rawBody || Buffer.alloc(0))
+    .createHmac('sha256', secret)
+    .update(rawBody || Buffer.alloc(0))
     .digest('hex');
   if (provided.length !== expected.length) return false;
   try {
@@ -39,6 +33,17 @@ function verifySignature(req) {
   } catch {
     return false;
   }
+}
+
+// Express adapter — pulls header + raw body off the request and warns once
+// when the secret is missing in production. Real verification logic lives
+// in verifyMetaSignature() above.
+function verifySignature(req) {
+  if (!APP_SECRET && !warnedNoSecret) {
+    console.warn('[whatsapp] WHATSAPP_APP_SECRET is empty — signature verification DISABLED. Set it before going live.');
+    warnedNoSecret = true;
+  }
+  return verifyMetaSignature(req.rawBody, req.get('x-hub-signature-256') || '', APP_SECRET);
 }
 
 whatsappRouter.get('/webhook', (req, res) => {

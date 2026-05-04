@@ -26,8 +26,9 @@ import { db } from '../lib/db.js';
 import { storeMessage } from '../lib/agent.js';
 import { requireOfficer } from '../lib/auth.js';
 import { sendWhatsAppText, isWhatsAppSession } from '../lib/whatsapp_send.js';
-import { createPaymentLink, newMerchantRef, AMWAL_ENABLED } from '../lib/amwal.js';
+import { createPaymentLink, newMerchantRef, AMWAL_ENABLED } from '../features/payment-checkout/index.js';
 import { SLA_MINUTES, REVIEW_SLA_MINUTES } from '../lib/sla.js';
+import { loadOwnedRequest, audit, notifyCitizen } from '../lib/officer_helpers.js';
 
 export const officerRouter = Router();
 
@@ -474,11 +475,12 @@ officerRouter.post(
              office_fee_omr, government_fee_omr, total,
              estimated_hours, note_ar, note_en]
     });
-    await db.execute({
-      sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
-            VALUES ('officer', ?, 'submit_offer', 'request', ?, ?)`,
-      args: [req.officer.officer_id, id,
-             JSON.stringify({ office_fee_omr, government_fee_omr, total, estimated_hours })]
+    await audit({
+      actor: { type: 'officer', id: req.officer.officer_id },
+      action: 'submit_offer',
+      target: 'request',
+      targetId: id,
+      diff: { office_fee_omr, government_fee_omr, total, estimated_hours }
     });
 
     // Auto-learn: remember this office's fee for this specific service, so
@@ -539,16 +541,10 @@ officerRouter.post('/request/:id/message', async (req, res) => {
   const id = Number(req.params.id);
   const text = String(req.body?.text || '').trim();
   if (!text) return res.status(400).json({ error: 'empty' });
-  const { rows } = await db.execute({
-    sql: `SELECT r.session_id, r.office_id, r.paid_at, r.status,
-                 c.phone AS citizen_phone
-            FROM request r
-            LEFT JOIN citizen c ON c.id = r.citizen_id
-           WHERE r.id=?`,
-    args: [id]
+  const { ok, row: r, status, error } = await loadOwnedRequest(req.office.id, id, {
+    extra: ', c.phone AS citizen_phone'
   });
-  const r = rows[0];
-  if (!r || r.office_id !== req.office.id) return res.status(403).json({ error: 'not_your_request' });
+  if (!ok) return res.status(status).json({ error });
   // Pre-payment chat is sealed in production — only DEBUG_MODE bypasses for tests.
   if (!r.paid_at && process.env.DEBUG_MODE !== 'true') {
     return res.status(403).json({
@@ -598,18 +594,15 @@ officerRouter.post('/request/:id/message', async (req, res) => {
 // ─── POST /request/:id/otp-window ──────────────────────────
 officerRouter.post('/request/:id/otp-window', async (req, res) => {
   const id = Number(req.params.id);
-  const { rows } = await db.execute({
-    sql: `SELECT session_id, office_id FROM request WHERE id=?`, args: [id]
-  });
-  const r = rows[0];
-  if (!r || r.office_id !== req.office.id) return res.status(403).json({ error: 'not_your_request' });
+  const { ok, row, status, error } = await loadOwnedRequest(req.office.id, id);
+  if (!ok) return res.status(status).json({ error });
   await db.execute({
     sql: `INSERT INTO otp_window(request_id,officer_id,expires_at)
           VALUES (?,?, datetime('now','+60 seconds'))`,
     args: [id, req.officer.officer_id]
   });
   await storeMessage({
-    session_id: r.session_id, request_id: id,
+    session_id: row.session_id, request_id: id,
     direction: 'out', actor_type: 'bot',
     body_text: '📲 أرسل لنا الرمز الذي وصلك من البوابة (صالح 60 ثانية).'
   });
@@ -618,11 +611,8 @@ officerRouter.post('/request/:id/otp-window', async (req, res) => {
 
 officerRouter.get('/request/:id/otp', async (req, res) => {
   const id = Number(req.params.id);
-  const { rows: own } = await db.execute({
-    sql: `SELECT office_id FROM request WHERE id=?`, args: [id]
-  });
-  if (!own[0] || own[0].office_id !== req.office.id)
-    return res.status(403).json({ error: 'not_your_request' });
+  const { ok, status, error } = await loadOwnedRequest(req.office.id, id);
+  if (!ok) return res.status(status).json({ error });
   const { rows } = await db.execute({
     sql: `SELECT code, consumed_at, expires_at FROM otp_window
            WHERE request_id=? ORDER BY id DESC LIMIT 1`,
@@ -638,11 +628,8 @@ officerRouter.get('/request/:id/otp', async (req, res) => {
 // a no-op (returns {already:true}).
 officerRouter.post('/request/:id/complete', async (req, res) => {
   const id = Number(req.params.id);
-  const { rows } = await db.execute({
-    sql: `SELECT session_id, office_id, status FROM request WHERE id=?`, args: [id]
-  });
-  const r = rows[0];
-  if (!r || r.office_id !== req.office.id) return res.status(403).json({ error: 'not_your_request' });
+  const { ok, row: r, status, error } = await loadOwnedRequest(req.office.id, id);
+  if (!ok) return res.status(status).json({ error });
   if (['completed', 'cancelled_by_citizen', 'cancelled_by_office'].includes(r.status)) {
     // Already in a terminal state — don't mutate, don't re-bill.
     return res.json({ ok: true, already: true, status: r.status });
@@ -699,10 +686,12 @@ officerRouter.post('/request/:id/document/:docId/unreject', async (req, res) => 
            WHERE id=? AND request_id=?`,
     args: [newStatus, req.officer.officer_id, docId, id]
   });
-  await db.execute({
-    sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
-          VALUES ('officer', ?, 'document_unreject', 'request_document', ?, ?)`,
-    args: [req.officer.officer_id, docId, JSON.stringify({ request_id: id, new_status: newStatus })]
+  await audit({
+    actor: { type: 'officer', id: req.officer.officer_id },
+    action: 'document_unreject',
+    target: 'request_document',
+    targetId: docId,
+    diff: { request_id: id, new_status: newStatus }
   });
   // Tell the citizen so they don't keep hunting for a replacement they
   // already submitted. Bot voice (not officer) — this is a correction.
@@ -719,11 +708,8 @@ officerRouter.post('/request/:id/document/:docId/unreject', async (req, res) => 
 officerRouter.post('/request/:id/document/:docId/verify', async (req, res) => {
   const id = Number(req.params.id);
   const docId = Number(req.params.docId);
-  const { rows } = await db.execute({
-    sql: `SELECT office_id FROM request WHERE id=?`, args: [id]
-  });
-  if (!rows[0] || rows[0].office_id !== req.office.id)
-    return res.status(403).json({ error: 'not_your_request' });
+  const { ok, status, error } = await loadOwnedRequest(req.office.id, id);
+  if (!ok) return res.status(status).json({ error });
   const r = await db.execute({
     sql: `UPDATE request_document
              SET status='verified', verified_by=?, verified_at=datetime('now'),
@@ -832,10 +818,12 @@ officerRouter.post('/request/:id/document/:docId/reject', async (req, res) => {
     });
   }
 
-  await db.execute({
-    sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
-          VALUES ('officer', ?, 'document_reject', 'request_document', ?, ?)`,
-    args: [req.officer.officer_id, docId, JSON.stringify({ request_id: id, reason: reasonCode, note: finalNote })]
+  await audit({
+    actor: { type: 'officer', id: req.officer.officer_id },
+    action: 'document_reject',
+    target: 'request_document',
+    targetId: docId,
+    diff: { request_id: id, reason: reasonCode, note: finalNote }
   });
 
   const { rows: dr } = await db.execute({
@@ -850,10 +838,12 @@ officerRouter.post('/request/:id/document/:docId/reject', async (req, res) => {
   lines.push('');
   lines.push('📎 ارسل النسخة الصحيحة هنا (صورة أو PDF) ليستلمها الموظف. أو اكتب رداً (مثل "سأرسلها خلال ساعة") وسنخبر المكتب.');
 
-  await storeMessage({
-    session_id: rows[0].session_id, request_id: id,
-    direction: 'out', actor_type: 'officer',
-    body_text: lines.join('\n'),
+  await notifyCitizen({
+    session_id: rows[0].session_id,
+    request_id: id,
+    body: lines.join('\n'),
+    actor_type: 'officer',
+    citizen_phone: rows[0].citizen_phone,
     meta: {
       officer_id: req.officer.officer_id,
       rejected_doc_id: docId,
@@ -861,11 +851,6 @@ officerRouter.post('/request/:id/document/:docId/reject', async (req, res) => {
       reason_code: reasonCode
     }
   });
-  // Push to WhatsApp when the citizen is on that channel.
-  if (isWhatsAppSession(rows[0].session_id)) {
-    const phone = rows[0].citizen_phone || rows[0].session_id.replace(/^wa:/, '');
-    sendWhatsAppText(phone, lines.join('\n')).catch(() => {});
-  }
 
   res.json({ ok: true, status: 'needs_more_info', reason_code: reasonCode });
 });
@@ -952,10 +937,12 @@ officerRouter.post('/request/:id/request-info',
     });
     if (!upd.rowsAffected) return res.status(404).json({ error: 'not_found' });
 
-    await db.execute({
-      sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
-            VALUES ('officer', ?, 'request_more_info', 'request', ?, ?)`,
-      args: [req.officer.officer_id, id, JSON.stringify({ from_status: r.status, reason, missing })]
+    await audit({
+      actor: { type: 'officer', id: req.officer.officer_id },
+      action: 'request_more_info',
+      target: 'request',
+      targetId: id,
+      diff: { from_status: r.status, reason, missing }
     });
 
     // Compose the citizen-facing message. Keep it tight: a one-liner
@@ -1107,11 +1094,12 @@ officerRouter.post('/request/:id/reclassify',
       args: [newServiceId, office_fee, gov_fee, total, reason, id, req.office.id]
     });
 
-    await db.execute({
-      sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
-            VALUES ('officer', ?, 'request_reclassify_proposed', 'request', ?, ?)`,
-      args: [req.officer.officer_id, id,
-             JSON.stringify({ from_service: r.old_service_id, to_service: newServiceId, reason, new_total: total })]
+    await audit({
+      actor: { type: 'officer', id: req.officer.officer_id },
+      action: 'request_reclassify_proposed',
+      target: 'request',
+      targetId: id,
+      diff: { from_service: r.old_service_id, to_service: newServiceId, reason, new_total: total }
     });
 
     const newName = r.new_service_name_ar || r.new_service_name;
@@ -1207,10 +1195,12 @@ officerRouter.post('/request/:id/release',
       sql: `UPDATE office SET offers_abandoned=COALESCE(offers_abandoned,0)+1 WHERE id=?`,
       args: [req.office.id]
     });
-    await db.execute({
-      sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
-            VALUES ('officer', ?, 'request_release', 'request', ?, ?)`,
-      args: [req.officer.officer_id, id, JSON.stringify({ from_status: cur[0].status, paid_at: cur[0].paid_at })]
+    await audit({
+      actor: { type: 'officer', id: req.officer.officer_id },
+      action: 'request_release',
+      target: 'request',
+      targetId: id,
+      diff: { from_status: cur[0].status, paid_at: cur[0].paid_at }
     });
     res.json({ ok: true, refund_required: !wipePay });
   }
@@ -1297,15 +1287,12 @@ officerRouter.post('/request/:id/claim',
       return res.status(409).json({ error: 'already_claimed', status: rd[0]?.status, office_id: rd[0]?.office_id });
     }
 
-    await db.execute({
-      sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
-            VALUES ('officer', ?, ?, 'request', ?, ?)`,
-      args: [
-        officer_id,
-        isTransfer ? 'request_claim_transfer' : 'request_claim',
-        id,
-        JSON.stringify({ office_fee, gov_fee, total, transfer: isTransfer })
-      ]
+    await audit({
+      actor: { type: 'officer', id: officer_id },
+      action: isTransfer ? 'request_claim_transfer' : 'request_claim',
+      target: 'request',
+      targetId: id,
+      diff: { office_fee, gov_fee, total, transfer: isTransfer }
     });
 
     // Notify the citizen. Two messages depending on whether this is a fresh
@@ -1321,15 +1308,13 @@ officerRouter.post('/request/:id/claim',
       : (lang === 'ar'
           ? `📥 تم استلام طلبك "${sname}" من قِبَل أحد مكاتب سند المرخّصة. يراجع الموظف مستنداتك الآن وسيرسل لك رابط الدفع قريباً.`
           : `📥 Your request "${sname}" was picked up by a licensed Sanad office. The officer is reviewing your documents and will send you a payment link shortly.`);
-    await storeMessage({
-      session_id: r.session_id, request_id: id,
-      direction: 'out', actor_type: 'bot',
-      body_text: claimMsg
+    await notifyCitizen({
+      session_id: r.session_id,
+      request_id: id,
+      body: claimMsg,
+      actor_type: 'bot',
+      citizen_phone: r.citizen_phone
     });
-    if (isWhatsAppSession(r.session_id)) {
-      const phone = r.citizen_phone || r.session_id.replace(/^wa:/, '');
-      sendWhatsAppText(phone, claimMsg).catch(() => {});
-    }
 
     res.json({
       ok: true,
@@ -1488,10 +1473,12 @@ officerRouter.post('/request/:id/payment/start',
              WHERE id=?`,
       args: [link.url, merchantRef, total, provider, sessionId, id]
     });
-    await db.execute({
-      sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
-            VALUES ('officer', ?, 'payment_start', 'request', ?, ?)`,
-      args: [req.officer.officer_id, id, JSON.stringify({ amount_omr: total, merchant_ref: merchantRef, provider, session_id: sessionId, stubbed: !AMWAL_ENABLED && !link.session_id })]
+    await audit({
+      actor: { type: 'officer', id: req.officer.officer_id },
+      action: 'payment_start',
+      target: 'request',
+      targetId: id,
+      diff: { amount_omr: total, merchant_ref: merchantRef, provider, session_id: sessionId, stubbed: !AMWAL_ENABLED && !link.session_id }
     });
 
     // Notify the citizen (web + WhatsApp). Same bot voice — preserves the
@@ -1594,10 +1581,12 @@ officerRouter.post('/request/:id/flag',
       });
       if (upd.rowsAffected) {
         removed = true;
-        await db.execute({
-          sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
-                VALUES ('system', NULL, 'request_auto_quarantined', 'request', ?, ?)`,
-          args: [id, JSON.stringify({ flag_count: flagCount, threshold: FLAG_AUTO_REMOVE_THRESHOLD })]
+        await audit({
+          actor: { type: 'system', id: null },
+          action: 'request_auto_quarantined',
+          target: 'request',
+          targetId: id,
+          diff: { flag_count: flagCount, threshold: FLAG_AUTO_REMOVE_THRESHOLD }
         });
         // Notify the citizen so they understand and can fix.
         await storeMessage({
@@ -1608,10 +1597,12 @@ officerRouter.post('/request/:id/flag',
       }
     }
 
-    await db.execute({
-      sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
-            VALUES ('officer', ?, 'request_flag', 'request', ?, ?)`,
-      args: [req.officer.officer_id, id, JSON.stringify({ reason, note, flag_count: flagCount })]
+    await audit({
+      actor: { type: 'officer', id: req.officer.officer_id },
+      action: 'request_flag',
+      target: 'request',
+      targetId: id,
+      diff: { reason, note, flag_count: flagCount }
     });
 
     res.json({
