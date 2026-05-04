@@ -290,21 +290,18 @@
   $('#loadingBox').classList.add('hidden');
   $('#applyForm').classList.remove('hidden');
 
-  // Header card
+  // Header card — render in active language only. If a field is missing in
+  // the active language, fall back quietly to the other language (better than
+  // showing "—"). The dual-language subtitle was removed because the user
+  // perceived the page as untranslated when both Arabic and English appeared.
   const lang = I18N.lang;
-  const name   = (lang === 'ar' && svc.name_ar) ? svc.name_ar : (svc.name_en || svc.name_ar || '—');
-  const altName = (lang === 'ar') ? (svc.name_en || '') : (svc.name_ar || '');
-  const entity = (lang === 'ar' && svc.entity_ar) ? svc.entity_ar : (svc.entity_en || '');
-  const desc   = (lang === 'ar' && svc.description_ar) ? svc.description_ar : (svc.description_en || '');
-  const time   = (lang === 'ar' && svc.avg_time_ar) ? svc.avg_time_ar : svc.avg_time_en;
+  const name   = (lang === 'ar') ? (svc.name_ar || svc.name_en || '—') : (svc.name_en || svc.name_ar || '—');
+  const entity = (lang === 'ar') ? (svc.entity_ar || svc.entity_en || '') : (svc.entity_en || svc.entity_ar || '');
+  const desc   = (lang === 'ar') ? (svc.description_ar || svc.description_en || '') : (svc.description_en || svc.description_ar || '');
+  const time   = (lang === 'ar') ? (svc.avg_time_ar || svc.avg_time_en) : (svc.avg_time_en || svc.avg_time_ar);
 
   $('#entityChip').textContent = entity || '—';
   $('#serviceName').textContent = name;
-  if (altName) {
-    $('#serviceNameAlt').textContent = altName;
-    $('#serviceNameAlt').classList.remove('hidden');
-    $('#serviceNameAlt').setAttribute('dir', lang === 'ar' ? 'ltr' : 'rtl');
-  }
   if (desc) {
     $('#serviceDesc').textContent = desc;
     $('#serviceDesc').classList.remove('hidden');
@@ -333,8 +330,11 @@
     }
     $('#docCounter').textContent = required.length + ' ' + I18N.t('apply.docs.required_count');
     $('#slots').innerHTML = required.map((d, i) => {
-      const slotLabel = (lang === 'ar' && d.label_ar) ? d.label_ar : (d.label_en || d.code || `doc ${i+1}`);
-      const altLabel = (lang === 'ar') ? (d.label_en || '') : (d.label_ar || '');
+      // Active language only. Fall back to the other language if missing,
+      // rather than showing both stacked (which read as "untranslated").
+      const slotLabel = (lang === 'ar')
+        ? (d.label_ar || d.label_en || d.code || `doc ${i+1}`)
+        : (d.label_en || d.label_ar || d.code || `doc ${i+1}`);
       const code = d.code || `slot_${i}`;
       return `<div class="border border-slate-200 rounded-xl p-4" data-slot="${escapeHtml(code)}">
         <div class="flex items-start gap-3">
@@ -344,7 +344,6 @@
               <div class="slot-dot is-empty" data-slot-dot="${escapeHtml(code)}"></div>
               <div class="font-bold ink-900 text-sm">${escapeHtml(slotLabel)}</div>
             </div>
-            ${altLabel ? `<div class="text-xs ink-500 mt-0.5" dir="${lang === 'ar' ? 'ltr' : 'rtl'}">${escapeHtml(altLabel)}</div>` : ''}
             <div class="mt-3 space-y-2" data-slot-rows="${escapeHtml(code)}"></div>
             <button type="button" class="add-file-btn mt-2 text-xs font-bold brand bg-teal-50 hover:bg-teal-100 border border-teal-200 px-3 py-1.5 rounded-lg" data-add="${escapeHtml(code)}">
               <span>+ ${I18N.t('apply.docs.add_file')}</span>

@@ -47,7 +47,7 @@
       'home.eyebrow': 'Trusted by Oman\'s licensed Sanad office network',
       'home.h1.line1': 'Your government paperwork.',
       'home.h1.line2': 'Resolved on WhatsApp.',
-      'home.subhead': 'Send Saned a message and we\'ll prepare the file with you — the right documents, the official fee locked in, and a licensed Sanad office completes the transaction on your behalf. Most requests close the same day.',
+      'home.subhead': 'Start with Saned on WhatsApp — or from your dashboard if you prefer — and we\'ll prepare the file with you, step by step: the right documents, the official fee locked in, and a licensed Sanad office completes the transaction on your behalf. Most requests close the same day.',
       'home.search.placeholder': 'Try "renew my passport" or "تجديد البطاقة المدنية"…',
       'home.search.cta': 'Find my service',
       'home.cta.whatsapp': 'Open in WhatsApp',
@@ -83,8 +83,8 @@
       'home.why.4.b': 'Your file is processed by a real, licensed Sanad office — not a chatbot pretending. We just remove the friction.',
       'home.how.h2': 'How it works',
       'home.how.sub': 'Three steps. From WhatsApp to "done" — no paperwork at home, no counter at the office.',
-      'home.how.1.t': 'You message',
-      'home.how.1.b': 'Say what you need in Arabic or English. We match it to one of 600+ services across every Omani ministry.',
+      'home.how.1.t': 'Start on WhatsApp',
+      'home.how.1.b': 'Tell Saned what you need on WhatsApp — in Arabic or English — or start from your dashboard on the web if you prefer. We match your request to one of 600+ services across every Omani government entity.',
       'home.how.2.t': 'We prepare',
       'home.how.2.b': 'Saned walks you through every document and confirms the official fees so your file is complete on the first try.',
       'home.how.3.t': 'A Sanad office finishes',
@@ -156,9 +156,10 @@
       'officer.title.all': 'All requests',
       'officer.title.mkt': 'Marketplace',
       'officer.title.mine': 'Claimed by me',
-      'officer.title.waiting': 'Waiting on citizen',
-      'officer.title.sla': 'SLA at risk',
-      'officer.title.done': 'Completed',
+      'officer.title.review':          'Under review',
+      'officer.title.pending_payment': 'Pending payment',
+      'officer.title.in_execution':    'In execution',
+      'officer.title.done':            'Completed',
       'officer.empty_title': 'Nothing here',
       'officer.empty_desc': 'Try a different filter, or open the citizen chat to create a test request.',
       'officer.nothing_to_send': 'Nothing to quote right now',
@@ -762,7 +763,7 @@
       'home.eyebrow': 'موثوق من شبكة مكاتب سند المرخّصة في سلطنة عُمان',
       'home.h1.line1': 'معاملاتك الحكومية.',
       'home.h1.line2': 'تُنجَز على واتساب.',
-      'home.subhead': 'أرسل لساند رسالة وسنُجهّز معك الملف خطوة بخطوة — المستندات الصحيحة، والرسوم الرسمية مُثبَّتة، ومكتب سند مرخّص يُتمّ المعاملة نيابةً عنك. أغلب الطلبات تُنجَز في نفس اليوم.',
+      'home.subhead': 'ابدأ مع ساند على واتساب — أو من لوحتك على الموقع إن فضّلت — وسنُجهّز معك الملف خطوة بخطوة: المستندات الصحيحة، والرسوم الرسمية مُثبَّتة، ومكتب سند مرخّص يُتمّ المعاملة نيابةً عنك. أغلب الطلبات تُنجَز في نفس اليوم.',
       'home.search.placeholder': 'جرّب «تجديد جواز سفر» أو "renew civil ID"…',
       'home.search.cta': 'ابحث عن خدمتي',
       'home.cta.whatsapp': 'افتح واتساب',
@@ -793,13 +794,13 @@
       'home.why.2.t': 'المستندات الصحيحة من أول مرة',
       'home.why.2.b': 'نخبرك تماماً ما الذي يحتاجه مكتب سند — قبل أن تذهب إلى أي مكان.',
       'home.why.3.t': 'سعر ثابت وشفّاف',
-      'home.why.3.b': 'الرسم الحكومي + رسم بسيط للمكتب. كلاهما يظهر مسبقاً. لا رسوم خفية ولا مساومات.',
+      'home.why.3.b': 'الرسوم الحكومية + رسم بسيط للمكتب. الكل يظهر مسبقاً. لا رسوم خفية ولا مساومات.',
       'home.why.4.t': 'موظف مرخّص يُنجز المعاملة',
       'home.why.4.b': 'ملفك يُنجزه مكتب سند مرخّص حقيقي — ليس بوت يتظاهر. نحن فقط نزيل الإجراءات المعقّدة.',
       'home.how.h2': 'كيف يعمل',
       'home.how.sub': 'ثلاث خطوات. من الواتساب إلى «تم» — لا أوراق في البيت، ولا كاونتر في المكتب.',
-      'home.how.1.t': 'تكتب رسالتك',
-      'home.how.1.b': 'أخبرنا بما تحتاج بالعربية أو الإنجليزية. سنطابقه مع واحدة من 600+ خدمة عبر جميع الجهات الحكومية في عُمان.',
+      'home.how.1.t': 'تبدأ على واتساب',
+      'home.how.1.b': 'راسل ساند على الواتساب بما تحتاج — بالعربية أو الإنجليزية — أو ابدأ من لوحتك على الموقع إن فضّلت. نُطابق طلبك مع واحدة من 600+ خدمة عبر جميع الجهات الحكومية في عُمان.',
       'home.how.2.t': 'نُجهّز ملفك',
       'home.how.2.b': 'يأخذك ساند خطوة خطوة عبر كل مستند، ويؤكد الرسوم الرسمية حتى يكون ملفك مكتملاً من أول محاولة.',
       'home.how.3.t': 'مكتب سند يُنجز الباقي',
@@ -823,7 +824,7 @@
       'home.voices.3.n': 'خالد · صحار',
       'home.faq.h2': 'أسئلة شائعة',
       'home.faq.q1': 'كم تكلفة هذه الخدمة؟',
-      'home.faq.a1': 'تدفع الرسم الحكومي الرسمي بالإضافة إلى رسم خدمة بسيط لمكتب سند. كلاهما يظهر لك قبل الإرسال — بدون مفاجآت.',
+      'home.faq.a1': 'تدفع الرسوم الحكومية الرسمية بالإضافة إلى رسم خدمة بسيط لمكتب سند. الكل يظهر لك قبل الإرسال — بدون مفاجآت.',
       'home.faq.q2': 'هل هذه خدمة رسمية؟',
       'home.faq.a2': 'مكاتب سند هي مكاتب خدمات مرخّصة من الحكومة، وتقوم بتقديم المعاملات عبر البوابات الرسمية نيابةً عنك. طلبك يُنجز من البداية للنهاية بواسطة مكتب مرخّص، وليس بواسطة الذكاء الاصطناعي.',
       'home.faq.q3': 'هل بياناتي آمنة؟',
@@ -869,9 +870,10 @@
       'officer.title.all': 'كل الطلبات',
       'officer.title.mkt': 'سوق الطلبات',
       'officer.title.mine': 'طلباتي',
-      'officer.title.waiting': 'بانتظار المواطن',
-      'officer.title.sla': 'قرب انتهاء المهلة',
-      'officer.title.done': 'المكتملة',
+      'officer.title.review':          'قيد المراجعة',
+      'officer.title.pending_payment': 'بانتظار الدفع',
+      'officer.title.in_execution':    'قيد التنفيذ',
+      'officer.title.done':            'المكتملة',
       'officer.empty_title': 'لا يوجد شيء هنا',
       'officer.empty_desc': 'جرّب تصفية مختلفة، أو افتح محادثة المواطن لإنشاء طلب تجريبي.',
       'officer.nothing_to_send': 'لا توجد طلبات لإرسال عرض الآن',
@@ -1445,12 +1447,19 @@
       return out;
     },
     setLang(lang) {
-      this.lang = (lang === 'ar' ? 'ar' : 'en');
+      const next = (lang === 'ar' ? 'ar' : 'en');
+      const changed = next !== this.lang;
+      this.lang = next;
       localStorage.setItem('sanad.lang', this.lang);
       document.documentElement.lang = this.lang;
       document.documentElement.dir = this.lang === 'ar' ? 'rtl' : 'ltr';
       this.apply();
       window.dispatchEvent(new CustomEvent('langchange', { detail: { lang: this.lang } }));
+      // Many pages render dynamic content (service titles, document labels,
+      // marketplace cards, etc.) once at load time and don't subscribe to
+      // langchange. A full reload guarantees every label — static or
+      // dynamic — comes back in the new language.
+      if (changed) location.reload();
     },
     apply() {
       document.querySelectorAll('[data-i18n]').forEach(el => {

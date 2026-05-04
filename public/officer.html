@@ -388,11 +388,11 @@
         </div>
 
         <nav class="flex-1 overflow-y-auto scroll-y px-2 pb-4">
-          <!-- Two clean modes — replaces the old 6-button mish-mash.
-               Sub-filters (waiting / SLA / completed) are exposed as
-               sub-toggles ONLY when طلباتي is the active mode, so the
-               sidebar never shows shortcuts that don't apply to what's
-               currently visible. -->
+          <!-- Two top-level modes (سوق الطلبات / طلباتي).
+               Sub-filters under طلباتي mirror the lifecycle stages shown on
+               each request's progress strip — three active stages plus a
+               terminal "completed" bucket. The previous mix of وضعيات
+               (waiting/SLA-near/done) overlapped and was confusing. -->
           <div class="sh" data-i18n="officer.sh.queue">القائمة</div>
           <button data-filter="ready" class="filter-btn">
             <span style="font-size:14px">🛒</span>
@@ -404,18 +404,25 @@
             <span>طلباتي</span>
             <span class="filter-count" data-count="mine">—</span>
           </button>
-          <!-- Sub-modes that only make sense inside طلباتي. CSS hides them
-               unless the parent .filter-btn[data-filter="mine"] is active. -->
+          <!-- Lifecycle sub-filters — visible only when طلباتي is active.
+               Three active stages line up with the progress-strip steps the
+               officer sees on each open request: review → pending payment →
+               in execution. Completed is the 4th, terminal stage. -->
           <div id="mineSubFilters" class="hidden" style="margin-inline-start:14px;border-inline-start:1px solid var(--line);padding-inline-start:6px;margin-top:2px">
-            <button data-filter="waiting" class="filter-btn" style="font-size:11.5px">
-              <span class="w-1.5 h-1.5 rounded-full pulse-dot" style="background:var(--warn)"></span>
-              <span>بانتظار المواطن</span>
-              <span class="filter-count" data-count="waiting">—</span>
+            <button data-filter="review" class="filter-btn" style="font-size:11.5px">
+              <span class="w-1.5 h-1.5 rounded-full" style="background:var(--info, #06b6d4)"></span>
+              <span>قيد المراجعة</span>
+              <span class="filter-count" data-count="review">—</span>
             </button>
-            <button data-filter="sla" class="filter-btn" style="font-size:11.5px">
-              <span class="w-1.5 h-1.5 rounded-full" style="background:var(--bad)"></span>
-              <span>قرب انتهاء المهلة</span>
-              <span class="filter-count" data-count="sla">—</span>
+            <button data-filter="pending_payment" class="filter-btn" style="font-size:11.5px">
+              <span class="w-1.5 h-1.5 rounded-full pulse-dot" style="background:var(--warn)"></span>
+              <span>بانتظار الدفع</span>
+              <span class="filter-count" data-count="pending_payment">—</span>
+            </button>
+            <button data-filter="in_execution" class="filter-btn" style="font-size:11.5px">
+              <span class="w-1.5 h-1.5 rounded-full" style="background:var(--brand, #10b981)"></span>
+              <span>قيد التنفيذ</span>
+              <span class="filter-count" data-count="in_execution">—</span>
             </button>
             <button data-filter="done" class="filter-btn" style="font-size:11.5px">
               <span class="w-1.5 h-1.5 rounded-full" style="background:var(--ok)"></span>
@@ -1098,17 +1105,49 @@
     // server) — not just today's, since the sidebar label is just 'مكتمل'
     // with no time qualifier and the previous "today only" filter was
     // dropping legitimate completions across the local-vs-UTC day boundary.
-    set('[data-count="all"]', mine.length + mkt.length);
+    // "طلباتي" (mine) is the office's full history view — active work AND
+    // completed work, so the parent badge always agrees with the visible
+    // list. Sub-filters slice into the four lifecycle stages mirrored from
+    // the request progress strip:
+    //   review          = officer is reviewing docs, no payment link yet
+    //   pending_payment = link sent, waiting on the citizen
+    //   in_execution    = paid, officer is doing the gov-side work
+    //   done            = completed (terminal)
+    // The state machine: status='claimed' (no payment) → status='awaiting_payment'
+    // (payment_status='awaiting') → paid_at set, status='in_progress' → 'completed'.
+    const mineTotal = allMine.length;
+    // 'awaiting_reclassify_ack' = office proposed switching the service and
+    // is waiting on the citizen to ack — pre-payment, so it lives in review.
+    const REVIEW_STATUSES = new Set(['claimed', 'needs_more_info', 'awaiting_reclassify_ack']);
+    const isReview          = x => REVIEW_STATUSES.has(x.status)
+                                && (!x.payment_status || x.payment_status === 'none')
+                                && !x.paid_at;
+    const isPendingPayment  = x => x.payment_status === 'awaiting' && !x.paid_at;
+    // 'in_progress' is the canonical "office is doing the gov work" status,
+    // set when payment lands. paid_at without that status (rare; debug/test
+    // rows or pre-status-flip races) also belongs here.
+    const isInExecution     = x => (x.status === 'in_progress' || !!x.paid_at)
+                                && !TERMINAL_STATUSES.has(x.status);
+    set('[data-count="all"]', mineTotal + mkt.length);
     set('[data-count="ready"]', mkt.length);
-    set('[data-count="mine"]', mine.length);
-    set('[data-count="waiting"]', mine.filter(x => x.status === 'claimed' || x.status === 'needs_more_info').length);
-    set('[data-count="sla"]', 0);
+    set('[data-count="mine"]', mineTotal);
+    set('[data-count="review"]',          mine.filter(isReview).length);
+    set('[data-count="pending_payment"]', mine.filter(isPendingPayment).length);
+    set('[data-count="in_execution"]',    mine.filter(isInExecution).length);
     set('[data-count="done"]', mineDone.length);
   }
 
   function highlightFilter() {
     document.querySelectorAll('[data-filter]').forEach(b => b.classList.toggle('active', b.getAttribute('data-filter') === filterMode));
-    const keys = { all:'officer.title.all', ready:'officer.title.mkt', mine:'officer.title.mine', waiting:'officer.title.waiting', sla:'officer.title.sla', done:'officer.title.done' };
+    const keys = {
+      all:             'officer.title.all',
+      ready:           'officer.title.mkt',
+      mine:            'officer.title.mine',
+      review:          'officer.title.review',
+      pending_payment: 'officer.title.pending_payment',
+      in_execution:    'officer.title.in_execution',
+      done:            'officer.title.done'
+    };
     document.getElementById('inboxTitle').textContent = t(keys[filterMode] || 'officer.title.all');
   }
 
@@ -1147,25 +1186,43 @@
   }
 
   function currentList() {
-    // Defensive: drop terminal-state rows so the inbox never shows or counts
-    // a completed/cancelled/flagged request unless the user explicitly asks
-    // for the 'done' sub-filter.
     const allMine = allInbox.mine || [];
-    const mine = allMine.filter(isActive);
+    const mine = allMine.filter(isActive); // non-terminal subset
     const mkt = allInbox.marketplace || [];
-    // Quick-filter (sidebar) → coarse pre-filter pool.
+    // Quick-filter (sidebar) → coarse pre-filter pool. "طلباتي" shows the
+    // full history (active + completed) so the parent count and the visible
+    // list always agree. Sub-filters slice the active set into the three
+    // lifecycle stages mirrored from the request progress strip:
+    //   review → pending_payment → in_execution → done (terminal).
+    // Predicates are duplicated here from updateKPIs() — kept inline rather
+    // than extracted because each is one expression and they feed slightly
+    // different array sources (mine vs allMine).
     let list;
     if (filterMode === 'ready') list = mkt;
-    else if (filterMode === 'mine') list = mine;
-    else if (filterMode === 'waiting') list = mine.filter(x => x.status === 'claimed' || x.status === 'needs_more_info');
-    else if (filterMode === 'sla') list = mine.filter(x => {
-      const s = slaInfo(x);
-      if (!s) return false;
-      const remain = s.deadlineMs - Date.now();
-      return remain >= 0 && remain < 120_000; // < 2 min
-    });
+    else if (filterMode === 'mine') list = allMine;
+    else if (filterMode === 'review') {
+      // Officer reviewing docs — pre-payment lifecycle. Covers fresh claims,
+      // citizens who were asked for more info, and reclassify proposals
+      // awaiting citizen ack. paid_at guard keeps post-pay needs-more-info
+      // out of this bucket (it lands in `in_execution` instead).
+      const REVIEW_STATUSES = new Set(['claimed', 'needs_more_info', 'awaiting_reclassify_ack']);
+      list = mine.filter(x =>
+        REVIEW_STATUSES.has(x.status)
+        && (!x.payment_status || x.payment_status === 'none')
+        && !x.paid_at);
+    }
+    else if (filterMode === 'pending_payment') {
+      // Payment link sent, waiting on the citizen to actually pay.
+      list = mine.filter(x => x.payment_status === 'awaiting' && !x.paid_at);
+    }
+    else if (filterMode === 'in_execution') {
+      // Office is doing the gov-side work. status='in_progress' is the
+      // canonical marker; paid_at also counts (covers needs_more_info-after-
+      // payment and any pre-flip race).
+      list = mine.filter(x => x.status === 'in_progress' || !!x.paid_at);
+    }
     else if (filterMode === 'done') list = allMine.filter(x => x.status === 'completed');
-    else list = mine.concat(mkt);
+    else list = allMine.concat(mkt);
 
     // Facet filters
     const fs = filterState;
@@ -1295,9 +1352,12 @@
     // are 'ready' — status filter would be a no-op). Show in طلباتي / all.
     const sg = document.getElementById('statusGroup');
     if (sg) sg.style.display = (filterMode === 'ready') ? 'none' : '';
-    // Show sub-filters under طلباتي only when that mode is active.
+    // Show sub-filters under طلباتي whenever the active filter is the parent
+    // ('mine') OR any of its lifecycle children — so drilling into "بانتظار
+    // الدفع" doesn't collapse the tree out from under the user.
     const sub = document.getElementById('mineSubFilters');
-    if (sub) sub.classList.toggle('hidden', filterMode !== 'mine' && !['waiting','sla','done'].includes(filterMode));
+    const MINE_CHILDREN = ['review', 'pending_payment', 'in_execution', 'done'];
+    if (sub) sub.classList.toggle('hidden', filterMode !== 'mine' && !MINE_CHILDREN.includes(filterMode));
   }
   function syncFilterControls() {
     document.getElementById('filterSort').value = filterState.sort || 'newest';
@@ -2686,7 +2746,10 @@
     { id:'claim_next', label:'Claim next in marketplace', icon:'⚡', run:()=>document.getElementById('quickClaim').click() },
     { id:'filter_mine', label:'Filter: My claimed', icon:'📌', run:()=>{filterMode='mine';loadInbox();} },
     { id:'filter_ready', label:'Filter: Marketplace', icon:'🛒', run:()=>{filterMode='ready';loadInbox();} },
-    { id:'filter_waiting', label:'Filter: Waiting on citizen', icon:'⏳', run:()=>{filterMode='waiting';loadInbox();} },
+    { id:'filter_review',          label:'Filter: Under review',    icon:'🔍', run:()=>{filterMode='review';loadInbox();} },
+    { id:'filter_pending_payment', label:'Filter: Pending payment', icon:'💳', run:()=>{filterMode='pending_payment';loadInbox();} },
+    { id:'filter_in_execution',    label:'Filter: In execution',    icon:'⚙️', run:()=>{filterMode='in_execution';loadInbox();} },
+    { id:'filter_done',            label:'Filter: Completed',       icon:'✓',  run:()=>{filterMode='done';loadInbox();} },
     { id:'toggle_theme', label:'Toggle dark mode', icon:'🌓', run:()=>document.documentElement.classList.toggle('dark') },
     { id:'toggle_lang', label:'Toggle language', icon:'🌐', run:()=>I18N.setLang(I18N.lang==='ar'?'en':'ar') },
     { id:'open_chat', label:'Open citizen chat drawer', icon:'💬', run:()=>openChatDrawer() },

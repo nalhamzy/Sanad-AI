@@ -284,12 +284,22 @@ body {
 
 /* ──────────────────────────────────────────────────────────── */
 /* OTP INPUT BOX — used by signup.html / login.html              */
+/* The row is six boxes inside a flex container. Fluid sizing    */
+/* (flex:1 + min-width:0 + max-width cap) prevents the row from  */
+/* overflowing the card on narrow phones (≤375px) — at 320px the */
+/* old fixed 2.75rem boxes spilled out by ~70px.                 */
 /* ──────────────────────────────────────────────────────────── */
+.otp-row { width: 100%; max-width: 100%; min-width: 0; }
 .otp-input {
-  width: 2.75rem; height: 3.25rem;
+  flex: 1 1 0;
+  min-width: 0;          /* allow shrink below content width inside flex */
+  max-width: 2.75rem;    /* keep desktop look — never grow past the cap */
+  height: 3.25rem;
   text-align: center; font-size: 1.5rem; font-weight: 700;
   border: 1.5px solid var(--line); border-radius: 0.75rem;
   background: var(--surface); outline: none;
+  padding: 0;            /* default input padding would shrink digit area */
+  box-sizing: border-box;
   transition: border-color .15s, box-shadow .15s, background .15s;
 }
 .otp-input:focus {
