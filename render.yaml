@@ -12,6 +12,12 @@ services:
         value: "false"              # production default — leaks /api/debug/state when true
       - key: PORT
         value: "3030"
+      # JWT signing key for officer + citizen session cookies. Must be set in
+      # the Render dashboard (≥16 chars). lib/auth.js fails fast on boot if
+      # missing — silently shipping with the dev placeholder is worse than
+      # crashing at startup.
+      - key: JWT_SECRET
+        sync: false
       - key: DB_URL
         value: file:./data/sanad.db # swap for libsql://… on Turso later
       - key: QWEN_API_KEY
