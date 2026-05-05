@@ -40,6 +40,51 @@ debugRouter.get('/state', async (_req, res) => {
   res.json({ counts, latestRequests, latestMessages });
 });
 
+// Per-session trace dump — narrow alternative to /state for debugging a
+// specific session in production without exposing global counts / other
+// citizens' data. Returns the last N message rows (default 30, max 100)
+// for one session_id, parsing meta_json so the agent trace is readable.
+//
+// Usage:
+//   GET /api/debug/trace/wa:%2B96812345678?n=50
+//
+// Gated by DEBUG_MODE (same as /state). Citizen body text is included so
+// it's still PII-bearing — operator-only.
+debugRouter.get('/trace/:session_id', async (req, res) => {
+  if (process.env.DEBUG_MODE !== 'true') return res.status(403).json({ error: 'debug_only' });
+  const session_id = String(req.params.session_id || '');
+  if (!session_id) return res.status(400).json({ error: 'session_id_required' });
+  const n = Math.min(100, Math.max(1, Number(req.query.n) || 30));
+  try {
+    const { rows: messages } = await db.execute({
+      sql: `SELECT id, request_id, direction, actor_type, body_text, media_url,
+                   meta_json, channel, created_at
+              FROM message
+             WHERE session_id = ?
+             ORDER BY id DESC
+             LIMIT ?`,
+      args: [session_id, n]
+    });
+    // Reverse so the caller reads oldest-first (turn order). Parse meta_json
+    // so traces are inline JSON, not strings-in-strings.
+    const parsed = messages.reverse().map(m => ({
+      ...m,
+      meta_json: m.meta_json ? safeParse(m.meta_json) : null
+    }));
+    const { rows: sessRows } = await db.execute({
+      sql: `SELECT state_json, updated_at FROM session WHERE id = ?`,
+      args: [session_id]
+    });
+    const session = sessRows[0]
+      ? { state: safeParse(sessRows[0].state_json), updated_at: sessRows[0].updated_at }
+      : null;
+    res.json({ session_id, count: messages.length, session, messages: parsed });
+  } catch (e) {
+    res.status(500).json({ error: 'query_failed', detail: e.message });
+  }
+});
+function safeParse(s) { try { return JSON.parse(s); } catch { return s; } }
+
 // Reset a session (nuclear — wipes state; keeps messages for audit)
 debugRouter.post('/reset/:session_id', async (req, res) => {
   await db.execute({ sql: `DELETE FROM session WHERE id=?`, args: [req.params.session_id] });
