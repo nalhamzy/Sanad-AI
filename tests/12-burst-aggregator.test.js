@@ -138,6 +138,49 @@ describe('lib/agent.js · burst aggregator + in-flight gate', () => {
     assert.equal(cur.buttons, null, 'no buttons should be set');
   });
 
+  test('drainBurst does NOT re-store the solo handler reply (de-dup)', async () => {
+    // Regression: trace from production showed two identical bot rows ~1.8s
+    // apart for every solo file (#985 + #986, #992 + #993, #997 stored once
+    // by runAgentV2 then again by drainBurst). For n === 1 the handler has
+    // already written the reply; drainBurst must only SEND, not re-STORE.
+    const sid = 'wa:+dedup-' + Date.now();
+    // Pre-store the handler's reply (mimics runAgentV2 behaviour).
+    const { db: liveDb } = await import('../lib/db.js');
+    await liveDb.execute({
+      sql: `INSERT INTO message(session_id, direction, actor_type, body_text)
+            VALUES (?, 'out', 'bot', ?)`,
+      args: [sid, 'is this for civil id?']
+    });
+    armBurst(sid, { reply: 'is this for civil id?' });
+    await sleep(120); // > BURST_QUIET_MS so drain fires
+
+    const { rows } = await liveDb.execute({
+      sql: `SELECT COUNT(*) AS n FROM message WHERE session_id = ? AND actor_type = 'bot'`,
+      args: [sid]
+    });
+    assert.equal(rows[0].n, 1,
+      'after a solo-file drain there must be exactly ONE bot row for this session — the handler-stored one');
+  });
+
+  test('drainBurst DOES store the synthetic summary for multi-file bursts', async () => {
+    // Counterpart to the de-dup test: when n >= 2 the drain text is a NEW
+    // synthetic summary that no handler emitted, so it MUST land in the DB.
+    const sid = 'wa:+multi-store-' + Date.now();
+    armBurst(sid, { reply: 'per-file 1' });
+    armBurst(sid, { reply: 'per-file 2' });
+    await sleep(120);
+
+    const { db: liveDb } = await import('../lib/db.js');
+    const { rows } = await liveDb.execute({
+      sql: `SELECT body_text FROM message WHERE session_id = ? AND actor_type = 'bot' ORDER BY id`,
+      args: [sid]
+    });
+    assert.equal(rows.length, 1,
+      'multi-file drain stores exactly one summary row (handler replies are suppressed)');
+    assert.match(rows[0].body_text, /استلمت 2/,
+      'the row body should be the templated multi-file summary, not a per-file reply');
+  });
+
   test('rapid arms within the quiet window collapse to a single drain', async () => {
     // No in-flight pretence — just verify that armBurst's own rearm logic
     // collapses N rapid arms into ONE drain (the original burst behaviour
