@@ -4,6 +4,8 @@
 
 import { Router } from 'express';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import { runTurn } from '../lib/agent.js';
 import { sendWhatsAppText } from '../lib/whatsapp_send.js';
 
@@ -102,8 +104,12 @@ whatsappRouter.post('/webhook', async (req, res) => {
 
     let attachment = null;
     const originalName = msg.document?.filename || null;
+    const _sessionId = `wa:${from}`;
     if (media && ACCESS_TOKEN) {
-      attachment = await fetchMedia(media.id);
+      // fetchMedia downloads the binary from Meta and writes it to
+      // /data/uploads/wa:<phone>/<ts_rand>.<ext>, returning a LOCAL URL
+      // the officer dashboard can serve via express.static.
+      attachment = await fetchMedia(media.id, _sessionId);
       if (attachment) {
         attachment.caption = caption;
         attachment.name = originalName;
@@ -136,10 +142,76 @@ whatsappRouter.post('/webhook', async (req, res) => {
   }
 });
 
-async function fetchMedia(mediaId) {
+// ── WhatsApp media → local disk ───────────────────────────────────────
+// Meta gives us a SHORT-LIVED signed URL on `lookaside.fbsbx.com` that:
+//   • requires the bearer token to fetch
+//   • expires in ~24h
+// If we just stored that URL on the request_document row, the office would
+// see a broken link the next day, and even within 24h the dashboard couldn't
+// load it (no Meta token in the browser). So: fetch the binary right now,
+// write it to /data/uploads/{wa-phone}/{ts_rand}.{ext}, and return the
+// LOCAL path. Server already serves /uploads/* via express.static.
+const UPLOAD_DIR = path.resolve('./data/uploads');
+const ALLOWED_MIMES = new Set([
+  'image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif',
+  'application/pdf'
+]);
+function extForMime(mime) {
+  const m = (mime || '').toLowerCase();
+  if (m === 'application/pdf') return '.pdf';
+  if (m === 'image/png') return '.png';
+  if (m === 'image/webp') return '.webp';
+  if (m === 'image/heic' || m === 'image/heif') return '.heic';
+  return '.jpg';
+}
+
+async function fetchMedia(mediaId, sessionId) {
+  // Step 1: ask Meta for the signed URL + metadata.
   const meta = await fetch(`https://graph.facebook.com/v20.0/${mediaId}`, {
     headers: { 'authorization': `Bearer ${ACCESS_TOKEN}` }
   }).then(r => r.json());
-  // Minimal: return the CDN URL (signed) — in production, fetch and re-host.
-  return { url: meta.url, mime: meta.mime_type, size: meta.file_size };
+  const cdnUrl = meta?.url;
+  const mime = meta?.mime_type || '';
+  const size = meta?.file_size || 0;
+  if (!cdnUrl) {
+    console.warn('[whatsapp] fetchMedia got no url from Meta:', JSON.stringify(meta).slice(0, 300));
+    return null;
+  }
+  if (mime && !ALLOWED_MIMES.has(mime.toLowerCase())) {
+    console.warn(`[whatsapp] rejecting unsupported mime ${mime} (mediaId=${mediaId})`);
+    return null;
+  }
+
+  // Step 2: download the binary using the SAME bearer token. Lookaside URLs
+  // 401 without it.
+  let buf;
+  try {
+    const r = await fetch(cdnUrl, { headers: { 'authorization': `Bearer ${ACCESS_TOKEN}` } });
+    if (!r.ok) {
+      console.warn(`[whatsapp] media fetch failed ${r.status} for ${mediaId}`);
+      return null;
+    }
+    buf = Buffer.from(await r.arrayBuffer());
+  } catch (e) {
+    console.warn('[whatsapp] media fetch threw:', e.message);
+    return null;
+  }
+
+  // Step 3: write to /data/uploads/{sid}/{ts_rand}.{ext}. Mirrors the
+  // multer destination shape used by web chat so officers' file-preview
+  // path is the same on both channels.
+  const safeSid = String(sessionId || 'wa-unknown').replace(/[^a-zA-Z0-9_+:.-]/g, '_');
+  const dir = path.join(UPLOAD_DIR, safeSid);
+  fs.mkdirSync(dir, { recursive: true });
+  const filename = `${Date.now()}_${crypto.randomBytes(4).toString('hex')}${extForMime(mime)}`;
+  const fullPath = path.join(dir, filename);
+  fs.writeFileSync(fullPath, buf);
+
+  // Returned `url` is the path Express serves under express.static(/uploads).
+  // Caller stores this on request_document.storage_url → dashboard renders it.
+  return {
+    url: `/uploads/${encodeURIComponent(safeSid)}/${encodeURIComponent(filename)}`,
+    mime,
+    size: buf.length
+  };
 }

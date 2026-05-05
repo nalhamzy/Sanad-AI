@@ -35,7 +35,8 @@ await bootTestEnv();
 
 const { __testBurst } = await import('../lib/agent.js');
 const { armBurst, drainBurst, bumpInflightFiles, inflightFilesFor,
-        pendingBurst, SESSION_BURST, SESSION_INFLIGHT_FILES } = __testBurst;
+        pendingBurst, SESSION_BURST, SESSION_INFLIGHT_FILES,
+        parseUploadDescriptions } = __testBurst;
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -179,6 +180,77 @@ describe('lib/agent.js · burst aggregator + in-flight gate', () => {
       'multi-file drain stores exactly one summary row (handler replies are suppressed)');
     assert.match(rows[0].body_text, /استلمت 2/,
       'the row body should be the templated multi-file summary, not a per-file reply');
+  });
+
+  describe('parseUploadDescriptions yes-fallback', () => {
+    // Regression: a citizen uploaded a file with no caption then replied
+    // "نعم". The old code mapped "yes" to vision_best on every pending file;
+    // if vision didn't run (or wasn't confident) the entire branch was
+    // skipped and the function fell through to the comma-parse path, which
+    // recorded the file as an EXTRA with caption "نعم". Trace bug observed
+    // 2026-05-05 on +96892888715 — bot then hallucinated "✅ حفظت Civil ID"
+    // even though state.collected was empty. Fix: positional fallback to
+    // the next still-empty required slot when vision_best is absent.
+
+    const docs = [
+      { code: 'civil_id', label_en: 'Civil ID' },
+      { code: 'passport', label_en: 'Passport' },
+      { code: 'photo', label_en: 'Personal Photo' }
+    ];
+    const upload = (idx, vision_best = null) => ({
+      idx, url: 'wa://' + idx, name: 'doc' + idx + '.jpg',
+      mime: 'image/jpeg', caption: '', vision_best
+    });
+
+    test('"نعم" with one file + no vision → records into next pending slot', () => {
+      const r = parseUploadDescriptions('نعم', [upload(1)], docs, {});
+      assert.equal(r.ok, true);
+      assert.equal(r.method, 'yes_positional');
+      assert.deepEqual(r.mappings, [{ idx: 1, doc_code: 'civil_id' }]);
+      assert.ok(!r.extras || r.extras.length === 0,
+        'must NOT route to extras (the original bug)');
+    });
+
+    test('"yes" with three files + no vision → fills 3 slots positionally', () => {
+      const r = parseUploadDescriptions('yes', [upload(1), upload(2), upload(3)], docs, {});
+      assert.equal(r.ok, true);
+      assert.equal(r.confidence, 'high');
+      assert.deepEqual(r.mappings.map(m => m.doc_code), ['civil_id', 'passport', 'photo']);
+    });
+
+    test('"تمام" + vision-best on file 1 → uses vision for file 1, positional for file 2', () => {
+      const r = parseUploadDescriptions(
+        'تمام',
+        [upload(1, 'passport'), upload(2)],
+        docs, {}
+      );
+      assert.equal(r.ok, true);
+      assert.deepEqual(r.mappings, [
+        { idx: 1, doc_code: 'passport' },     // vision win
+        { idx: 2, doc_code: 'civil_id' }      // positional next-empty (passport already consumed)
+      ]);
+    });
+
+    test('"نعم" when civil_id already collected → starts at next empty slot (passport)', () => {
+      const r = parseUploadDescriptions(
+        'نعم',
+        [upload(1)],
+        docs,
+        { civil_id: { storage_url: '/uploads/x.jpg' } }
+      );
+      assert.equal(r.ok, true);
+      assert.deepEqual(r.mappings, [{ idx: 1, doc_code: 'passport' }]);
+    });
+
+    test('non-yes free text still parses positionally as before (no regression)', () => {
+      const r = parseUploadDescriptions(
+        'civil id, passport',
+        [upload(1), upload(2)],
+        docs, {}
+      );
+      assert.equal(r.ok, true);
+      assert.deepEqual(r.mappings.map(m => m.doc_code), ['civil_id', 'passport']);
+    });
   });
 
   test('rapid arms within the quiet window collapse to a single drain', async () => {
