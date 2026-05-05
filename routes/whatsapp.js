@@ -74,6 +74,9 @@ whatsappRouter.post('/webhook', async (req, res) => {
     //   reclassify:reject → 'رفض'
     //   burst:done        → 'تم'
     //   burst:more        → 'سأرسل المزيد'
+    //   doc:yes           → 'نعم'   (confirm ambiguous-doc classification)
+    //   doc:wrong         → 'لا'    (the file is for a different slot)
+    //   doc:extra         → 'إضافي' (record as a supplementary file)
     let interactiveText = '';
     if (msg.interactive?.type === 'button_reply') {
       const id = msg.interactive.button_reply.id || '';
@@ -82,6 +85,9 @@ whatsappRouter.post('/webhook', async (req, res) => {
       else if (id === 'reclassify:reject') interactiveText = 'رفض';
       else if (id === 'burst:done')   interactiveText = 'تم';
       else if (id === 'burst:more')   interactiveText = 'سأرسل المزيد';
+      else if (id === 'doc:yes')      interactiveText = 'نعم';
+      else if (id === 'doc:wrong')    interactiveText = 'لا';
+      else if (id === 'doc:extra')    interactiveText = 'إضافي';
       else interactiveText = title; // generic — just forward what was tapped
     } else if (msg.interactive?.type === 'list_reply') {
       // List picks: forward the row id so list-driven flows can dispatch.

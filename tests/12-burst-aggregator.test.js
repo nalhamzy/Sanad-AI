@@ -109,6 +109,35 @@ describe('lib/agent.js · burst aggregator + in-flight gate', () => {
       'with no files in flight the recheck tick should now flush');
   });
 
+  test('armBurst stores quick-reply buttons and surfaces them on drain', async () => {
+    // Verifies that handlers can attach `_buttons` to their reply and the
+    // burst aggregator carries them through to the drain step (where the
+    // drain layer would send them as an interactive WhatsApp message).
+    const sid = 'wa:+buttons-' + Date.now();
+    const buttons = [
+      { id: 'doc:yes',   title: '✓ نعم' },
+      { id: 'doc:wrong', title: '🔄 ملف آخر' },
+      { id: 'doc:extra', title: '📎 إضافي' }
+    ];
+    armBurst(sid, { reply: 'is this for civil id?', buttons });
+    const cur = pendingBurst(sid);
+    assert.ok(cur, 'burst should be armed');
+    assert.deepEqual(cur.buttons, buttons,
+      'buttons attached at arm time must persist on the burst entry');
+    // Drain so we don't leak state into other tests.
+    await sleep(120);
+    assert.equal(pendingBurst(sid), null, 'drain should clear the entry');
+  });
+
+  test('armBurst ignores empty/non-array buttons', () => {
+    const sid = 'wa:+buttons-empty-' + Date.now();
+    armBurst(sid, { reply: 'plain', buttons: null });
+    armBurst(sid, { reply: 'plain', buttons: [] });
+    armBurst(sid, { reply: 'plain', buttons: 'not-an-array' });
+    const cur = pendingBurst(sid);
+    assert.equal(cur.buttons, null, 'no buttons should be set');
+  });
+
   test('rapid arms within the quiet window collapse to a single drain', async () => {
     // No in-flight pretence — just verify that armBurst's own rearm logic
     // collapses N rapid arms into ONE drain (the original burst behaviour
