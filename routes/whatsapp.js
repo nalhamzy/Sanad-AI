@@ -99,8 +99,28 @@ whatsappRouter.post('/webhook', async (req, res) => {
     const media = msg.image || msg.document || null;
     // Media captions live on the media object itself. Use filename as a
     // secondary hint for documents (WhatsApp preserves the original name).
-    const caption = (media?.caption || msg.image?.caption || msg.document?.caption
-                     || msg.document?.filename || '').toString();
+    // Caption priority: explicit user caption first; only fall back to the
+    // filename if it looks INFORMATIVE. iPhone/Android default names like
+    // "IMG_0001.HEIC" / "WhatsApp Image 2026-05-04 at 18.48.jpeg" /
+    // "image.jpg" pollute the agent's intent matcher and the vision prompt
+    // — they're worse than no caption. If only a noise filename is present,
+    // pass empty string and let the buffer/button flow handle it.
+    let caption = (media?.caption || msg.image?.caption || msg.document?.caption || '').toString();
+    if (!caption && msg.document?.filename) {
+      const fn = msg.document.filename;
+      const NOISE_PATTERNS = [
+        /^IMG[_-]?\d+/i,
+        /^WhatsApp[ _]Image/i,
+        /^WhatsApp[ _]Document/i,
+        /^image\.[a-z]{3,4}$/i,
+        /^document\.[a-z]{3,4}$/i,
+        /^scan[ _]?\d+\.[a-z]{3,4}$/i,
+        /^photo[ _]?\d*\.[a-z]{3,4}$/i,
+        /^\d{4}[-_]\d{2}[-_]\d{2}/, // YYYY-MM-DD prefix from camera apps
+      ];
+      const isNoise = NOISE_PATTERNS.some(re => re.test(fn));
+      if (!isNoise) caption = fn;
+    }
 
     let attachment = null;
     const originalName = msg.document?.filename || null;
