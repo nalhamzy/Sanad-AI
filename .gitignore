@@ -28,3 +28,4 @@ scripts/*_scrape/inspect*.mjs
 scripts/*_scrape/probe.mjs
 scripts/*_scrape/urls_*.txt
 
+.trace.json

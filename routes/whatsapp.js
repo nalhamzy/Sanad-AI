@@ -92,8 +92,8 @@ whatsappRouter.post('/webhook', async (req, res) => {
       // and dispatches to a deterministic handler.
       if (id === 'reclassify:accept') interactiveText = '__btn__:reclassify:accept';
       else if (id === 'reclassify:reject') interactiveText = '__btn__:reclassify:reject';
-      else if (id === 'burst:done')   interactiveText = '__btn__:burst:done';
-      else if (id === 'burst:more')   interactiveText = '__btn__:burst:more';
+      else if (id === 'burst:done')   interactiveText = '__btn__:burst:done';   // "انتهيت"
+      else if (id === 'burst:more')   interactiveText = '__btn__:burst:more';   // "سأرسل المزيد"
       else if (id === 'doc:yes')      interactiveText = '__btn__:doc:yes';
       else if (id === 'doc:wrong')    interactiveText = '__btn__:doc:wrong';
       else if (id === 'doc:extra')    interactiveText = '__btn__:doc:extra';

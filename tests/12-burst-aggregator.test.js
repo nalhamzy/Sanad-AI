@@ -25,6 +25,9 @@ import assert from 'node:assert/strict';
 // constants pick them up.
 process.env.SANAD_BURST_QUIET_MS  = '50';
 process.env.SANAD_BURST_RECHECK_MS = '20';
+// Cooldown > quiet so the cooldown test has a clear deferred-drain window
+// to assert against. (Production uses 4s cooldown vs 1.2s quiet.)
+process.env.SANAD_BURST_COOLDOWN_MS = '300';
 
 // Boot the test DB before importing agent.js so drainBurst's storeMessage
 // call lands on a real `message` table instead of triggering "no such table"
@@ -36,6 +39,7 @@ await bootTestEnv();
 const { __testBurst } = await import('../lib/agent.js');
 const { armBurst, drainBurst, bumpInflightFiles, inflightFilesFor,
         pendingBurst, SESSION_BURST, SESSION_INFLIGHT_FILES,
+        SESSION_LAST_DRAIN_AT,
         parseUploadDescriptions, looksLikeYesNoAsk } = __testBurst;
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
@@ -44,10 +48,12 @@ before(() => {
   // Clean state so a previous test file doesn't leak burst entries here.
   SESSION_BURST.clear();
   SESSION_INFLIGHT_FILES.clear();
+  SESSION_LAST_DRAIN_AT.clear();
 });
 after(() => {
   SESSION_BURST.clear();
   SESSION_INFLIGHT_FILES.clear();
+  SESSION_LAST_DRAIN_AT.clear();
 });
 
 describe('lib/agent.js · burst aggregator + in-flight gate', () => {
@@ -303,6 +309,35 @@ describe('lib/agent.js · burst aggregator + in-flight gate', () => {
       assert.equal(looksLikeYesNoAsk(''), false);
       assert.equal(looksLikeYesNoAsk(null), false);
     });
+  });
+
+  // Regression for prod trace +96892888715 #1231 + #1233 (2026-05-06):
+  // citizen sent file 1, bot acked at +1.2s; citizen sent file 2 three
+  // seconds later → bot acked AGAIN as a separate n=1 burst. The fix is
+  // a per-session post-drain cooldown so a late-arriving file's drain
+  // is deferred to coalesce with whatever else lands in the cooldown
+  // window (or just delays the second ack so it merges with file 3).
+  test('post-drain cooldown defers the next drain to coalesce stragglers', async () => {
+    const sid = 'wa:+cooldown-' + Date.now();
+    SESSION_LAST_DRAIN_AT.delete(sid);
+    armBurst(sid, { reply: 'file 1 ack' });
+    await sleep(120); // > BURST_QUIET_MS=50, drain fires + stamps last_drain_at
+    assert.equal(pendingBurst(sid), null, 'first burst drained');
+    assert.ok(SESSION_LAST_DRAIN_AT.get(sid), 'last_drain_at stamped');
+
+    // Immediately arm a SECOND burst. With cooldown=300ms in tests + a
+    // first drain at ~t=50, the cooldown ends at ~t=350. Second arm at
+    // t=120 (right after assertion 1) → its natural drain at t=170 hits
+    // the cooldown gate and defers until t=350.
+    armBurst(sid, { reply: 'file 2 ack' });
+    await sleep(80); // t≈200, well past natural drain (170) but still in cooldown
+    assert.ok(pendingBurst(sid),
+      'cooldown must defer the second drain — burst entry still present');
+
+    // Wait past the cooldown end.
+    await sleep(250); // t≈450, cooldown (350) cleared, drain fires
+    assert.equal(pendingBurst(sid), null,
+      'after cooldown elapses, the second drain fires');
   });
 
   test('rapid arms within the quiet window collapse to a single drain', async () => {
