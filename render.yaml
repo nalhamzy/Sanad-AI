@@ -43,12 +43,12 @@ services:
         value: anthropic
       - key: ANTHROPIC_API_KEY     # chat / tool-calling backend (Claude)
         sync: false
-      # Sonnet over Opus: ~3× faster + ~5× cheaper, Sonnet 4.5 follows the
-      # tight per-turn caps in our system prompt just as well as Opus for
-      # this chat-with-tools workload. Bump to claude-opus-4-5 if a specific
-      # deploy needs the extra reasoning headroom.
+      # Switched to Opus 4.5 on 2026-05-07 by user request. Trade-off
+      # vs Sonnet: ~3× slower + ~5× per-token cost, gains stronger
+      # reasoning and instruction-following. Flip back to
+      # claude-sonnet-4-5 if latency becomes a complaint.
       - key: ANTHROPIC_MODEL
-        value: claude-sonnet-4-5
+        value: claude-opus-4-5
       - key: SANAD_AGENT_V2
         value: "true"
       # ── Public base URL — used to build Thawani success/cancel URLs,
