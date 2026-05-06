@@ -251,6 +251,26 @@ describe('lib/agent.js · burst aggregator + in-flight gate', () => {
       assert.equal(r.ok, true);
       assert.deepEqual(r.mappings.map(m => m.doc_code), ['civil_id', 'passport']);
     });
+
+    // Regression: trace from prod (+96892888715, 13:54 UTC, commit 15a2af2)
+    // showed 4 buffered files recorded as EXTRAS with caption "تم" because
+    // "تم" wasn't in the yes-fallback regex. Citizen typed "تم" meaning
+    // "I'm done", parser treated it as a description, files went to extras.
+    test('"تم" with buffered files → records into pending slots (not extras)', () => {
+      const r = parseUploadDescriptions('تم', [upload(1), upload(2)], docs, {});
+      assert.equal(r.ok, true);
+      assert.equal(r.method, 'yes_positional',
+        'trigger word "تم" must hit the yes-fallback path, not comma-parse');
+      assert.deepEqual(r.mappings.map(m => m.doc_code), ['civil_id', 'passport']);
+    });
+    test('"خلصت" / "done" / "finished" / "ما عندي" all hit yes-fallback', () => {
+      for (const word of ['خلصت', 'انتهيت', 'done', 'finished', 'ما عندي']) {
+        const r = parseUploadDescriptions(word, [upload(1)], docs, {});
+        assert.equal(r.ok, true, `"${word}" should hit yes-fallback`);
+        assert.equal(r.method, 'yes_positional', `"${word}" via yes_positional`);
+        assert.deepEqual(r.mappings, [{ idx: 1, doc_code: 'civil_id' }]);
+      }
+    });
   });
 
   describe('looksLikeYesNoAsk (generic confirm-button auto-attach trigger)', () => {
