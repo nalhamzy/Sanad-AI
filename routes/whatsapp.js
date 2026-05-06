@@ -90,6 +90,8 @@ whatsappRouter.post('/webhook', async (req, res) => {
       else if (id === 'doc:yes')      interactiveText = 'نعم';
       else if (id === 'doc:wrong')    interactiveText = 'لا';
       else if (id === 'doc:extra')    interactiveText = 'إضافي';
+      else if (id === 'confirm:yes')  interactiveText = 'نعم';
+      else if (id === 'confirm:no')   interactiveText = 'لا';
       else interactiveText = title; // generic — just forward what was tapped
     } else if (msg.interactive?.type === 'list_reply') {
       // List picks: forward the row id so list-driven flows can dispatch.

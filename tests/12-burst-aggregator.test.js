@@ -36,7 +36,7 @@ await bootTestEnv();
 const { __testBurst } = await import('../lib/agent.js');
 const { armBurst, drainBurst, bumpInflightFiles, inflightFilesFor,
         pendingBurst, SESSION_BURST, SESSION_INFLIGHT_FILES,
-        parseUploadDescriptions } = __testBurst;
+        parseUploadDescriptions, looksLikeYesNoAsk } = __testBurst;
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -250,6 +250,38 @@ describe('lib/agent.js · burst aggregator + in-flight gate', () => {
       );
       assert.equal(r.ok, true);
       assert.deepEqual(r.mappings.map(m => m.doc_code), ['civil_id', 'passport']);
+    });
+  });
+
+  describe('looksLikeYesNoAsk (generic confirm-button auto-attach trigger)', () => {
+    test('matches "اكتب نعم أو لا" / "type yes/no" instructions', () => {
+      assert.equal(looksLikeYesNoAsk('اكتب نعم أو لا للاستمرار'), true);
+      assert.equal(looksLikeYesNoAsk('اكتب نعم/لا'), true);
+      assert.equal(looksLikeYesNoAsk('Type yes / no to confirm.'), true);
+      assert.equal(looksLikeYesNoAsk('reply yes or no'), true);
+    });
+    test('matches Arabic "هل تؤكد؟" style asks', () => {
+      assert.equal(looksLikeYesNoAsk('هل تؤكد البدء؟'), true);
+      assert.equal(looksLikeYesNoAsk('هل تريد المتابعة؟'), true);
+      assert.equal(looksLikeYesNoAsk('هل ترغب في إرسال الطلب؟'), true);
+      assert.equal(looksLikeYesNoAsk('هل تكمل أم لا؟'), true);
+    });
+    test('matches trailing "نتابع؟" / "نُرسل؟" question prompts', () => {
+      assert.equal(looksLikeYesNoAsk('الملف اكتمل. نُرسل؟'), true);
+      assert.equal(looksLikeYesNoAsk('جاهز. نتابع؟'), true);
+      assert.equal(looksLikeYesNoAsk('Submit?'), true);
+      assert.equal(looksLikeYesNoAsk('Confirm?'), true);
+    });
+    test('does NOT match free-form "describe the file" asks', () => {
+      assert.equal(looksLikeYesNoAsk('وضّح ما يحتوي هذا الملف.'), false);
+      assert.equal(looksLikeYesNoAsk('اكتب اسم الخدمة التي تريدها.'), false);
+      assert.equal(looksLikeYesNoAsk('Tell me what each file contains.'), false);
+    });
+    test('does NOT match plain statements / acks', () => {
+      assert.equal(looksLikeYesNoAsk('✅ حفظت الملف.'), false);
+      assert.equal(looksLikeYesNoAsk('📥 استلمت 3 ملفات.'), false);
+      assert.equal(looksLikeYesNoAsk(''), false);
+      assert.equal(looksLikeYesNoAsk(null), false);
     });
   });
 
