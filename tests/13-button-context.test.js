@@ -84,9 +84,25 @@ describe('lib/agent.js · attachContextualButtons', () => {
     assert.equal(trace[0].case, 'unified_collecting');
   });
 
-  test('CASE 3 — collecting text turn (no record) still shows the unified set', () => {
+  test('CASE 3 — collecting + zero files yet → cancel-only (user spec 2026-05-07)', () => {
+    // No files received yet → "انتهيت من الرفع" / "سأرسل المزيد" make
+    // no sense. Show only the cancel exit.
     const r = attachContextualButtons({
       state: { status: 'collecting', docs: baseDocs, collected: {} },
+      finalReply: 'أحتاج الجواز',
+      trace: []
+    });
+    assert.ok(r);
+    assert.deepEqual(r.map(b => b.id), ['service:cancel']);
+  });
+
+  test('CASE 3b — collecting + at least one file → unified 3-button set', () => {
+    const r = attachContextualButtons({
+      state: {
+        status: 'collecting',
+        docs: baseDocs,
+        collected: { civil_id: { storage_url: '/u/x.jpg' } }
+      },
       finalReply: 'أحتاج الجواز',
       trace: []
     });
@@ -94,9 +110,13 @@ describe('lib/agent.js · attachContextualButtons', () => {
     assert.deepEqual(r.map(b => b.id), ['review:submit', 'burst:more', 'service:cancel']);
   });
 
-  test('CASE 4 — reviewing → unified set (confirm/more/cancel)', () => {
+  test('CASE 4 — reviewing + files → unified set (confirm/more/cancel)', () => {
     const r = attachContextualButtons({
-      state: { status: 'reviewing', docs: baseDocs, collected: {} },
+      state: {
+        status: 'reviewing',
+        docs: baseDocs,
+        collected: { civil_id: { storage_url: '/u/x.jpg' } }
+      },
       finalReply: 'all set?',
       trace: []
     });
