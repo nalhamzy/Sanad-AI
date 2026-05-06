@@ -16,7 +16,8 @@ const { bootTestEnv } = await import('./helpers.js');
 await bootTestEnv();
 
 const { __testBurst } = await import('../lib/agent.js');
-const { handleButtonIntent, arabicLabelFor, SESSION_BURST, SESSION_INFLIGHT_FILES } = __testBurst;
+const { handleButtonIntent, arabicLabelFor, renderChecklist,
+        SESSION_BURST, SESSION_INFLIGHT_FILES } = __testBurst;
 const { TOOL_IMPL_V2 } = await import('../lib/agent_tools.js');
 
 before(() => {
@@ -78,6 +79,46 @@ describe('lib/agent.js · arabicLabelFor (Arabic-label fallback)', () => {
   });
 });
 
+describe('lib/agent.js · renderChecklist — live ✅/⏳ list (Khidmat spec v1)', () => {
+  test('returns empty string when there are no real required docs', () => {
+    assert.equal(renderChecklist(null), '');
+    assert.equal(renderChecklist({ docs: [], collected: {} }), '');
+    assert.equal(
+      renderChecklist({ docs: [{ code: 'nothing', label_en: '', label_ar: '' }], collected: {} }),
+      ''
+    );
+  });
+  test('mixes ✅ and ⏳ markers in declaration order', () => {
+    // Use a code WITHOUT Arabic mapping so the label_en fallback is exercised.
+    const checklist = renderChecklist({
+      docs: [
+        { code: 'civil_id', label_en: 'Civil ID', label_ar: '' },
+        { code: 'passport', label_en: 'Passport', label_ar: '' },
+        { code: 'no_objection_certificate', label_en: 'NoObjectionCert', label_ar: '' }
+      ],
+      collected: {
+        civil_id: { storage_url: '/u/a.jpg' },
+        passport: { storage_url: '/u/b.jpg' }
+      }
+    });
+    const lines = checklist.split('\n');
+    assert.equal(lines.length, 3);
+    assert.match(lines[0], /^✅ البطاقة المدنية$/);
+    assert.match(lines[1], /^✅ جواز السفر$/);
+    assert.match(lines[2], /^⏳ NoObjectionCert$/); // single-token English fallback (no guillemets)
+  });
+  test('null storage_url is treated as NOT collected (state-corruption guard)', () => {
+    // Real bug from prod #1208: state.collected.civil_id.storage_url=null
+    // would render as ✅ even though no real file was attached. The
+    // checklist must reflect actual file presence.
+    const checklist = renderChecklist({
+      docs: [{ code: 'civil_id', label_en: 'Civil ID', label_ar: '' }],
+      collected: { civil_id: { storage_url: null } }
+    });
+    assert.match(checklist, /^⏳/);
+  });
+});
+
 describe('lib/agent.js · handleButtonIntent — deterministic button dispatch', () => {
 
   function freshState(overrides = {}) {
@@ -105,9 +146,10 @@ describe('lib/agent.js · handleButtonIntent — deterministic button dispatch',
       attachment: null, citizen_phone: '+test1', trace: []
     });
     assert.ok(r, 'should be handled deterministically');
-    assert.match(r.reply, /المتبقي.*\(2\)/);
-    assert.match(r.reply, /جواز السفر/);  // arabicLabelFor mapping
-    assert.match(r.reply, /صورة شخصية/);
+    // Live checklist replaces the old "remaining N" header
+    assert.match(r.reply, /✅.*البطاقة المدنية/s);
+    assert.match(r.reply, /⏳.*جواز السفر/s); // pending Arabic-mapped
+    assert.match(r.reply, /⏳.*صورة شخصية/s);
     // Buttons present
     assert.ok(r._buttons?.length, 'should include nav buttons');
     const ids = r._buttons.map(b => b.id);
@@ -143,8 +185,13 @@ describe('lib/agent.js · handleButtonIntent — deterministic button dispatch',
     });
     assert.ok(r);
     assert.equal(r.state.status, 'collecting', 'must NOT advance with missing docs');
-    assert.match(r.reply, /لا يمكنني الإرسال للمراجعة/);
+    // Per spec: lead with what's done, not "you can't submit yet". The
+    // softer wording acknowledges the user heard the "done" intent.
+    assert.match(r.reply, /استلمت منك \d+ مستند/);
     assert.match(r.reply, /جواز السفر/); // names what's missing
+    // Live checklist must be present
+    assert.match(r.reply, /✅.*البطاقة المدنية/s);
+    assert.match(r.reply, /⏳.*جواز السفر/s);
   });
 
   test('burst:done with all required collected → advances to reviewing', async () => {
