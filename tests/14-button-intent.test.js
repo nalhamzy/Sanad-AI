@@ -94,7 +94,7 @@ describe('lib/agent.js · renderChecklist — live ✅/⏳ list (Khidmat spec v1
       docs: [
         { code: 'civil_id', label_en: 'Civil ID', label_ar: '' },
         { code: 'passport', label_en: 'Passport', label_ar: '' },
-        { code: 'no_objection_certificate', label_en: 'NoObjectionCert', label_ar: '' }
+        { code: 'totally_unknown_code_xyz', label_en: 'NoObjectionCert', label_ar: '' }
       ],
       collected: {
         civil_id: { storage_url: '/u/a.jpg' },
