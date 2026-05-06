@@ -26,7 +26,9 @@ describe('lib/agent.js · attachContextualButtons', () => {
     assert.equal(r, null);
   });
 
-  test('CASE 1 — file just buffered → 3-button doc:* set with vision-best label', () => {
+  test('CASE 1 — file just buffered → 2-button confirm set (no داعم/extra)', () => {
+    // Updated 2026-05-06 per user spec: drop the إضافي/داعم button from
+    // the ambiguous-doc menu; citizen confirms slot or asks for re-route.
     const trace = [];
     const r = attachContextualButtons({
       state: { status: 'collecting', docs: baseDocs, collected: {} },
@@ -35,10 +37,9 @@ describe('lib/agent.js · attachContextualButtons', () => {
       trace
     });
     assert.ok(r);
-    assert.equal(r.length, 3);
+    assert.equal(r.length, 2);
     assert.equal(r[0].id, 'doc:yes');
     assert.equal(r[1].id, 'doc:wrong');
-    assert.equal(r[2].id, 'doc:extra');
     // Title cap
     for (const b of r) assert.ok(b.title.length <= 20, `title "${b.title}" too long`);
     assert.match(trace[0].case, /buffered_no_caption|ambiguous_doc/);
