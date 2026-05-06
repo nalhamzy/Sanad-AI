@@ -29,3 +29,4 @@ scripts/*_scrape/probe.mjs
 scripts/*_scrape/urls_*.txt
 
 .trace.json
+.state.json

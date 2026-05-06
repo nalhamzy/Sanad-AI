@@ -6,7 +6,7 @@ import { Router } from 'express';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { runTurn } from '../lib/agent.js';
+import { runTurn, trackInflightMedia } from '../lib/agent.js';
 import { sendWhatsAppText, sendWhatsAppButtons } from '../lib/whatsapp_send.js';
 
 export const whatsappRouter = Router();
@@ -140,6 +140,19 @@ whatsappRouter.post('/webhook', async (req, res) => {
     let attachment = null;
     const originalName = msg.document?.filename || null;
     const _sessionId = `wa:${from}`;
+
+    // ── INFLIGHT-GATE OPEN ────────────────────────────────────────
+    // Bump BEFORE fetchMedia so the burst-quiet timer in agent.js can SEE
+    // this in-flight media even while we're still downloading from Meta's
+    // CDN (1-3s). Without this, the timer can fire on file 1's reply
+    // while file 2 is mid-fetch, producing a separate per-file ack
+    // instead of one consolidated burst summary. Decremented in `finally`
+    // below so any throw / early-return still releases the gate.
+    // (Real prod bug from trace +96892888715 #1231/#1233 on 2026-05-06.)
+    const mediaInflight = !!media;
+    if (mediaInflight) trackInflightMedia(_sessionId, +1);
+    let turn = null;
+    try {
     if (media && ACCESS_TOKEN) {
       // fetchMedia downloads the binary from Meta and writes it to
       // /data/uploads/wa:<phone>/<ts_rand>.<ext>, returning a LOCAL URL
@@ -179,7 +192,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
     const effectiveText = text || (attachment?.caption || '');
 
     const session_id = `wa:${from}`;
-    const turn = await runTurn({ session_id, user_text: effectiveText, attachment, citizen_phone: from });
+    turn = await runTurn({ session_id, user_text: effectiveText, attachment, citizen_phone: from });
     const reply = turn?.reply || '';
     const buttons = Array.isArray(turn?._buttons) ? turn._buttons : null;
 
@@ -209,8 +222,19 @@ whatsappRouter.post('/webhook', async (req, res) => {
         if (!send.ok) console.warn('[whatsapp] bot reply send failed:', send.error);
       }
     }
+    } finally {
+      // Release the inflight gate so drainBurst can flush. Outer try wraps
+      // fetch + runTurn so a throw or early-return still hits this. Note:
+      // runTurn ALSO bumps inflight inside its own try/finally — net count
+      // stays >= 1 from webhook entry through the agent loop's completion,
+      // closing the previously open race window during fetchMedia.
+      if (mediaInflight) trackInflightMedia(_sessionId, -1);
+    }
   } catch (e) {
     console.error('[whatsapp] error', e);
+    // Defensive: if media inflight bump succeeded but the throw escaped
+    // our inner try (e.g. before mediaInflight was set), the inner finally
+    // already covered it. Nothing to do here.
   }
 });
 

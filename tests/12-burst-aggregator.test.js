@@ -311,6 +311,51 @@ describe('lib/agent.js · burst aggregator + in-flight gate', () => {
     });
   });
 
+  // Regression for the fetchMedia race that produced the doubled-message
+  // bug (trace +96892888715 #1231/#1233): file 1 finished runTurn and
+  // dropped inflight to 0 WHILE file 2 was still inside fetchMedia (which
+  // runs in routes/whatsapp.js, BEFORE runTurn bumps inflight). The
+  // burst-quiet timer fired in that gap, draining file 1 alone.
+  // Fix: routes/whatsapp.js holds an inflight bump from BEFORE fetchMedia
+  // through AFTER runTurn (via trackInflightMedia). This test simulates
+  // the exact scenario.
+  test('inflight gate covers route-side fetch span — no double drain on overlapping fetches', async () => {
+    const sid = 'wa:+fetchrace-' + Date.now();
+    const { trackInflightMedia } = await import('../lib/agent.js');
+
+    // Simulate file 1's webhook: route bumps before fetchMedia.
+    trackInflightMedia(sid, +1);                 // route: file 1 fetch starts
+    // ... fetchMedia for file 1 finishes, runTurn runs, armBurst …
+    armBurst(sid, { reply: 'file 1 ack' });
+    // ... runTurn returns, route's finally decrements (file 1 done end-to-end).
+    trackInflightMedia(sid, -1);                 // route: file 1 fully done
+
+    // INSTANT: file 2's webhook arrives. Route bumps BEFORE fetchMedia
+    // even though we haven't actually called runTurn yet — this is the
+    // protection. Old code wouldn't bump until INSIDE runTurn (much later).
+    trackInflightMedia(sid, +1);                 // route: file 2 fetch starts
+
+    // Wait past the quiet window. Old code: inflight=0 here because file
+    // 2's runTurn hasn't yet bumped — drain would flush file 1 alone.
+    // New code: inflight=1 (held by route) — drain defers.
+    await sleep(120); // > BURST_QUIET_MS=50
+    assert.equal(inflightFilesFor(sid), 1,
+      'route-side bump must keep inflight > 0 across the fetch window');
+    assert.ok(pendingBurst(sid),
+      'burst entry MUST still be present — drain must not have flushed');
+
+    // File 2's runTurn finally fires armBurst (merging into burst).
+    armBurst(sid, { reply: 'file 2 ack' });
+    // Route's finally decrements after runTurn returns.
+    trackInflightMedia(sid, -1);
+    assert.equal(inflightFilesFor(sid), 0);
+
+    // Wait past quiet + cooldown so drain can fire.
+    await sleep(450);
+    assert.equal(pendingBurst(sid), null,
+      'with both fetches done, the merged burst drains as ONE message');
+  });
+
   // Regression for prod trace +96892888715 #1231 + #1233 (2026-05-06):
   // citizen sent file 1, bot acked at +1.2s; citizen sent file 2 three
   // seconds later → bot acked AGAIN as a separate n=1 burst. The fix is
