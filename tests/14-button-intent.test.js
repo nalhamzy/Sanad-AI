@@ -150,11 +150,9 @@ describe('lib/agent.js · handleButtonIntent — deterministic button dispatch',
     assert.match(r.reply, /✅.*البطاقة المدنية/s);
     assert.match(r.reply, /⏳.*جواز السفر/s); // pending Arabic-mapped
     assert.match(r.reply, /⏳.*صورة شخصية/s);
-    // Buttons present
-    assert.ok(r._buttons?.length, 'should include nav buttons');
-    const ids = r._buttons.map(b => b.id);
-    assert.ok(ids.includes('doc:list'));
-    assert.ok(ids.includes('service:cancel'));
+    // Unified 3-button set (user spec, 2026-05-06): same buttons every turn
+    assert.deepEqual(r._buttons.map(b => b.id),
+      ['review:submit', 'burst:more', 'service:cancel']);
   });
 
   test('burst:more with all docs already collected → moves to reviewing', async () => {
@@ -185,13 +183,17 @@ describe('lib/agent.js · handleButtonIntent — deterministic button dispatch',
     });
     assert.ok(r);
     assert.equal(r.state.status, 'collecting', 'must NOT advance with missing docs');
-    // Per spec: lead with what's done, not "you can't submit yet". The
-    // softer wording acknowledges the user heard the "done" intent.
+    // Per user spec (2026-05-06): the bot acknowledges what's collected
+    // and asks "is your file complete?" instead of gatekeeping. The
+    // confirm button STAYS available — citizen knows best.
     assert.match(r.reply, /استلمت منك \d+ مستند/);
-    assert.match(r.reply, /جواز السفر/); // names what's missing
+    assert.match(r.reply, /هل اكتمل ملفك/);
     // Live checklist must be present
     assert.match(r.reply, /✅.*البطاقة المدنية/s);
     assert.match(r.reply, /⏳.*جواز السفر/s);
+    // Unified 3-button set
+    assert.deepEqual(r._buttons.map(b => b.id),
+      ['review:submit', 'burst:more', 'service:cancel']);
   });
 
   test('burst:done with all required collected → advances to reviewing', async () => {

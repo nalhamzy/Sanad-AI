@@ -57,11 +57,13 @@ describe('lib/agent.js · attachContextualButtons', () => {
       trace
     });
     assert.ok(r);
-    assert.deepEqual(r.map(b => b.id), ['doc:list', 'doc:extra', 'service:cancel']);
-    assert.equal(trace[0].case, 'collecting_recorded');
+    // Unified set (user spec, 2026-05-06): same 3 buttons every turn
+    // during collecting/reviewing — no surprise menus.
+    assert.deepEqual(r.map(b => b.id), ['review:submit', 'burst:more', 'service:cancel']);
+    assert.equal(trace[0].case, 'unified_collecting');
   });
 
-  test('CASE 2b — collecting + all docs in → submit-ready buttons', () => {
+  test('CASE 2b — collecting + all docs in → unified set still applies', () => {
     const trace = [];
     const r = attachContextualButtons({
       state: {
@@ -77,28 +79,28 @@ describe('lib/agent.js · attachContextualButtons', () => {
       trace
     });
     assert.ok(r);
-    assert.deepEqual(r.map(b => b.id), ['review:submit', 'doc:extra', 'service:cancel']);
-    assert.equal(trace[0].case, 'collecting_complete');
+    assert.deepEqual(r.map(b => b.id), ['review:submit', 'burst:more', 'service:cancel']);
+    assert.equal(trace[0].case, 'unified_collecting');
   });
 
-  test('CASE 3 — collecting text turn (no record) still shows nav', () => {
+  test('CASE 3 — collecting text turn (no record) still shows the unified set', () => {
     const r = attachContextualButtons({
       state: { status: 'collecting', docs: baseDocs, collected: {} },
       finalReply: 'أحتاج الجواز',
       trace: []
     });
     assert.ok(r);
-    assert.deepEqual(r.map(b => b.id), ['doc:list', 'doc:extra', 'service:cancel']);
+    assert.deepEqual(r.map(b => b.id), ['review:submit', 'burst:more', 'service:cancel']);
   });
 
-  test('CASE 4 — reviewing → submit/extra/cancel', () => {
+  test('CASE 4 — reviewing → unified set (confirm/more/cancel)', () => {
     const r = attachContextualButtons({
       state: { status: 'reviewing', docs: baseDocs, collected: {} },
       finalReply: 'all set?',
       trace: []
     });
     assert.ok(r);
-    assert.deepEqual(r.map(b => b.id), ['review:submit', 'doc:extra', 'service:cancel']);
+    assert.deepEqual(r.map(b => b.id), ['review:submit', 'burst:more', 'service:cancel']);
   });
 
   test('CASE 5 — idle + yes/no phrasing → confirm:yes/no', () => {
@@ -111,13 +113,25 @@ describe('lib/agent.js · attachContextualButtons', () => {
     assert.deepEqual(r.map(b => b.id), ['confirm:yes', 'confirm:no']);
   });
 
-  test('idle + plain ack → null (no buttons)', () => {
+  test('idle + plain ack (no question) → null (no buttons)', () => {
     const r = attachContextualButtons({
       state: { status: 'idle', docs: [], collected: {} },
-      finalReply: 'مرحباً، كيف أقدر أساعدك؟',
+      finalReply: 'مرحباً بك في ساند.',
       trace: []
     });
     assert.equal(r, null);
+  });
+  test('idle + reply ending in ؟ → fallback confirm:yes/no buttons', () => {
+    // Per user spec: "never allow a message without buttons for yes/no/go ahead".
+    const trace = [];
+    const r = attachContextualButtons({
+      state: { status: 'idle', docs: [], collected: {} },
+      finalReply: 'مرحباً، كيف أقدر أساعدك؟',
+      trace
+    });
+    assert.ok(r);
+    assert.deepEqual(r.map(b => b.id), ['confirm:yes', 'confirm:no']);
+    assert.equal(trace[0].case, 'fallback_question');
   });
 
   test('button title length is always ≤ 20 chars (Meta cap)', () => {
