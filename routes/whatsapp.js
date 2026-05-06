@@ -83,21 +83,28 @@ whatsappRouter.post('/webhook', async (req, res) => {
     if (msg.interactive?.type === 'button_reply') {
       const id = msg.interactive.button_reply.id || '';
       const title = msg.interactive.button_reply.title || '';
-      if (id === 'reclassify:accept') interactiveText = 'موافق';
-      else if (id === 'reclassify:reject') interactiveText = 'رفض';
-      else if (id === 'burst:done')   interactiveText = 'تم';
-      else if (id === 'burst:more')   interactiveText = 'سأرسل المزيد';
-      else if (id === 'doc:yes')      interactiveText = 'نعم';
-      else if (id === 'doc:wrong')    interactiveText = 'لا';
-      else if (id === 'doc:extra')    interactiveText = 'إضافي';
-      else if (id === 'doc:list')     interactiveText = 'اعرض المتبقي من المستندات';
-      else if (id === 'review:submit')  interactiveText = 'أؤكد الإرسال للمراجعة';
-      else if (id === 'review:pause')   interactiveText = 'أوقف الآن';
-      else if (id === 'service:cancel') interactiveText = 'إلغاء الطلب';
-      else if (id === 'service:show')   interactiveText = 'اعرض تفاصيل الخدمة';
-      else if (id === 'next:doc')       interactiveText = 'التالي';
-      else if (id === 'confirm:yes')  interactiveText = 'نعم';
-      else if (id === 'confirm:no')   interactiveText = 'لا';
+      // Button payloads use control prefix `__btn__:<id>` so the agent can
+      // distinguish tap-driven intent from typed text. Without this prefix
+      // a tap on "+ سأرسل المزيد" would be passed to parseUploadDescriptions
+      // as a CAPTION for the just-buffered files (real bug seen in prod
+      // trace +96892888715 #1214: state.extras gained an entry with
+      // caption="سأرسل المزيد"). The runAgentV2 entry strips the prefix
+      // and dispatches to a deterministic handler.
+      if (id === 'reclassify:accept') interactiveText = '__btn__:reclassify:accept';
+      else if (id === 'reclassify:reject') interactiveText = '__btn__:reclassify:reject';
+      else if (id === 'burst:done')   interactiveText = '__btn__:burst:done';
+      else if (id === 'burst:more')   interactiveText = '__btn__:burst:more';
+      else if (id === 'doc:yes')      interactiveText = '__btn__:doc:yes';
+      else if (id === 'doc:wrong')    interactiveText = '__btn__:doc:wrong';
+      else if (id === 'doc:extra')    interactiveText = '__btn__:doc:extra';
+      else if (id === 'doc:list')     interactiveText = '__btn__:doc:list';
+      else if (id === 'review:submit')  interactiveText = '__btn__:review:submit';
+      else if (id === 'review:pause')   interactiveText = '__btn__:review:pause';
+      else if (id === 'service:cancel') interactiveText = '__btn__:service:cancel';
+      else if (id === 'service:show')   interactiveText = '__btn__:service:show';
+      else if (id === 'next:doc')       interactiveText = '__btn__:next:doc';
+      else if (id === 'confirm:yes')  interactiveText = '__btn__:confirm:yes';
+      else if (id === 'confirm:no')   interactiveText = '__btn__:confirm:no';
       else interactiveText = title; // generic — just forward what was tapped
     } else if (msg.interactive?.type === 'list_reply') {
       // List picks: forward the row id so list-driven flows can dispatch.
