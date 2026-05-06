@@ -7,7 +7,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { runTurn } from '../lib/agent.js';
-import { sendWhatsAppText } from '../lib/whatsapp_send.js';
+import { sendWhatsAppText, sendWhatsAppButtons } from '../lib/whatsapp_send.js';
 
 export const whatsappRouter = Router();
 
@@ -90,6 +90,12 @@ whatsappRouter.post('/webhook', async (req, res) => {
       else if (id === 'doc:yes')      interactiveText = 'نعم';
       else if (id === 'doc:wrong')    interactiveText = 'لا';
       else if (id === 'doc:extra')    interactiveText = 'إضافي';
+      else if (id === 'doc:list')     interactiveText = 'اعرض المتبقي من المستندات';
+      else if (id === 'review:submit')  interactiveText = 'أؤكد الإرسال للمراجعة';
+      else if (id === 'review:pause')   interactiveText = 'أوقف الآن';
+      else if (id === 'service:cancel') interactiveText = 'إلغاء الطلب';
+      else if (id === 'service:show')   interactiveText = 'اعرض تفاصيل الخدمة';
+      else if (id === 'next:doc')       interactiveText = 'التالي';
       else if (id === 'confirm:yes')  interactiveText = 'نعم';
       else if (id === 'confirm:no')   interactiveText = 'لا';
       else interactiveText = title; // generic — just forward what was tapped
@@ -135,6 +141,23 @@ whatsappRouter.post('/webhook', async (req, res) => {
       if (attachment) {
         attachment.caption = caption;
         attachment.name = originalName;
+      } else {
+        // Download failed silently (unsupported mime, Meta 4xx/5xx, or
+        // network error). Without this branch the citizen would see
+        // nothing — and the LLM downstream sometimes hallucinates a save
+        // anyway because it sees an "(attachment)" stub in chat history.
+        // Tell the citizen explicitly so they can resend in a supported
+        // format. Skip runTurn entirely for this turn.
+        const reason = (media.mime_type || '').toLowerCase();
+        const supported = 'JPG · PNG · WEBP · HEIC · PDF';
+        const msg = reason
+          ? `⚠️ لم أستطع استلام الملف (نوع ${reason} غير مدعوم). أرسل الملف بصيغة: ${supported}.`
+          : `⚠️ لم أستطع استلام الملف. حاول إرسال الملف مرة أخرى بصيغة: ${supported}.`;
+        try {
+          const send = await sendWhatsAppText(from, msg);
+          if (!send.ok) console.warn('[whatsapp] media-error notice send failed:', send.error);
+        } catch (e) { console.warn('[whatsapp] media-error notice threw:', e.message); }
+        return; // do NOT call runTurn — there's no attachment + no useful text
       }
     } else if (media) {
       // Debug / no-token path: still pass a stub so the agent can log it
@@ -149,15 +172,35 @@ whatsappRouter.post('/webhook', async (req, res) => {
     const effectiveText = text || (attachment?.caption || '');
 
     const session_id = `wa:${from}`;
-    const { reply } = await runTurn({ session_id, user_text: effectiveText, attachment, citizen_phone: from });
+    const turn = await runTurn({ session_id, user_text: effectiveText, attachment, citizen_phone: from });
+    const reply = turn?.reply || '';
+    const buttons = Array.isArray(turn?._buttons) ? turn._buttons : null;
 
     // Empty reply = agent intentionally stayed silent (e.g. burst-continuation
-    // file 2+ of a multi-upload batch). Skip the WhatsApp send so the citizen
-    // doesn't get a flood of identical "got N files" acks while they're still
-    // in the middle of dropping photos.
+    // file 2+ of a multi-upload batch, or attachment turn whose reply is
+    // queued for drainBurst). Skip the WhatsApp send so the citizen doesn't
+    // get a flood of identical "got N files" acks while they're still in
+    // the middle of dropping photos.
     if (reply && String(reply).trim()) {
-      const send = await sendWhatsAppText(from, reply);
-      if (!send.ok) console.warn('[whatsapp] bot reply send failed:', send.error);
+      // Buttons take precedence — if the agent attached any, use the
+      // interactive endpoint. Falls back to plain text if Meta rejects the
+      // interactive message (rare; happens when title length is wrong or
+      // recipient hasn't initiated the conversation in 24h).
+      if (buttons && buttons.length) {
+        const safe = buttons.slice(0, 3).map(b => ({
+          id: String(b.id || '').slice(0, 256),
+          title: String(b.title || '').slice(0, 20)
+        }));
+        const send = await sendWhatsAppButtons(from, reply, safe);
+        if (!send.ok) {
+          console.warn('[whatsapp] interactive send failed, falling back to text:', send.error);
+          const fb = await sendWhatsAppText(from, reply);
+          if (!fb.ok) console.warn('[whatsapp] bot reply send failed:', fb.error);
+        }
+      } else {
+        const send = await sendWhatsAppText(from, reply);
+        if (!send.ok) console.warn('[whatsapp] bot reply send failed:', send.error);
+      }
     }
   } catch (e) {
     console.error('[whatsapp] error', e);

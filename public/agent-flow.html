@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sanad-AI · WhatsApp Agent Flow & Tools</title>
+<style>
+  :root{
+    --bg:#0b0f17; --panel:#121826; --panel2:#0f1522; --border:#1f2a3d;
+    --text:#e6edf6; --muted:#8a97ad; --accent:#6aa8ff; --warn:#ffb84d;
+    --ok:#5fd58a; --bad:#ff6b6b; --code:#0a0e16; --brand:#7aa7ff;
+    --pill:#1b2436;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.55 -apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  header{padding:24px 28px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(11,15,23,.92);backdrop-filter:blur(8px);z-index:5}
+  header h1{margin:0 0 4px;font-size:22px;letter-spacing:.2px}
+  header p{margin:0;color:var(--muted);font-size:13px}
+  main{max-width:1200px;margin:0 auto;padding:24px 28px 80px}
+  section{margin:36px 0}
+  h2{font-size:18px;margin:0 0 14px;letter-spacing:.2px}
+  h2 .num{display:inline-block;width:26px;height:26px;border-radius:6px;background:var(--pill);color:var(--brand);text-align:center;line-height:26px;margin-right:8px;font-weight:600;font-size:13px}
+  h3{font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:18px 0 8px;font-weight:600}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px}
+  .panel + .panel{margin-top:12px}
+  .grid{display:grid;gap:12px}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  code,kbd{font-family:ui-monospace,SFMono-Regular,Consolas,Menlo,monospace;font-size:12.5px}
+  code{background:var(--code);padding:2px 6px;border-radius:4px;color:#cfe2ff;border:1px solid #16213a}
+  .ref{font-family:ui-monospace,SFMono-Regular,Consolas,Menlo,monospace;font-size:12px;color:var(--muted)}
+  .ref a{color:var(--accent)}
+  pre{background:var(--code);border:1px solid #16213a;border-radius:8px;padding:12px 14px;overflow:auto;font-size:12.5px;line-height:1.55;color:#dbe6f3}
+  pre .k{color:#c098f3}.pre .s{color:#9bd6a8}.pre .c{color:#5b6b86}
+  .pill{display:inline-block;background:var(--pill);border:1px solid var(--border);color:var(--text);padding:2px 8px;border-radius:999px;font-size:12px;margin-right:6px}
+  .pill.ok{color:var(--ok);border-color:#1f4530}
+  .pill.warn{color:var(--warn);border-color:#4a3a1c}
+  .pill.bad{color:var(--bad);border-color:#4a2020}
+  .pill.muted{color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px;background:var(--panel2)}
+  tr:last-child td{border-bottom:none}
+  .arrow{display:inline-block;color:var(--muted);margin:0 6px}
+  .step{display:flex;gap:14px;padding:14px;background:var(--panel2);border:1px solid var(--border);border-radius:10px}
+  .step .n{flex:0 0 32px;height:32px;border-radius:50%;background:var(--pill);color:var(--brand);text-align:center;line-height:32px;font-weight:700}
+  .step .body{flex:1}
+  .step h4{margin:0 0 4px;font-size:14px}
+  .step p{margin:4px 0;color:var(--muted);font-size:13px}
+  .lane{display:grid;grid-template-columns:140px 1fr;gap:10px;align-items:start;padding:10px 0;border-bottom:1px dashed var(--border)}
+  .lane:last-child{border-bottom:none}
+  .lane .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .toc a{background:var(--pill);border:1px solid var(--border);padding:6px 12px;border-radius:999px;font-size:12.5px}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;font-size:12px;color:var(--muted)}
+  .legend .dot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle}
+  .bug{background:#2a1313;border:1px solid #4a2020;border-radius:10px;padding:14px}
+  .bug h4{margin:0 0 6px;color:var(--bad)}
+  .ok-box{background:#0f2418;border:1px solid #1f4530;border-radius:10px;padding:14px}
+  .ok-box h4{margin:0 0 6px;color:var(--ok)}
+  .note{background:#1d2236;border-left:3px solid var(--accent);padding:10px 14px;border-radius:0 8px 8px 0;color:#cfd8e8;font-size:13px}
+  .file{font-family:ui-monospace,SFMono-Regular,Consolas,Menlo,monospace;font-size:12px;background:#0a0e16;border:1px solid #16213a;border-radius:4px;padding:1px 6px;color:#cfe2ff}
+  /* SVG */
+  svg.flow{width:100%;height:auto;display:block}
+  svg .node rect{fill:var(--panel2);stroke:var(--border);stroke-width:1.2}
+  svg .node.accent rect{stroke:var(--accent)}
+  svg .node.ok rect{stroke:#1f4530}
+  svg .node.warn rect{stroke:#4a3a1c}
+  svg .node.bad rect{stroke:#4a2020}
+  svg .node text{fill:var(--text);font:12px -apple-system,Segoe UI,Roboto,Inter}
+  svg .node text.title{font-weight:600;font-size:12.5px}
+  svg .node text.sub{fill:var(--muted);font-size:11px}
+  svg .edge{stroke:#3a4a66;stroke-width:1.4;fill:none}
+  svg .edge.dashed{stroke-dasharray:4 4}
+  svg .label{fill:var(--muted);font:11px -apple-system,Segoe UI,Roboto;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Sanad-AI · WhatsApp Agent — Flow &amp; Tooling Map</h1>
+  <p>An investigation surface for the WhatsApp pipeline. Every box has a <span class="file">file:line</span> reference so we can jump straight to the suspect code.</p>
+  <div class="toc">
+    <a href="#overview">Overview</a>
+    <a href="#entry">1 · Webhook entry</a>
+    <a href="#media">2 · Media fetch</a>
+    <a href="#runturn">3 · runTurn / lock</a>
+    <a href="#burst">4 · Burst aggregator</a>
+    <a href="#agentv2">5 · runAgentV2 loop</a>
+    <a href="#tools">6 · Tool surface</a>
+    <a href="#buttons">7 · Buttons auto-attach</a>
+    <a href="#hallucination">8 · Hallucination guard</a>
+    <a href="#state">9 · State machine</a>
+    <a href="#bugs">10 · Live bugs</a>
+  </div>
+</header>
+
+<main>
+
+<!-- ───────────────────────── OVERVIEW ───────────────────────── -->
+<section id="overview">
+  <h2><span class="num">0</span>System overview — what calls what</h2>
+  <div class="panel">
+    <svg class="flow" viewBox="0 0 1180 360" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#6aa8ff"/>
+        </marker>
+      </defs>
+
+      <!-- Lane 1: Meta -->
+      <g class="node accent"><rect x="20" y="30" width="180" height="56" rx="8"/>
+        <text class="title" x="110" y="52" text-anchor="middle">Meta WhatsApp Cloud</text>
+        <text class="sub" x="110" y="70" text-anchor="middle">webhook ▸ messages</text>
+      </g>
+
+      <!-- Lane 2: webhook -->
+      <g class="node"><rect x="240" y="20" width="220" height="76" rx="8"/>
+        <text class="title" x="350" y="44" text-anchor="middle">routes/whatsapp.js</text>
+        <text class="sub" x="350" y="62" text-anchor="middle">verifySignature · dispatch</text>
+        <text class="sub" x="350" y="78" text-anchor="middle">handleText / handleMedia</text>
+      </g>
+
+      <!-- fetchMedia -->
+      <g class="node warn"><rect x="240" y="120" width="220" height="56" rx="8"/>
+        <text class="title" x="350" y="142" text-anchor="middle">fetchMedia()</text>
+        <text class="sub" x="350" y="160" text-anchor="middle">CDN → /data/uploads/{sid}/</text>
+      </g>
+
+      <!-- Lane 3: runTurn -->
+      <g class="node"><rect x="500" y="20" width="200" height="76" rx="8"/>
+        <text class="title" x="600" y="44" text-anchor="middle">runTurn()</text>
+        <text class="sub" x="600" y="62" text-anchor="middle">withSessionLock</text>
+        <text class="sub" x="600" y="78" text-anchor="middle">inflight++ / finally --</text>
+      </g>
+
+      <!-- runAgentV2 -->
+      <g class="node accent"><rect x="740" y="20" width="200" height="76" rx="8"/>
+        <text class="title" x="840" y="44" text-anchor="middle">runAgentV2()</text>
+        <text class="sub" x="840" y="62" text-anchor="middle">tool-loop · max 6 rounds</text>
+        <text class="sub" x="840" y="78" text-anchor="middle">deterministic overrides</text>
+      </g>
+
+      <!-- Anthropic -->
+      <g class="node"><rect x="980" y="20" width="180" height="76" rx="8"/>
+        <text class="title" x="1070" y="44" text-anchor="middle">lib/llm.js</text>
+        <text class="sub" x="1070" y="62" text-anchor="middle">Claude Sonnet 4.5</text>
+        <text class="sub" x="1070" y="78" text-anchor="middle">prompt caching</text>
+      </g>
+
+      <!-- Tools -->
+      <g class="node ok"><rect x="740" y="130" width="200" height="56" rx="8"/>
+        <text class="title" x="840" y="152" text-anchor="middle">TOOL_IMPL_V2</text>
+        <text class="sub" x="840" y="170" text-anchor="middle">22 tools · agent_tools.js</text>
+      </g>
+
+      <!-- Burst aggregator -->
+      <g class="node warn"><rect x="500" y="130" width="200" height="56" rx="8"/>
+        <text class="title" x="600" y="152" text-anchor="middle">armBurst / drainBurst</text>
+        <text class="sub" x="600" y="170" text-anchor="middle">1.2s quiet · inflight gate</text>
+      </g>
+
+      <!-- DB -->
+      <g class="node"><rect x="500" y="220" width="200" height="56" rx="8"/>
+        <text class="title" x="600" y="242" text-anchor="middle">SQLite (libsql)</text>
+        <text class="sub" x="600" y="260" text-anchor="middle">sessions · messages · requests</text>
+      </g>
+
+      <!-- Vision -->
+      <g class="node"><rect x="740" y="220" width="200" height="56" rx="8"/>
+        <text class="title" x="840" y="242" text-anchor="middle">lib/vision.js</text>
+        <text class="sub" x="840" y="260" text-anchor="middle">classifyDocImage()</text>
+      </g>
+
+      <!-- WA send -->
+      <g class="node"><rect x="980" y="220" width="180" height="56" rx="8"/>
+        <text class="title" x="1070" y="242" text-anchor="middle">whatsapp_send.js</text>
+        <text class="sub" x="1070" y="260" text-anchor="middle">sendWhatsAppText/Buttons</text>
+      </g>
+
+      <!-- DB Burst -->
+      <g class="node"><rect x="240" y="220" width="220" height="56" rx="8"/>
+        <text class="title" x="350" y="242" text-anchor="middle">storeMessage()</text>
+        <text class="sub" x="350" y="260" text-anchor="middle">audit + trace + SANAD_TEST_PHONE</text>
+      </g>
+
+      <!-- edges -->
+      <path class="edge" d="M200,58 L240,58" marker-end="url(#ah)"/>
+      <path class="edge" d="M460,58 L500,58" marker-end="url(#ah)"/>
+      <path class="edge" d="M700,58 L740,58" marker-end="url(#ah)"/>
+      <path class="edge" d="M940,58 L980,58" marker-end="url(#ah)"/>
+      <path class="edge dashed" d="M350,96 L350,120" marker-end="url(#ah)"/>
+      <path class="edge dashed" d="M600,96 L600,130" marker-end="url(#ah)"/>
+      <path class="edge dashed" d="M840,96 L840,130" marker-end="url(#ah)"/>
+      <path class="edge dashed" d="M840,186 L840,220" marker-end="url(#ah)"/>
+      <path class="edge dashed" d="M600,186 L600,220" marker-end="url(#ah)"/>
+      <path class="edge dashed" d="M1070,96 L1070,220" marker-end="url(#ah)"/>
+      <path class="edge dashed" d="M460,248 L500,248" marker-end="url(#ah)"/>
+    </svg>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--accent)"></span>main path</span>
+      <span><span class="dot" style="background:var(--warn)"></span>burst / media</span>
+      <span><span class="dot" style="background:var(--ok)"></span>tool surface</span>
+      <span><span class="dot" style="background:#3a4a66"></span>data / I/O</span>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── 1 · ENTRY ───────────────────────── -->
+<section id="entry">
+  <h2><span class="num">1</span>Webhook entry — <span class="file">routes/whatsapp.js</span></h2>
+  <div class="grid grid-2">
+    <div class="panel">
+      <h3>Inbound dispatch</h3>
+      <ul>
+        <li><span class="ref">verifyMetaSignature</span> at L24 — rejects requests without valid <code>X-Hub-Signature-256</code>.</li>
+        <li>For each <code>messages[]</code> item: branch on <code>type</code> (text · image · document · interactive · audio · etc.).</li>
+        <li>Interactive buttons map IDs (<code>doc:yes</code>, <code>confirm:yes</code>, <code>burst:done</code>…) into synthetic user text before <code>runTurn</code>.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>Why text and media fork early</h3>
+      <p>Media must be downloaded <em>before</em> entering <code>runTurn</code> because the lock is per-session and the binary fetch (Meta CDN auth) is too slow to hold under it. <span class="pill warn">side-effect</span> if <code>fetchMedia</code> returns <code>null</code> we now early-return with a citizen-facing notice <span class="pill ok">just added</span>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── 2 · MEDIA ───────────────────────── -->
+<section id="media">
+  <h2><span class="num">2</span>Media fetch — <span class="file">routes/whatsapp.js:207</span></h2>
+  <div class="panel">
+    <div class="grid grid-2">
+      <div>
+        <h3>Steps</h3>
+        <ol>
+          <li><code>GET /v18.0/{media_id}</code> → returns short-lived signed URL.</li>
+          <li><code>GET</code> that URL with bearer → binary.</li>
+          <li>Persist to <code>./data/uploads/{session_id}/{ts_rand}.{ext}</code> via <code>extForMime</code> (L198).</li>
+          <li>Return <code>{ url:'/uploads/...', mime, name }</code>.</li>
+        </ol>
+      </div>
+      <div>
+        <h3>Failure modes (relevant to current bug)</h3>
+        <ul>
+          <li><span class="pill bad">silent-null</span> unsupported MIME (e.g. <code>application/octet-stream</code>) → returns <code>null</code> → bot then calls <code>runTurn</code> with <em>no</em> attachment, and the LLM hallucinates a save.</li>
+          <li><span class="pill warn">stale URL</span> Meta CDN URL expires in ~5 min — fetch must complete inside the same handler.</li>
+          <li><span class="pill warn">disk</span> if <code>./data/uploads</code> isn't on a Render persistent disk, files are lost on redeploy.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── 3 · runTurn ───────────────────────── -->
+<section id="runturn">
+  <h2><span class="num">3</span>runTurn / session lock — <span class="file">lib/agent.js:411</span></h2>
+  <div class="panel">
+    <pre>// shape (paraphrase, not source)
+runTurn({ session_id, user_text, attachment, citizen_phone })
+  → bumpInflightFiles(+1) if attachment
+  → withSessionLock(session_id, _runTurnLocked)
+      → loadSession ▸ recentMessages ▸ storeMessage(user)
+      → runAgentV2(...) | runHeuristic(...)   ← V2 default since SANAD_AGENT_V2=true
+      → storeMessage(bot reply) ▸ saveSession
+  → finally bumpInflightFiles(-1)</pre>
+    <div class="grid grid-2">
+      <div>
+        <h3>Why the lock matters</h3>
+        <p><code>withSessionLock</code> at L397 serializes turns per <code>session_id</code>. Without it, two near-simultaneous WhatsApp messages would both read the same <code>state.collected</code>, both write, and the second clobbers the first.</p>
+      </div>
+      <div>
+        <h3>Inflight counter</h3>
+        <p><code>bumpInflightFiles</code> (L94) keeps a per-session count of <em>media-bearing</em> turns currently waiting on the lock. <code>drainBurst</code> reads this at L136 to decide whether to fire — see §4.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── 4 · BURST ───────────────────────── -->
+<section id="burst">
+  <h2><span class="num">4</span>Burst aggregator — <span class="file">lib/agent.js:109 / :130</span></h2>
+  <div class="panel">
+    <p>Citizens send 3–4 documents in quick succession. Without aggregation we'd reply once per file ("got page 1", "got page 2", …). The aggregator buffers replies until the citizen <em>stops</em> sending for <code>BURST_QUIET_MS</code> (1200ms).</p>
+    <svg class="flow" viewBox="0 0 1100 220" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#6aa8ff"/>
+        </marker>
+      </defs>
+      <g class="node"><rect x="20" y="30" width="170" height="50" rx="8"/>
+        <text class="title" x="105" y="52" text-anchor="middle">file 1 arrives</text>
+        <text class="sub" x="105" y="70" text-anchor="middle">runTurn → reply queued</text></g>
+      <g class="node"><rect x="20" y="100" width="170" height="50" rx="8"/>
+        <text class="title" x="105" y="122" text-anchor="middle">file 2 arrives</text>
+        <text class="sub" x="105" y="140" text-anchor="middle">timer reset</text></g>
+      <g class="node warn"><rect x="240" y="65" width="220" height="80" rx="8"/>
+        <text class="title" x="350" y="92" text-anchor="middle">armBurst()</text>
+        <text class="sub" x="350" y="110" text-anchor="middle">push reply · clearTimeout</text>
+        <text class="sub" x="350" y="126" text-anchor="middle">setTimeout(drainBurst, 1200ms)</text></g>
+      <g class="node accent"><rect x="500" y="65" width="220" height="80" rx="8"/>
+        <text class="title" x="610" y="92" text-anchor="middle">drainBurst()</text>
+        <text class="sub" x="610" y="110" text-anchor="middle">if inflight &gt; 0 → re-arm</text>
+        <text class="sub" x="610" y="126" text-anchor="middle">else compose &amp; send</text></g>
+      <g class="node ok"><rect x="760" y="30" width="320" height="50" rx="8"/>
+        <text class="title" x="920" y="52" text-anchor="middle">n=1 → forward stored bot reply</text>
+        <text class="sub" x="920" y="70" text-anchor="middle">(handler already storeMessage'd it)</text></g>
+      <g class="node ok"><rect x="760" y="100" width="320" height="50" rx="8"/>
+        <text class="title" x="920" y="122" text-anchor="middle">n≥2 → de-dup, attach Done/More buttons</text>
+        <text class="sub" x="920" y="140" text-anchor="middle">storeMessage(bot, channel:wa, meta.kind:burst)</text></g>
+      <path class="edge" d="M190,55 L240,80" marker-end="url(#ah2)"/>
+      <path class="edge" d="M190,125 L240,120" marker-end="url(#ah2)"/>
+      <path class="edge dashed" d="M460,105 L500,105" marker-end="url(#ah2)"/>
+      <path class="edge" d="M720,90 L760,55" marker-end="url(#ah2)"/>
+      <path class="edge" d="M720,120 L760,125" marker-end="url(#ah2)"/>
+    </svg>
+    <div class="note" style="margin-top:12px">
+      <strong>Inflight gate (L136).</strong> If a previous turn is still inside the session lock, <code>drainBurst</code> bails out and re-arms — preventing the "sent reply too early, before the next file's turn finished" race that produced duplicate "✅ استلمت" lines.
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── 5 · AGENT V2 ───────────────────────── -->
+<section id="agentv2">
+  <h2><span class="num">5</span>runAgentV2 tool-loop — <span class="file">lib/agent.js:1882</span></h2>
+  <div class="panel">
+    <pre>for round in 0..MAX_TOOL_ROUNDS_V2(=6):                    // L2445
+  resp = llm.complete({ system, messages, tools: TOOL_SPEC_V2 })
+
+  if resp.stop_reason === 'tool_use':
+    for each tool_use block:
+      result = TOOL_IMPL_V2[name](args, ctx)
+      messages.push({ role:'user', content:[{type:'tool_result', tool_use_id, content}]})
+    continue                                               // next round
+
+  // model produced text → finalize
+  reply = sanitize(resp.text, raw)
+  reply = recoverHallucinated(reply, ctx)                  // §8
+  attach buttons (§7) if heuristic matches
+  return { reply, buttons, trace }</pre>
+    <div class="grid grid-2" style="margin-top:12px">
+      <div>
+        <h3>Deterministic overrides</h3>
+        <ul>
+          <li><span class="pill">welcome</span> first turn (state idle, no recent bot) → fixed welcome copy, skips LLM.</li>
+          <li><span class="pill">start_submission</span> when LLM calls this tool, the human-facing reply is <em>built from the tool result</em>, not from the LLM's own text — kills the hallucinated-fee/wrong-name class.</li>
+          <li><span class="pill">first_doc</span> after start_submission, prompt with <code>firstDocPrompt</code> (L635) using catalog data.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Prompt cache</h3>
+        <ul>
+          <li><code>system</code> block carries <code>cache_control:{type:'ephemeral'}</code>.</li>
+          <li>The last <code>tool_result</code> also gets a cache breakpoint — Anthropic 5-min TTL covers the typical citizen reply window.</li>
+          <li>Visible in lib/llm.js — Anthropic when <code>ANTHROPIC_API_KEY</code> set, Qwen otherwise.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── 6 · TOOLS ───────────────────────── -->
+<section id="tools">
+  <h2><span class="num">6</span>Tool surface — <span class="file">lib/agent_tools.js:274</span></h2>
+  <div class="panel">
+    <table>
+      <thead><tr><th>Tool</th><th>Purpose</th><th>Side-effect</th><th>Notes / known issues</th></tr></thead>
+      <tbody>
+        <tr><td><code>search_services</code></td><td>FTS5 + embedding hybrid search over catalog</td><td>read</td><td>Returns top-K w/ entity, fee, doc list.</td></tr>
+        <tr><td><code>get_service_details</code></td><td>Full row by code</td><td>read</td><td>Used after a search hit.</td></tr>
+        <tr><td><code>list_entities</code> / <code>list_categories</code></td><td>Browse</td><td>read</td><td>—</td></tr>
+        <tr><td><code>get_entity_services</code></td><td>Drill-down</td><td>read</td><td>—</td></tr>
+        <tr><td><code>compare_services</code></td><td>Side-by-side</td><td>read</td><td>Rarely used in WA channel.</td></tr>
+        <tr><td><code>start_submission</code></td><td>Create draft request, switch state → <code>collecting</code></td><td>write</td><td>Returns <code>{name_ar, fee_omr, required_documents, first_doc, ...}</code>. <strong>Reply is rendered deterministically</strong> from this payload — see §5.</td></tr>
+        <tr><td><code>confirm_submission</code></td><td>Lock the draft for review</td><td>write</td><td>—</td></tr>
+        <tr><td><code>discard_draft</code></td><td>Cancel the in-progress draft</td><td>write</td><td>—</td></tr>
+        <tr><td><code>record_document</code></td><td>Attach a media URL to a required slot</td><td>write</td><td>Hallucination guard checks that this fired before any "✅ استلمت" leaks.</td></tr>
+        <tr><td><code>record_extra_document</code></td><td>Attach a non-required supplementary doc</td><td>write</td><td>If caption missing, synthesizes from filename.</td></tr>
+        <tr><td><code>replace_document</code></td><td>Swap a previously-attached doc</td><td>write</td><td>—</td></tr>
+        <tr><td><code>submit_request</code></td><td>Move <code>reviewing → queued</code></td><td>write</td><td>Triggers officer notification.</td></tr>
+        <tr><td><code>get_my_requests</code></td><td>List by phone</td><td>read</td><td>—</td></tr>
+        <tr><td><code>get_request_status</code></td><td>One request</td><td>read</td><td>—</td></tr>
+        <tr><td><code>list_offers</code> / <code>accept_offer</code></td><td>Office bids</td><td>read / write</td><td>—</td></tr>
+        <tr><td><code>cancel_request</code></td><td>Citizen-side cancel</td><td>write</td><td>—</td></tr>
+        <tr><td><code>add_note</code></td><td>Free-text note attached to request</td><td>write</td><td>—</td></tr>
+        <tr><td><code>get_session_state</code></td><td>Echo state for debugging</td><td>read</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ───────────────────────── 7 · BUTTONS ───────────────────────── -->
+<section id="buttons">
+  <h2><span class="num">7</span>Quick-reply button auto-attach</h2>
+  <div class="panel">
+    <p>Meta limits us to 3 buttons, 20-char title each. We attach them in three places, in priority order:</p>
+    <table>
+      <thead><tr><th>Trigger</th><th>Where</th><th>IDs sent</th><th>Source line</th></tr></thead>
+      <tbody>
+        <tr><td>Single doc just classified, low confidence</td><td>after <code>record_document</code> reply</td><td><code>doc:yes</code> · <code>doc:wrong</code> · <code>doc:extra</code></td><td>agent.js (V2 finalize)</td></tr>
+        <tr><td>Burst summary (n≥2 files)</td><td><code>drainBurst</code> after compose</td><td><code>burst:done</code> · <code>burst:more</code></td><td>agent.js:130+</td></tr>
+        <tr><td>Generic yes/no question detected</td><td><code>looksLikeYesNoAsk</code> heuristic</td><td><code>confirm:yes</code> · <code>confirm:no</code></td><td>agent.js:2698</td></tr>
+        <tr><td>Reclassification suggestion</td><td>after vision disagrees with caption</td><td><code>reclassify:accept</code> · <code>reclassify:reject</code></td><td>agent.js (collecting handler)</td></tr>
+      </tbody>
+    </table>
+    <div class="note" style="margin-top:12px">
+      The system prompt explicitly forbids the LLM from writing <em>"اكتب نعم/لا"</em> or <em>"اكتب تم"</em> — those phrases are the signal we missed an auto-attach, not a UX feature. See SYSTEM_V2 § <strong>Channel UX</strong> in <span class="file">lib/agent.js</span>.
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── 8 · HALLUCINATION ───────────────────────── -->
+<section id="hallucination">
+  <h2><span class="num">8</span>Hallucination guard — <span class="file">lib/agent.js:2552</span></h2>
+  <div class="panel">
+    <p>Post-LLM text is regex-scanned for "save-claim" phrases. If matched but no <code>record_*</code> tool fired this turn, we either:</p>
+    <ul>
+      <li><strong>Mode A — no record at all:</strong> strip the claim, append "أرسل المستند الآن" (send now).</li>
+      <li><strong>Mode B — record fired but for a different slot:</strong> rewrite the slot label to match what the tool actually wrote.</li>
+    </ul>
+    <pre>// current pattern (with "استلمت" extension just added):
+const HALLUCINATED_SAVE_RE =
+  /✅\s*(?:حفظت|استلمت|تم\s*الحفظ|تم\s*التسجيل|تم\s*الاستلام|saved|received|recorded|stored|got\s+your)
+    |(?:^|\s)(?:حُفِظ(?:ت|ا)?|سجّلت|سُجّل|received\s+your)(?=\s|$|[:.،])/ix</pre>
+    <div class="note">
+      The Arabic-aware lookahead <code>(?=\s|$|[:.،])</code> is required — JS <code>\b</code> doesn't fire on Arabic letters, so a naive boundary lets the verb leak past the guard.
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── 9 · STATE ───────────────────────── -->
+<section id="state">
+  <h2><span class="num">9</span>Request lifecycle</h2>
+  <div class="panel">
+    <svg class="flow" viewBox="0 0 1100 130" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#6aa8ff"/>
+        </marker>
+      </defs>
+      <g class="node"><rect x="10"  y="40" width="120" height="50" rx="8"/><text class="title" x="70"  y="70" text-anchor="middle">idle</text></g>
+      <g class="node accent"><rect x="155" y="40" width="140" height="50" rx="8"/><text class="title" x="225" y="62" text-anchor="middle">collecting</text><text class="sub" x="225" y="78" text-anchor="middle">required + extra</text></g>
+      <g class="node"><rect x="320" y="40" width="130" height="50" rx="8"/><text class="title" x="385" y="62" text-anchor="middle">reviewing</text><text class="sub" x="385" y="78" text-anchor="middle">summary + confirm</text></g>
+      <g class="node"><rect x="475" y="40" width="120" height="50" rx="8"/><text class="title" x="535" y="70" text-anchor="middle">queued</text></g>
+      <g class="node"><rect x="620" y="40" width="120" height="50" rx="8"/><text class="title" x="680" y="70" text-anchor="middle">claimed</text></g>
+      <g class="node"><rect x="765" y="40" width="140" height="50" rx="8"/><text class="title" x="835" y="70" text-anchor="middle">in_progress</text></g>
+      <g class="node ok"><rect x="930" y="40" width="140" height="50" rx="8"/><text class="title" x="1000" y="70" text-anchor="middle">completed</text></g>
+      <path class="edge" d="M130,65 L155,65" marker-end="url(#ah3)"/>
+      <path class="edge" d="M295,65 L320,65" marker-end="url(#ah3)"/>
+      <path class="edge" d="M450,65 L475,65" marker-end="url(#ah3)"/>
+      <path class="edge" d="M595,65 L620,65" marker-end="url(#ah3)"/>
+      <path class="edge" d="M740,65 L765,65" marker-end="url(#ah3)"/>
+      <path class="edge" d="M905,65 L930,65" marker-end="url(#ah3)"/>
+      <text class="label" x="142" y="32">start_submission</text>
+      <text class="label" x="298" y="32">all docs in</text>
+      <text class="label" x="455" y="32">submit_request</text>
+      <text class="label" x="600" y="32">officer claim</text>
+      <text class="label" x="745" y="32">payment</text>
+      <text class="label" x="908" y="32">deliver</text>
+    </svg>
+    <p style="margin-top:10px;color:var(--muted);font-size:13px">Handlers: <code>handleIdle</code> (L556) · <code>handleConfirming</code> (L775) · <code>handleCollecting</code> (L834) · <code>handleReviewing</code> (L1025) · <code>handleInFlight</code> (L1069). The V2 agent supersedes most of these on the WA channel — they remain the heuristic fallback when <code>SANAD_AGENT_V2</code> is off.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────── 10 · BUGS ───────────────────────── -->
+<section id="bugs">
+  <h2><span class="num">10</span>Live bugs we're investigating</h2>
+
+  <div class="grid grid-2">
+    <div class="bug">
+      <h4>A · "✅ استلمت البطاقة المدنية" but state.collected is empty</h4>
+      <p>Trace #1184: bot text claims a save; <code>state.collected.civil_id</code> is still ⬜. No <code>record_document</code> tool call in the round.</p>
+      <p><strong>Root cause:</strong> hallucination guard regex didn't match <code>استلمت</code> (only matched <code>حفظت</code>/<code>تم الحفظ</code>).</p>
+      <p><strong>Fix:</strong> extended <code>HALLUCINATED_SAVE_RE</code> at <span class="file">lib/agent.js:2552</span> to include <code>استلمت</code>, <code>تم الاستلام</code>, <code>received your</code>.</p>
+      <p class="ref">Verify: re-run trace, confirm guard rewrites or strips the bot reply when no record_* tool fired.</p>
+    </div>
+
+    <div class="bug">
+      <h4>B · file 1 has no media_url in trace</h4>
+      <p>Trace #1183: attachment present in webhook payload but <code>fetchMedia</code> returned <code>null</code>. The bot then proceeded into <code>runTurn</code> with no attachment and the LLM made up a confirmation.</p>
+      <p><strong>Root cause:</strong> webhook used to silently drop unsupported MIMEs.</p>
+      <p><strong>Fix:</strong> in <span class="file">routes/whatsapp.js</span>, when <code>fetchMedia</code> returns null, send the citizen "⚠️ لم أستطع استلام الملف…" and skip <code>runTurn</code> entirely — no chance for the LLM to invent a save.</p>
+      <p class="ref">Verify: send a corrupted/oversized file via WA, expect the new notice text and no record_* tool call in the trace.</p>
+    </div>
+
+    <div class="bug">
+      <h4>C · "اكتب نعم/لا" / "اكتب تم" still leaking</h4>
+      <p>System prompt forbids these phrases; LLM occasionally produces them anyway.</p>
+      <p><strong>Mitigation in place:</strong> <code>looksLikeYesNoAsk</code> heuristic auto-attaches buttons even if the prompt fails — see §7. <strong>Recheck:</strong> ensure the heuristic catches Arabic confirm phrasing without depending on <code>\b</code>.</p>
+    </div>
+
+    <div class="ok-box">
+      <h4>Investigation hooks</h4>
+      <ul>
+        <li><span class="file">/api/debug/trace/:session_id</span> · last N rounds with tool calls + state snapshots</li>
+        <li><span class="file">/api/debug/health</span> · provider, model, deploy commit</li>
+        <li><span class="file">/api/debug/clear-phone</span> · wipe session for a phone (test only)</li>
+        <li><code>SANAD_TEST_PHONE</code> env · mirrors every bot reply to a debug WA number</li>
+        <li>Tests: <span class="file">tests/12-burst-aggregator.test.js</span> (burst + parseUploadDescriptions + looksLikeYesNoAsk)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">★</span>Where to look next</h2>
+  <div class="panel">
+    <div class="lane">
+      <div class="label">If reply is wrong</div>
+      <div>Read <span class="file">lib/agent.js</span> at the <code>runAgentV2</code> finalize block — that's where the LLM text is sanitized, then the hallucination guard, then button attach. Most "weird reply" bugs land in one of those three.</div>
+    </div>
+    <div class="lane">
+      <div class="label">If a file vanished</div>
+      <div>Walk: webhook receive → <code>fetchMedia</code> → upload to disk → <code>runTurn</code> attachment → <code>handleCollecting</code> / V2 <code>record_document</code> → <code>state.collected[code]</code>. Compare against <span class="file">/api/debug/trace</span>.</div>
+    </div>
+    <div class="lane">
+      <div class="label">If the bot replied twice</div>
+      <div>Burst aggregator. Check <code>inflightFilesFor(session_id)</code> at the moment of the timer fire (L136). If &gt;0 the timer should have re-armed — if it didn't, that's the bug.</div>
+    </div>
+    <div class="lane">
+      <div class="label">If a button didn't appear</div>
+      <div>Check finalize order: deterministic override → text → guard → button heuristic. If the heuristic regex doesn't match, no button. <span class="file">lib/agent.js:2698</span>.</div>
+    </div>
+  </div>
+</section>
+
+</main>
+</body>
+</html>
