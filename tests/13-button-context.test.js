@@ -84,16 +84,17 @@ describe('lib/agent.js · attachContextualButtons', () => {
     assert.equal(trace[0].case, 'unified_collecting');
   });
 
-  test('CASE 3 — collecting + zero files yet → cancel-only (user spec 2026-05-07)', () => {
+  test('CASE 3 — collecting + zero files yet → switch + cancel (user spec 2026-05-07)', () => {
     // No files received yet → "انتهيت من الرفع" / "سأرسل المزيد" make
-    // no sense. Show only the cancel exit.
+    // no sense. Show service:switch (pivot to different service) +
+    // service:cancel (back out).
     const r = attachContextualButtons({
       state: { status: 'collecting', docs: baseDocs, collected: {} },
       finalReply: 'أحتاج الجواز',
       trace: []
     });
     assert.ok(r);
-    assert.deepEqual(r.map(b => b.id), ['service:cancel']);
+    assert.deepEqual(r.map(b => b.id), ['service:switch', 'service:cancel']);
   });
 
   test('CASE 3b — collecting + at least one file → unified 3-button set', () => {
@@ -246,17 +247,20 @@ describe('lib/agent.js · button-suppression guards', () => {
     assert.equal(trace[0].reason, 'warning_reply');
   });
 
-  // Codex (gpt-5.2-codex) round 2 — finalized-state gates.
-  test('finalized state (queued) suppresses submit/extra buttons', () => {
+  // Codex (gpt-5.2-codex) round 2 — finalized-state gates. Updated
+  // 2026-05-07: in-flight finalized states now SHOW status:check +
+  // service:cancel buttons (no submit/extra). 'completed' still
+  // suppresses entirely (nothing to do).
+  test('finalized state (queued) → status:check + service:cancel buttons', () => {
     const trace = [];
     const r = attachContextualButtons({
       state: { status: 'queued', docs: [], collected: {}, request_id: 42 },
       finalReply: 'طلبك في الطابور — سيتولّاه أحد المكاتب قريباً.',
       trace
     });
-    assert.equal(r, null);
-    assert.equal(trace[0].reason, 'finalized_state');
-    assert.equal(trace[0].status, 'queued');
+    assert.ok(r);
+    assert.deepEqual(r.map(b => b.id), ['status:check', 'service:cancel']);
+    assert.equal(trace[0].case, 'finalized_status_cancel');
   });
   test('finalized state still attaches confirm:yes/no for genuine y/n asks', () => {
     const trace = [];
@@ -269,14 +273,21 @@ describe('lib/agent.js · button-suppression guards', () => {
     assert.deepEqual(r.map(b => b.id), ['confirm:yes', 'confirm:no']);
     assert.equal(trace[0].case, 'finalized_yes_no');
   });
-  test('finalized states: claimed / needs_more_info / completed all suppress', () => {
-    for (const status of ['claimed', 'needs_more_info', 'awaiting_payment', 'completed']) {
+  test('in-flight finalized states attach status+cancel buttons; completed suppresses', () => {
+    for (const status of ['claimed', 'needs_more_info', 'awaiting_payment']) {
       const r = attachContextualButtons({
         state: { status, docs: [], collected: {}, request_id: 1 },
         finalReply: 'حالة الطلب محدّثة.',
         trace: []
       });
-      assert.equal(r, null, `status=${status} must not attach nav buttons`);
+      assert.ok(r, `status=${status} must attach status/cancel buttons`);
+      assert.deepEqual(r.map(b => b.id), ['status:check', 'service:cancel']);
     }
+    const completed = attachContextualButtons({
+      state: { status: 'completed', docs: [], collected: {}, request_id: 1 },
+      finalReply: 'تم إنجاز المعاملة.',
+      trace: []
+    });
+    assert.equal(completed, null, 'completed state suppresses all buttons');
   });
 });

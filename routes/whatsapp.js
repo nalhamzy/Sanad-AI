@@ -101,7 +101,9 @@ whatsappRouter.post('/webhook', async (req, res) => {
       else if (id === 'review:submit')  interactiveText = '__btn__:review:submit';
       else if (id === 'review:pause')   interactiveText = '__btn__:review:pause';
       else if (id === 'service:cancel') interactiveText = '__btn__:service:cancel';
+      else if (id === 'service:switch') interactiveText = '__btn__:service:switch';
       else if (id === 'service:show')   interactiveText = '__btn__:service:show';
+      else if (id === 'status:check')   interactiveText = '__btn__:status:check';
       else if (id === 'next:doc')       interactiveText = '__btn__:next:doc';
       else if (id === 'confirm:yes')  interactiveText = '__btn__:confirm:yes';
       else if (id === 'confirm:no')   interactiveText = '__btn__:confirm:no';
