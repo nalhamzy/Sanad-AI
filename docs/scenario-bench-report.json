@@ -1,25 +1,143 @@
 {
   "summary": {
-    "generated_at": "2026-05-08T09:08:24.484Z",
-    "scenario_count": 4,
-    "passed": 4,
+    "generated_at": "2026-05-08T09:39:04.513Z",
+    "scenario_count": 11,
+    "passed": 11,
     "failed": 0,
     "ux": {
-      "avg_reply_length": 98,
-      "button_attached_rate": 0.6,
+      "avg_reply_length": 94,
+      "button_attached_rate": 0.867,
       "english_label_leak_rate": 0,
-      "deterministic_vs_llm_ratio": 0
+      "deterministic_vs_llm_ratio": 0.767
     },
     "flow": {
-      "sessions_reached_collecting": 3,
-      "sessions_reached_reviewing": 2,
-      "sessions_reached_queued": 2,
+      "sessions_reached_collecting": 6,
+      "sessions_reached_reviewing": 5,
+      "sessions_reached_queued": 5,
       "sessions_reached_completed": 0
     },
     "hazards": {
-      "silent_failures": 0
+      "silent_failures": 4
     },
     "per_scenario": [
+      {
+        "id": "doesnt_know_what_he_wants",
+        "label": "#1 — User doesn't know what they want",
+        "turns": 3,
+        "bot_msgs": 3,
+        "turns_with_buttons": 2,
+        "turns_with_bot_reply": 3,
+        "avg_reply_chars": 115,
+        "deterministic_replies": 2,
+        "english_leaks": 0,
+        "final_state": {
+          "status": "idle",
+          "docs_collected": 0
+        },
+        "ms": 3943
+      },
+      {
+        "id": "service_accept_random_attachments",
+        "label": "#2 — Accept service, send 4 attachments in random order",
+        "turns": 7,
+        "bot_msgs": 8,
+        "turns_with_buttons": 7,
+        "turns_with_bot_reply": 3,
+        "avg_reply_chars": 89,
+        "deterministic_replies": 8,
+        "english_leaks": 0,
+        "final_state": {
+          "status": "idle",
+          "docs_collected": 0
+        },
+        "ms": 4120
+      },
+      {
+        "id": "follow_up_request",
+        "label": "#3 — Follow up on existing request",
+        "turns": 2,
+        "bot_msgs": 2,
+        "turns_with_buttons": 2,
+        "turns_with_bot_reply": 2,
+        "avg_reply_chars": 100,
+        "deterministic_replies": 2,
+        "english_leaks": 0,
+        "final_state": {
+          "status": "in_progress",
+          "request_id": 209,
+          "service_id": 140017,
+          "docs_collected": 0
+        },
+        "ms": 1891
+      },
+      {
+        "id": "mid_flow_pivot",
+        "label": "#4 — Mid-flow pivot to different service",
+        "turns": 4,
+        "bot_msgs": 4,
+        "turns_with_buttons": 4,
+        "turns_with_bot_reply": 4,
+        "avg_reply_chars": 91,
+        "deterministic_replies": 4,
+        "english_leaks": 0,
+        "final_state": {
+          "status": "idle",
+          "docs_collected": 0
+        },
+        "ms": 3193
+      },
+      {
+        "id": "cancel_in_flight_request",
+        "label": "#5 — Cancel an in-flight request",
+        "turns": 4,
+        "bot_msgs": 4,
+        "turns_with_buttons": 4,
+        "turns_with_bot_reply": 4,
+        "avg_reply_chars": 94,
+        "deterministic_replies": 4,
+        "english_leaks": 0,
+        "final_state": {
+          "status": "queued",
+          "request_id": 210,
+          "service_id": 140017,
+          "docs_collected": 0
+        },
+        "ms": 1992
+      },
+      {
+        "id": "free_text_status_query",
+        "label": "#6 — Asks status by typing (no button)",
+        "turns": 1,
+        "bot_msgs": 1,
+        "turns_with_buttons": 1,
+        "turns_with_bot_reply": 1,
+        "avg_reply_chars": 72,
+        "deterministic_replies": 0,
+        "english_leaks": 0,
+        "final_state": {
+          "status": "awaiting_payment",
+          "request_id": 211,
+          "service_id": 140017,
+          "docs_collected": 0
+        },
+        "ms": 1575
+      },
+      {
+        "id": "no_files_yet_then_submit_attempt",
+        "label": "#7 — Tap submit before sending any file",
+        "turns": 3,
+        "bot_msgs": 3,
+        "turns_with_buttons": 3,
+        "turns_with_bot_reply": 3,
+        "avg_reply_chars": 91,
+        "deterministic_replies": 3,
+        "english_leaks": 0,
+        "final_state": {
+          "status": "idle",
+          "docs_collected": 0
+        },
+        "ms": 2827
+      },
       {
         "id": "payment_link_present",
         "label": "#8 — Payment-link query when link IS present (deterministic handler)",
@@ -32,11 +150,11 @@
         "english_leaks": 0,
         "final_state": {
           "status": "awaiting_payment",
-          "request_id": 182,
+          "request_id": 212,
           "service_id": 140017,
           "docs_collected": 0
         },
-        "ms": 1520
+        "ms": 1518
       },
       {
         "id": "otp_forward_refusal",
@@ -50,11 +168,11 @@
         "english_leaks": 0,
         "final_state": {
           "status": "in_progress",
-          "request_id": 183,
+          "request_id": 213,
           "service_id": 140017,
           "docs_collected": 0
         },
-        "ms": 1538
+        "ms": 1531
       },
       {
         "id": "thanks_ack",
@@ -70,7 +188,7 @@
           "status": "idle",
           "docs_collected": 0
         },
-        "ms": 1511
+        "ms": 1531
       },
       {
         "id": "fee_query_in_flight",
@@ -84,67 +202,327 @@
         "english_leaks": 0,
         "final_state": {
           "status": "collecting",
-          "request_id": 184,
+          "request_id": 214,
           "service_id": 140017,
           "docs_collected": 0
         },
-        "ms": 1520
+        "ms": 1529
       }
     ]
   },
   "results": [
     {
-      "id": "payment_link_present",
-      "label": "#8 — Payment-link query when link IS present (deterministic handler)",
-      "sid": "bench-payment_link_present-1778231298395",
+      "id": "doesnt_know_what_he_wants",
+      "label": "#1 — User doesn't know what they want",
+      "sid": "bench-doesnt_know_what_he_wants-1778233118861",
       "transcript": [
         {
           "kind": "turn",
-          "citizen": "وين رابط الدفع؟",
-          "bot_reply": "💳 *رابط الدفع*\n💰 الإجمالي: 21.500 ر.ع\n\n/api/payments/_stub/request_pay?ref=req-bench-pay\n\nاضغط الرابط للدفع — سأخبرك فور إتمام المعاملة.",
-          "ms": 8,
+          "citizen": "مرحبا",
+          "bot_reply": "أهلاً 👋 أنا *ساند* — جاهز أُجهّز معاملتك الحكومية وأرسلها لمكتب سند للتنفيذ.\n\nاكتب اسم الخدمة (مثلاً: *تجديد رخصة القيادة* / *إصدار سجل تجاري*) أو وصف ما تحتاجه.",
+          "ms": 13,
+          "buttons": null
+        },
+        {
+          "kind": "turn",
+          "citizen": "محتاج مساعدة بخدمة حكومية",
+          "bot_reply": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "ms": 1993,
           "buttons": [
-            "status:check",
-            "service:cancel"
+            "discover:license",
+            "discover:title",
+            "discover:cr"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "مش متأكد بالضبط… شي يخص السيارة",
+          "bot_reply": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "ms": 434,
+          "buttons": [
+            "discover:license",
+            "discover:title",
+            "discover:cr"
           ]
         }
       ],
       "final_state": {
-        "status": "awaiting_payment",
-        "request_id": 182,
-        "service_id": 140017,
+        "status": "idle",
         "docs_collected": 0
       },
       "db_messages": [
         {
-          "id": 1328,
+          "id": 1582,
           "direction": "in",
           "actor_type": "citizen",
-          "body_text": "وين رابط الدفع؟",
+          "body_text": "مرحبا",
           "media_url": null,
-          "created_at": "2026-05-08 09:08:18"
+          "created_at": "2026-05-08 09:38:38"
         },
         {
-          "id": 1329,
+          "id": 1583,
           "direction": "out",
           "actor_type": "bot",
-          "body_text": "💳 *رابط الدفع*\n💰 الإجمالي: 21.500 ر.ع\n\n/api/payments/_stub/request_pay?ref=req-bench-pay\n\nاضغط الرابط للدفع — سأخبرك فور إتمام المعاملة.",
+          "body_text": "أهلاً 👋 أنا *ساند* — جاهز أُجهّز معاملتك الحكومية وأرسلها لمكتب سند للتنفيذ.\n\nاكتب اسم الخدمة (مثلاً: *تجديد رخصة القيادة* / *إصدار سجل تجاري*) أو وصف ما تحتاجه.",
           "media_url": null,
-          "created_at": "2026-05-08 09:08:18"
+          "created_at": "2026-05-08 09:38:38"
+        },
+        {
+          "id": 1584,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "محتاج مساعدة بخدمة حكومية",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:38"
+        },
+        {
+          "id": 1585,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:40"
+        },
+        {
+          "id": 1586,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "مش متأكد بالضبط… شي يخص السيارة",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:40"
+        },
+        {
+          "id": 1587,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:41"
         }
       ],
-      "ms": 1520
+      "ms": 3943
     },
     {
-      "id": "otp_forward_refusal",
-      "label": "#9 — Citizen asks to forward an OTP (must redirect)",
-      "sid": "bench-otp_forward_refusal-1778231299915",
+      "id": "service_accept_random_attachments",
+      "label": "#2 — Accept service, send 4 attachments in random order",
+      "sid": "bench-service_accept_random_attachments-1778233122804",
       "transcript": [
         {
           "kind": "turn",
-          "citizen": "وصلني رمز تحقق، شو أسوي فيه؟",
-          "bot_reply": "🔒 *لا تشاركني رمز التحقق* — الرمز خاص بك وحدك.\n\nأكمل خطوة التحقق على بوابة الخدمة الحكومية مباشرة.\n\nإن احتجت مساعدة بشيء آخر، أخبرني.",
-          "ms": 7,
+          "citizen": "بغيت أجدد رخصة القيادة",
+          "bot_reply": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "ms": 425,
+          "buttons": [
+            "discover:license",
+            "discover:title",
+            "discover:cr"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "__btn__:confirm:yes",
+          "bot_reply": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "ms": 355,
+          "buttons": [
+            "discover:license",
+            "discover:title",
+            "discover:cr"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "(attachment)",
+          "bot_reply": "",
+          "ms": 374,
+          "buttons": [
+            "discover:license",
+            "discover:title",
+            "discover:cr"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "(attachment)",
+          "bot_reply": "",
+          "ms": 369,
+          "buttons": [
+            "discover:license",
+            "discover:title",
+            "discover:cr"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "(attachment)",
+          "bot_reply": "",
+          "ms": 360,
+          "buttons": [
+            "discover:license",
+            "discover:title",
+            "discover:cr"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "(attachment)",
+          "bot_reply": "",
+          "ms": 362,
+          "buttons": [
+            "discover:license",
+            "discover:title",
+            "discover:cr"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "__btn__:review:submit",
+          "bot_reply": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "ms": 365,
+          "buttons": [
+            "discover:license",
+            "discover:title",
+            "discover:cr"
+          ]
+        }
+      ],
+      "final_state": {
+        "status": "idle",
+        "docs_collected": 0
+      },
+      "db_messages": [
+        {
+          "id": 1588,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "بغيت أجدد رخصة القيادة",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:42"
+        },
+        {
+          "id": 1589,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:43"
+        },
+        {
+          "id": 1590,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "__btn__:confirm:yes",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:43"
+        },
+        {
+          "id": 1591,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:43"
+        },
+        {
+          "id": 1592,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "(attachment)",
+          "media_url": "/uploads/bench/r3.jpg",
+          "created_at": "2026-05-08 09:38:43"
+        },
+        {
+          "id": 1593,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:43"
+        },
+        {
+          "id": 1594,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "(attachment)",
+          "media_url": "/uploads/bench/r1.jpg",
+          "created_at": "2026-05-08 09:38:43"
+        },
+        {
+          "id": 1595,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:44"
+        },
+        {
+          "id": 1596,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "(attachment)",
+          "media_url": "/uploads/bench/r2.jpg",
+          "created_at": "2026-05-08 09:38:44"
+        },
+        {
+          "id": 1597,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:44"
+        },
+        {
+          "id": 1598,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "(attachment)",
+          "media_url": "/uploads/bench/r4.jpg",
+          "created_at": "2026-05-08 09:38:44"
+        },
+        {
+          "id": 1599,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:45"
+        },
+        {
+          "id": 1600,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "📥 استلمت 4 ملفات.\n\nهل اكتمل ملفك؟ اضغط *✅ انتهيت من الرفع* أو أرسل المزيد.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:45"
+        },
+        {
+          "id": 1601,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "__btn__:review:submit",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:45"
+        },
+        {
+          "id": 1602,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:45"
+        }
+      ],
+      "ms": 4120
+    },
+    {
+      "id": "follow_up_request",
+      "label": "#3 — Follow up on existing request",
+      "sid": "bench-follow_up_request-1778233126924",
+      "transcript": [
+        {
+          "kind": "turn",
+          "citizen": "مرحبا، أبي أعرف وضع طلبي",
+          "bot_reply": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "ms": 372,
           "buttons": [
             "status:check",
             "service:cancel"
@@ -152,8 +530,8 @@
         },
         {
           "kind": "turn",
-          "citizen": "الرمز: 123456",
-          "bot_reply": "🔒 *لا تشاركني رمز التحقق* — الرمز خاص بك وحدك.\n\nأكمل خطوة التحقق على بوابة الخدمة الحكومية مباشرة.\n\nإن احتجت مساعدة بشيء آخر، أخبرني.",
+          "citizen": "__btn__:status:check",
+          "bot_reply": "📊 *حالة طلبك*\n\n🆔 رقم الطلب: *#R-209*\n📂 الخدمة: خدمة طلب تجديد رخصة سياقة\n⚙️ المكتب يعمل على إنجاز معاملتك",
           "ms": 7,
           "buttons": [
             "status:check",
@@ -163,56 +541,545 @@
       ],
       "final_state": {
         "status": "in_progress",
-        "request_id": 183,
+        "request_id": 209,
         "service_id": 140017,
         "docs_collected": 0
       },
       "db_messages": [
         {
-          "id": 1330,
+          "id": 1603,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "مرحبا، أبي أعرف وضع طلبي",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:46"
+        },
+        {
+          "id": 1604,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:47"
+        },
+        {
+          "id": 1605,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "__btn__:status:check",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:47"
+        },
+        {
+          "id": 1606,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "📊 *حالة طلبك*\n\n🆔 رقم الطلب: *#R-209*\n📂 الخدمة: خدمة طلب تجديد رخصة سياقة\n⚙️ المكتب يعمل على إنجاز معاملتك",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:47"
+        }
+      ],
+      "ms": 1891
+    },
+    {
+      "id": "mid_flow_pivot",
+      "label": "#4 — Mid-flow pivot to different service",
+      "sid": "bench-mid_flow_pivot-1778233128815",
+      "transcript": [
+        {
+          "kind": "turn",
+          "citizen": "بغيت تجديد رخصة القيادة",
+          "bot_reply": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "ms": 601,
+          "buttons": [
+            "discover:license",
+            "discover:title",
+            "discover:cr"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "__btn__:confirm:yes",
+          "bot_reply": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "ms": 360,
+          "buttons": [
+            "discover:license",
+            "discover:title",
+            "discover:cr"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "__btn__:service:switch",
+          "bot_reply": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "ms": 372,
+          "buttons": [
+            "discover:license",
+            "discover:title",
+            "discover:cr"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "لا في الحقيقة بغيت تجديد جواز السفر",
+          "bot_reply": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "ms": 357,
+          "buttons": [
+            "discover:license",
+            "discover:title",
+            "discover:cr"
+          ]
+        }
+      ],
+      "final_state": {
+        "status": "idle",
+        "docs_collected": 0
+      },
+      "db_messages": [
+        {
+          "id": 1607,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "بغيت تجديد رخصة القيادة",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:48"
+        },
+        {
+          "id": 1608,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:49"
+        },
+        {
+          "id": 1609,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "__btn__:confirm:yes",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:49"
+        },
+        {
+          "id": 1610,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:49"
+        },
+        {
+          "id": 1611,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "__btn__:service:switch",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:49"
+        },
+        {
+          "id": 1612,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:50"
+        },
+        {
+          "id": 1613,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "لا في الحقيقة بغيت تجديد جواز السفر",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:50"
+        },
+        {
+          "id": 1614,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:50"
+        }
+      ],
+      "ms": 3193
+    },
+    {
+      "id": "cancel_in_flight_request",
+      "label": "#5 — Cancel an in-flight request",
+      "sid": "bench-cancel_in_flight_request-1778233132009",
+      "transcript": [
+        {
+          "kind": "turn",
+          "citizen": "مرحبا",
+          "bot_reply": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "ms": 451,
+          "buttons": [
+            "status:check",
+            "service:cancel"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "__btn__:status:check",
+          "bot_reply": "📊 *حالة طلبك*\n\n🆔 رقم الطلب: *#R-210*\n📂 الخدمة: خدمة طلب تجديد رخصة سياقة\n⏳ في انتظار مراجعة المكتب",
+          "ms": 7,
+          "buttons": [
+            "status:check",
+            "service:cancel"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "__btn__:service:cancel",
+          "bot_reply": "⚠️ هل تؤكد طلب إلغاء طلبك *#R-210*؟ سيُرسل طلب الإلغاء إلى المكتب المتولّي للمراجعة.",
+          "ms": 10,
+          "buttons": [
+            "confirm:yes",
+            "confirm:no"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "__btn__:confirm:yes",
+          "bot_reply": "⚠️ تعذّر إرسال طلب الإلغاء حالياً.\n\nتواصل مع مكتب سند مباشرة عبر التطبيق، أو حاول مرة أخرى بعد لحظات.",
+          "ms": 8,
+          "buttons": [
+            "confirm:yes",
+            "status:check"
+          ]
+        }
+      ],
+      "final_state": {
+        "status": "queued",
+        "request_id": 210,
+        "service_id": 140017,
+        "docs_collected": 0
+      },
+      "db_messages": [
+        {
+          "id": 1615,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "مرحبا",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:52"
+        },
+        {
+          "id": 1616,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:52"
+        },
+        {
+          "id": 1617,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "__btn__:status:check",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:52"
+        },
+        {
+          "id": 1618,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "📊 *حالة طلبك*\n\n🆔 رقم الطلب: *#R-210*\n📂 الخدمة: خدمة طلب تجديد رخصة سياقة\n⏳ في انتظار مراجعة المكتب",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:52"
+        },
+        {
+          "id": 1619,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "__btn__:service:cancel",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:52"
+        },
+        {
+          "id": 1620,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⚠️ هل تؤكد طلب إلغاء طلبك *#R-210*؟ سيُرسل طلب الإلغاء إلى المكتب المتولّي للمراجعة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:52"
+        },
+        {
+          "id": 1621,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "__btn__:confirm:yes",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:52"
+        },
+        {
+          "id": 1622,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⚠️ تعذّر إرسال طلب الإلغاء حالياً.\n\nتواصل مع مكتب سند مباشرة عبر التطبيق، أو حاول مرة أخرى بعد لحظات.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:52"
+        }
+      ],
+      "ms": 1992
+    },
+    {
+      "id": "free_text_status_query",
+      "label": "#6 — Asks status by typing (no button)",
+      "sid": "bench-free_text_status_query-1778233134001",
+      "transcript": [
+        {
+          "kind": "turn",
+          "citizen": "وصلني رابط الدفع؟",
+          "bot_reply": "⏳ لم يصلني رابط الدفع بعد — المكتب يعدّ الطلب.\n\nسأرسله إليك فور جاهزيته.",
+          "ms": 46,
+          "buttons": [
+            "status:check",
+            "service:cancel"
+          ]
+        }
+      ],
+      "final_state": {
+        "status": "awaiting_payment",
+        "request_id": 211,
+        "service_id": 140017,
+        "docs_collected": 0
+      },
+      "db_messages": [
+        {
+          "id": 1623,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "وصلني رابط الدفع؟",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:54"
+        },
+        {
+          "id": 1624,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⏳ لم يصلني رابط الدفع بعد — المكتب يعدّ الطلب.\n\nسأرسله إليك فور جاهزيته.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:54"
+        }
+      ],
+      "ms": 1575
+    },
+    {
+      "id": "no_files_yet_then_submit_attempt",
+      "label": "#7 — Tap submit before sending any file",
+      "sid": "bench-no_files_yet_then_submit_attempt-1778233135576",
+      "transcript": [
+        {
+          "kind": "turn",
+          "citizen": "تجديد رخصة القيادة",
+          "bot_reply": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "ms": 373,
+          "buttons": [
+            "discover:license",
+            "discover:title",
+            "discover:cr"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "__btn__:confirm:yes",
+          "bot_reply": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "ms": 374,
+          "buttons": [
+            "discover:license",
+            "discover:title",
+            "discover:cr"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "__btn__:review:submit",
+          "bot_reply": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "ms": 565,
+          "buttons": [
+            "discover:license",
+            "discover:title",
+            "discover:cr"
+          ]
+        }
+      ],
+      "final_state": {
+        "status": "idle",
+        "docs_collected": 0
+      },
+      "db_messages": [
+        {
+          "id": 1625,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "تجديد رخصة القيادة",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:55"
+        },
+        {
+          "id": 1626,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:55"
+        },
+        {
+          "id": 1627,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "__btn__:confirm:yes",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:55"
+        },
+        {
+          "id": 1628,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:56"
+        },
+        {
+          "id": 1629,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "__btn__:review:submit",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:56"
+        },
+        {
+          "id": 1630,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:56"
+        }
+      ],
+      "ms": 2827
+    },
+    {
+      "id": "payment_link_present",
+      "label": "#8 — Payment-link query when link IS present (deterministic handler)",
+      "sid": "bench-payment_link_present-1778233138403",
+      "transcript": [
+        {
+          "kind": "turn",
+          "citizen": "وين رابط الدفع؟",
+          "bot_reply": "💳 *رابط الدفع*\n💰 الإجمالي: 21.500 ر.ع\n\n/api/payments/_stub/request_pay?ref=req-bench-pay\n\nاضغط الرابط للدفع — سأخبرك فور إتمام المعاملة.",
+          "ms": 7,
+          "buttons": [
+            "status:check",
+            "service:cancel"
+          ]
+        }
+      ],
+      "final_state": {
+        "status": "awaiting_payment",
+        "request_id": 212,
+        "service_id": 140017,
+        "docs_collected": 0
+      },
+      "db_messages": [
+        {
+          "id": 1631,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "وين رابط الدفع؟",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:58"
+        },
+        {
+          "id": 1632,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "💳 *رابط الدفع*\n💰 الإجمالي: 21.500 ر.ع\n\n/api/payments/_stub/request_pay?ref=req-bench-pay\n\nاضغط الرابط للدفع — سأخبرك فور إتمام المعاملة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:38:58"
+        }
+      ],
+      "ms": 1518
+    },
+    {
+      "id": "otp_forward_refusal",
+      "label": "#9 — Citizen asks to forward an OTP (must redirect)",
+      "sid": "bench-otp_forward_refusal-1778233139921",
+      "transcript": [
+        {
+          "kind": "turn",
+          "citizen": "وصلني رمز تحقق، شو أسوي فيه؟",
+          "bot_reply": "🔒 *لا تشاركني رمز التحقق* — الرمز خاص بك وحدك.\n\nأكمل خطوة التحقق على بوابة الخدمة الحكومية مباشرة.\n\nإن احتجت مساعدة بشيء آخر، أخبرني.",
+          "ms": 6,
+          "buttons": [
+            "status:check",
+            "service:cancel"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "الرمز: 123456",
+          "bot_reply": "🔒 *لا تشاركني رمز التحقق* — الرمز خاص بك وحدك.\n\nأكمل خطوة التحقق على بوابة الخدمة الحكومية مباشرة.\n\nإن احتجت مساعدة بشيء آخر، أخبرني.",
+          "ms": 5,
+          "buttons": [
+            "status:check",
+            "service:cancel"
+          ]
+        }
+      ],
+      "final_state": {
+        "status": "in_progress",
+        "request_id": 213,
+        "service_id": 140017,
+        "docs_collected": 0
+      },
+      "db_messages": [
+        {
+          "id": 1633,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "وصلني رمز تحقق، شو أسوي فيه؟",
           "media_url": null,
-          "created_at": "2026-05-08 09:08:19"
+          "created_at": "2026-05-08 09:38:59"
         },
         {
-          "id": 1331,
+          "id": 1634,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "🔒 *لا تشاركني رمز التحقق* — الرمز خاص بك وحدك.\n\nأكمل خطوة التحقق على بوابة الخدمة الحكومية مباشرة.\n\nإن احتجت مساعدة بشيء آخر، أخبرني.",
           "media_url": null,
-          "created_at": "2026-05-08 09:08:19"
+          "created_at": "2026-05-08 09:38:59"
         },
         {
-          "id": 1332,
+          "id": 1635,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "الرمز: 123456",
           "media_url": null,
-          "created_at": "2026-05-08 09:08:19"
+          "created_at": "2026-05-08 09:38:59"
         },
         {
-          "id": 1333,
+          "id": 1636,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "🔒 *لا تشاركني رمز التحقق* — الرمز خاص بك وحدك.\n\nأكمل خطوة التحقق على بوابة الخدمة الحكومية مباشرة.\n\nإن احتجت مساعدة بشيء آخر، أخبرني.",
           "media_url": null,
-          "created_at": "2026-05-08 09:08:19"
+          "created_at": "2026-05-08 09:38:59"
         }
       ],
-      "ms": 1538
+      "ms": 1531
     },
     {
       "id": "thanks_ack",
       "label": "#10 — Citizen says thanks (deterministic ack)",
-      "sid": "bench-thanks_ack-1778231301453",
+      "sid": "bench-thanks_ack-1778233141452",
       "transcript": [
         {
           "kind": "turn",
           "citizen": "شكراً",
           "bot_reply": "🤍 العفو. أخبرني إن احتجت أي خدمة أخرى.",
-          "ms": 9,
+          "ms": 19,
           "buttons": null
         }
       ],
@@ -222,62 +1089,62 @@
       },
       "db_messages": [
         {
-          "id": 1334,
+          "id": 1637,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "شكراً",
           "media_url": null,
-          "created_at": "2026-05-08 09:08:21"
+          "created_at": "2026-05-08 09:39:01"
         },
         {
-          "id": 1335,
+          "id": 1638,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "🤍 العفو. أخبرني إن احتجت أي خدمة أخرى.",
           "media_url": null,
-          "created_at": "2026-05-08 09:08:21"
+          "created_at": "2026-05-08 09:39:01"
         }
       ],
-      "ms": 1511
+      "ms": 1531
     },
     {
       "id": "fee_query_in_flight",
       "label": "#11 — Citizen asks \"كم الرسوم\" while service is known",
-      "sid": "bench-fee_query_in_flight-1778231302964",
+      "sid": "bench-fee_query_in_flight-1778233142983",
       "transcript": [
         {
           "kind": "turn",
           "citizen": "كم الرسوم؟",
           "bot_reply": "💰 رسوم *خدمة طلب تجديد رخصة سياقة*: 20 ر.ع",
-          "ms": 7,
+          "ms": 8,
           "buttons": null
         }
       ],
       "final_state": {
         "status": "collecting",
-        "request_id": 184,
+        "request_id": 214,
         "service_id": 140017,
         "docs_collected": 0
       },
       "db_messages": [
         {
-          "id": 1336,
+          "id": 1639,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "كم الرسوم؟",
           "media_url": null,
-          "created_at": "2026-05-08 09:08:22"
+          "created_at": "2026-05-08 09:39:02"
         },
         {
-          "id": 1337,
+          "id": 1640,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "💰 رسوم *خدمة طلب تجديد رخصة سياقة*: 20 ر.ع",
           "media_url": null,
-          "created_at": "2026-05-08 09:08:22"
+          "created_at": "2026-05-08 09:39:02"
         }
       ],
-      "ms": 1520
+      "ms": 1529
     }
   ]
 }

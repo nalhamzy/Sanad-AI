@@ -108,6 +108,10 @@ whatsappRouter.post('/webhook', async (req, res) => {
       else if (id === 'pick:1')         interactiveText = '__btn__:pick:1';
       else if (id === 'pick:2')         interactiveText = '__btn__:pick:2';
       else if (id === 'pick:3')         interactiveText = '__btn__:pick:3';
+      // codex iter-7 — discovery hints surfaced when LLM is unreachable.
+      else if (id === 'discover:license') interactiveText = '__btn__:discover:license';
+      else if (id === 'discover:title')   interactiveText = '__btn__:discover:title';
+      else if (id === 'discover:cr')      interactiveText = '__btn__:discover:cr';
       else if (id === 'confirm:yes')  interactiveText = '__btn__:confirm:yes';
       else if (id === 'confirm:no')   interactiveText = '__btn__:confirm:no';
       else interactiveText = title; // generic — just forward what was tapped
