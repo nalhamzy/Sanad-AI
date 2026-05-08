@@ -1,0 +1,833 @@
+{
+  "summary": {
+    "generated_at": "2026-05-08T08:08:37.229Z",
+    "scenario_count": 7,
+    "passed": 7,
+    "failed": 0,
+    "ux": {
+      "avg_reply_length": 181,
+      "button_attached_rate": 1.053,
+      "english_label_leak_rate": 0,
+      "deterministic_vs_llm_ratio": 0.368
+    },
+    "flow": {
+      "sessions_reached_collecting": 4,
+      "sessions_reached_reviewing": 2,
+      "sessions_reached_queued": 2,
+      "sessions_reached_completed": 0
+    },
+    "hazards": {
+      "silent_failures": 4
+    },
+    "per_scenario": [
+      {
+        "id": "doesnt_know_what_he_wants",
+        "label": "#1 — User doesn't know what they want",
+        "turns": 3,
+        "bot_msgs": 3,
+        "turns_with_buttons": 0,
+        "turns_with_bot_reply": 3,
+        "avg_reply_chars": 247,
+        "deterministic_replies": 0,
+        "english_leaks": 0,
+        "final_state": {
+          "status": "idle",
+          "docs_collected": 0
+        },
+        "ms": 16395
+      },
+      {
+        "id": "service_accept_random_attachments",
+        "label": "#2 — Accept service, send 4 attachments in random order",
+        "turns": 7,
+        "bot_msgs": 3,
+        "turns_with_buttons": 7,
+        "turns_with_bot_reply": 3,
+        "avg_reply_chars": 181,
+        "deterministic_replies": 2,
+        "english_leaks": 0,
+        "final_state": {
+          "status": "collecting",
+          "request_id": null,
+          "service_id": 140017,
+          "docs_collected": 1
+        },
+        "ms": 19579
+      },
+      {
+        "id": "follow_up_request",
+        "label": "#3 — Follow up on existing request",
+        "turns": 2,
+        "bot_msgs": 2,
+        "turns_with_buttons": 2,
+        "turns_with_bot_reply": 2,
+        "avg_reply_chars": 254,
+        "deterministic_replies": 1,
+        "english_leaks": 0,
+        "final_state": {
+          "status": "in_progress",
+          "request_id": 152,
+          "service_id": 140017,
+          "docs_collected": 0
+        },
+        "ms": 6293
+      },
+      {
+        "id": "mid_flow_pivot",
+        "label": "#4 — Mid-flow pivot to different service",
+        "turns": 4,
+        "bot_msgs": 4,
+        "turns_with_buttons": 3,
+        "turns_with_bot_reply": 4,
+        "avg_reply_chars": 176,
+        "deterministic_replies": 2,
+        "english_leaks": 0,
+        "final_state": {
+          "status": "idle",
+          "docs_collected": 0
+        },
+        "ms": 18127
+      },
+      {
+        "id": "cancel_in_flight_request",
+        "label": "#5 — Cancel an in-flight request",
+        "turns": 4,
+        "bot_msgs": 3,
+        "turns_with_buttons": 4,
+        "turns_with_bot_reply": 4,
+        "avg_reply_chars": 101,
+        "deterministic_replies": 1,
+        "english_leaks": 0,
+        "final_state": {
+          "status": "idle",
+          "request_id": 153,
+          "service_id": 140017,
+          "docs_collected": 0
+        },
+        "ms": 9892
+      },
+      {
+        "id": "free_text_status_query",
+        "label": "#6 — Asks status by typing (no button)",
+        "turns": 1,
+        "bot_msgs": 1,
+        "turns_with_buttons": 1,
+        "turns_with_bot_reply": 1,
+        "avg_reply_chars": 72,
+        "deterministic_replies": 0,
+        "english_leaks": 0,
+        "final_state": {
+          "status": "awaiting_payment",
+          "request_id": 154,
+          "service_id": 140017,
+          "docs_collected": 0
+        },
+        "ms": 1520
+      },
+      {
+        "id": "no_files_yet_then_submit_attempt",
+        "label": "#7 — Tap submit before sending any file",
+        "turns": 3,
+        "bot_msgs": 3,
+        "turns_with_buttons": 3,
+        "turns_with_bot_reply": 3,
+        "avg_reply_chars": 187,
+        "deterministic_replies": 1,
+        "english_leaks": 0,
+        "final_state": {
+          "status": "collecting",
+          "request_id": null,
+          "service_id": 140017,
+          "docs_collected": 0
+        },
+        "ms": 18743
+      }
+    ]
+  },
+  "results": [
+    {
+      "id": "doesnt_know_what_he_wants",
+      "label": "#1 — User doesn't know what they want",
+      "sid": "bench-doesnt_know_what_he_wants-1778227626680",
+      "transcript": [
+        {
+          "kind": "turn",
+          "citizen": "مرحبا",
+          "bot_reply": "مرحباً! 👋 أنا **ساند** — مساعدك الذكي لإنجاز معاملاتك الحكومية في سلطنة عُمان.\n\nأُجهّز لك الملف خطوة بخطوة، ثم يستلمه أحد *مكاتب سند المرخّصة* ليُتمّ المعاملة نيابةً عنك.\n\n🔎 أرسل لي اسم الخدمة التي تريدها — مثل:\n• تجديد رخصة القيادة\n• بدل فاقد سند ملكية\n• إصدار سجل تجاري\n\nأو اكتب أي خدمة حكومية وسأبحث لك عنها في كتالوج 600+ خدمة. 🌟",
+          "ms": 14,
+          "buttons": null
+        },
+        {
+          "kind": "turn",
+          "citizen": "محتاج مساعدة بخدمة حكومية",
+          "bot_reply": "أهلاً! 👋\n\nأنا جاهز أساعدك. فقط أخبرني بالخدمة اللي تحتاجها — مثلاً:\n\n• رخصة قيادة\n• جواز سفر\n• سجل تجاري\n• تصريح بناء\n\nأو اكتب اسم الخدمة وأبحث لك عنها. 🔎",
+          "ms": 6515,
+          "buttons": null
+        },
+        {
+          "kind": "turn",
+          "citizen": "مش متأكد بالضبط… شي يخص السيارة",
+          "bot_reply": "هذي أبرز الخدمات المتعلقة بالسيارات: 🚗\n\n1️⃣ تجديد رخصة السياقة — 20 ر.ع\n2️⃣ تأمين السيارات — 4 ر.ع\n3️⃣ نقل ملكية مركبة\n4️⃣ إصدار تصاريح خاصة للمركبات — 5 ر.ع\n5️⃣ ترخيص تشغيل سيارات الأجرة\n\nأي وحدة تحتاج؟ أو أخبرني أكثر عن اللي تبي تسويه وأساعدك. 😊",
+          "ms": 8351,
+          "buttons": null
+        }
+      ],
+      "final_state": {
+        "status": "idle",
+        "docs_collected": 0
+      },
+      "db_messages": [
+        {
+          "id": 1026,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "مرحبا",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:06"
+        },
+        {
+          "id": 1027,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "مرحباً! 👋 أنا **ساند** — مساعدك الذكي لإنجاز معاملاتك الحكومية في سلطنة عُمان.\n\nأُجهّز لك الملف خطوة بخطوة، ثم يستلمه أحد *مكاتب سند المرخّصة* ليُتمّ المعاملة نيابةً عنك.\n\n🔎 أرسل لي اسم الخدمة التي تريدها — مثل:\n• تجديد رخصة القيادة\n• بدل فاقد سند ملكية\n• إصدار سجل تجاري\n\nأو اكتب أي خدمة حكومية وسأبحث لك عنها في كتالوج 600+ خدمة. 🌟",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:06"
+        },
+        {
+          "id": 1028,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "محتاج مساعدة بخدمة حكومية",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:06"
+        },
+        {
+          "id": 1029,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "أهلاً! 👋\n\nأنا جاهز أساعدك. فقط أخبرني بالخدمة اللي تحتاجها — مثلاً:\n\n• رخصة قيادة\n• جواز سفر\n• سجل تجاري\n• تصريح بناء\n\nأو اكتب اسم الخدمة وأبحث لك عنها. 🔎",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:13"
+        },
+        {
+          "id": 1030,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "مش متأكد بالضبط… شي يخص السيارة",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:13"
+        },
+        {
+          "id": 1031,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "هذي أبرز الخدمات المتعلقة بالسيارات: 🚗\n\n1️⃣ تجديد رخصة السياقة — 20 ر.ع\n2️⃣ تأمين السيارات — 4 ر.ع\n3️⃣ نقل ملكية مركبة\n4️⃣ إصدار تصاريح خاصة للمركبات — 5 ر.ع\n5️⃣ ترخيص تشغيل سيارات الأجرة\n\nأي وحدة تحتاج؟ أو أخبرني أكثر عن اللي تبي تسويه وأساعدك. 😊",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:21"
+        }
+      ],
+      "ms": 16395
+    },
+    {
+      "id": "service_accept_random_attachments",
+      "label": "#2 — Accept service, send 4 attachments in random order",
+      "sid": "bench-service_accept_random_attachments-1778227643075",
+      "transcript": [
+        {
+          "kind": "turn",
+          "citizen": "بغيت أجدد رخصة القيادة",
+          "bot_reply": "لقيت الخدمة اللي تبيها:\n\n🛂 خدمة طلب تجديد رخصة سياقة\nالجهة: شرطة عمان السلطانية\nالرسوم: 20 ريال عُماني\n\nتبي نبدأ بتجهيز طلبك؟",
+          "ms": 6563,
+          "buttons": [
+            "confirm:yes",
+            "confirm:no"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "__btn__:confirm:yes",
+          "bot_reply": "✅ بدأت طلبك:\n*خدمة طلب تجديد رخصة سياقة*\n🏛 شرطة عمان السلطانية\n💰 الرسوم: 20 ر.ع\n\n📋 *المستندات المطلوبة* (5):\n1. البطاقة المدنية\n2. جواز السفر\n3. رخصة القيادة الحالية\n4. صورة شخصية حديثة\n5. شهادة كشف طبي\n\nأرسل المستندات الآن — كلها معاً أو بأي ترتيب.",
+          "ms": 5513,
+          "buttons": [
+            "service:switch",
+            "service:cancel"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "(attachment)",
+          "bot_reply": "",
+          "ms": 5964,
+          "buttons": [
+            "service:switch",
+            "service:cancel"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "(attachment)",
+          "bot_reply": "",
+          "ms": 6,
+          "buttons": [
+            "review:submit",
+            "burst:more",
+            "service:cancel"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "(attachment)",
+          "bot_reply": "",
+          "ms": 6,
+          "buttons": [
+            "review:submit",
+            "burst:more",
+            "service:cancel"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "(attachment)",
+          "bot_reply": "",
+          "ms": 5,
+          "buttons": [
+            "review:submit",
+            "burst:more",
+            "service:cancel"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "__btn__:review:submit",
+          "bot_reply": "لم يصلني أي ملف بعد.\n\n⏳ البطاقة المدنية\n⏳ جواز السفر\n⏳ رخصة القيادة الحالية\n⏳ صورة شخصية حديثة\n⏳ شهادة كشف طبي\n\nأرسل ملفاتك الآن — كلها معاً أو واحداً تلو الآخر، بأي ترتيب.",
+          "ms": 9,
+          "buttons": [
+            "review:submit",
+            "burst:more",
+            "service:cancel"
+          ]
+        }
+      ],
+      "final_state": {
+        "status": "collecting",
+        "request_id": null,
+        "service_id": 140017,
+        "docs_collected": 1
+      },
+      "db_messages": [
+        {
+          "id": 1032,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "بغيت أجدد رخصة القيادة",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:23"
+        },
+        {
+          "id": 1033,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "لقيت الخدمة اللي تبيها:\n\n🛂 خدمة طلب تجديد رخصة سياقة\nالجهة: شرطة عمان السلطانية\nالرسوم: 20 ريال عُماني\n\nتبي نبدأ بتجهيز طلبك؟",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:29"
+        },
+        {
+          "id": 1034,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "__btn__:confirm:yes",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:29"
+        },
+        {
+          "id": 1035,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "✅ بدأت طلبك:\n*خدمة طلب تجديد رخصة سياقة*\n🏛 شرطة عمان السلطانية\n💰 الرسوم: 20 ر.ع\n\n📋 *المستندات المطلوبة* (5):\n1. البطاقة المدنية\n2. جواز السفر\n3. رخصة القيادة الحالية\n4. صورة شخصية حديثة\n5. شهادة كشف طبي\n\nأرسل المستندات الآن — كلها معاً أو بأي ترتيب.",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:35"
+        },
+        {
+          "id": 1036,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "(attachment)",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:35"
+        },
+        {
+          "id": 1037,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "(attachment)",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:41"
+        },
+        {
+          "id": 1038,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "(attachment)",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:41"
+        },
+        {
+          "id": 1039,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "(attachment)",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:41"
+        },
+        {
+          "id": 1040,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "📥 استلمت 4 ملفات.\n\n⏳ البطاقة المدنية\n⏳ جواز السفر\n⏳ رخصة القيادة الحالية\n⏳ صورة شخصية حديثة\n⏳ شهادة كشف طبي\n\nهل اكتمل ملفك؟ اضغط *✅ انتهيت من الرفع* أو أرسل المزيد.",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:41"
+        },
+        {
+          "id": 1041,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "__btn__:review:submit",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:41"
+        }
+      ],
+      "ms": 19579
+    },
+    {
+      "id": "follow_up_request",
+      "label": "#3 — Follow up on existing request",
+      "sid": "bench-follow_up_request-1778227662654",
+      "transcript": [
+        {
+          "kind": "turn",
+          "citizen": "مرحبا، أبي أعرف وضع طلبي",
+          "bot_reply": "أهلاً! 👋\n\nعندك أكثر من طلب قيد التنفيذ:\n\n1. #R-152 · تجديد رخصة القيادة · قيد التنفيذ\n2. #R-148 · تجديد رخصة القيادة · قيد التنفيذ\n3. #R-66 · تجديد رخصة القيادة · قيد التنفيذ (مكتب سند النهضة)\n4. #R-64 · تجديد رخصة القيادة · قيد التنفيذ (مكتب سند النهضة)\n5. #R-63 · تجديد رخصة القيادة · قيد التنفيذ (مكتب سند النهضة)\n6. #R-62 · تجديد رخصة القيادة · قيد التنفيذ (مكتب سند النهضة)\n\nأي طلب تبي تفاصيله؟",
+          "ms": 4769,
+          "buttons": [
+            "status:check",
+            "service:cancel"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "__btn__:status:check",
+          "bot_reply": "📊 *حالة طلبك*\n\n🆔 رقم الطلب: *#R-152*\n📂 الخدمة: خدمة طلب تجديد رخصة سياقة\n⚙️ المكتب يعمل على إنجاز معاملتك",
+          "ms": 6,
+          "buttons": [
+            "status:check",
+            "service:cancel"
+          ]
+        }
+      ],
+      "final_state": {
+        "status": "in_progress",
+        "request_id": 152,
+        "service_id": 140017,
+        "docs_collected": 0
+      },
+      "db_messages": [
+        {
+          "id": 1042,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "مرحبا، أبي أعرف وضع طلبي",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:42"
+        },
+        {
+          "id": 1043,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "أهلاً! 👋\n\nعندك أكثر من طلب قيد التنفيذ:\n\n1. #R-152 · تجديد رخصة القيادة · قيد التنفيذ\n2. #R-148 · تجديد رخصة القيادة · قيد التنفيذ\n3. #R-66 · تجديد رخصة القيادة · قيد التنفيذ (مكتب سند النهضة)\n4. #R-64 · تجديد رخصة القيادة · قيد التنفيذ (مكتب سند النهضة)\n5. #R-63 · تجديد رخصة القيادة · قيد التنفيذ (مكتب سند النهضة)\n6. #R-62 · تجديد رخصة القيادة · قيد التنفيذ (مكتب سند النهضة)\n\nأي طلب تبي تفاصيله؟",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:47"
+        },
+        {
+          "id": 1044,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "__btn__:status:check",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:47"
+        },
+        {
+          "id": 1045,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "📊 *حالة طلبك*\n\n🆔 رقم الطلب: *#R-152*\n📂 الخدمة: خدمة طلب تجديد رخصة سياقة\n⚙️ المكتب يعمل على إنجاز معاملتك",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:47"
+        }
+      ],
+      "ms": 6293
+    },
+    {
+      "id": "mid_flow_pivot",
+      "label": "#4 — Mid-flow pivot to different service",
+      "sid": "bench-mid_flow_pivot-1778227668947",
+      "transcript": [
+        {
+          "kind": "turn",
+          "citizen": "بغيت تجديد رخصة القيادة",
+          "bot_reply": "لقيت الخدمة اللي تبيها:\n\n🚗 خدمة طلب تجديد رخصة سياقة\nالجهة: شرطة عمان السلطانية\nالرسوم: 20 ريال عُماني\n\nتبي نبدأ بتجهيز الطلب؟",
+          "ms": 5986,
+          "buttons": [
+            "confirm:yes",
+            "confirm:no"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "__btn__:confirm:yes",
+          "bot_reply": "✅ بدأت طلبك:\n*خدمة طلب تجديد رخصة سياقة*\n🏛 شرطة عمان السلطانية\n💰 الرسوم: 20 ر.ع\n\n📋 *المستندات المطلوبة* (5):\n1. البطاقة المدنية\n2. جواز السفر\n3. رخصة القيادة الحالية\n4. صورة شخصية حديثة\n5. شهادة كشف طبي\n\nأرسل المستندات الآن — كلها معاً أو بأي ترتيب.",
+          "ms": 6178,
+          "buttons": [
+            "service:switch",
+            "service:cancel"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "__btn__:service:switch",
+          "bot_reply": "🔍 تمام، أخبرني باسم الخدمة التي تريدها — مثل: تجديد رخصة القيادة، إصدار سجل تجاري، بدل فاقد سند ملكية…",
+          "ms": 9,
+          "buttons": null
+        },
+        {
+          "kind": "turn",
+          "citizen": "لا في الحقيقة بغيت تجديد جواز السفر",
+          "bot_reply": "عندك طلب جاري (تجديد رخصة سياقة) ولم تُرفع أي مستندات بعد.\n\nللأسف، لا أرى خدمة تجديد جواز السفر في القائمة الحالية. أقرب خدمة هي \"خدمة إصدار جواز سفر عماني\" (إصدار أول مرة).\n\nتبي ألغي طلب الرخصة وأبدأ بطلب إصدار جواز السفر؟",
+          "ms": 4452,
+          "buttons": [
+            "confirm:yes",
+            "confirm:no"
+          ]
+        }
+      ],
+      "final_state": {
+        "status": "idle",
+        "docs_collected": 0
+      },
+      "db_messages": [
+        {
+          "id": 1046,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "بغيت تجديد رخصة القيادة",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:48"
+        },
+        {
+          "id": 1047,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "لقيت الخدمة اللي تبيها:\n\n🚗 خدمة طلب تجديد رخصة سياقة\nالجهة: شرطة عمان السلطانية\nالرسوم: 20 ريال عُماني\n\nتبي نبدأ بتجهيز الطلب؟",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:54"
+        },
+        {
+          "id": 1048,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "__btn__:confirm:yes",
+          "media_url": null,
+          "created_at": "2026-05-08 08:07:54"
+        },
+        {
+          "id": 1049,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "✅ بدأت طلبك:\n*خدمة طلب تجديد رخصة سياقة*\n🏛 شرطة عمان السلطانية\n💰 الرسوم: 20 ر.ع\n\n📋 *المستندات المطلوبة* (5):\n1. البطاقة المدنية\n2. جواز السفر\n3. رخصة القيادة الحالية\n4. صورة شخصية حديثة\n5. شهادة كشف طبي\n\nأرسل المستندات الآن — كلها معاً أو بأي ترتيب.",
+          "media_url": null,
+          "created_at": "2026-05-08 08:08:01"
+        },
+        {
+          "id": 1050,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "__btn__:service:switch",
+          "media_url": null,
+          "created_at": "2026-05-08 08:08:01"
+        },
+        {
+          "id": 1051,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "🔍 تمام، أخبرني باسم الخدمة التي تريدها — مثل: تجديد رخصة القيادة، إصدار سجل تجاري، بدل فاقد سند ملكية…",
+          "media_url": null,
+          "created_at": "2026-05-08 08:08:01"
+        },
+        {
+          "id": 1052,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "لا في الحقيقة بغيت تجديد جواز السفر",
+          "media_url": null,
+          "created_at": "2026-05-08 08:08:01"
+        },
+        {
+          "id": 1053,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "عندك طلب جاري (تجديد رخصة سياقة) ولم تُرفع أي مستندات بعد.\n\nللأسف، لا أرى خدمة تجديد جواز السفر في القائمة الحالية. أقرب خدمة هي \"خدمة إصدار جواز سفر عماني\" (إصدار أول مرة).\n\nتبي ألغي طلب الرخصة وأبدأ بطلب إصدار جواز السفر؟",
+          "media_url": null,
+          "created_at": "2026-05-08 08:08:05"
+        }
+      ],
+      "ms": 18127
+    },
+    {
+      "id": "cancel_in_flight_request",
+      "label": "#5 — Cancel an in-flight request",
+      "sid": "bench-cancel_in_flight_request-1778227687074",
+      "transcript": [
+        {
+          "kind": "turn",
+          "citizen": "مرحبا",
+          "bot_reply": "أهلاً وسهلاً! 👋\n\nطلبك رقم R-153 لتجديد رخصة القيادة في قائمة الانتظار الآن. سيراجعه مكتب سند ويرسل لك رابط الدفع قريباً.\n\nكيف أقدر أساعدك؟",
+          "ms": 3277,
+          "buttons": [
+            "status:check",
+            "service:cancel"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "__btn__:status:check",
+          "bot_reply": "📊 *حالة طلبك*\n\n🆔 رقم الطلب: *#R-153*\n📂 الخدمة: خدمة طلب تجديد رخصة سياقة\n⏳ في انتظار مراجعة المكتب",
+          "ms": 7,
+          "buttons": [
+            "status:check",
+            "service:cancel"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "__btn__:service:cancel",
+          "bot_reply": "⚠️ هل تؤكد طلب إلغاء طلبك *#R-153*؟ سيُرسل طلب الإلغاء إلى المكتب المتولّي للمراجعة.",
+          "ms": 8,
+          "buttons": [
+            "confirm:yes",
+            "confirm:no"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "__btn__:confirm:yes",
+          "bot_reply": "✅ تم إلغاء طلبك رقم R-153 بنجاح.\n\nهل تحتاج مساعدة في خدمة أخرى؟",
+          "ms": 5091,
+          "buttons": [
+            "confirm:yes",
+            "confirm:no"
+          ]
+        }
+      ],
+      "final_state": {
+        "status": "idle",
+        "request_id": 153,
+        "service_id": 140017,
+        "docs_collected": 0
+      },
+      "db_messages": [
+        {
+          "id": 1054,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "مرحبا",
+          "media_url": null,
+          "created_at": "2026-05-08 08:08:07"
+        },
+        {
+          "id": 1055,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "أهلاً وسهلاً! 👋\n\nطلبك رقم R-153 لتجديد رخصة القيادة في قائمة الانتظار الآن. سيراجعه مكتب سند ويرسل لك رابط الدفع قريباً.\n\nكيف أقدر أساعدك؟",
+          "media_url": null,
+          "created_at": "2026-05-08 08:08:10"
+        },
+        {
+          "id": 1056,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "__btn__:status:check",
+          "media_url": null,
+          "created_at": "2026-05-08 08:08:10"
+        },
+        {
+          "id": 1057,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "📊 *حالة طلبك*\n\n🆔 رقم الطلب: *#R-153*\n📂 الخدمة: خدمة طلب تجديد رخصة سياقة\n⏳ في انتظار مراجعة المكتب",
+          "media_url": null,
+          "created_at": "2026-05-08 08:08:10"
+        },
+        {
+          "id": 1058,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "__btn__:service:cancel",
+          "media_url": null,
+          "created_at": "2026-05-08 08:08:10"
+        },
+        {
+          "id": 1059,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "__btn__:confirm:yes",
+          "media_url": null,
+          "created_at": "2026-05-08 08:08:10"
+        },
+        {
+          "id": 1060,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "✅ تم إلغاء طلبك رقم R-153 بنجاح.\n\nهل تحتاج مساعدة في خدمة أخرى؟",
+          "media_url": null,
+          "created_at": "2026-05-08 08:08:15"
+        }
+      ],
+      "ms": 9892
+    },
+    {
+      "id": "free_text_status_query",
+      "label": "#6 — Asks status by typing (no button)",
+      "sid": "bench-free_text_status_query-1778227696966",
+      "transcript": [
+        {
+          "kind": "turn",
+          "citizen": "وصلني رابط الدفع؟",
+          "bot_reply": "⏳ لم يصلني رابط الدفع بعد — المكتب يعدّ الطلب.\n\nسأرسله إليك فور جاهزيته.",
+          "ms": 7,
+          "buttons": [
+            "status:check",
+            "service:cancel"
+          ]
+        }
+      ],
+      "final_state": {
+        "status": "awaiting_payment",
+        "request_id": 154,
+        "service_id": 140017,
+        "docs_collected": 0
+      },
+      "db_messages": [
+        {
+          "id": 1061,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "وصلني رابط الدفع؟",
+          "media_url": null,
+          "created_at": "2026-05-08 08:08:16"
+        },
+        {
+          "id": 1062,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "⏳ لم يصلني رابط الدفع بعد — المكتب يعدّ الطلب.\n\nسأرسله إليك فور جاهزيته.",
+          "media_url": null,
+          "created_at": "2026-05-08 08:08:16"
+        }
+      ],
+      "ms": 1520
+    },
+    {
+      "id": "no_files_yet_then_submit_attempt",
+      "label": "#7 — Tap submit before sending any file",
+      "sid": "bench-no_files_yet_then_submit_attempt-1778227698486",
+      "transcript": [
+        {
+          "kind": "turn",
+          "citizen": "تجديد رخصة القيادة",
+          "bot_reply": "وجدت الخدمة المطلوبة:\n\n🚗 خدمة طلب تجديد رخصة سياقة\nالجهة: شرطة عمان السلطانية\nالرسوم: 20 ريال عُماني\n\nهل تريد أن أبدأ بتجهيز طلبك؟",
+          "ms": 7678,
+          "buttons": [
+            "confirm:yes",
+            "confirm:no"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "__btn__:confirm:yes",
+          "bot_reply": "✅ بدأت طلبك:\n*خدمة طلب تجديد رخصة سياقة*\n🏛 شرطة عمان السلطانية\n💰 الرسوم: 20 ر.ع\n\n📋 *المستندات المطلوبة* (5):\n1. البطاقة المدنية\n2. جواز السفر\n3. رخصة القيادة الحالية\n4. صورة شخصية حديثة\n5. شهادة كشف طبي\n\nأرسل المستندات الآن — كلها معاً أو بأي ترتيب.",
+          "ms": 5993,
+          "buttons": [
+            "service:switch",
+            "service:cancel"
+          ]
+        },
+        {
+          "kind": "turn",
+          "citizen": "__btn__:review:submit",
+          "bot_reply": "لم تُرفق أي مستندات بعد. المطلوب 5 مستندات:\n\n1. ⬜ البطاقة المدنية\n2. ⬜ جواز السفر\n3. ⬜ رخصة القيادة الحالية\n4. ⬜ صورة شخصية حديثة\n5. ⬜ شهادة كشف طبي\n\n📎 أرسل المستند الأول لنبدأ.",
+          "ms": 3570,
+          "buttons": [
+            "service:switch",
+            "service:cancel"
+          ]
+        }
+      ],
+      "final_state": {
+        "status": "collecting",
+        "request_id": null,
+        "service_id": 140017,
+        "docs_collected": 0
+      },
+      "db_messages": [
+        {
+          "id": 1063,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "تجديد رخصة القيادة",
+          "media_url": null,
+          "created_at": "2026-05-08 08:08:18"
+        },
+        {
+          "id": 1064,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "وجدت الخدمة المطلوبة:\n\n🚗 خدمة طلب تجديد رخصة سياقة\nالجهة: شرطة عمان السلطانية\nالرسوم: 20 ريال عُماني\n\nهل تريد أن أبدأ بتجهيز طلبك؟",
+          "media_url": null,
+          "created_at": "2026-05-08 08:08:26"
+        },
+        {
+          "id": 1065,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "__btn__:confirm:yes",
+          "media_url": null,
+          "created_at": "2026-05-08 08:08:26"
+        },
+        {
+          "id": 1066,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "✅ بدأت طلبك:\n*خدمة طلب تجديد رخصة سياقة*\n🏛 شرطة عمان السلطانية\n💰 الرسوم: 20 ر.ع\n\n📋 *المستندات المطلوبة* (5):\n1. البطاقة المدنية\n2. جواز السفر\n3. رخصة القيادة الحالية\n4. صورة شخصية حديثة\n5. شهادة كشف طبي\n\nأرسل المستندات الآن — كلها معاً أو بأي ترتيب.",
+          "media_url": null,
+          "created_at": "2026-05-08 08:08:32"
+        },
+        {
+          "id": 1067,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "__btn__:review:submit",
+          "media_url": null,
+          "created_at": "2026-05-08 08:08:32"
+        },
+        {
+          "id": 1068,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "لم تُرفق أي مستندات بعد. المطلوب 5 مستندات:\n\n1. ⬜ البطاقة المدنية\n2. ⬜ جواز السفر\n3. ⬜ رخصة القيادة الحالية\n4. ⬜ صورة شخصية حديثة\n5. ⬜ شهادة كشف طبي\n\n📎 أرسل المستند الأول لنبدأ.",
+          "media_url": null,
+          "created_at": "2026-05-08 08:08:35"
+        }
+      ],
+      "ms": 18743
+    }
+  ]
+}

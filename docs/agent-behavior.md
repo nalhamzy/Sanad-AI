@@ -219,16 +219,31 @@ Run: `node scripts/eval_scenarios.mjs` (Anthropic judge) or `node scripts/eval_s
 | Burst summary said "saved 3 files" but they went to extras | `dc41e98` (auto-flush) | ✓ |
 | `status:check` button → silent on tool failure | `437b3e3` | ✓ |
 | Cooldown 4s too short for human burst rhythm | `5de4e83` (→ 8s) | ✓ |
+| `«label_en»‎` fallback leaking on 60% of replies | `c413530` (→ مستند placeholder) | ✓ |
+| LLM mis-interpreted "وصلني رابط الدفع؟" as confirmation of receipt | _iter-2_ (deterministic payment-query handler) | ✓ |
 
 ## 14. Engineering notes
 
 - `lib/codex.js` — endpoint-aware OpenAI client (codex models → `/v1/responses`, others → `/v1/chat/completions`)
 - `scripts/codex-review.mjs` — design-validation calls to `gpt-5.2-codex`
 - `scripts/codex-uxreview.mjs` — hostile-QA review (predicts failure modes from code alone)
-- `scripts/agent-metrics.mjs` — runs `agent-metrics.json` artefact for trend tracking
-- `scripts/eval_scenarios.mjs` — full LLM-judge eval, 12 scenarios
+- `scripts/codex-doc-review.mjs` — review behavior doc + metrics via gpt-5.2-codex
+- `scripts/codex-bench-review.mjs` — review scenario-bench transcripts via gpt-5.2-codex
+- `scripts/agent-metrics.mjs` — UX/flow/hazard metrics from local DB or `/api/debug/trace`
+- `scripts/scenario-bench.mjs` — runs the 7 named scenarios + extras against the live agent (no LLM judge), produces `docs/scenario-bench-report.json`
+- `scripts/eval_scenarios.mjs` — full LLM-judge eval, 12 scenarios (more thorough but costs Anthropic tokens)
 
 `render.yaml` ships `claude-opus-4-5` for the agent. Vision uses Sonnet 4.5. Embeddings on Qwen `text-embedding-v3`.
+
+## 15. Loop-iteration playbook
+
+Every `/loop` iteration runs:
+1. `scripts/scenario-bench.mjs` — fresh transcripts via 7 scenarios
+2. `scripts/codex-bench-review.mjs` — codex verdict per scenario + TOP-3 fixes
+3. Apply real-bug fixes (skip false-positive flags)
+4. Tests pass (`npm test`) → 163/163 currently
+5. Commit + push → Render auto-deploy
+6. Update §13 (history) and §15 of this doc with the iteration's changes
 
 ---
 
