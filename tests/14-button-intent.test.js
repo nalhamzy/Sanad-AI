@@ -60,17 +60,17 @@ describe('lib/agent.js · arabicLabelFor (Arabic-label fallback)', () => {
       'خطاب التعيين من الجهة الصحية'
     );
   });
-  test('falls back to label_en when no Arabic mapping exists (wrapped in Arabic guillemets)', () => {
-    // Codex Q4: wrap fallback in Arabic guillemets + LRM so it doesn't
-    // bidi-flip mid-Arabic. Multi-word labels get wrapped; single-token
-    // labels stay bare.
+  test('returns generic Arabic placeholder when no Arabic mapping exists', () => {
+    // Updated 2026-05-08 per gpt-5.2-codex review: dropped the
+    // «label_en»‎ fallback (was leaking on 60% of bot replies in prod).
+    // Now returns the generic 'مستند' placeholder for any unknown code.
     assert.equal(
       arabicLabelFor({ code: 'unknown_doc_xyz', label_en: 'Some Niche Cert', label_ar: '' }),
-      '«Some Niche Cert»‎'
+      'مستند'
     );
     assert.equal(
       arabicLabelFor({ code: 'singletoken', label_en: 'SingleToken', label_ar: '' }),
-      'SingleToken'
+      'مستند'
     );
   });
   test('null / placeholder docs return empty string', () => {
@@ -105,7 +105,7 @@ describe('lib/agent.js · renderChecklist — live ✅/⏳ list (Khidmat spec v1
     assert.equal(lines.length, 3);
     assert.match(lines[0], /^✅ البطاقة المدنية$/);
     assert.match(lines[1], /^✅ جواز السفر$/);
-    assert.match(lines[2], /^⏳ NoObjectionCert$/); // single-token English fallback (no guillemets)
+    assert.match(lines[2], /^⏳ مستند$/); // generic placeholder (codex 2026-05-08)
   });
   test('null storage_url is treated as NOT collected (state-corruption guard)', () => {
     // Real bug from prod #1208: state.collected.civil_id.storage_url=null

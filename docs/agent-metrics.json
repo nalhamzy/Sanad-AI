@@ -1,0 +1,50 @@
+{
+  "generated_at": "2026-05-08T07:57:30.590Z",
+  "scope": {
+    "since_hours": 24,
+    "phone_filter": "96892888715",
+    "source": "remote"
+  },
+  "totals": {
+    "sessions": 1,
+    "messages": 17,
+    "bot_messages": 5,
+    "citizen_messages": 12
+  },
+  "ux": {
+    "avg_reply_length": 219,
+    "median_reply_length": 209,
+    "button_attached_rate": 0.4,
+    "deterministic_vs_llm_ratio": 0.6,
+    "english_label_leak_rate": 0.6,
+    "over_long_replies": 0,
+    "very_short_replies": 0
+  },
+  "flow": {
+    "sessions_reached_collecting": 1,
+    "sessions_reached_reviewing": 1,
+    "sessions_reached_queued": 1,
+    "sessions_reached_completed": 0,
+    "sessions_with_media": 1
+  },
+  "hazards": {
+    "silent_failures": 5,
+    "multi_message_per_burst": 0,
+    "hallucination_guard_fires": 0
+  },
+  "per_session": [
+    {
+      "session_id": "wa:96892888715",
+      "bot_count": 5,
+      "citizen_count": 12,
+      "has_media": true,
+      "reached": {
+        "col": true,
+        "rev": true,
+        "q": true,
+        "comp": false
+      },
+      "last_msg_at": "2026-05-07 18:36:53"
+    }
+  ]
+}
