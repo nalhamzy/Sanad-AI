@@ -68,10 +68,10 @@ const SCENARIOS = [
     turns: [
       { text: 'بغيت أجدد رخصة القيادة' },
       { text: '__btn__:confirm:yes' },
-      { text: '', attachment: { name: 'random_3.jpg', mime: 'image/jpeg', caption: '' } },
-      { text: '', attachment: { name: 'random_1.jpg', mime: 'image/jpeg', caption: '' } },
-      { text: '', attachment: { name: 'random_2.jpg', mime: 'image/jpeg', caption: '' } },
-      { text: '', attachment: { name: 'random_4.jpg', mime: 'image/jpeg', caption: '' } },
+      { text: '', attachment: { name: 'random_3.jpg', mime: 'image/jpeg', caption: '', url: '/uploads/bench/r3.jpg', size: 80_000 } },
+      { text: '', attachment: { name: 'random_1.jpg', mime: 'image/jpeg', caption: '', url: '/uploads/bench/r1.jpg', size: 80_000 } },
+      { text: '', attachment: { name: 'random_2.jpg', mime: 'image/jpeg', caption: '', url: '/uploads/bench/r2.jpg', size: 80_000 } },
+      { text: '', attachment: { name: 'random_4.jpg', mime: 'image/jpeg', caption: '', url: '/uploads/bench/r4.jpg', size: 80_000 } },
       { text: '__btn__:review:submit' }
     ]
   },

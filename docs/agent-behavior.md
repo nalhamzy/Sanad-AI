@@ -112,6 +112,7 @@ Every button tap (`__btn__:<id>`) routes through `handleButtonIntent` BEFORE any
 | Completed / cancelled | none (terminal) |
 | Generic LLM yes/no question | `✓ نعم` · `✕ لا` |
 | Reply ending in `؟` / `?` (fallback) | `✓ نعم` · `✕ لا` |
+| Numbered candidate-list reply (`1️⃣ … 2️⃣ … 3️⃣ …`) | `1️⃣` · `2️⃣` · `3️⃣` (taps map to "1"/"2"/"3" so the LLM resolves the picked service from its previous reply) |
 
 ## 7. Multi-file (burst) handling
 
@@ -220,7 +221,9 @@ Run: `node scripts/eval_scenarios.mjs` (Anthropic judge) or `node scripts/eval_s
 | `status:check` button → silent on tool failure | `437b3e3` | ✓ |
 | Cooldown 4s too short for human burst rhythm | `5de4e83` (→ 8s) | ✓ |
 | `«label_en»‎` fallback leaking on 60% of replies | `c413530` (→ مستند placeholder) | ✓ |
-| LLM mis-interpreted "وصلني رابط الدفع؟" as confirmation of receipt | _iter-2_ (deterministic payment-query handler) | ✓ |
+| LLM mis-interpreted "وصلني رابط الدفع؟" as confirmation of receipt | `ca30eb9` (deterministic payment-query handler) | ✓ |
+| Long welcome message (333 chars) | _iter-3_ (trimmed to ≤200 chars) | ✓ |
+| Numbered service-picker lists had no buttons | _iter-3_ (1️⃣/2️⃣/3️⃣ pick:N buttons) | ✓ |
 
 ## 14. Engineering notes
 

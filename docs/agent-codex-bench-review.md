@@ -1,23 +1,20 @@
-# GPT-5.2-Codex bench review · 2026-05-08T08:04:41.288Z
+# GPT-5.2-Codex bench review · 2026-05-08T08:17:07.035Z
 
 Model: gpt-5.2-codex
 
 ---
 
-- ✅ #1 pass — Arabic only; no buttons ok; reply length borderline but acceptable.
-- ⚠️ #2 minor — 4 attachments, bot silent on 3; buttons shown without bot reply (silent failures).
-- ✅ #3 pass — status flow ok; buttons present; no leaks.
-- ⚠️ #4 minor — “لا أرى خدمة تجديد جواز السفر” likely false negative; service switch ok.
-- ✅ #5 pass — cancel confirm ok; no regressions.
-- ❌ #6 fail — user asks “وصلني رابط الدفع؟” bot assumes paid; wrong action.
-- ✅ #7 pass — submit w/o files handled; buttons ok.
+- ✅ #1 pass — no English/leaks; but reply length >200 and no buttons for clear choice (minor UX)
+- ⚠️ #2 minor — 4 silent failures on attachments (empty bot replies)
+- ✅ #3 pass — clear status flow with buttons
+- ✅ #4 pass — pivot handled; but “no passport renewal” may be catalog gap (flag)
+- ✅ #5 pass — cancel flow OK
+- ✅ #6 pass — free-text status OK
+- ✅ #7 pass — submit w/o files handled
 
-- TOP-3 changes:
-  - app/flows/attachments.ts:~88 — Fix silent failures on attachments: always ACK any attachment with “تم الاستلام” + update counter.
-    - Patch: onAttachment() { save; sendAck(); maybeUpdateButtons(); } (add 1 reply when bot msg is empty)
-  - app/flows/status.ts:~42 — Payment status query: if user asks about link, respond with current status + offer resend; don’t assume paid.
-    - Patch: if intent==PAYMENT_LINK && status!=paid => send “لم يصل الرابط بعد/يمكنني إعادة الإرسال” + buttons [status:check,resend_link]
-  - app/search/services.ts:~120 — Service lookup for “تجديد جواز السفر” should suggest closest valid “تجديد/إصدار” based on catalog synonyms; avoid hard “لا أرى”.
-    - Patch: add synonym map { “تجديد جواز” -> service_id if exists; else suggest “إصدار” but ask clarification }
+- TOP-3 changes
+  - files:line: unknown — Fix silent attachment turns: on any attachment, send a 1-line ack + count. Smallest fix: add handler `onAttachment` to emit “تم استلام المستند (X/5)” even if no other state change.
+  - files:line: unknown — Add quick-reply buttons for scenario #1 service list (car services). Smallest fix: when presenting top-5 list, attach buttons for each service id.
+  - files:line: unknown — Trim long intros (>200 chars). Smallest fix: remove one paragraph from greeting and service list; keep ≤2 lines + examples.
 
-- Clarify: Is “تجديد جواز السفر” actually in catalog, and what’s the canonical service_id/fee?
+- Question/assumption: Is “تجديد جواز السفر” actually in the catalog? If yes, scenario #4 indicates a bad search/alias mapping.

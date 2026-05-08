@@ -105,6 +105,9 @@ whatsappRouter.post('/webhook', async (req, res) => {
       else if (id === 'service:show')   interactiveText = '__btn__:service:show';
       else if (id === 'status:check')   interactiveText = '__btn__:status:check';
       else if (id === 'next:doc')       interactiveText = '__btn__:next:doc';
+      else if (id === 'pick:1')         interactiveText = '__btn__:pick:1';
+      else if (id === 'pick:2')         interactiveText = '__btn__:pick:2';
+      else if (id === 'pick:3')         interactiveText = '__btn__:pick:3';
       else if (id === 'confirm:yes')  interactiveText = '__btn__:confirm:yes';
       else if (id === 'confirm:no')   interactiveText = '__btn__:confirm:no';
       else interactiveText = title; // generic — just forward what was tapped
