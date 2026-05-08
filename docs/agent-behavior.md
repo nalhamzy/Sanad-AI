@@ -1,7 +1,7 @@
 # Sanad-AI · Agent Behavior Spec
 
-Last updated: 2026-05-08 (codex iter-11).
-Loop bench (13 scenarios): button-attached **80%**, deterministic **67%**, English-leaks **0%**, **silent-failures 0** (down from 6 — metric corrected to recognize burst-deferred replies), flow reach `collecting:8 reviewing:6 queued:6`.
+Last updated: 2026-05-08 (codex iter-12).
+Loop bench (13 scenarios): button-attached **80%**, deterministic **57%**, English-leaks **0%**, silent-failures **0**, flow reach `collecting:9 reviewing:6 queued:6`. New launch service: passport issuance/renewal.
 Source of truth for what the WhatsApp/web agent does in every interaction.
 **If a behaviour here disagrees with `lib/agent.js`, the code is wrong.**
 
@@ -259,6 +259,7 @@ Run: `node scripts/eval_scenarios.mjs` (Anthropic judge) or `node scripts/eval_s
 | Bench had no coverage for typical burst-rhythm (photo → caption → photo → submit) or idle-state fee queries | _iter-10_ — added scenarios `burst_with_captions` (#12) and `fee_query_idle` (#13). Bench now 13/13. | ✓ |
 | `silent_failures` metric overcounted by N-1 per burst (each attachment turn during the burst-quiet window counted as silent even though `drainBurst` posts ONE consolidated summary covering them all) | _iter-11_ — bench harness now treats turns followed by a `📥 ` drain summary as deferred-not-silent. Reported silent failures: 6 → 0. | ✓ |
 | Citizen tapping `__btn__:confirm:yes` AFTER deterministic-service-match (the iter-8 shortcut transitions straight to `collecting`, so confirm:yes wasn't in `last_offered_buttons`) → injection guard stripped prefix → "yes" hit the LLM → bilingual fallback fired | _iter-11_ — added `confirm:yes`/`confirm:no` to `ALWAYS_OK_FOR_COLLECTING`; new `deterministic_confirm_yes_post_match` handler renders the live checklist + 3 submit/switch/cancel buttons | ✓ |
+| Mid-flow pivot to passport renewal ("لا في الحقيقة بغيت تجديد جواز السفر") never matched the deterministic shortcut → LLM fallback fired | _iter-12_ — added `passport_issuance_renewal` to `LAUNCH_SERVICES` (maps to catalog id 140020 "خدمة إصدار الجواز العماني", fee 5 ر.ع, 3 docs). Bench scenario #4 now reaches `collecting`. | ✓ |
 
 ## 14. Engineering notes
 
