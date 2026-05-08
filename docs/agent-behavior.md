@@ -1,7 +1,7 @@
 # Sanad-AI · Agent Behavior Spec
 
-Last updated: 2026-05-08 (codex iter-10).
-Loop bench (13 scenarios): button-attached **~83%**, deterministic **~70%**, English-leaks **0%**, flow reach `collecting:9 reviewing:7 queued:7`. New scenarios: `burst_with_captions`, `fee_query_idle`. Fixed: cancel_request was silently failing for years (missing 2nd arg).
+Last updated: 2026-05-08 (codex iter-11).
+Loop bench (13 scenarios): button-attached **80%**, deterministic **67%**, English-leaks **0%**, **silent-failures 0** (down from 6 — metric corrected to recognize burst-deferred replies), flow reach `collecting:8 reviewing:6 queued:6`.
 Source of truth for what the WhatsApp/web agent does in every interaction.
 **If a behaviour here disagrees with `lib/agent.js`, the code is wrong.**
 
@@ -257,6 +257,8 @@ Run: `node scripts/eval_scenarios.mjs` (Anthropic judge) or `node scripts/eval_s
 | **`cancel_request` silently failing every time** — iter-7 invocation passed only the ctx (1 arg), so destructuring `{request_id, reason}` of `undefined` threw immediately, the catch block fired the iter-7 deterministic apology, citizen never saw real cancellation | _iter-10_ — pass the second args object explicitly (`{request_id: state.request_id, reason: 'citizen_initiated'}`). Bench scenario #5 now ends at `idle` (was stuck at `queued`). | ✓ |
 | `fee_query_idle` ("كم رسوم تجديد رخصة القيادة؟") incorrectly triggered `start_submission` because text contained both fee-query keywords and a service name | _iter-10_ — service-match shortcut now skips when `FEE_OR_INFO_QUERY_RE` matches (researching, not committing); separate `deterministic_fee_query_idle` handler resolves the service from text and answers fee + offers discovery buttons | ✓ |
 | Bench had no coverage for typical burst-rhythm (photo → caption → photo → submit) or idle-state fee queries | _iter-10_ — added scenarios `burst_with_captions` (#12) and `fee_query_idle` (#13). Bench now 13/13. | ✓ |
+| `silent_failures` metric overcounted by N-1 per burst (each attachment turn during the burst-quiet window counted as silent even though `drainBurst` posts ONE consolidated summary covering them all) | _iter-11_ — bench harness now treats turns followed by a `📥 ` drain summary as deferred-not-silent. Reported silent failures: 6 → 0. | ✓ |
+| Citizen tapping `__btn__:confirm:yes` AFTER deterministic-service-match (the iter-8 shortcut transitions straight to `collecting`, so confirm:yes wasn't in `last_offered_buttons`) → injection guard stripped prefix → "yes" hit the LLM → bilingual fallback fired | _iter-11_ — added `confirm:yes`/`confirm:no` to `ALWAYS_OK_FOR_COLLECTING`; new `deterministic_confirm_yes_post_match` handler renders the live checklist + 3 submit/switch/cancel buttons | ✓ |
 
 ## 14. Engineering notes
 

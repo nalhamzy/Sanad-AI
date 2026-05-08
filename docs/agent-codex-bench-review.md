@@ -1,26 +1,30 @@
-# GPT-5.2-Codex bench review · 2026-05-08T10:11:01.758Z
+# GPT-5.2-Codex bench review · 2026-05-08T10:27:35.490Z
 
 Model: gpt-5.2-codex
 
 ---
 
-- ✅ #1 pass — no English, buttons present; but fallback “تعذّر الاتصال” repeats
-- ⚠️ #2 minor — 4 attachment turns with silent bot replies
-- ⚠️ #3 minor — initial “تعذّر الاتصال” despite clear intent
-- ⚠️ #4 minor — pivot answered with “تعذّر الاتصال” + irrelevant discover buttons
-- ❌ #5 fail — cancel flow error; no retry path besides same buttons
-- ✅ #6 pass — status handled, buttons ok
-- ✅ #7 pass — submit-without-files handled, buttons ok
-- ❌ #8 fail — payment link shows raw /api URL; inconsistent fee vs #11
-- ✅ #9 pass — OTP refusal correct, buttons ok
-- ✅ #10 pass — short ack
-- ⚠️ #11 minor — fee shown, but conflicts with #8 total
-- ⚠️ #12 minor — silent bot replies on attachments; long final msg >200 chars
-- ⚠️ #13 minor — fee query in idle triggers “تعذّر الاتصال” instead of fee
+- ✅ #1 pass/⚠️ minor — repeated “تعذّر الاتصال” stalls discovery
+- ❌ #2 fail — silent failures on attachments + LLM error on confirm
+- ⚠️ #3 minor — initial LLM error before status
+- ⚠️ #4 minor — LLM error after service switch
+- ✅ #5 pass — cancel flow clean
+- ✅ #6 pass — free-text status handled
+- ⚠️ #7 minor — LLM error on confirm; still in collecting
+- ✅ #8 pass — payment link returned
+- ✅ #9 pass — OTP refusal correct
+- ✅ #10 pass — thanks ack
+- ✅ #11 pass — fee reply ok
+- ❌ #12 fail — silent failures + doc mislabeling from caption/attachment pairing
+- ✅ #13 pass — fee reply + CTA
 
-- TOP-3 changes (smallest concrete fix):
-  - unknown:unknown — Add attachment-ack handler. On media receipt, send 1-line “تم استلام الملف” + show review buttons. (5–7 lines in media webhook)
-  - unknown:unknown — Fix fee source-of-truth. Ensure fee display and payment total pull same service_price field; remove hardcoded 20 ر.ع. (≤8 lines)
-  - unknown:unknown — Replace generic “تعذّر الاتصال” for known intents (fee/status/service switch) with deterministic fallback. (≤10 lines in intent router)
+- TOP-3 changes:
+  - src/flows/attachments.ts:~ — always ACK attachments (no empty bot reply).
+    - Fix (≤10 lines): if `botReply==""` after attachment ingestion → send "✅ تم استلام الملف" + keep existing buttons.
+  - src/llm/errorHandler.ts:~ — replace “تعذّر الاتصال” loop with deterministic fallback.
+    - Fix: on LLM fail, call `route_discovery_buttons()` or `ask_service_name()` and suppress duplicate error within 1 turn.
+  - src/flows/docClassification.ts:~ — avoid auto-assigning docs on low confidence/caption-only.
+    - Fix: if `confidence<threshold` or `message_type==caption` → mark as `unassigned` and prompt “ما نوع المستند؟” with doc buttons.
 
-- Question: هل رسوم خدمة تجديد رخصة القيادة = 20 ر.ع أم 21.500 ر.ع؟ Which is authoritative?
+- سؤال/افتراض:
+  - هل يُسمح بتعيين المستندات تلقائياً حسب ترتيب الإرسال، أم يجب دائماً تأكيد نوع المستند من المستخدم؟
