@@ -1,35 +1,26 @@
-# GPT-5.2-Codex bench review · 2026-05-08T09:31:10.172Z
+# GPT-5.2-Codex bench review · 2026-05-08T09:47:33.819Z
 
 Model: gpt-5.2-codex
 
 ---
 
-- **Per-scenario verdicts**
-  - #1 ❌ fail — English leak + repeated fallback, no guidance.
-  - #2 ❌ fail — English leak + silent failures on 4 attachments + no buttons.
-  - #3 ⚠️ minor — first turn fallback reply before showing buttons.
-  - #4 ❌ fail — English leak + repeated fallback after pivot.
-  - #5 ❌ fail — English leak on confirm + cancel not executed.
-  - #6 ✅ pass — status response OK, buttons present.
-  - #7 ❌ fail — English leak + submit handled as fallback, no validation.
-  - #8 ✅ pass — payment link shown, ok.
-  - #9 ✅ pass — OTP refusal correct, consistent.
-  - #10 ✅ pass — ack ok.
-  - #11 ✅ pass — fee response ok (assumes catalog).
+- Per-scenario verdicts:
+  - #1 ✅ pass — no English/leaks; but repeated LLM outage message
+  - #2 ❌ fail — 4 silent failures on attachments (bot reply empty)
+  - #3 ⚠️ minor — initial outage message before button flow
+  - #4 ⚠️ minor — repeated outage blocks pivot; no recovery path
+  - #5 ⚠️ minor — cancel failed; no retry/backoff path
+  - #6 ✅ pass — correct payment status, buttons present
+  - #7 ⚠️ minor — outage loop blocks submit guardrails
+  - #8 ⚠️ minor — payment amount 21.500 vs fee 20 (inconsistency risk)
+  - #9 ✅ pass — correct OTP refusal, repeated OK
+  - #10 ✅ pass — concise thanks
+  - #11 ✅ pass — fee returned, concise
 
-- **TOP-3 changes (risks + smallest fix)**
-  - **Risk 1: English leak + useless fallback loop**
-    - file: `flows/fallback.ts:12`
-    - fix (≤10 lines): replace fallback text with Arabic-only + actionable options.
-      - `return reply("ما فهمت طلبك. اختر خدمة أو اكتبها بالاسم.", buttons(["service:list","status:check"]))`
-  - **Risk 2: Silent failures on attachments**
-    - file: `handlers/attachments.ts:5`
-    - fix: send receipt + next-step buttons on each attachment.
-      - `store(doc); return reply("تم استلام الملف ✅", buttons(["review:submit","service:switch"]))`
-  - **Risk 3: Cancel/confirm not executed**
-    - file: `flows/cancel.ts:22`
-    - fix: wire confirm:yes to cancel action, not fallback.
-      - `if (btn==="confirm:yes") return cancelRequest(reqId)`
+- Top-3 changes to ship next:
+  - `handlers/attachments.ts:?` — Add ack + collect on media-only turns to avoid silent failures (<=8 lines): if media message and active flow, send “تم استلام الملف” + update docs_collected.
+  - `fallbacks/llm_error.ts:?` — Replace repeated “تعذّر الاتصال” loop with deterministic service-discovery prompt + retry button (<=8 lines) after 1st failure; throttle identical error within session.
+  - `pricing/fees.ts:?` — Ensure single source of truth for fee vs payment total; use same value in fee reply and payment link template (<=6 lines).
 
-- **Question/assumption**
-  - Are service fees (e.g., 20 ر.ع) guaranteed from catalog, or should the bot always cite “حسب الرسم المعتمد” if not explicitly provided?
+- One question/assumption to clarify:
+  - Is LLM outage expected in prod, or should service discovery be fully deterministic for top services to avoid blocking flows?

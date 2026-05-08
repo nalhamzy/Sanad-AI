@@ -1,7 +1,7 @@
 # Sanad-AI · Agent Behavior Spec
 
-Last updated: 2026-05-08 (codex iter-7).
-Loop bench (11 scenarios): button-attached **86.7%**, deterministic **76.7%**, English-leaks **0%**, avg reply **94 chars**.
+Last updated: 2026-05-08 (codex iter-8).
+Loop bench (11 scenarios): button-attached **80.8%**, deterministic **73.1%**, English-leaks **0%**, avg reply **121 chars**, flow reach `collecting:8 reviewing:6 queued:6`.
 Source of truth for what the WhatsApp/web agent does in every interaction.
 **If a behaviour here disagrees with `lib/agent.js`, the code is wrong.**
 
@@ -249,6 +249,7 @@ Run: `node scripts/eval_scenarios.mjs` (Anthropic judge) or `node scripts/eval_s
 | Bilingual fallback `حسناً، دعني أحاول مجدداً. / Let me try again.` (English leak + zero next-step) | _iter-7_ — Arabic-only fallback `⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً…` + recovery buttons in `attachContextualButtons` (`isLlmFallback` bypass + `discover:license/title/cr` chips when idle) | ✓ |
 | `service:cancel` confirmation prompt not persisted to `message` table | _iter-7_ — added `storeMessage` + `btn_cancel_confirm_prompt` trace step | ✓ |
 | `confirm:yes` after `pending_cancel` fell through to LLM on `cancel_request` tool failure | _iter-7_ — deterministic apology + retry buttons (`pending_cancel` restored so `🔁 حاول الإلغاء مجدداً` works) | ✓ |
+| Citizens typing "بغيت أجدد رخصة القيادة" never reached `collecting` when LLM unreachable | _iter-8_ — deterministic service-match shortcut (`matchService` launch path → `start_submission` tool) before LLM tool loop, plus expanded `LAUNCH_SERVICES.match_keywords` for Omani Arabic variants (`أجدد رخصة`, `جدد رخصة`, `رخصة القيادة` with ال, `بدل فاقد سند ملكية`). Bench flow reach `collecting:6→8`, `reviewing:5→6`, `queued:5→6`. | ✓ |
 
 ## 14. Engineering notes
 
