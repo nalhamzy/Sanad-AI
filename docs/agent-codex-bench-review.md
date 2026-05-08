@@ -1,26 +1,31 @@
-# GPT-5.2-Codex bench review · 2026-05-08T09:47:33.819Z
+# GPT-5.2-Codex bench review · 2026-05-08T10:02:05.752Z
 
 Model: gpt-5.2-codex
 
 ---
 
-- Per-scenario verdicts:
-  - #1 ✅ pass — no English/leaks; but repeated LLM outage message
-  - #2 ❌ fail — 4 silent failures on attachments (bot reply empty)
-  - #3 ⚠️ minor — initial outage message before button flow
-  - #4 ⚠️ minor — repeated outage blocks pivot; no recovery path
-  - #5 ⚠️ minor — cancel failed; no retry/backoff path
-  - #6 ✅ pass — correct payment status, buttons present
-  - #7 ⚠️ minor — outage loop blocks submit guardrails
-  - #8 ⚠️ minor — payment amount 21.500 vs fee 20 (inconsistency risk)
-  - #9 ✅ pass — correct OTP refusal, repeated OK
-  - #10 ✅ pass — concise thanks
-  - #11 ✅ pass — fee returned, concise
+- ✅ #1 — ⚠️ minor: repeated “تعذّر الاتصال” fallback; discovery not progressing.
+- ✅ #2 — ❌ fail: silent failures on 3 attachment turns (no bot reply); also overlong checklist >200 chars.
+- ✅ #3 — ⚠️ minor: initial “تعذّر الاتصال” despite clear status intent.
+- ✅ #4 — ⚠️ minor: LLM outage blocks pivot; user stuck after “تجديد جواز السفر”.
+- ✅ #5 — ⚠️ minor: cancel action fails; no retry path other than generic error.
+- ✅ #6 — ✅ pass: correct deterministic status response with buttons.
+- ✅ #7 — ❌ fail: submit-without-files returns outage message instead of guidance.
+- ✅ #8 — ⚠️ minor: payment total (21.500) inconsistent with fee (20) + stub URL exposed.
+- ✅ #9 — ⚠️ minor: duplicate refusal message (identical) after OTP share.
+- ✅ #10 — ✅ pass.
+- ✅ #11 — ⚠️ minor: fee response lacks buttons for next step (e.g., “ابدأ الطلب/إرسال ملفات”).
 
-- Top-3 changes to ship next:
-  - `handlers/attachments.ts:?` — Add ack + collect on media-only turns to avoid silent failures (<=8 lines): if media message and active flow, send “تم استلام الملف” + update docs_collected.
-  - `fallbacks/llm_error.ts:?` — Replace repeated “تعذّر الاتصال” loop with deterministic service-discovery prompt + retry button (<=8 lines) after 1st failure; throttle identical error within session.
-  - `pricing/fees.ts:?` — Ensure single source of truth for fee vs payment total; use same value in fee reply and payment link template (<=6 lines).
+- TOP-3 changes
+  - file: flows/collecting.ts: line ?  
+    - Fix: when docs_collected==0 and review:submit -> reply “لم تصل أي ملفات… أرسل الملفات المطلوبة” + keep buttons.  
+    - Smallest change: add 5-line guard before submit handler.
+  - file: handlers/attachments.ts: line ?  
+    - Fix: always ack attachment with “✅ استلمت الملف X/5” and show review:submit once min docs uploaded.  
+    - Smallest change: add 6–8 line reply builder on attachment ingest.
+  - file: pricing/catalog.ts or handlers/payment_link.ts: line ?  
+    - Fix: assert fee consistency; if payment total != catalog fee+allowed surcharge -> show fee from catalog, hide stub URL.  
+    - Smallest change: 7-line validation + fallback to “الرابط غير متاح بعد”.
 
-- One question/assumption to clarify:
-  - Is LLM outage expected in prod, or should service discovery be fully deterministic for top services to avoid blocking flows?
+- Question/assumption
+  - هل توجد رسوم مكتب/سند إضافية ثابتة؟ إذا نعم، زوّدني بقواعدها لتطابق إجمالي الدفع مع رسوم الخدمة.
