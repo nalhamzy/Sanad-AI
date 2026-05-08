@@ -1,7 +1,7 @@
 # Sanad-AI · Agent Behavior Spec
 
-Last updated: 2026-05-08 (codex iter-12).
-Loop bench (13 scenarios): button-attached **80%**, deterministic **57%**, English-leaks **0%**, silent-failures **0**, flow reach `collecting:9 reviewing:6 queued:6`. New launch service: passport issuance/renewal.
+Last updated: 2026-05-08 (codex iter-13).
+Loop bench (13 scenarios): button-attached **80%**, deterministic **57%**, English-leaks **0%**, silent-failures **0**, flow reach `collecting:9 reviewing:6 queued:6`.
 Source of truth for what the WhatsApp/web agent does in every interaction.
 **If a behaviour here disagrees with `lib/agent.js`, the code is wrong.**
 
@@ -260,6 +260,9 @@ Run: `node scripts/eval_scenarios.mjs` (Anthropic judge) or `node scripts/eval_s
 | `silent_failures` metric overcounted by N-1 per burst (each attachment turn during the burst-quiet window counted as silent even though `drainBurst` posts ONE consolidated summary covering them all) | _iter-11_ — bench harness now treats turns followed by a `📥 ` drain summary as deferred-not-silent. Reported silent failures: 6 → 0. | ✓ |
 | Citizen tapping `__btn__:confirm:yes` AFTER deterministic-service-match (the iter-8 shortcut transitions straight to `collecting`, so confirm:yes wasn't in `last_offered_buttons`) → injection guard stripped prefix → "yes" hit the LLM → bilingual fallback fired | _iter-11_ — added `confirm:yes`/`confirm:no` to `ALWAYS_OK_FOR_COLLECTING`; new `deterministic_confirm_yes_post_match` handler renders the live checklist + 3 submit/switch/cancel buttons | ✓ |
 | Mid-flow pivot to passport renewal ("لا في الحقيقة بغيت تجديد جواز السفر") never matched the deterministic shortcut → LLM fallback fired | _iter-12_ — added `passport_issuance_renewal` to `LAUNCH_SERVICES` (maps to catalog id 140020 "خدمة إصدار الجواز العماني", fee 5 ر.ع, 3 docs). Bench scenario #4 now reaches `collecting`. | ✓ |
+| Catalog `required_documents_json` for passport listed `"دفع الرسوم المطلوبة"` as a doc — it's a payment step, not something the citizen uploads, but it appeared in the doc list shown to citizens | _iter-13_ — `_parseDocs` now filters payment steps via `NON_DOC_LABEL_RE` (matches `دفع الرسوم`/`سداد الرسوم`/`payment of fees`, etc.). Passport doc list reduced from 4 → 3 items. | ✓ |
+| Repeated identical "تعذّر الاتصال" message when LLM stays unreachable across consecutive turns — citizen sees same outage text and may think the bot is just broken | _iter-13_ — `state.last_llm_fallback_at` tracks recency; second fallback within 60 s escalates to *"المساعد الذكي ما زال غير متاح حالياً…"* with explicit "اختر من الأزرار أو اكتب اسم الخدمة" guidance. `attachContextualButtons` recognizes the escalated wording too, and the discovery-buttons branch now runs **before** the generic yes/no detector so the escalated reply doesn't catch on `اختر`. | ✓ |
+| Trailing English suffix `'/ Sorry, try again.'` on the V2 loop-exhausted fallback at line 3643 | _iter-13_ — Arabic-only: *"عذراً، لم أكمل الإجابة — حاول مرة أخرى أو استخدم الأزرار للمتابعة."* | ✓ |
 
 ## 14. Engineering notes
 
