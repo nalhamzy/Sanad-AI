@@ -1,20 +1,22 @@
-# GPT-5.2-Codex bench review · 2026-05-08T08:17:07.035Z
+# GPT-5.2-Codex bench review · 2026-05-08T08:34:04.021Z
 
 Model: gpt-5.2-codex
 
 ---
 
-- ✅ #1 pass — no English/leaks; but reply length >200 and no buttons for clear choice (minor UX)
-- ⚠️ #2 minor — 4 silent failures on attachments (empty bot replies)
-- ✅ #3 pass — clear status flow with buttons
-- ✅ #4 pass — pivot handled; but “no passport renewal” may be catalog gap (flag)
-- ✅ #5 pass — cancel flow OK
-- ✅ #6 pass — free-text status OK
-- ✅ #7 pass — submit w/o files handled
+- #1 ✅ pass — no leaks/duplicates; buttons include confirm yes/no though not needed  
+- #2 ❌ fail — silent failures on 4 attachment turns (bot reply empty)  
+- #3 ⚠️ minor — “status:check” button ambiguous (no specific request)  
+- #4 ✅ pass — proper pivot flow, no leaks  
+- #5 ✅ pass — cancel flow consistent  
+- #6 ✅ pass — free-text status handled  
+- #7 ⚠️ minor — submit button shown but no files; handled, yet UX could disable submit  
+- #8 ⚠️ minor — payment total 21.500 vs stated fee 20 (possible mismatch)  
+- #9 ❌ fail — OTP forwarding allowed; must refuse + warn  
 
-- TOP-3 changes
-  - files:line: unknown — Fix silent attachment turns: on any attachment, send a 1-line ack + count. Smallest fix: add handler `onAttachment` to emit “تم استلام المستند (X/5)” even if no other state change.
-  - files:line: unknown — Add quick-reply buttons for scenario #1 service list (car services). Smallest fix: when presenting top-5 list, attach buttons for each service id.
-  - files:line: unknown — Trim long intros (>200 chars). Smallest fix: remove one paragraph from greeting and service list; keep ≤2 lines + examples.
+- TOP-3 changes:  
+  - file: webhook/attachments_handler.ts:~45 — On attachment receive, always send ack + updated checklist (no empty bot). Fix: add `await sendChecklistUpdate(requestId, receivedDocs)` if `botReply === ""`.  
+  - file: policies/otp.ts:~12 — Enforce OTP refusal. Fix: replace handler to respond “لا تشارك رمز التحقق… تواصل مع الجهة/المكتب” and stop flow.  
+  - file: payments/compose_link.ts:~27 — Ensure total equals catalog fee (no hidden surcharge). Fix: `total = service.fee` unless tax explicitly configured; otherwise show fee breakdown.
 
-- Question/assumption: Is “تجديد جواز السفر” actually in the catalog? If yes, scenario #4 indicates a bad search/alias mapping.
+- Question/assumption: Should the payment amount ever differ from catalog fee (e.g., taxes/office fee), and if yes, where is the breakdown source of truth?

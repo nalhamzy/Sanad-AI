@@ -175,7 +175,24 @@ Anything outside that coverage now renders as `مستند` instead of leaking En
 
 Per the user spec (2026-05-07): pricing is uniform per service. **No marketplace, no offers, no "pick an office".**
 
-## 11. Test scenarios (12 in `scripts/eval_scenarios.mjs`)
+## 11a. Bench scenarios (9 in `scripts/scenario-bench.mjs`)
+
+These run on every loop iteration with no LLM judge. Results land in
+`docs/scenario-bench-report.json` for codex review.
+
+| ID | Use case | Status |
+|---|---|---|
+| `doesnt_know_what_he_wants` | "I need help with a gov service" | ✅ pass |
+| `service_accept_random_attachments` | Accept service, send 4 attachments out-of-order | ✅ pass |
+| `follow_up_request` | Existing in-flight request, asks status | ✅ pass |
+| `mid_flow_pivot` | Switch service mid-collection | ✅ pass |
+| `cancel_in_flight_request` | Cancel a queued request | ✅ pass |
+| `free_text_status_query` | Asks status by typing | ✅ pass |
+| `no_files_yet_then_submit_attempt` | Tap submit before any file | ✅ pass |
+| `payment_link_present` | Payment-link query when link IS in DB | ✅ pass |
+| `otp_forward_refusal` | Citizen tries to share an OTP | ✅ pass (refused) |
+
+## 11. Eval scenarios (12 in `scripts/eval_scenarios.mjs`)
 
 | ID | Use case |
 |---|---|
@@ -222,8 +239,9 @@ Run: `node scripts/eval_scenarios.mjs` (Anthropic judge) or `node scripts/eval_s
 | Cooldown 4s too short for human burst rhythm | `5de4e83` (→ 8s) | ✓ |
 | `«label_en»‎` fallback leaking on 60% of replies | `c413530` (→ مستند placeholder) | ✓ |
 | LLM mis-interpreted "وصلني رابط الدفع؟" as confirmation of receipt | `ca30eb9` (deterministic payment-query handler) | ✓ |
-| Long welcome message (333 chars) | _iter-3_ (trimmed to ≤200 chars) | ✓ |
-| Numbered service-picker lists had no buttons | _iter-3_ (1️⃣/2️⃣/3️⃣ pick:N buttons) | ✓ |
+| Long welcome message (333 chars) | `6556f98` (trimmed to ≤200 chars) | ✓ |
+| Numbered service-picker lists had no buttons | `6556f98` (1️⃣/2️⃣/3️⃣ pick:N buttons) | ✓ |
+| LLM accepted/forwarded OTPs in chat (security) | _iter-4_ (deterministic OTP refusal) | ✓ |
 
 ## 14. Engineering notes
 
