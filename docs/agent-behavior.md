@@ -1,7 +1,7 @@
 # Sanad-AI · Agent Behavior Spec
 
-Last updated: 2026-05-08 (codex iter-9).
-Loop bench (11 scenarios): button-attached **84.6%**, deterministic **69.2%**, English-leaks **0%**, avg reply **123 chars**, flow reach `collecting:8 reviewing:6 queued:6`.
+Last updated: 2026-05-08 (codex iter-10).
+Loop bench (13 scenarios): button-attached **~83%**, deterministic **~70%**, English-leaks **0%**, flow reach `collecting:9 reviewing:7 queued:7`. New scenarios: `burst_with_captions`, `fee_query_idle`. Fixed: cancel_request was silently failing for years (missing 2nd arg).
 Source of truth for what the WhatsApp/web agent does in every interaction.
 **If a behaviour here disagrees with `lib/agent.js`, the code is wrong.**
 
@@ -254,6 +254,9 @@ Run: `node scripts/eval_scenarios.mjs` (Anthropic judge) or `node scripts/eval_s
 | `review:submit` 0-files handler returned reply but never `storeMessage`'d → DB transcript missing one row | _iter-9_ — added `storeMessage` + `btn_review_submit_no_files` trace step | ✓ |
 | Fee-query (`💰 رسوم *…*: 20 ر.ع`) had no continuation buttons | _iter-9_ — state-appropriate buttons (review/cancel while collecting; status/cancel while in-flight) + cache to `last_offered_buttons` | ✓ |
 | Identical OTP-refusal repeated verbatim when citizen sends a 2nd code | _iter-9_ — repeat detected via `state.last_otp_refusal_at < 60s`; second reply uses different framing ("لاحظت أنك أرسلت رمزاً مرة أخرى…") | ✓ |
+| **`cancel_request` silently failing every time** — iter-7 invocation passed only the ctx (1 arg), so destructuring `{request_id, reason}` of `undefined` threw immediately, the catch block fired the iter-7 deterministic apology, citizen never saw real cancellation | _iter-10_ — pass the second args object explicitly (`{request_id: state.request_id, reason: 'citizen_initiated'}`). Bench scenario #5 now ends at `idle` (was stuck at `queued`). | ✓ |
+| `fee_query_idle` ("كم رسوم تجديد رخصة القيادة؟") incorrectly triggered `start_submission` because text contained both fee-query keywords and a service name | _iter-10_ — service-match shortcut now skips when `FEE_OR_INFO_QUERY_RE` matches (researching, not committing); separate `deterministic_fee_query_idle` handler resolves the service from text and answers fee + offers discovery buttons | ✓ |
+| Bench had no coverage for typical burst-rhythm (photo → caption → photo → submit) or idle-state fee queries | _iter-10_ — added scenarios `burst_with_captions` (#12) and `fee_query_idle` (#13). Bench now 13/13. | ✓ |
 
 ## 14. Engineering notes
 

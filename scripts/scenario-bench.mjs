@@ -173,6 +173,30 @@ const SCENARIOS = [
     turns: [
       { text: 'كم الرسوم؟' }
     ]
+  },
+  // Added iter-10: covers the burst-rhythm + caption-mix flow citizens
+  // actually use on WhatsApp (drop a photo, then a few seconds later type
+  // the description, then drop another photo, repeat). Catches drainBurst
+  // edge cases the prior 4-attachment scenario glossed over.
+  {
+    id: 'burst_with_captions',
+    label: '#12 — Burst flow: photo → caption → photo → final submit',
+    turns: [
+      { text: 'تجديد رخصة القيادة' },
+      { text: '', attachment: { name: 'civil.jpg', mime: 'image/jpeg', caption: 'البطاقة المدنية', url: '/uploads/bench/civil.jpg', size: 80_000 } },
+      { text: 'هذه شهادة الفحص الطبي', attachment: { name: 'med.jpg', mime: 'image/jpeg', caption: 'الفحص الطبي', url: '/uploads/bench/med.jpg', size: 80_000 } },
+      { text: '__btn__:review:submit' }
+    ]
+  },
+  // Added iter-10: citizen explicitly types a service-fee question
+  // BEFORE picking a service. The LLM is the natural handler here
+  // (catalog lookup), so it doubles as an LLM-path coverage scenario.
+  {
+    id: 'fee_query_idle',
+    label: '#13 — Citizen asks "كم رسوم تجديد رخصة القيادة" while idle',
+    turns: [
+      { text: 'كم رسوم تجديد رخصة القيادة؟' }
+    ]
   }
 ];
 
