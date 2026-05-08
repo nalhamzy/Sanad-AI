@@ -1,6 +1,6 @@
 {
   "summary": {
-    "generated_at": "2026-05-08T11:14:41.833Z",
+    "generated_at": "2026-05-08T11:32:25.687Z",
     "scenario_count": 13,
     "passed": 13,
     "failed": 0,
@@ -34,7 +34,7 @@
           "status": "idle",
           "docs_collected": 0
         },
-        "ms": 2318
+        "ms": 2314
       },
       {
         "id": "service_accept_random_attachments",
@@ -48,11 +48,11 @@
         "english_leaks": 0,
         "final_state": {
           "status": "queued",
-          "request_id": 359,
+          "request_id": 376,
           "service_id": 140017,
           "docs_collected": 4
         },
-        "ms": 1952
+        "ms": 1923
       },
       {
         "id": "follow_up_request",
@@ -66,11 +66,11 @@
         "english_leaks": 0,
         "final_state": {
           "status": "in_progress",
-          "request_id": 360,
+          "request_id": 377,
           "service_id": 140017,
           "docs_collected": 0
         },
-        "ms": 2049
+        "ms": 1875
       },
       {
         "id": "mid_flow_pivot",
@@ -88,7 +88,7 @@
           "service_id": 140020,
           "docs_collected": 0
         },
-        "ms": 1550
+        "ms": 1564
       },
       {
         "id": "cancel_in_flight_request",
@@ -102,11 +102,11 @@
         "english_leaks": 0,
         "final_state": {
           "status": "idle",
-          "request_id": 361,
+          "request_id": 378,
           "service_id": 140017,
           "docs_collected": 0
         },
-        "ms": 1946
+        "ms": 1873
       },
       {
         "id": "free_text_status_query",
@@ -120,11 +120,11 @@
         "english_leaks": 0,
         "final_state": {
           "status": "awaiting_payment",
-          "request_id": 362,
+          "request_id": 379,
           "service_id": 140017,
           "docs_collected": 0
         },
-        "ms": 1520
+        "ms": 1532
       },
       {
         "id": "no_files_yet_then_submit_attempt",
@@ -142,7 +142,7 @@
           "service_id": 140017,
           "docs_collected": 0
         },
-        "ms": 1551
+        "ms": 1539
       },
       {
         "id": "payment_link_present",
@@ -151,16 +151,16 @@
         "bot_msgs": 1,
         "turns_with_buttons": 1,
         "turns_with_bot_reply": 1,
-        "avg_reply_chars": 138,
+        "avg_reply_chars": 154,
         "deterministic_replies": 0,
         "english_leaks": 0,
         "final_state": {
           "status": "awaiting_payment",
-          "request_id": 363,
+          "request_id": 380,
           "service_id": 140017,
           "docs_collected": 0
         },
-        "ms": 1522
+        "ms": 1530
       },
       {
         "id": "otp_forward_refusal",
@@ -174,11 +174,11 @@
         "english_leaks": 0,
         "final_state": {
           "status": "in_progress",
-          "request_id": 364,
+          "request_id": 381,
           "service_id": 140017,
           "docs_collected": 0
         },
-        "ms": 1536
+        "ms": 1539
       },
       {
         "id": "thanks_ack",
@@ -194,7 +194,7 @@
           "status": "idle",
           "docs_collected": 0
         },
-        "ms": 1520
+        "ms": 1516
       },
       {
         "id": "fee_query_in_flight",
@@ -208,11 +208,11 @@
         "english_leaks": 0,
         "final_state": {
           "status": "collecting",
-          "request_id": 365,
+          "request_id": 382,
           "service_id": 140017,
           "docs_collected": 0
         },
-        "ms": 1524
+        "ms": 1522
       },
       {
         "id": "burst_with_captions",
@@ -226,11 +226,11 @@
         "english_leaks": 0,
         "final_state": {
           "status": "queued",
-          "request_id": 366,
+          "request_id": 383,
           "service_id": 140017,
           "docs_collected": 2
         },
-        "ms": 2249
+        "ms": 2270
       },
       {
         "id": "fee_query_idle",
@@ -246,7 +246,7 @@
           "status": "idle",
           "docs_collected": 0
         },
-        "ms": 1515
+        "ms": 1517
       }
     ]
   },
@@ -254,20 +254,20 @@
     {
       "id": "doesnt_know_what_he_wants",
       "label": "#1 — User doesn't know what they want",
-      "sid": "bench-doesnt_know_what_he_wants-1778238859081",
+      "sid": "bench-doesnt_know_what_he_wants-1778239923168",
       "transcript": [
         {
           "kind": "turn",
           "citizen": "مرحبا",
           "bot_reply": "أهلاً 👋 أنا *ساند* — جاهز أُجهّز معاملتك الحكومية وأرسلها لمكتب سند للتنفيذ.\n\nاكتب اسم الخدمة (مثلاً: *تجديد رخصة القيادة* / *إصدار سجل تجاري*) أو وصف ما تحتاجه.",
-          "ms": 20,
+          "ms": 18,
           "buttons": null
         },
         {
           "kind": "turn",
           "citizen": "محتاج مساعدة بخدمة حكومية",
           "bot_reply": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
-          "ms": 446,
+          "ms": 443,
           "buttons": [
             "discover:license",
             "discover:title",
@@ -278,7 +278,7 @@
           "kind": "turn",
           "citizen": "مش متأكد بالضبط… شي يخص السيارة",
           "bot_reply": "⚠️ المساعد الذكي ما زال غير متاح حالياً.\n\nللمتابعة الآن، اختر إحدى الخدمات الشائعة من الأزرار، أو اكتب اسم الخدمة بالضبط — مثل: *تجديد رخصة القيادة*، *تجديد جواز السفر*، *إصدار سجل تجاري*.",
-          "ms": 344,
+          "ms": 336,
           "buttons": [
             "discover:license",
             "discover:title",
@@ -292,66 +292,66 @@
       },
       "db_messages": [
         {
-          "id": 2810,
+          "id": 2940,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "مرحبا",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:19"
+          "created_at": "2026-05-08 11:32:03"
         },
         {
-          "id": 2811,
+          "id": 2941,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "أهلاً 👋 أنا *ساند* — جاهز أُجهّز معاملتك الحكومية وأرسلها لمكتب سند للتنفيذ.\n\nاكتب اسم الخدمة (مثلاً: *تجديد رخصة القيادة* / *إصدار سجل تجاري*) أو وصف ما تحتاجه.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:19"
+          "created_at": "2026-05-08 11:32:03"
         },
         {
-          "id": 2812,
+          "id": 2942,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "محتاج مساعدة بخدمة حكومية",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:19"
+          "created_at": "2026-05-08 11:32:03"
         },
         {
-          "id": 2813,
+          "id": 2943,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:19"
+          "created_at": "2026-05-08 11:32:03"
         },
         {
-          "id": 2814,
+          "id": 2944,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "مش متأكد بالضبط… شي يخص السيارة",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:19"
+          "created_at": "2026-05-08 11:32:03"
         },
         {
-          "id": 2815,
+          "id": 2945,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "⚠️ المساعد الذكي ما زال غير متاح حالياً.\n\nللمتابعة الآن، اختر إحدى الخدمات الشائعة من الأزرار، أو اكتب اسم الخدمة بالضبط — مثل: *تجديد رخصة القيادة*، *تجديد جواز السفر*، *إصدار سجل تجاري*.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:19"
+          "created_at": "2026-05-08 11:32:03"
         }
       ],
-      "ms": 2318
+      "ms": 2314
     },
     {
       "id": "service_accept_random_attachments",
       "label": "#2 — Accept service, send 4 attachments in random order",
-      "sid": "bench-service_accept_random_attachments-1778238861399",
+      "sid": "bench-service_accept_random_attachments-1778239925483",
       "transcript": [
         {
           "kind": "turn",
           "citizen": "بغيت أجدد رخصة القيادة",
           "bot_reply": "✅ بدأت طلب *خدمة طلب تجديد رخصة سياقة*.\n\nالملفات المطلوبة:\n1) البطاقة المدنية\n2) جواز السفر\n3) رخصة القيادة الحالية\n4) صورة شخصية حديثة\n5) شهادة كشف طبي\n\nأرسل الملفات بأي ترتيب — سأرتّبها لك.",
-          "ms": 18,
+          "ms": 19,
           "buttons": [
             "service:switch",
             "service:cancel"
@@ -361,7 +361,7 @@
           "kind": "turn",
           "citizen": "__btn__:confirm:yes",
           "bot_reply": "👍 ممتاز — الطلب جاهز. أرسل المستندات بأي ترتيب:\n\n⏳ البطاقة المدنية\n⏳ جواز السفر\n⏳ رخصة القيادة الحالية\n⏳ صورة شخصية حديثة\n⏳ شهادة كشف طبي",
-          "ms": 11,
+          "ms": 9,
           "buttons": [
             "review:submit",
             "service:switch",
@@ -372,7 +372,7 @@
           "kind": "turn",
           "citizen": "(attachment)",
           "bot_reply": "",
-          "ms": 367,
+          "ms": 335,
           "buttons": null
         },
         {
@@ -403,119 +403,119 @@
         {
           "kind": "turn",
           "citizen": "__btn__:review:submit",
-          "bot_reply": "✅ ممتاز! استلمت 4 مستندات لطلبك.\n\n✅ البطاقة المدنية\n✅ جواز السفر\n✅ رخصة القيادة الحالية\n✅ صورة شخصية حديثة\n⏳ شهادة كشف طبي\n\n📤 *أرسلت طلبك إلى مكتب سند للمراجعة.*\n🆔 رقم الطلب: *#R-359*\n\nℹ️ بعض المستندات لم تصلني — لا قلق، سيتواصل معك المكتب المتولّي إن احتاج إليها.\n\n*الخطوات التالية:*\n1️⃣ مراجعة الطلب من المكتب\n2️⃣ إرسال رابط الدفع إليك\n3️⃣ إشعارك فور إنجاز المعاملة",
-          "ms": 30,
+          "bot_reply": "✅ ممتاز! استلمت 4 مستندات لطلبك.\n\n✅ البطاقة المدنية\n✅ جواز السفر\n✅ رخصة القيادة الحالية\n✅ صورة شخصية حديثة\n⏳ شهادة كشف طبي\n\n📤 *أرسلت طلبك إلى مكتب سند للمراجعة.*\n🆔 رقم الطلب: *#R-376*\n\nℹ️ بعض المستندات لم تصلني — لا قلق، سيتواصل معك المكتب المتولّي إن احتاج إليها.\n\n*الخطوات التالية:*\n1️⃣ مراجعة الطلب من المكتب\n2️⃣ إرسال رابط الدفع إليك\n3️⃣ إشعارك فور إنجاز المعاملة",
+          "ms": 28,
           "buttons": null
         }
       ],
       "final_state": {
         "status": "queued",
-        "request_id": 359,
+        "request_id": 376,
         "service_id": 140017,
         "docs_collected": 4
       },
       "db_messages": [
         {
-          "id": 2816,
+          "id": 2946,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "بغيت أجدد رخصة القيادة",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:21"
+          "created_at": "2026-05-08 11:32:05"
         },
         {
-          "id": 2817,
+          "id": 2947,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "✅ بدأت طلب *خدمة طلب تجديد رخصة سياقة*.\n\nالملفات المطلوبة:\n1) البطاقة المدنية\n2) جواز السفر\n3) رخصة القيادة الحالية\n4) صورة شخصية حديثة\n5) شهادة كشف طبي\n\nأرسل الملفات بأي ترتيب — سأرتّبها لك.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:21"
+          "created_at": "2026-05-08 11:32:05"
         },
         {
-          "id": 2818,
+          "id": 2948,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "__btn__:confirm:yes",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:21"
+          "created_at": "2026-05-08 11:32:05"
         },
         {
-          "id": 2819,
+          "id": 2949,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "👍 ممتاز — الطلب جاهز. أرسل المستندات بأي ترتيب:\n\n⏳ البطاقة المدنية\n⏳ جواز السفر\n⏳ رخصة القيادة الحالية\n⏳ صورة شخصية حديثة\n⏳ شهادة كشف طبي",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:21"
+          "created_at": "2026-05-08 11:32:05"
         },
         {
-          "id": 2820,
+          "id": 2950,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "(attachment)",
           "media_url": "/uploads/bench/r3.jpg",
-          "created_at": "2026-05-08 11:14:21"
+          "created_at": "2026-05-08 11:32:05"
         },
         {
-          "id": 2821,
+          "id": 2951,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "(attachment)",
           "media_url": "/uploads/bench/r1.jpg",
-          "created_at": "2026-05-08 11:14:21"
+          "created_at": "2026-05-08 11:32:05"
         },
         {
-          "id": 2822,
+          "id": 2952,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "(attachment)",
           "media_url": "/uploads/bench/r2.jpg",
-          "created_at": "2026-05-08 11:14:21"
+          "created_at": "2026-05-08 11:32:05"
         },
         {
-          "id": 2823,
+          "id": 2953,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "(attachment)",
           "media_url": "/uploads/bench/r4.jpg",
-          "created_at": "2026-05-08 11:14:21"
+          "created_at": "2026-05-08 11:32:05"
         },
         {
-          "id": 2824,
+          "id": 2954,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "📥 استلمت 4 ملفات.\n\n✅ البطاقة المدنية\n✅ جواز السفر\n✅ رخصة القيادة الحالية\n✅ صورة شخصية حديثة\n⏳ شهادة كشف طبي\n\nهل اكتمل ملفك؟ اضغط *✅ انتهيت من الرفع* أو أرسل المزيد.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:21"
+          "created_at": "2026-05-08 11:32:05"
         },
         {
-          "id": 2825,
+          "id": 2955,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "__btn__:review:submit",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:21"
+          "created_at": "2026-05-08 11:32:05"
         },
         {
-          "id": 2826,
+          "id": 2956,
           "direction": "out",
           "actor_type": "bot",
-          "body_text": "✅ ممتاز! استلمت 4 مستندات لطلبك.\n\n✅ البطاقة المدنية\n✅ جواز السفر\n✅ رخصة القيادة الحالية\n✅ صورة شخصية حديثة\n⏳ شهادة كشف طبي\n\n📤 *أرسلت طلبك إلى مكتب سند للمراجعة.*\n🆔 رقم الطلب: *#R-359*\n\nℹ️ بعض المستندات لم تصلني — لا قلق، سيتواصل معك المكتب المتولّي إن احتاج إليها.\n\n*الخطوات التالية:*\n1️⃣ مراجعة الطلب من المكتب\n2️⃣ إرسال رابط الدفع إليك\n3️⃣ إشعارك فور إنجاز المعاملة",
+          "body_text": "✅ ممتاز! استلمت 4 مستندات لطلبك.\n\n✅ البطاقة المدنية\n✅ جواز السفر\n✅ رخصة القيادة الحالية\n✅ صورة شخصية حديثة\n⏳ شهادة كشف طبي\n\n📤 *أرسلت طلبك إلى مكتب سند للمراجعة.*\n🆔 رقم الطلب: *#R-376*\n\nℹ️ بعض المستندات لم تصلني — لا قلق، سيتواصل معك المكتب المتولّي إن احتاج إليها.\n\n*الخطوات التالية:*\n1️⃣ مراجعة الطلب من المكتب\n2️⃣ إرسال رابط الدفع إليك\n3️⃣ إشعارك فور إنجاز المعاملة",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:21"
+          "created_at": "2026-05-08 11:32:05"
         }
       ],
-      "ms": 1952
+      "ms": 1923
     },
     {
       "id": "follow_up_request",
       "label": "#3 — Follow up on existing request",
-      "sid": "bench-follow_up_request-1778238863351",
+      "sid": "bench-follow_up_request-1778239927407",
       "transcript": [
         {
           "kind": "turn",
           "citizen": "مرحبا، أبي أعرف وضع طلبي",
           "bot_reply": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
-          "ms": 525,
+          "ms": 348,
           "buttons": [
             "status:check",
             "service:cancel"
@@ -524,8 +524,8 @@
         {
           "kind": "turn",
           "citizen": "__btn__:status:check",
-          "bot_reply": "📊 *حالة طلبك*\n\n🆔 رقم الطلب: *#R-360*\n📂 الخدمة: خدمة طلب تجديد رخصة سياقة\n⚙️ المكتب يعمل على إنجاز معاملتك",
-          "ms": 9,
+          "bot_reply": "📊 *حالة طلبك*\n\n🆔 رقم الطلب: *#R-377*\n📂 الخدمة: خدمة طلب تجديد رخصة سياقة\n⚙️ المكتب يعمل على إنجاز معاملتك",
+          "ms": 7,
           "buttons": [
             "status:check",
             "service:cancel"
@@ -534,56 +534,56 @@
       ],
       "final_state": {
         "status": "in_progress",
-        "request_id": 360,
+        "request_id": 377,
         "service_id": 140017,
         "docs_collected": 0
       },
       "db_messages": [
         {
-          "id": 2827,
+          "id": 2957,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "مرحبا، أبي أعرف وضع طلبي",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:23"
+          "created_at": "2026-05-08 11:32:07"
         },
         {
-          "id": 2828,
+          "id": 2958,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:23"
+          "created_at": "2026-05-08 11:32:07"
         },
         {
-          "id": 2829,
+          "id": 2959,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "__btn__:status:check",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:23"
+          "created_at": "2026-05-08 11:32:07"
         },
         {
-          "id": 2830,
+          "id": 2960,
           "direction": "out",
           "actor_type": "bot",
-          "body_text": "📊 *حالة طلبك*\n\n🆔 رقم الطلب: *#R-360*\n📂 الخدمة: خدمة طلب تجديد رخصة سياقة\n⚙️ المكتب يعمل على إنجاز معاملتك",
+          "body_text": "📊 *حالة طلبك*\n\n🆔 رقم الطلب: *#R-377*\n📂 الخدمة: خدمة طلب تجديد رخصة سياقة\n⚙️ المكتب يعمل على إنجاز معاملتك",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:23"
+          "created_at": "2026-05-08 11:32:07"
         }
       ],
-      "ms": 2049
+      "ms": 1875
     },
     {
       "id": "mid_flow_pivot",
       "label": "#4 — Mid-flow pivot to different service",
-      "sid": "bench-mid_flow_pivot-1778238865400",
+      "sid": "bench-mid_flow_pivot-1778239929282",
       "transcript": [
         {
           "kind": "turn",
           "citizen": "بغيت تجديد رخصة القيادة",
           "bot_reply": "✅ بدأت طلب *خدمة طلب تجديد رخصة سياقة*.\n\nالملفات المطلوبة:\n1) البطاقة المدنية\n2) جواز السفر\n3) رخصة القيادة الحالية\n4) صورة شخصية حديثة\n5) شهادة كشف طبي\n\nأرسل الملفات بأي ترتيب — سأرتّبها لك.",
-          "ms": 16,
+          "ms": 20,
           "buttons": [
             "service:switch",
             "service:cancel"
@@ -593,7 +593,7 @@
           "kind": "turn",
           "citizen": "__btn__:confirm:yes",
           "bot_reply": "👍 ممتاز — الطلب جاهز. أرسل المستندات بأي ترتيب:\n\n⏳ البطاقة المدنية\n⏳ جواز السفر\n⏳ رخصة القيادة الحالية\n⏳ صورة شخصية حديثة\n⏳ شهادة كشف طبي",
-          "ms": 9,
+          "ms": 8,
           "buttons": [
             "review:submit",
             "service:switch",
@@ -604,14 +604,14 @@
           "kind": "turn",
           "citizen": "__btn__:service:switch",
           "bot_reply": "🔍 تمام، أخبرني باسم الخدمة التي تريدها — مثل: تجديد رخصة القيادة، إصدار سجل تجاري، بدل فاقد سند ملكية…",
-          "ms": 8,
+          "ms": 9,
           "buttons": null
         },
         {
           "kind": "turn",
           "citizen": "لا في الحقيقة بغيت تجديد جواز السفر",
           "bot_reply": "✅ بدأت طلب *خدمة إصدار الجواز العماني*.\n\nالملفات المطلوبة:\n1) البطاقة المدنية\n2) صورة شخصية حديثة بخلفية بيضاء\n3) شهادة الميلاد الأصلية أو نسخة مصدقة\n\nأرسل الملفات بأي ترتيب — سأرتّبها لك.",
-          "ms": 13,
+          "ms": 11,
           "buttons": [
             "service:switch",
             "service:cancel"
@@ -626,82 +626,82 @@
       },
       "db_messages": [
         {
-          "id": 2831,
+          "id": 2961,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "بغيت تجديد رخصة القيادة",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:25"
+          "created_at": "2026-05-08 11:32:09"
         },
         {
-          "id": 2832,
+          "id": 2962,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "✅ بدأت طلب *خدمة طلب تجديد رخصة سياقة*.\n\nالملفات المطلوبة:\n1) البطاقة المدنية\n2) جواز السفر\n3) رخصة القيادة الحالية\n4) صورة شخصية حديثة\n5) شهادة كشف طبي\n\nأرسل الملفات بأي ترتيب — سأرتّبها لك.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:25"
+          "created_at": "2026-05-08 11:32:09"
         },
         {
-          "id": 2833,
+          "id": 2963,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "__btn__:confirm:yes",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:25"
+          "created_at": "2026-05-08 11:32:09"
         },
         {
-          "id": 2834,
+          "id": 2964,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "👍 ممتاز — الطلب جاهز. أرسل المستندات بأي ترتيب:\n\n⏳ البطاقة المدنية\n⏳ جواز السفر\n⏳ رخصة القيادة الحالية\n⏳ صورة شخصية حديثة\n⏳ شهادة كشف طبي",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:25"
+          "created_at": "2026-05-08 11:32:09"
         },
         {
-          "id": 2835,
+          "id": 2965,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "__btn__:service:switch",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:25"
+          "created_at": "2026-05-08 11:32:09"
         },
         {
-          "id": 2836,
+          "id": 2966,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "🔍 تمام، أخبرني باسم الخدمة التي تريدها — مثل: تجديد رخصة القيادة، إصدار سجل تجاري، بدل فاقد سند ملكية…",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:25"
+          "created_at": "2026-05-08 11:32:09"
         },
         {
-          "id": 2837,
+          "id": 2967,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "لا في الحقيقة بغيت تجديد جواز السفر",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:25"
+          "created_at": "2026-05-08 11:32:09"
         },
         {
-          "id": 2838,
+          "id": 2968,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "✅ بدأت طلب *خدمة إصدار الجواز العماني*.\n\nالملفات المطلوبة:\n1) البطاقة المدنية\n2) صورة شخصية حديثة بخلفية بيضاء\n3) شهادة الميلاد الأصلية أو نسخة مصدقة\n\nأرسل الملفات بأي ترتيب — سأرتّبها لك.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:25"
+          "created_at": "2026-05-08 11:32:09"
         }
       ],
-      "ms": 1550
+      "ms": 1564
     },
     {
       "id": "cancel_in_flight_request",
       "label": "#5 — Cancel an in-flight request",
-      "sid": "bench-cancel_in_flight_request-1778238866950",
+      "sid": "bench-cancel_in_flight_request-1778239930847",
       "transcript": [
         {
           "kind": "turn",
           "citizen": "مرحبا",
           "bot_reply": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
-          "ms": 392,
+          "ms": 332,
           "buttons": [
             "status:check",
             "service:cancel"
@@ -710,8 +710,8 @@
         {
           "kind": "turn",
           "citizen": "__btn__:status:check",
-          "bot_reply": "📊 *حالة طلبك*\n\n🆔 رقم الطلب: *#R-361*\n📂 الخدمة: خدمة طلب تجديد رخصة سياقة\n⏳ في انتظار مراجعة المكتب",
-          "ms": 8,
+          "bot_reply": "📊 *حالة طلبك*\n\n🆔 رقم الطلب: *#R-378*\n📂 الخدمة: خدمة طلب تجديد رخصة سياقة\n⏳ في انتظار مراجعة المكتب",
+          "ms": 6,
           "buttons": [
             "status:check",
             "service:cancel"
@@ -720,7 +720,7 @@
         {
           "kind": "turn",
           "citizen": "__btn__:service:cancel",
-          "bot_reply": "⚠️ هل تؤكد طلب إلغاء طلبك *#R-361*؟ سيُرسل طلب الإلغاء إلى المكتب المتولّي للمراجعة.",
+          "bot_reply": "⚠️ هل تؤكد طلب إلغاء طلبك *#R-378*؟ سيُرسل طلب الإلغاء إلى المكتب المتولّي للمراجعة.",
           "ms": 10,
           "buttons": [
             "confirm:yes",
@@ -730,95 +730,95 @@
         {
           "kind": "turn",
           "citizen": "__btn__:confirm:yes",
-          "bot_reply": "✅ أرسلت طلب إلغاء طلبك *#R-361* إلى المكتب المتولّي.\n\nسأخبرك فور تأكيد الإلغاء من المكتب.",
-          "ms": 14,
+          "bot_reply": "✅ أرسلت طلب إلغاء طلبك *#R-378* إلى المكتب المتولّي.\n\nسأخبرك فور تأكيد الإلغاء من المكتب.",
+          "ms": 13,
           "buttons": null
         }
       ],
       "final_state": {
         "status": "idle",
-        "request_id": 361,
+        "request_id": 378,
         "service_id": 140017,
         "docs_collected": 0
       },
       "db_messages": [
         {
-          "id": 2839,
+          "id": 2969,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "مرحبا",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:26"
+          "created_at": "2026-05-08 11:32:10"
         },
         {
-          "id": 2840,
+          "id": 2970,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "⚠️ تعذّر الاتصال بالمساعد الذكي مؤقتاً. حاول مرة أخرى بعد لحظات أو استخدم الأزرار للمتابعة.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:27"
+          "created_at": "2026-05-08 11:32:11"
         },
         {
-          "id": 2841,
+          "id": 2971,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "__btn__:status:check",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:27"
+          "created_at": "2026-05-08 11:32:11"
         },
         {
-          "id": 2842,
+          "id": 2972,
           "direction": "out",
           "actor_type": "bot",
-          "body_text": "📊 *حالة طلبك*\n\n🆔 رقم الطلب: *#R-361*\n📂 الخدمة: خدمة طلب تجديد رخصة سياقة\n⏳ في انتظار مراجعة المكتب",
+          "body_text": "📊 *حالة طلبك*\n\n🆔 رقم الطلب: *#R-378*\n📂 الخدمة: خدمة طلب تجديد رخصة سياقة\n⏳ في انتظار مراجعة المكتب",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:27"
+          "created_at": "2026-05-08 11:32:11"
         },
         {
-          "id": 2843,
+          "id": 2973,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "__btn__:service:cancel",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:27"
+          "created_at": "2026-05-08 11:32:11"
         },
         {
-          "id": 2844,
+          "id": 2974,
           "direction": "out",
           "actor_type": "bot",
-          "body_text": "⚠️ هل تؤكد طلب إلغاء طلبك *#R-361*؟ سيُرسل طلب الإلغاء إلى المكتب المتولّي للمراجعة.",
+          "body_text": "⚠️ هل تؤكد طلب إلغاء طلبك *#R-378*؟ سيُرسل طلب الإلغاء إلى المكتب المتولّي للمراجعة.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:27"
+          "created_at": "2026-05-08 11:32:11"
         },
         {
-          "id": 2845,
+          "id": 2975,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "__btn__:confirm:yes",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:27"
+          "created_at": "2026-05-08 11:32:11"
         },
         {
-          "id": 2846,
+          "id": 2976,
           "direction": "out",
           "actor_type": "bot",
-          "body_text": "✅ أرسلت طلب إلغاء طلبك *#R-361* إلى المكتب المتولّي.\n\nسأخبرك فور تأكيد الإلغاء من المكتب.",
+          "body_text": "✅ أرسلت طلب إلغاء طلبك *#R-378* إلى المكتب المتولّي.\n\nسأخبرك فور تأكيد الإلغاء من المكتب.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:27"
+          "created_at": "2026-05-08 11:32:11"
         }
       ],
-      "ms": 1946
+      "ms": 1873
     },
     {
       "id": "free_text_status_query",
       "label": "#6 — Asks status by typing (no button)",
-      "sid": "bench-free_text_status_query-1778238868896",
+      "sid": "bench-free_text_status_query-1778239932720",
       "transcript": [
         {
           "kind": "turn",
           "citizen": "وصلني رابط الدفع؟",
           "bot_reply": "⏳ لم يصلني رابط الدفع بعد — المكتب يعدّ الطلب.\n\nسأرسله إليك فور جاهزيته.",
-          "ms": 9,
+          "ms": 7,
           "buttons": [
             "status:check",
             "service:cancel"
@@ -827,40 +827,40 @@
       ],
       "final_state": {
         "status": "awaiting_payment",
-        "request_id": 362,
+        "request_id": 379,
         "service_id": 140017,
         "docs_collected": 0
       },
       "db_messages": [
         {
-          "id": 2847,
+          "id": 2977,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "وصلني رابط الدفع؟",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:28"
+          "created_at": "2026-05-08 11:32:12"
         },
         {
-          "id": 2848,
+          "id": 2978,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "⏳ لم يصلني رابط الدفع بعد — المكتب يعدّ الطلب.\n\nسأرسله إليك فور جاهزيته.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:28"
+          "created_at": "2026-05-08 11:32:12"
         }
       ],
-      "ms": 1520
+      "ms": 1532
     },
     {
       "id": "no_files_yet_then_submit_attempt",
       "label": "#7 — Tap submit before sending any file",
-      "sid": "bench-no_files_yet_then_submit_attempt-1778238870416",
+      "sid": "bench-no_files_yet_then_submit_attempt-1778239934252",
       "transcript": [
         {
           "kind": "turn",
           "citizen": "تجديد رخصة القيادة",
           "bot_reply": "✅ بدأت طلب *خدمة طلب تجديد رخصة سياقة*.\n\nالملفات المطلوبة:\n1) البطاقة المدنية\n2) جواز السفر\n3) رخصة القيادة الحالية\n4) صورة شخصية حديثة\n5) شهادة كشف طبي\n\nأرسل الملفات بأي ترتيب — سأرتّبها لك.",
-          "ms": 17,
+          "ms": 15,
           "buttons": [
             "service:switch",
             "service:cancel"
@@ -870,7 +870,7 @@
           "kind": "turn",
           "citizen": "__btn__:confirm:yes",
           "bot_reply": "👍 ممتاز — الطلب جاهز. أرسل المستندات بأي ترتيب:\n\n⏳ البطاقة المدنية\n⏳ جواز السفر\n⏳ رخصة القيادة الحالية\n⏳ صورة شخصية حديثة\n⏳ شهادة كشف طبي",
-          "ms": 12,
+          "ms": 8,
           "buttons": [
             "review:submit",
             "service:switch",
@@ -881,7 +881,7 @@
           "kind": "turn",
           "citizen": "__btn__:review:submit",
           "bot_reply": "لم يصلني أي ملف بعد.\n\n⏳ البطاقة المدنية\n⏳ جواز السفر\n⏳ رخصة القيادة الحالية\n⏳ صورة شخصية حديثة\n⏳ شهادة كشف طبي\n\nأرسل ملفاتك الآن — كلها معاً أو واحداً تلو الآخر، بأي ترتيب.",
-          "ms": 9,
+          "ms": 7,
           "buttons": [
             "review:submit",
             "burst:more",
@@ -897,65 +897,65 @@
       },
       "db_messages": [
         {
-          "id": 2849,
+          "id": 2979,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "تجديد رخصة القيادة",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:30"
+          "created_at": "2026-05-08 11:32:14"
         },
         {
-          "id": 2850,
+          "id": 2980,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "✅ بدأت طلب *خدمة طلب تجديد رخصة سياقة*.\n\nالملفات المطلوبة:\n1) البطاقة المدنية\n2) جواز السفر\n3) رخصة القيادة الحالية\n4) صورة شخصية حديثة\n5) شهادة كشف طبي\n\nأرسل الملفات بأي ترتيب — سأرتّبها لك.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:30"
+          "created_at": "2026-05-08 11:32:14"
         },
         {
-          "id": 2851,
+          "id": 2981,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "__btn__:confirm:yes",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:30"
+          "created_at": "2026-05-08 11:32:14"
         },
         {
-          "id": 2852,
+          "id": 2982,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "👍 ممتاز — الطلب جاهز. أرسل المستندات بأي ترتيب:\n\n⏳ البطاقة المدنية\n⏳ جواز السفر\n⏳ رخصة القيادة الحالية\n⏳ صورة شخصية حديثة\n⏳ شهادة كشف طبي",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:30"
+          "created_at": "2026-05-08 11:32:14"
         },
         {
-          "id": 2853,
+          "id": 2983,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "__btn__:review:submit",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:30"
+          "created_at": "2026-05-08 11:32:14"
         },
         {
-          "id": 2854,
+          "id": 2984,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "لم يصلني أي ملف بعد.\n\n⏳ البطاقة المدنية\n⏳ جواز السفر\n⏳ رخصة القيادة الحالية\n⏳ صورة شخصية حديثة\n⏳ شهادة كشف طبي\n\nأرسل ملفاتك الآن — كلها معاً أو واحداً تلو الآخر، بأي ترتيب.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:30"
+          "created_at": "2026-05-08 11:32:14"
         }
       ],
-      "ms": 1551
+      "ms": 1539
     },
     {
       "id": "payment_link_present",
       "label": "#8 — Payment-link query when link IS present (deterministic handler)",
-      "sid": "bench-payment_link_present-1778238871967",
+      "sid": "bench-payment_link_present-1778239935791",
       "transcript": [
         {
           "kind": "turn",
           "citizen": "وين رابط الدفع؟",
-          "bot_reply": "💳 *رابط الدفع*\n💰 الإجمالي: 21.500 ر.ع\n\n/api/payments/_stub/request_pay?ref=req-bench-pay\n\nاضغط الرابط للدفع — سأخبرك فور إتمام المعاملة.",
+          "bot_reply": "💳 *رابط الدفع*\n💰 الإجمالي: 21.500 ر.ع\n\nhttps://saned.ai/api/payments/_stub/request_pay?ref=req-bench-pay\n\nاضغط الرابط للدفع — سأخبرك فور إتمام المعاملة.",
           "ms": 6,
           "buttons": [
             "status:check",
@@ -965,40 +965,40 @@
       ],
       "final_state": {
         "status": "awaiting_payment",
-        "request_id": 363,
+        "request_id": 380,
         "service_id": 140017,
         "docs_collected": 0
       },
       "db_messages": [
         {
-          "id": 2855,
+          "id": 2985,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "وين رابط الدفع؟",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:31"
+          "created_at": "2026-05-08 11:32:15"
         },
         {
-          "id": 2856,
+          "id": 2986,
           "direction": "out",
           "actor_type": "bot",
-          "body_text": "💳 *رابط الدفع*\n💰 الإجمالي: 21.500 ر.ع\n\n/api/payments/_stub/request_pay?ref=req-bench-pay\n\nاضغط الرابط للدفع — سأخبرك فور إتمام المعاملة.",
+          "body_text": "💳 *رابط الدفع*\n💰 الإجمالي: 21.500 ر.ع\n\nhttps://saned.ai/api/payments/_stub/request_pay?ref=req-bench-pay\n\nاضغط الرابط للدفع — سأخبرك فور إتمام المعاملة.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:31"
+          "created_at": "2026-05-08 11:32:15"
         }
       ],
-      "ms": 1522
+      "ms": 1530
     },
     {
       "id": "otp_forward_refusal",
       "label": "#9 — Citizen asks to forward an OTP (must redirect)",
-      "sid": "bench-otp_forward_refusal-1778238873489",
+      "sid": "bench-otp_forward_refusal-1778239937321",
       "transcript": [
         {
           "kind": "turn",
           "citizen": "وصلني رمز تحقق، شو أسوي فيه؟",
           "bot_reply": "🔒 *لا تشاركني رمز التحقق* — الرمز خاص بك وحدك.\n\nأكمل خطوة التحقق على بوابة الخدمة الحكومية مباشرة.\n\nإن احتجت مساعدة بشيء آخر، أخبرني.",
-          "ms": 8,
+          "ms": 9,
           "buttons": [
             "status:check",
             "service:cancel"
@@ -1008,7 +1008,7 @@
           "kind": "turn",
           "citizen": "الرمز: 123456",
           "bot_reply": "🔒 لاحظت أنك أرسلت رمزاً مرة أخرى — لا أحتاج هذه الرموز.\n\nالرمز خاص بك وحدك؛ أكمل خطوة التحقق على بوابة الخدمة مباشرة.",
-          "ms": 11,
+          "ms": 8,
           "buttons": [
             "status:check",
             "service:cancel"
@@ -1017,56 +1017,56 @@
       ],
       "final_state": {
         "status": "in_progress",
-        "request_id": 364,
+        "request_id": 381,
         "service_id": 140017,
         "docs_collected": 0
       },
       "db_messages": [
         {
-          "id": 2857,
+          "id": 2987,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "وصلني رمز تحقق، شو أسوي فيه؟",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:33"
+          "created_at": "2026-05-08 11:32:17"
         },
         {
-          "id": 2858,
+          "id": 2988,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "🔒 *لا تشاركني رمز التحقق* — الرمز خاص بك وحدك.\n\nأكمل خطوة التحقق على بوابة الخدمة الحكومية مباشرة.\n\nإن احتجت مساعدة بشيء آخر، أخبرني.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:33"
+          "created_at": "2026-05-08 11:32:17"
         },
         {
-          "id": 2859,
+          "id": 2989,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "الرمز: 123456",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:33"
+          "created_at": "2026-05-08 11:32:17"
         },
         {
-          "id": 2860,
+          "id": 2990,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "🔒 لاحظت أنك أرسلت رمزاً مرة أخرى — لا أحتاج هذه الرموز.\n\nالرمز خاص بك وحدك؛ أكمل خطوة التحقق على بوابة الخدمة مباشرة.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:33"
+          "created_at": "2026-05-08 11:32:17"
         }
       ],
-      "ms": 1536
+      "ms": 1539
     },
     {
       "id": "thanks_ack",
       "label": "#10 — Citizen says thanks (deterministic ack)",
-      "sid": "bench-thanks_ack-1778238875025",
+      "sid": "bench-thanks_ack-1778239938861",
       "transcript": [
         {
           "kind": "turn",
           "citizen": "شكراً",
           "bot_reply": "🤍 العفو. أخبرني إن احتجت أي خدمة أخرى.",
-          "ms": 9,
+          "ms": 10,
           "buttons": null
         }
       ],
@@ -1076,28 +1076,28 @@
       },
       "db_messages": [
         {
-          "id": 2861,
+          "id": 2991,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "شكراً",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:35"
+          "created_at": "2026-05-08 11:32:18"
         },
         {
-          "id": 2862,
+          "id": 2992,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "🤍 العفو. أخبرني إن احتجت أي خدمة أخرى.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:35"
+          "created_at": "2026-05-08 11:32:18"
         }
       ],
-      "ms": 1520
+      "ms": 1516
     },
     {
       "id": "fee_query_in_flight",
       "label": "#11 — Citizen asks \"كم الرسوم\" while service is known",
-      "sid": "bench-fee_query_in_flight-1778238876545",
+      "sid": "bench-fee_query_in_flight-1778239940377",
       "transcript": [
         {
           "kind": "turn",
@@ -1113,40 +1113,40 @@
       ],
       "final_state": {
         "status": "collecting",
-        "request_id": 365,
+        "request_id": 382,
         "service_id": 140017,
         "docs_collected": 0
       },
       "db_messages": [
         {
-          "id": 2863,
+          "id": 2993,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "كم الرسوم؟",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:36"
+          "created_at": "2026-05-08 11:32:20"
         },
         {
-          "id": 2864,
+          "id": 2994,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "💰 رسوم *خدمة طلب تجديد رخصة سياقة*: 20 ر.ع",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:36"
+          "created_at": "2026-05-08 11:32:20"
         }
       ],
-      "ms": 1524
+      "ms": 1522
     },
     {
       "id": "burst_with_captions",
       "label": "#12 — Burst flow: photo → caption → photo → final submit",
-      "sid": "bench-burst_with_captions-1778238878069",
+      "sid": "bench-burst_with_captions-1778239941899",
       "transcript": [
         {
           "kind": "turn",
           "citizen": "تجديد رخصة القيادة",
           "bot_reply": "✅ بدأت طلب *خدمة طلب تجديد رخصة سياقة*.\n\nالملفات المطلوبة:\n1) البطاقة المدنية\n2) جواز السفر\n3) رخصة القيادة الحالية\n4) صورة شخصية حديثة\n5) شهادة كشف طبي\n\nأرسل الملفات بأي ترتيب — سأرتّبها لك.",
-          "ms": 15,
+          "ms": 20,
           "buttons": [
             "service:switch",
             "service:cancel"
@@ -1156,14 +1156,14 @@
           "kind": "turn",
           "citizen": "(attachment)",
           "bot_reply": "",
-          "ms": 374,
+          "ms": 375,
           "buttons": null
         },
         {
           "kind": "turn",
           "citizen": "هذه شهادة الفحص الطبي",
           "bot_reply": "",
-          "ms": 326,
+          "ms": 337,
           "buttons": [
             "review:submit",
             "burst:more",
@@ -1173,81 +1173,81 @@
         {
           "kind": "turn",
           "citizen": "__btn__:review:submit",
-          "bot_reply": "✅ ممتاز! استلمت 2 مستندات لطلبك.\n\n✅ البطاقة المدنية\n⏳ جواز السفر\n⏳ رخصة القيادة الحالية\n⏳ صورة شخصية حديثة\n✅ شهادة كشف طبي\n\n📤 *أرسلت طلبك إلى مكتب سند للمراجعة.*\n🆔 رقم الطلب: *#R-366*\n\nℹ️ بعض المستندات لم تصلني — لا قلق، سيتواصل معك المكتب المتولّي إن احتاج إليها.\n\n*الخطوات التالية:*\n1️⃣ مراجعة الطلب من المكتب\n2️⃣ إرسال رابط الدفع إليك\n3️⃣ إشعارك فور إنجاز المعاملة",
+          "bot_reply": "✅ ممتاز! استلمت 2 مستندات لطلبك.\n\n✅ البطاقة المدنية\n⏳ جواز السفر\n⏳ رخصة القيادة الحالية\n⏳ صورة شخصية حديثة\n✅ شهادة كشف طبي\n\n📤 *أرسلت طلبك إلى مكتب سند للمراجعة.*\n🆔 رقم الطلب: *#R-383*\n\nℹ️ بعض المستندات لم تصلني — لا قلق، سيتواصل معك المكتب المتولّي إن احتاج إليها.\n\n*الخطوات التالية:*\n1️⃣ مراجعة الطلب من المكتب\n2️⃣ إرسال رابط الدفع إليك\n3️⃣ إشعارك فور إنجاز المعاملة",
           "ms": 22,
           "buttons": null
         }
       ],
       "final_state": {
         "status": "queued",
-        "request_id": 366,
+        "request_id": 383,
         "service_id": 140017,
         "docs_collected": 2
       },
       "db_messages": [
         {
-          "id": 2865,
+          "id": 2995,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "تجديد رخصة القيادة",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:38"
+          "created_at": "2026-05-08 11:32:21"
         },
         {
-          "id": 2866,
+          "id": 2996,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "✅ بدأت طلب *خدمة طلب تجديد رخصة سياقة*.\n\nالملفات المطلوبة:\n1) البطاقة المدنية\n2) جواز السفر\n3) رخصة القيادة الحالية\n4) صورة شخصية حديثة\n5) شهادة كشف طبي\n\nأرسل الملفات بأي ترتيب — سأرتّبها لك.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:38"
+          "created_at": "2026-05-08 11:32:21"
         },
         {
-          "id": 2867,
+          "id": 2997,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "(attachment)",
           "media_url": "/uploads/bench/civil.jpg",
-          "created_at": "2026-05-08 11:14:38"
+          "created_at": "2026-05-08 11:32:21"
         },
         {
-          "id": 2868,
+          "id": 2998,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "هذه شهادة الفحص الطبي",
           "media_url": "/uploads/bench/med.jpg",
-          "created_at": "2026-05-08 11:14:38"
+          "created_at": "2026-05-08 11:32:22"
         },
         {
-          "id": 2869,
+          "id": 2999,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "📥 استلمت 2 ملفين.\n\n✅ البطاقة المدنية\n⏳ جواز السفر\n⏳ رخصة القيادة الحالية\n⏳ صورة شخصية حديثة\n✅ شهادة كشف طبي\n\nهل اكتمل ملفك؟ اضغط *✅ انتهيت من الرفع* أو أرسل المزيد.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:38"
+          "created_at": "2026-05-08 11:32:22"
         },
         {
-          "id": 2870,
+          "id": 3000,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "__btn__:review:submit",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:38"
+          "created_at": "2026-05-08 11:32:22"
         },
         {
-          "id": 2871,
+          "id": 3001,
           "direction": "out",
           "actor_type": "bot",
-          "body_text": "✅ ممتاز! استلمت 2 مستندات لطلبك.\n\n✅ البطاقة المدنية\n⏳ جواز السفر\n⏳ رخصة القيادة الحالية\n⏳ صورة شخصية حديثة\n✅ شهادة كشف طبي\n\n📤 *أرسلت طلبك إلى مكتب سند للمراجعة.*\n🆔 رقم الطلب: *#R-366*\n\nℹ️ بعض المستندات لم تصلني — لا قلق، سيتواصل معك المكتب المتولّي إن احتاج إليها.\n\n*الخطوات التالية:*\n1️⃣ مراجعة الطلب من المكتب\n2️⃣ إرسال رابط الدفع إليك\n3️⃣ إشعارك فور إنجاز المعاملة",
+          "body_text": "✅ ممتاز! استلمت 2 مستندات لطلبك.\n\n✅ البطاقة المدنية\n⏳ جواز السفر\n⏳ رخصة القيادة الحالية\n⏳ صورة شخصية حديثة\n✅ شهادة كشف طبي\n\n📤 *أرسلت طلبك إلى مكتب سند للمراجعة.*\n🆔 رقم الطلب: *#R-383*\n\nℹ️ بعض المستندات لم تصلني — لا قلق، سيتواصل معك المكتب المتولّي إن احتاج إليها.\n\n*الخطوات التالية:*\n1️⃣ مراجعة الطلب من المكتب\n2️⃣ إرسال رابط الدفع إليك\n3️⃣ إشعارك فور إنجاز المعاملة",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:38"
+          "created_at": "2026-05-08 11:32:22"
         }
       ],
-      "ms": 2249
+      "ms": 2270
     },
     {
       "id": "fee_query_idle",
       "label": "#13 — Citizen asks \"كم رسوم تجديد رخصة القيادة\" while idle",
-      "sid": "bench-fee_query_idle-1778238880318",
+      "sid": "bench-fee_query_idle-1778239944170",
       "transcript": [
         {
           "kind": "turn",
@@ -1267,23 +1267,23 @@
       },
       "db_messages": [
         {
-          "id": 2872,
+          "id": 3002,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "كم رسوم تجديد رخصة القيادة؟",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:40"
+          "created_at": "2026-05-08 11:32:24"
         },
         {
-          "id": 2873,
+          "id": 3003,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "💰 رسوم *خدمة طلب تجديد رخصة سياقة*: 20 ر.ع\n\nجاهز أبدأ الطلب؟ اكتب \"خدمة طلب تجديد رخصة سياقة\" وسأبدأ معك خطوة بخطوة.",
           "media_url": null,
-          "created_at": "2026-05-08 11:14:40"
+          "created_at": "2026-05-08 11:32:24"
         }
       ],
-      "ms": 1515
+      "ms": 1517
     }
   ]
 }

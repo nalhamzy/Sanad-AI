@@ -1,7 +1,7 @@
 # Sanad-AI · Agent Behavior Spec
 
-Last updated: 2026-05-08 (codex iter-13).
-Loop bench (13 scenarios): button-attached **80%**, deterministic **57%**, English-leaks **0%**, silent-failures **0**, flow reach `collecting:9 reviewing:6 queued:6`.
+Last updated: 2026-05-08 (codex iter-14).
+Loop bench (13 scenarios): button-attached **80%**, deterministic **57%**, English-leaks **0%**, silent-failures **0**, flow reach `collecting:9 reviewing:6 queued:6`. Codex verdicts: 10 pass / 2 minor / 1 fail (down from 4 fails in iter-7).
 Source of truth for what the WhatsApp/web agent does in every interaction.
 **If a behaviour here disagrees with `lib/agent.js`, the code is wrong.**
 
@@ -263,6 +263,7 @@ Run: `node scripts/eval_scenarios.mjs` (Anthropic judge) or `node scripts/eval_s
 | Catalog `required_documents_json` for passport listed `"دفع الرسوم المطلوبة"` as a doc — it's a payment step, not something the citizen uploads, but it appeared in the doc list shown to citizens | _iter-13_ — `_parseDocs` now filters payment steps via `NON_DOC_LABEL_RE` (matches `دفع الرسوم`/`سداد الرسوم`/`payment of fees`, etc.). Passport doc list reduced from 4 → 3 items. | ✓ |
 | Repeated identical "تعذّر الاتصال" message when LLM stays unreachable across consecutive turns — citizen sees same outage text and may think the bot is just broken | _iter-13_ — `state.last_llm_fallback_at` tracks recency; second fallback within 60 s escalates to *"المساعد الذكي ما زال غير متاح حالياً…"* with explicit "اختر من الأزرار أو اكتب اسم الخدمة" guidance. `attachContextualButtons` recognizes the escalated wording too, and the discovery-buttons branch now runs **before** the generic yes/no detector so the escalated reply doesn't catch on `اختر`. | ✓ |
 | Trailing English suffix `'/ Sorry, try again.'` on the V2 loop-exhausted fallback at line 3643 | _iter-13_ — Arabic-only: *"عذراً، لم أكمل الإجابة — حاول مرة أخرى أو استخدم الأزرار للمتابعة."* | ✓ |
+| Payment-link reply could expose a relative `/api/payments/...` URL (un-tappable from WhatsApp) when the request row stored a relative path | _iter-14_ — `deterministic_payment_query` promotes relative payment_link to absolute via `PUBLIC_BASE_URL` (or `https://saned.ai`). Bench scenario #8 now shows full `https://saned.ai/api/...` URL. Prod Thawani URLs (`https://thawani.om/...`) remain unchanged because they already start with `http`. | ✓ |
 
 ## 14. Engineering notes
 
