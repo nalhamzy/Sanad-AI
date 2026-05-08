@@ -201,6 +201,24 @@ whatsappRouter.post('/webhook', async (req, res) => {
     const effectiveText = text || (attachment?.caption || '');
 
     const session_id = `wa:${from}`;
+
+    // CX iter-5 (2026-05-08): real prod bug from +96892888715 traces
+    // #1740/#1831 — WhatsApp webhook delivered messages with no
+    // recognized text AND no recognized media (msg.image/msg.document
+    // both null — citizen sent a voice note, video, audio, sticker, or
+    // a Meta event we don't know how to handle). The old path called
+    // runTurn with empty inputs → LLM fired → credit-error fallback →
+    // citizen saw 'تعذّر الاتصال' as a phantom 'first reply' before the
+    // real burst summary landed for files 2+. Intercept here:
+    if (!effectiveText && !attachment) {
+      const noticeText = '⚠️ لم أستلم محتوى أتعرف عليه. أرسل صورة (JPG/PNG/HEIC) أو ملف PDF أو رسالة نصية.';
+      try {
+        await sendWhatsAppText(from, noticeText);
+      } catch (e) { console.warn('[whatsapp] empty-payload notice send failed:', e.message); }
+      console.warn('[whatsapp] received empty payload (no text, no media). msg type:', msg.type, 'keys:', Object.keys(msg));
+      return; // do NOT call runTurn — nothing to process
+    }
+
     turn = await runTurn({ session_id, user_text: effectiveText, attachment, citizen_phone: from });
     const reply = turn?.reply || '';
     const buttons = Array.isArray(turn?._buttons) ? turn._buttons : null;
