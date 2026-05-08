@@ -191,6 +191,8 @@ These run on every loop iteration with no LLM judge. Results land in
 | `no_files_yet_then_submit_attempt` | Tap submit before any file | ✅ pass |
 | `payment_link_present` | Payment-link query when link IS in DB | ✅ pass |
 | `otp_forward_refusal` | Citizen tries to share an OTP | ✅ pass (refused) |
+| `thanks_ack` | Citizen says "شكراً" | ✅ pass (deterministic) |
+| `fee_query_in_flight` | Citizen asks "كم الرسوم" with service known | ✅ pass (deterministic) |
 
 ## 11. Eval scenarios (12 in `scripts/eval_scenarios.mjs`)
 
@@ -241,7 +243,8 @@ Run: `node scripts/eval_scenarios.mjs` (Anthropic judge) or `node scripts/eval_s
 | LLM mis-interpreted "وصلني رابط الدفع؟" as confirmation of receipt | `ca30eb9` (deterministic payment-query handler) | ✓ |
 | Long welcome message (333 chars) | `6556f98` (trimmed to ≤200 chars) | ✓ |
 | Numbered service-picker lists had no buttons | `6556f98` (1️⃣/2️⃣/3️⃣ pick:N buttons) | ✓ |
-| LLM accepted/forwarded OTPs in chat (security) | _iter-4_ (deterministic OTP refusal) | ✓ |
+| LLM accepted/forwarded OTPs in chat (security) | `50be2b0` (deterministic OTP refusal) | ✓ |
+| Anthropic credit exhaustion exposed every LLM-driven turn | _iter-6_ (added thanks/fee deterministic shortcuts) | ⚠️ partial — LLM-only paths still affected; restore credits |
 
 ## 14. Engineering notes
 

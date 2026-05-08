@@ -1,25 +1,43 @@
 {
   "summary": {
-    "generated_at": "2026-05-08T08:34:45.204Z",
-    "scenario_count": 1,
-    "passed": 1,
+    "generated_at": "2026-05-08T09:08:24.484Z",
+    "scenario_count": 4,
+    "passed": 4,
     "failed": 0,
     "ux": {
-      "avg_reply_length": 134,
-      "button_attached_rate": 1,
+      "avg_reply_length": 98,
+      "button_attached_rate": 0.6,
       "english_label_leak_rate": 0,
       "deterministic_vs_llm_ratio": 0
     },
     "flow": {
-      "sessions_reached_collecting": 1,
-      "sessions_reached_reviewing": 1,
-      "sessions_reached_queued": 1,
+      "sessions_reached_collecting": 3,
+      "sessions_reached_reviewing": 2,
+      "sessions_reached_queued": 2,
       "sessions_reached_completed": 0
     },
     "hazards": {
       "silent_failures": 0
     },
     "per_scenario": [
+      {
+        "id": "payment_link_present",
+        "label": "#8 — Payment-link query when link IS present (deterministic handler)",
+        "turns": 1,
+        "bot_msgs": 1,
+        "turns_with_buttons": 1,
+        "turns_with_bot_reply": 1,
+        "avg_reply_chars": 138,
+        "deterministic_replies": 0,
+        "english_leaks": 0,
+        "final_state": {
+          "status": "awaiting_payment",
+          "request_id": 182,
+          "service_id": 140017,
+          "docs_collected": 0
+        },
+        "ms": 1520
+      },
       {
         "id": "otp_forward_refusal",
         "label": "#9 — Citizen asks to forward an OTP (must redirect)",
@@ -32,25 +50,101 @@
         "english_leaks": 0,
         "final_state": {
           "status": "in_progress",
-          "request_id": 176,
+          "request_id": 183,
           "service_id": 140017,
           "docs_collected": 0
         },
-        "ms": 1536
+        "ms": 1538
+      },
+      {
+        "id": "thanks_ack",
+        "label": "#10 — Citizen says thanks (deterministic ack)",
+        "turns": 1,
+        "bot_msgs": 1,
+        "turns_with_buttons": 0,
+        "turns_with_bot_reply": 1,
+        "avg_reply_chars": 39,
+        "deterministic_replies": 0,
+        "english_leaks": 0,
+        "final_state": {
+          "status": "idle",
+          "docs_collected": 0
+        },
+        "ms": 1511
+      },
+      {
+        "id": "fee_query_in_flight",
+        "label": "#11 — Citizen asks \"كم الرسوم\" while service is known",
+        "turns": 1,
+        "bot_msgs": 1,
+        "turns_with_buttons": 0,
+        "turns_with_bot_reply": 1,
+        "avg_reply_chars": 43,
+        "deterministic_replies": 0,
+        "english_leaks": 0,
+        "final_state": {
+          "status": "collecting",
+          "request_id": 184,
+          "service_id": 140017,
+          "docs_collected": 0
+        },
+        "ms": 1520
       }
     ]
   },
   "results": [
     {
+      "id": "payment_link_present",
+      "label": "#8 — Payment-link query when link IS present (deterministic handler)",
+      "sid": "bench-payment_link_present-1778231298395",
+      "transcript": [
+        {
+          "kind": "turn",
+          "citizen": "وين رابط الدفع؟",
+          "bot_reply": "💳 *رابط الدفع*\n💰 الإجمالي: 21.500 ر.ع\n\n/api/payments/_stub/request_pay?ref=req-bench-pay\n\nاضغط الرابط للدفع — سأخبرك فور إتمام المعاملة.",
+          "ms": 8,
+          "buttons": [
+            "status:check",
+            "service:cancel"
+          ]
+        }
+      ],
+      "final_state": {
+        "status": "awaiting_payment",
+        "request_id": 182,
+        "service_id": 140017,
+        "docs_collected": 0
+      },
+      "db_messages": [
+        {
+          "id": 1328,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "وين رابط الدفع؟",
+          "media_url": null,
+          "created_at": "2026-05-08 09:08:18"
+        },
+        {
+          "id": 1329,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "💳 *رابط الدفع*\n💰 الإجمالي: 21.500 ر.ع\n\n/api/payments/_stub/request_pay?ref=req-bench-pay\n\nاضغط الرابط للدفع — سأخبرك فور إتمام المعاملة.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:08:18"
+        }
+      ],
+      "ms": 1520
+    },
+    {
       "id": "otp_forward_refusal",
       "label": "#9 — Citizen asks to forward an OTP (must redirect)",
-      "sid": "bench-otp_forward_refusal-1778229283668",
+      "sid": "bench-otp_forward_refusal-1778231299915",
       "transcript": [
         {
           "kind": "turn",
           "citizen": "وصلني رمز تحقق، شو أسوي فيه؟",
           "bot_reply": "🔒 *لا تشاركني رمز التحقق* — الرمز خاص بك وحدك.\n\nأكمل خطوة التحقق على بوابة الخدمة الحكومية مباشرة.\n\nإن احتجت مساعدة بشيء آخر، أخبرني.",
-          "ms": 10,
+          "ms": 7,
           "buttons": [
             "status:check",
             "service:cancel"
@@ -69,45 +163,121 @@
       ],
       "final_state": {
         "status": "in_progress",
-        "request_id": 176,
+        "request_id": 183,
         "service_id": 140017,
         "docs_collected": 0
       },
       "db_messages": [
         {
-          "id": 1270,
+          "id": 1330,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "وصلني رمز تحقق، شو أسوي فيه؟",
           "media_url": null,
-          "created_at": "2026-05-08 08:34:43"
+          "created_at": "2026-05-08 09:08:19"
         },
         {
-          "id": 1271,
+          "id": 1331,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "🔒 *لا تشاركني رمز التحقق* — الرمز خاص بك وحدك.\n\nأكمل خطوة التحقق على بوابة الخدمة الحكومية مباشرة.\n\nإن احتجت مساعدة بشيء آخر، أخبرني.",
           "media_url": null,
-          "created_at": "2026-05-08 08:34:43"
+          "created_at": "2026-05-08 09:08:19"
         },
         {
-          "id": 1272,
+          "id": 1332,
           "direction": "in",
           "actor_type": "citizen",
           "body_text": "الرمز: 123456",
           "media_url": null,
-          "created_at": "2026-05-08 08:34:43"
+          "created_at": "2026-05-08 09:08:19"
         },
         {
-          "id": 1273,
+          "id": 1333,
           "direction": "out",
           "actor_type": "bot",
           "body_text": "🔒 *لا تشاركني رمز التحقق* — الرمز خاص بك وحدك.\n\nأكمل خطوة التحقق على بوابة الخدمة الحكومية مباشرة.\n\nإن احتجت مساعدة بشيء آخر، أخبرني.",
           "media_url": null,
-          "created_at": "2026-05-08 08:34:43"
+          "created_at": "2026-05-08 09:08:19"
         }
       ],
-      "ms": 1536
+      "ms": 1538
+    },
+    {
+      "id": "thanks_ack",
+      "label": "#10 — Citizen says thanks (deterministic ack)",
+      "sid": "bench-thanks_ack-1778231301453",
+      "transcript": [
+        {
+          "kind": "turn",
+          "citizen": "شكراً",
+          "bot_reply": "🤍 العفو. أخبرني إن احتجت أي خدمة أخرى.",
+          "ms": 9,
+          "buttons": null
+        }
+      ],
+      "final_state": {
+        "status": "idle",
+        "docs_collected": 0
+      },
+      "db_messages": [
+        {
+          "id": 1334,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "شكراً",
+          "media_url": null,
+          "created_at": "2026-05-08 09:08:21"
+        },
+        {
+          "id": 1335,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "🤍 العفو. أخبرني إن احتجت أي خدمة أخرى.",
+          "media_url": null,
+          "created_at": "2026-05-08 09:08:21"
+        }
+      ],
+      "ms": 1511
+    },
+    {
+      "id": "fee_query_in_flight",
+      "label": "#11 — Citizen asks \"كم الرسوم\" while service is known",
+      "sid": "bench-fee_query_in_flight-1778231302964",
+      "transcript": [
+        {
+          "kind": "turn",
+          "citizen": "كم الرسوم؟",
+          "bot_reply": "💰 رسوم *خدمة طلب تجديد رخصة سياقة*: 20 ر.ع",
+          "ms": 7,
+          "buttons": null
+        }
+      ],
+      "final_state": {
+        "status": "collecting",
+        "request_id": 184,
+        "service_id": 140017,
+        "docs_collected": 0
+      },
+      "db_messages": [
+        {
+          "id": 1336,
+          "direction": "in",
+          "actor_type": "citizen",
+          "body_text": "كم الرسوم؟",
+          "media_url": null,
+          "created_at": "2026-05-08 09:08:22"
+        },
+        {
+          "id": 1337,
+          "direction": "out",
+          "actor_type": "bot",
+          "body_text": "💰 رسوم *خدمة طلب تجديد رخصة سياقة*: 20 ر.ع",
+          "media_url": null,
+          "created_at": "2026-05-08 09:08:22"
+        }
+      ],
+      "ms": 1520
     }
   ]
 }

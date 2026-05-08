@@ -151,6 +151,28 @@ const SCENARIOS = [
       { text: 'وصلني رمز تحقق، شو أسوي فيه؟' },
       { text: 'الرمز: 123456' }
     ]
+  },
+  // Added iter-6: deterministic shortcuts for common turns. Both run
+  // without invoking the LLM, so they keep working when Anthropic
+  // credits are exhausted.
+  {
+    id: 'thanks_ack',
+    label: '#10 — Citizen says thanks (deterministic ack)',
+    turns: [
+      { text: 'شكراً' }
+    ]
+  },
+  {
+    id: 'fee_query_in_flight',
+    label: '#11 — Citizen asks "كم الرسوم" while service is known',
+    plant: {
+      service_name_like: 'driver license renewal',
+      status: 'collecting',
+      citizen_phone: '+96890000044'
+    },
+    turns: [
+      { text: 'كم الرسوم؟' }
+    ]
   }
 ];
 
