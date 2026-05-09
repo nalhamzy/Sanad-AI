@@ -162,10 +162,17 @@
   .cta-card h3{color:#fff;font-size:22px;font-family:'Inter';letter-spacing:-.01em;margin-bottom:6px}
   .cta-card p{color:rgba(255,255,255,.85);max-width:50ch;margin:8px auto 0}
 
-  /* Print */
+  /* Print — keep gradients/colors, force one logical page per .page block,
+     and ensure cover gradient renders rather than being optimized to white. */
   @media print{
+    @page{margin:0;size:A4}
+    *,*::before,*::after{print-color-adjust:exact;-webkit-print-color-adjust:exact}
     body{background:#fff}
-    .page{box-shadow:none;margin:0;border-radius:0;width:100%}
+    .page{box-shadow:none;margin:0 0 0 0;border-radius:0;width:100%;page-break-after:always}
+    .cover{min-height:100vh}
+    /* Avoid card-internal page breaks (split looks bad). */
+    .ba,.flow3 .step-card,.bigstat,.shared-trait,.of-card,.ready-tile,.cta-card,
+    .winside,.concept,.mock{break-inside:avoid;page-break-inside:avoid}
   }
   /* Mobile */
   @media (max-width:720px){
@@ -201,10 +208,19 @@
         رقم واتساب واحد. شبكة مكاتب سند مرخّصة.<br/>
         المواطن يطلب — والمكتب يُنجز.
       </p>
+      <div style="margin-top:28px;display:flex;gap:10px;flex-wrap:wrap">
+        <span style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,.12);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.22);font-size:12.5px;font-weight:700;color:#ecfdf5">
+          <span style="width:8px;height:8px;border-radius:50%;background:#5eead4;box-shadow:0 0 0 4px rgba(94,234,212,.25)"></span>
+          مباشر الآن — saned.ai
+        </span>
+        <span style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,.12);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.22);font-size:12.5px;font-weight:700;color:#ecfdf5">
+          601 خدمة · 6 جهات حكومية · عربي أوّلاً
+        </span>
+      </div>
     </div>
     <div class="cover-foot">
       <div>saned.ai</div>
-      <div dir="ltr">1 / 6</div>
+      <div dir="ltr">1 / 8</div>
     </div>
   </div>
 </section>
@@ -212,7 +228,7 @@
 <!-- ─── Page 2 — Problem ──────────────────────────────────── -->
 <section class="page">
   <span class="page-tag">المشكلة · The problem</span>
-  <span class="page-num">2 / 6</span>
+  <span class="page-num">2 / 8</span>
   <div class="page-pad">
     <div class="section-num">01 — The opportunity</div>
     <h2>الكثير من الخدمات — ومدخل واحد يجمعها</h2>
@@ -221,9 +237,9 @@
     </p>
 
     <div class="grid grid-3" style="margin-top:36px">
-      <div class="bigstat"><div class="num">601</div><div class="lbl">خدمة حكومية موثّقة</div></div>
-      <div class="bigstat"><div class="num">29</div><div class="lbl">جهة حكومية</div></div>
-      <div class="bigstat"><div class="num">52+</div><div class="lbl">مكتب سند مرخّص في الشبكة</div></div>
+      <div class="bigstat"><div class="num">601</div><div class="lbl">خدمة حكومية في القائمة</div></div>
+      <div class="bigstat"><div class="num">128</div><div class="lbl">خدمة بمستندات وخطوات كاملة</div></div>
+      <div class="bigstat"><div class="num">56</div><div class="lbl">خدمة مُتحقّق منها مباشرةً من المصدر</div></div>
     </div>
 
     <div class="grid grid-2" style="margin-top:40px">
@@ -252,7 +268,7 @@
 <!-- ─── Page 3 — Solution + how it works ───────────────────── -->
 <section class="page">
   <span class="page-tag">الحل · The solution</span>
-  <span class="page-num">3 / 6</span>
+  <span class="page-num">3 / 8</span>
   <div class="page-pad">
     <div class="section-num">02 — Saned</div>
     <h2>كيف يعمل ساند — في ٣ خطوات</h2>
@@ -296,7 +312,7 @@
 <!-- ─── Page 4 — For citizens ──────────────────────────────── -->
 <section class="page">
   <span class="page-tag">المواطن · Citizen</span>
-  <span class="page-num">4 / 6</span>
+  <span class="page-num">4 / 8</span>
   <div class="page-pad">
     <div class="section-num">03 — Citizen experience</div>
     <h2>تجربة المواطن — قناتان، تجربة واحدة</h2>
@@ -318,20 +334,31 @@
           <div class="wa-body" style="min-height:300px">
             <div class="bubble in"><span>السلام عليكم، فقدت سند ملكية أرضي وأبغى بدل فاقد</span><div class="meta">14:12 ✓✓</div></div>
             <div class="bubble out">
-              <span>وعليكم السلام ورحمة الله 👋<br/><br/><b>بدل فاقد سند ملكية</b> — وزارة الإسكان والتخطيط العمراني<br/><br/>🪪 <b>المستندات المطلوبة:</b><br/>• البطاقة المدنية (الوجهين)<br/>• محضر فقد من مركز الشرطة<br/>• إقرار خطّي بالفقد<br/><br/>🤝 رسوم المعاملة: ١٠ ر.ع<br/><br/>نبدأ الطلب؟</span>
+              <span>📝 طلب إصدار سند ملكية بدل فاقد<br/>وزارة الإسكان والتخطيط العمراني<br/>💰 الرسوم تُحدّد عند مراجعة المكتب<br/><br/>📎 الملفات المطلوبة:<br/>1) البطاقة المدنية<br/>2) بلاغ فقدان من الشرطة<br/>3) إستمارة إعلان فقدان سند ملكية<br/><br/>تحب أحد مكاتب سند يساعدك تقدّمه؟</span>
               <div class="meta">14:12</div>
             </div>
-            <div class="bubble in"><span>نعم تكفّل</span><div class="meta">14:13 ✓✓</div></div>
-            <div class="bubble attach"><span>📎 civil-id-front.jpg</span></div>
-            <div class="bubble attach"><span>📎 civil-id-back.jpg</span></div>
+            <div class="bubble btn-row">
+              <span class="wa-btn primary">✓ نعم</span>
+              <span class="wa-btn">✕ لا</span>
+            </div>
+            <div class="bubble in"><span>نعم</span><div class="meta">14:13 ✓✓</div></div>
+            <div class="bubble out">
+              <span>✅ تمام — جهزنا ملف طلب إصدار سند ملكية بدل فاقد.<br/>أرسل الملفات بأي ترتيب وسأرتّبها لك.</span>
+              <div class="meta">14:13</div>
+            </div>
+            <div class="bubble attach"><span>📎 civil-id.jpg</span></div>
+            <div class="bubble attach"><span>📎 police-report.pdf</span></div>
             <div class="bubble attach"><span>📎 declaration.pdf</span></div>
             <div class="bubble out">
-              <span>✅ استلمنا البطاقة المدنية + الإقرار الخطّي.<br/>بقي مستند واحد: <b>محضر الفقد</b> من الشرطة.</span>
+              <span>📥 استلمت 3 ملفات.<br/>✅ البطاقة المدنية<br/>✅ بلاغ فقدان من الشرطة<br/>✅ إستمارة إعلان فقدان<br/><br/>✨ اكتمل ملفك.<br/>اضغط ✅ انتهيت من الرفع.</span>
               <div class="meta">14:14</div>
             </div>
-            <div class="bubble attach"><span>📎 lost-report.pdf</span></div>
+            <div class="bubble btn-row">
+              <span class="wa-btn primary">✅ انتهيت من الرفع</span>
+              <span class="wa-btn">➕ سأرسل المزيد</span>
+            </div>
             <div class="bubble out">
-              <span>✅ ممتاز! اكتمل الملف.<br/><br/>نُرسله الآن إلى مكاتب سند المرخّصة 🤝<br/>وستصلك رسالة فور استلامه.</span>
+              <span>✅ تم الإرسال — استلمت 3 مستندات.<br/>🆔 #R-1042<br/><br/>المكتب يراجع الطلب الآن وسأرسل لك رابط الدفع فور جاهزيته.</span>
               <div class="meta">14:14</div>
             </div>
           </div>
@@ -354,11 +381,11 @@
             <!-- Service info card -->
             <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:14px">
               <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
-                <span style="font-size:10px;padding:3px 8px;border-radius:6px;background:#ecfdf5;color:var(--brand-dark);font-weight:700;border:1px solid var(--teal-100)">وزارة العمل</span>
-                <span style="font-size:10px;padding:3px 8px;border-radius:6px;background:#fff;color:var(--ink-2);font-weight:700;border:1px solid var(--line)">⏱ خدمة ذاتية</span>
+                <span style="font-size:10px;padding:3px 8px;border-radius:6px;background:#ecfdf5;color:var(--brand-dark);font-weight:700;border:1px solid var(--teal-100)">شرطة عُمان السلطانية</span>
+                <span style="font-size:10px;padding:3px 8px;border-radius:6px;background:#fff;color:var(--ink-2);font-weight:700;border:1px solid var(--line)">💰 20 ر.ع</span>
               </div>
-              <div style="font-weight:800;font-size:13px">تجديد تأشيرة عامل</div>
-              <div style="font-size:10px;color:var(--mute);font-family:'Inter';margin-top:2px">Worker Visa Renewal</div>
+              <div style="font-weight:800;font-size:13px">خدمة تجديد رخصة سياقة</div>
+              <div style="font-size:10px;color:var(--mute);font-family:'Inter';margin-top:2px">Driver License Renewal · verified 2026-05</div>
             </div>
 
             <!-- Documents required header -->
@@ -371,12 +398,12 @@
             <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
                 <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#10b981,#0d9488);color:#fff;font-size:10px;font-weight:800">١</span>
-                <span style="font-weight:700;font-size:12px">جواز السفر</span>
-                <span style="font-size:10px;color:var(--mute);font-family:'Inter'">Passport</span>
+                <span style="font-weight:700;font-size:12px">البطاقة المدنية</span>
+                <span style="font-size:10px;color:var(--mute);font-family:'Inter'">Civil ID</span>
               </div>
               <div style="display:flex;align-items:center;gap:6px;font-size:10.5px">
                 <button style="padding:4px 10px;background:#f1f5f9;border:1px solid var(--line);border-radius:6px;font-weight:700;font-size:10px">Choose File</button>
-                <span style="color:var(--mute)">passport.jpg ✓</span>
+                <span style="color:var(--mute)">civil-id.jpg ✓</span>
               </div>
             </div>
 
@@ -384,8 +411,8 @@
             <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
                 <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#10b981,#0d9488);color:#fff;font-size:10px;font-weight:800">٢</span>
-                <span style="font-weight:700;font-size:12px">بطاقة العامل</span>
-                <span style="font-size:10px;color:var(--mute);font-family:'Inter'">Worker Card</span>
+                <span style="font-weight:700;font-size:12px">الفحص الطبي</span>
+                <span style="font-size:10px;color:var(--mute);font-family:'Inter'">Medical Fitness Form</span>
               </div>
               <div style="display:flex;align-items:center;gap:6px;font-size:10.5px">
                 <button style="padding:4px 10px;background:#f1f5f9;border:1px solid var(--line);border-radius:6px;font-weight:700;font-size:10px">Choose File</button>
@@ -409,12 +436,63 @@
   </div>
 </section>
 
-<!-- ─── Page 5 — Two-sided marketplace ─────────────────────── -->
+<!-- ─── Page 5 (NEW) — Verified online ─────────────────────── -->
+<section class="page">
+  <span class="page-tag">دقّة موثّقة · Verified accuracy</span>
+  <span class="page-num">5 / 8</span>
+  <div class="page-pad">
+    <div class="section-num">04 — Why citizens trust the answers</div>
+    <h2>كل خدمة — مستنداتها وخطواتها مأخوذة من المصدر</h2>
+    <p class="lede">
+      الفرق بين «بوت ذكي» و«بوت يعمل» هو دقّة البيانات. ساند يربط مباشرة بصفحات الجهات الحكومية ويستخرج المستندات والخطوات من المصدر — لا تخمين، لا اختراع.
+    </p>
+
+    <div class="grid grid-3" style="margin-top:32px">
+      <div class="bigstat" style="padding:24px">
+        <div class="num" style="font-size:46px">601</div>
+        <div class="lbl">خدمة في القائمة الرسمية</div>
+        <p style="font-size:11.5px;margin-top:10px;line-height:1.55">من المصادر العُمانية الرسمية — شرطة، صحة، عمل، تجارة، إسكان، بلدية مسقط.</p>
+      </div>
+      <div class="bigstat" style="padding:24px;background:linear-gradient(135deg,#ecfdf5,#fff)">
+        <div class="num" style="font-size:46px">128</div>
+        <div class="lbl">خدمة بمستندات وخطوات كاملة</div>
+        <p style="font-size:11.5px;margin-top:10px;line-height:1.55">قابلة للإرسال للمكتب فوراً عبر ساند — مع رسوم رسمية ومدّة الإنجاز.</p>
+      </div>
+      <div class="bigstat" style="padding:24px;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;border:0">
+        <div class="num" style="font-size:46px;color:#fff">56</div>
+        <div class="lbl" style="color:#a7f3d0">خدمة مُتحقّق منها مباشرةً</div>
+        <p style="font-size:11.5px;margin-top:10px;line-height:1.55;color:#ccfbf1">قورنت اليوم بصفحاتها الرسمية على rop.gov.om و moh.gov.om و mol.gov.om — كل رقم وكل مستند.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:42px;font-size:18px">شملت عمليّة التحقّق ٦ جهات حكومية رئيسية</h3>
+    <div class="grid grid-3" style="margin-top:14px;gap:14px">
+      <div class="shared-trait"><span class="ico">🚓</span><div><b>شرطة عُمان السلطانية</b><br/><span class="small">29 خدمة مُتحقّق منها — جواز، بطاقة، رخصة سياقة، شهادات…</span></div></div>
+      <div class="shared-trait"><span class="ico">⚕️</span><div><b>وزارة الصحة</b><br/><span class="small">16 خدمة مُتحقّق منها — تراخيص، فحص، تسجيل كوادر…</span></div></div>
+      <div class="shared-trait"><span class="ico">👷</span><div><b>وزارة العمل</b><br/><span class="small">20 خدمة مُتحقّق منها — تصاريح، عقود، إنهاء، نقل…</span></div></div>
+      <div class="shared-trait"><span class="ico">🏢</span><div><b>وزارة التجارة</b><br/><span class="small">14 خدمة في القائمة — منصّة استثمر بسهولة (Invest Easy)</span></div></div>
+      <div class="shared-trait"><span class="ico">🏠</span><div><b>وزارة الإسكان</b><br/><span class="small">87 خدمة من بوابة الخدمات الإلكترونية</span></div></div>
+      <div class="shared-trait"><span class="ico">🏛️</span><div><b>بلدية مسقط</b><br/><span class="small">83 خدمة — رخص بلدية، عقود إيجار، تراخيص أنشطة…</span></div></div>
+    </div>
+
+    <div style="margin-top:32px;background:linear-gradient(135deg,#f8fafc,#fff);padding:20px 24px;border-radius:14px;border:1px solid var(--line)">
+      <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+        <div style="font-size:34px">🔁</div>
+        <div style="flex:1;min-width:280px">
+          <div style="font-weight:800;font-size:14.5px">إعادة تحقّق دوريّة — لا بيانات قديمة</div>
+          <p style="margin:4px 0 0;font-size:12.5px;line-height:1.6;color:var(--ink-2)">تشغيل آليّ يفحص كل رابط ومستند مقابل المصدر الرسمي. أيّ خدمة تتغيّر شروطها → تُحدَّث القائمة قبل وصول الطلب التالي.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Page 6 — Two-sided marketplace ─────────────────────── -->
 <section class="page">
   <span class="page-tag">سوق يربح فيه الطرفان · Two-sided marketplace</span>
-  <span class="page-num">5 / 6</span>
+  <span class="page-num">6 / 8</span>
   <div class="page-pad">
-    <div class="section-num">04 — A win for both sides</div>
+    <div class="section-num">05 — A win for both sides</div>
     <h2>سوق يربح فيه الطرفان</h2>
     <p class="lede">
       المواطن يحصل على إنجاز سريع دون الحاجة للبحث عن مكتب معيّن. والمكتب يحصل على تدفّق مستمرّ من الطلبات الجاهزة — دون تسويق ولا انتظار.
@@ -450,24 +528,24 @@
             <span class="chip cyan">قيد المراجعة</span>
             <span class="chip fresh">💬 ردّ جديد</span>
           </div>
-          <div style="font-weight:700;font-size:13.5px">تجديد رخصة قيادة</div>
-          <div class="small" style="margin-top:6px">‎#R-1042 · مسقط · ٥.٠٠٠ ر.ع</div>
+          <div style="font-weight:700;font-size:13.5px">خدمة تجديد رخصة سياقة</div>
+          <div class="small" style="margin-top:6px">‎#R-1042 · مسقط · ٢٠.٠٠٠ ر.ع</div>
         </div>
         <div class="of-card" style="border-inline-start-color:#f59e0b">
           <div class="row">
-            <span class="chip">بلدية مسقط</span>
+            <span class="chip">شرطة عُمان</span>
             <span class="chip" style="background:#fef3c7;color:#92400e;border-color:#fde68a">بانتظار الدفع</span>
           </div>
-          <div style="font-weight:700;font-size:13.5px">رخصة بناء</div>
-          <div class="small" style="margin-top:6px">‎#R-1041 · مسقط · ١٢.٥٠٠ ر.ع</div>
+          <div style="font-weight:700;font-size:13.5px">إصدار الجواز العماني</div>
+          <div class="small" style="margin-top:6px">‎#R-1041 · مسقط · ١٠.٠٠٠ ر.ع</div>
         </div>
         <div class="of-card" style="border-inline-start-color:#10b981">
           <div class="row">
-            <span class="chip">شرطة عُمان</span>
+            <span class="chip">وزارة العمل</span>
             <span class="chip" style="background:#d1fae5;color:#065f46;border-color:#6ee7b7">مكتمل ✓</span>
           </div>
-          <div style="font-weight:700;font-size:13.5px">تجديد ملكية مركبة</div>
-          <div class="small" style="margin-top:6px">‎#R-1039 · صلالة · ١٠.٠٠٠ ر.ع</div>
+          <div style="font-weight:700;font-size:13.5px">تجديد تصريح عمل</div>
+          <div class="small" style="margin-top:6px">‎#R-1039 · صلالة · ١٠٠.٠٠٠ ر.ع</div>
         </div>
       </div>
 
@@ -501,12 +579,87 @@
   </div>
 </section>
 
-<!-- ─── Page 6 — Ready to launch ───────────────────────────── -->
+<!-- ─── Page 7 (NEW) — Engineered for trust ────────────────── -->
+<section class="page">
+  <span class="page-tag">هندسة الجودة · Engineered for trust</span>
+  <span class="page-num">7 / 8</span>
+  <div class="page-pad">
+    <div class="section-num">06 — Built to be reliable</div>
+    <h2>منصّة لا تكذب — حتى تحت الضغط</h2>
+    <p class="lede">
+      أكثر ما يُؤذي ثقة المواطن: بوت يُضيع ملفه، أو يُعطي رسوماً وهميّة، أو يحوّل الطلب لمكتبَين فيتنازعان. ساند مهندَس بحيث لا يحدث أيّ من ذلك.
+    </p>
+
+    <div class="grid grid-2" style="margin-top:32px;gap:22px">
+      <div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px 24px;box-shadow:var(--shadow-soft)">
+        <div style="display:flex;gap:14px;align-items:flex-start">
+          <div style="width:48px;height:48px;border-radius:14px;background:#ecfdf5;color:#0d9488;display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid var(--teal-100);flex-shrink:0">🛡️</div>
+          <div>
+            <h3 style="font-size:16px;margin:0">حماية من ازدواج الرسائل</h3>
+            <p style="margin:6px 0 0;font-size:12.5px;line-height:1.6">واتساب أحياناً يُعيد إرسال نفس الرسالة. ساند يتعرّف على المعرّف الفريد لكلّ رسالة ويُسقط المكرّرة — لا يحسبها مرتين، لا يضاعف الفواتير.</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px 24px;box-shadow:var(--shadow-soft)">
+        <div style="display:flex;gap:14px;align-items:flex-start">
+          <div style="width:48px;height:48px;border-radius:14px;background:#ecfdf5;color:#0d9488;display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid var(--teal-100);flex-shrink:0">📥</div>
+          <div>
+            <h3 style="font-size:16px;margin:0">عدّ صادق للملفات</h3>
+            <p style="margin:6px 0 0;font-size:12.5px;line-height:1.6">إذا أرسلت ٤ ملفات ووصل ٣ — ساند يُخبرك صراحةً: «وصلتني ٤ ملفات — رتّبت ٣ منها، و١ لم يكتمل تحميله». لا اختفاء صامت.</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px 24px;box-shadow:var(--shadow-soft)">
+        <div style="display:flex;gap:14px;align-items:flex-start">
+          <div style="width:48px;height:48px;border-radius:14px;background:#ecfdf5;color:#0d9488;display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid var(--teal-100);flex-shrink:0">⚛️</div>
+          <div>
+            <h3 style="font-size:16px;margin:0">استلام ذرّيّ — لا تنازع</h3>
+            <p style="margin:6px 0 0;font-size:12.5px;line-height:1.6">أوّل مكتب يضغط «استلام» يحصل على الطلب. مضمون على مستوى قاعدة البيانات. لا يحدث أبداً أن يستلمه مكتبان معاً.</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px 24px;box-shadow:var(--shadow-soft)">
+        <div style="display:flex;gap:14px;align-items:flex-start">
+          <div style="width:48px;height:48px;border-radius:14px;background:#ecfdf5;color:#0d9488;display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid var(--teal-100);flex-shrink:0">🔒</div>
+          <div>
+            <h3 style="font-size:16px;margin:0">رمز التحقق — لن نطلبه</h3>
+            <p style="margin:6px 0 0;font-size:12.5px;line-height:1.6">إذا أرسلت رمز التحقّق بالخطأ، ساند يرفضه فوراً ويُذكّرك أنّ الرمز خاص بك وحدك. لا تسريب، لا حساسية أمنيّة.</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px 24px;box-shadow:var(--shadow-soft)">
+        <div style="display:flex;gap:14px;align-items:flex-start">
+          <div style="width:48px;height:48px;border-radius:14px;background:#ecfdf5;color:#0d9488;display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid var(--teal-100);flex-shrink:0">⏱️</div>
+          <div>
+            <h3 style="font-size:16px;margin:0">SLA حازم — لا انتظار خفيّ</h3>
+            <p style="margin:6px 0 0;font-size:12.5px;line-height:1.6">٥ دقائق للمراجعة، ٤٥ دقيقة للتنفيذ بعد الدفع. عند انتهاء المهلة، الطلب ينتقل لمكتب آخر تلقائياً — والدفع محفوظ.</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px 24px;box-shadow:var(--shadow-soft)">
+        <div style="display:flex;gap:14px;align-items:flex-start">
+          <div style="width:48px;height:48px;border-radius:14px;background:#ecfdf5;color:#0d9488;display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid var(--teal-100);flex-shrink:0">🧪</div>
+          <div>
+            <h3 style="font-size:16px;margin:0">مُختبر — ٢٦٣ اختبار آليّ</h3>
+            <p style="margin:6px 0 0;font-size:12.5px;line-height:1.6">كلّ تغيير يُختبر آليّاً ضد سيناريوهات حقيقية مأخوذة من سجلّات الاستخدام. أي خطأ يُعاد ولا يعود.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Page 8 — Ready to launch ───────────────────────────── -->
 <section class="page">
   <span class="page-tag">جاهز · Ready to launch</span>
-  <span class="page-num">6 / 6</span>
+  <span class="page-num">8 / 8</span>
   <div class="page-pad">
-    <div class="section-num">05 — Today</div>
+    <div class="section-num">07 — Today</div>
     <h2>جاهز — ومُجرَّب — ويعمل الآن</h2>
     <p class="lede">
       كلّ ما يحتاجه المواطن وكلّ ما يحتاجه المكتب: مبنيّ، ومُختبر، ويعمل اليوم. ساند منصّة كاملة، تنتظر الإشارة لتنطلق على الميدان.
@@ -534,6 +687,25 @@
       <div class="eyebrow">جرّبه بنفسك · Try it now</div>
       <h3>saned.ai</h3>
       <p>المنصّة كاملة ومفتوحة للتجربة — رحلة المواطن، لوحة المكتب، والدفع عبر بيئة آمنة.</p>
+    </div>
+
+    <!-- Three-track next-step CTA — citizens / offices / partners -->
+    <div class="grid grid-3" style="margin-top:24px;gap:14px">
+      <div style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow-soft)">
+        <div style="font-size:11px;font-weight:800;color:var(--brand);letter-spacing:.16em;text-transform:uppercase;margin-bottom:8px">للمواطن</div>
+        <div style="font-weight:800;font-size:14px;margin-bottom:4px">ابدأ من الواتساب</div>
+        <div style="font-size:11.5px;color:var(--mute);line-height:1.55">رقم واتساب موحّد — اكتب «تجديد رخصة سياقة» أو «جواز السفر».</div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow-soft);border-color:var(--teal-100);background:linear-gradient(180deg,#ecfdf5,#fff)">
+        <div style="font-size:11px;font-weight:800;color:var(--brand-dark);letter-spacing:.16em;text-transform:uppercase;margin-bottom:8px">لمكاتب سند</div>
+        <div style="font-weight:800;font-size:14px;margin-bottom:4px">انضمّ للشبكة</div>
+        <div style="font-size:11.5px;color:var(--mute);line-height:1.55">طلبات جاهزة، استلام ذرّيّ، دفع مضمون. تواصل معنا للتسجيل.</div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow-soft)">
+        <div style="font-size:11px;font-weight:800;color:var(--brand);letter-spacing:.16em;text-transform:uppercase;margin-bottom:8px">للجهات الحكومية</div>
+        <div style="font-weight:800;font-size:14px;margin-bottom:4px">شراكة مؤسّسية</div>
+        <div style="font-size:11.5px;color:var(--mute);line-height:1.55">تقديم خدماتكم لكل المواطنين عبر قناة واحدة موثوقة.</div>
+      </div>
     </div>
   </div>
 </section>
