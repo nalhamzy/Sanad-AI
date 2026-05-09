@@ -14,7 +14,8 @@ import './helpers.js';
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-const { _welcomeMessage, _helpMessage, _firstDocPrompt, stripMarkdownEmphasis } = await import('../lib/agent.js');
+const { _welcomeMessage, _helpMessage, _firstDocPrompt, stripMarkdownEmphasis,
+        isGreetingOrHelp, greetingIntent } = await import('../lib/agent.js');
 
 // Reject **double-asterisk bold** anywhere in the string. Single asterisks
 // are WhatsApp's bold marker (and we don't use them either) — so the simpler
@@ -52,6 +53,48 @@ describe('helpMessage()', () => {
   test('contains no markdown bold (** or *)', () => assertNoMarkdownBold(h, 'helpMessage'));
   test('describes the 5-step prep + dispatch flow', () => {
     assert.ok(/1️⃣/.test(h) && /5️⃣/.test(h), 'must enumerate steps 1️⃣–5️⃣');
+  });
+});
+
+describe('greeting/help/thanks classifier (runAgentV2 short-circuit)', () => {
+  // Real prod regression: +96892888715 (2026-05-09) typed "مرحبا" and got
+  // back "وجدت 3 خدمات تناسبك ..." because runAgentV2 went straight to the
+  // LLM, which called search_services on the greeting. These cases pin the
+  // deterministic catch in place so this can't regress.
+  describe('isGreetingOrHelp() — true cases', () => {
+    for (const t of [
+      'مرحبا', 'مرحب بك', 'السلام عليكم', 'اهلا', 'أهلا', 'هاي', 'هلا',
+      'صباح الخير', 'مساء الخير',
+      'hi', 'hello', 'hey', 'Hi there!', 'salam', 'good morning',
+      'help', '?', 'مساعدة', 'قدراتك',
+      'thanks', 'thank you', 'شكرا', 'مشكور', 'تسلم'
+    ]) {
+      test(`"${t}" is a greeting/help/thanks`, () => assert.equal(isGreetingOrHelp(t), true, t));
+    }
+  });
+  describe('isGreetingOrHelp() — false cases (no false positives)', () => {
+    for (const t of [
+      'أبغى أجدد رخصة القيادة',
+      'كم رسوم تجديد جواز السفر؟',
+      'I want to renew my passport',
+      'civil id renewal',
+      'تجديد رخصة',
+      ''
+    ]) {
+      test(`"${t}" is NOT a greeting`, () => assert.equal(isGreetingOrHelp(t), false, t));
+    }
+  });
+  describe('greetingIntent() — classifies intent correctly', () => {
+    test('thanks beats greeting', () => assert.equal(greetingIntent('thank you'), 'thanks'));
+    test('help', () => assert.equal(greetingIntent('help'), 'help'));
+    test('arabic help', () => assert.equal(greetingIntent('مساعدة'), 'help'));
+    test('greeting', () => assert.equal(greetingIntent('مرحبا'), 'greeting'));
+    test('non-match returns null', () => assert.equal(greetingIntent('renew passport'), null));
+  });
+  test('handles non-string safely', () => {
+    assert.equal(isGreetingOrHelp(null), false);
+    assert.equal(isGreetingOrHelp(undefined), false);
+    assert.equal(isGreetingOrHelp(123), false);
   });
 });
 
