@@ -55,6 +55,37 @@ whatsappRouter.get('/webhook', (req, res) => {
   res.sendStatus(403);
 });
 
+// ── Webhook idempotency cache ─────────────────────────────────────
+// Meta retries webhook delivery when the server ACK doesn't reach Meta
+// in time (slow ACK, network blip, container restart mid-handler).
+// Without idempotency the same logical message is processed twice and
+// the burst aggregator counts the citizen's 1 file as 2 — real prod
+// bug from +96892888715 trace 2026-05-09 15:07:47 ("📥 استلمت 2
+// ملفين" for a single attachment).
+//
+// Meta provides a stable `msg.id` per logical message; storing its
+// hash in a TTL'd Map prevents double-processing while keeping the
+// memory footprint bounded (~120 bytes/entry, max ~10K entries before
+// eviction sweep — i.e. ~1.2 MB ceiling at heavy traffic).
+const SEEN_WEBHOOK_IDS = new Map(); // id → expiresAtMs
+const SEEN_TTL_MS = 5 * 60 * 1000;  // 5 min — Meta retries within ~30 s typically
+
+export function _resetSeenWebhookIds() { SEEN_WEBHOOK_IDS.clear(); }
+export function isDuplicateWebhook(id) {
+  if (!id) return false;
+  pruneSeenWebhookIds();
+  if (SEEN_WEBHOOK_IDS.has(id)) return true;
+  SEEN_WEBHOOK_IDS.set(id, Date.now() + SEEN_TTL_MS);
+  return false;
+}
+function pruneSeenWebhookIds() {
+  if (SEEN_WEBHOOK_IDS.size < 8000) return; // amortized — only sweep when large
+  const now = Date.now();
+  for (const [id, exp] of SEEN_WEBHOOK_IDS) {
+    if (exp < now) SEEN_WEBHOOK_IDS.delete(id);
+  }
+}
+
 whatsappRouter.post('/webhook', async (req, res) => {
   if (!verifySignature(req)) {
     console.warn('[whatsapp] X-Hub-Signature-256 verification failed — rejecting request');
@@ -66,6 +97,14 @@ whatsappRouter.post('/webhook', async (req, res) => {
     const change = entry?.changes?.[0]?.value;
     const msg = change?.messages?.[0];
     if (!msg) return;
+
+    // Idempotency check — see SEEN_WEBHOOK_IDS doc above. Drop the
+    // duplicate silently; the previous delivery already produced the
+    // citizen-visible response (or armed the burst aggregator).
+    if (isDuplicateWebhook(msg.id)) {
+      console.warn(`[whatsapp] dropping duplicate webhook for msg.id=${msg.id} (Meta retry)`);
+      return;
+    }
 
     const from = msg.from;                                 // E.164 phone
     // Three text-bearing message types: plain text, template-button reply
