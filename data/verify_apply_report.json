@@ -1,0 +1,467 @@
+{
+  "applied": [
+    {
+      "entity": "ROP",
+      "id": 140000,
+      "name_en": "Obtain Circus Shows permits",
+      "docs": 4,
+      "steps": 1
+    },
+    {
+      "entity": "ROP",
+      "id": 140001,
+      "name_en": "Obtain Commercial Exhibitions Permits",
+      "docs": 4,
+      "steps": 1
+    },
+    {
+      "entity": "ROP",
+      "id": 140003,
+      "name_en": "Good Conduct Certificate",
+      "docs": 4,
+      "steps": 4
+    },
+    {
+      "entity": "ROP",
+      "id": 140004,
+      "name_en": "Non-conviction certificate",
+      "docs": 0,
+      "steps": 6
+    },
+    {
+      "entity": "ROP",
+      "id": 140006,
+      "name_en": "Security Escort Service in Oil Concession Areas",
+      "docs": 0,
+      "steps": 7
+    },
+    {
+      "entity": "ROP",
+      "id": 140007,
+      "name_en": "Obtain Tourist Boats Anchoring Permits",
+      "docs": 4,
+      "steps": 1
+    },
+    {
+      "entity": "ROP",
+      "id": 140008,
+      "name_en": "Requesting Security Escort of Public Roads",
+      "docs": 0,
+      "steps": 5
+    },
+    {
+      "entity": "ROP",
+      "id": 140010,
+      "name_en": "Vehicle Ownership Transfer Service",
+      "docs": 0,
+      "steps": 8
+    },
+    {
+      "entity": "ROP",
+      "id": 140020,
+      "name_en": "Omani Passport Issuance Service",
+      "docs": 3,
+      "steps": 3
+    },
+    {
+      "entity": "ROP",
+      "id": 140018,
+      "name_en": "Issuing Civil Status Card Service",
+      "docs": 4,
+      "steps": 6
+    },
+    {
+      "entity": "ROP",
+      "id": 140014,
+      "name_en": "Issuance of Birth Certificate (Omanis / expatriates)",
+      "docs": 4,
+      "steps": 2
+    },
+    {
+      "entity": "ROP",
+      "id": 140025,
+      "name_en": "Issuance of identity card (ID) for the first time",
+      "docs": 3,
+      "steps": 2
+    },
+    {
+      "entity": "ROP",
+      "id": 140028,
+      "name_en": "First-time issuance of residence card",
+      "docs": 3,
+      "steps": 4
+    },
+    {
+      "entity": "ROP",
+      "id": 140015,
+      "name_en": "Updating Data for Individuals with Children Under 18",
+      "docs": 0,
+      "steps": 4
+    },
+    {
+      "entity": "ROP",
+      "id": 140027,
+      "name_en": "Registration of Marriage / Divorce",
+      "docs": 3,
+      "steps": 3
+    },
+    {
+      "entity": "ROP",
+      "id": 140011,
+      "name_en": "Vehicle Registration Renewal",
+      "docs": 0,
+      "steps": 5
+    },
+    {
+      "entity": "ROP",
+      "id": 140017,
+      "name_en": "Driver License Renewal",
+      "docs": 3,
+      "steps": 4
+    },
+    {
+      "entity": "ROP",
+      "id": 140024,
+      "name_en": "New driving license issuance",
+      "docs": 2,
+      "steps": 5
+    },
+    {
+      "entity": "ROP",
+      "id": 140009,
+      "name_en": "Traffic Fines Payment",
+      "docs": 1,
+      "steps": 4
+    },
+    {
+      "entity": "ROP",
+      "id": 140013,
+      "name_en": "Age estimation certificate for the first time for obtaining an ID card/passport.",
+      "docs": 1,
+      "steps": 4
+    },
+    {
+      "entity": "MOH",
+      "id": 110000,
+      "name_en": "Pre-Arrival Medical Report Attestation Service",
+      "docs": 0,
+      "steps": 4
+    },
+    {
+      "entity": "MOH",
+      "id": 110001,
+      "name_en": "Post Arrival Medical Fitness Exam Service",
+      "docs": 2,
+      "steps": 4
+    },
+    {
+      "entity": "MOH",
+      "id": 110002,
+      "name_en": "Health Practitioners Registration e-Service",
+      "docs": 5,
+      "steps": 7
+    },
+    {
+      "entity": "MOH",
+      "id": 110003,
+      "name_en": "Claim of Medical Error",
+      "docs": 5,
+      "steps": 5
+    },
+    {
+      "entity": "MOH",
+      "id": 110004,
+      "name_en": "Getting initial approval Private Clinic/Center/Polyclinic",
+      "docs": 5,
+      "steps": 5
+    },
+    {
+      "entity": "MOH",
+      "id": 110006,
+      "name_en": "Request for Issuance of Commencement of Work Letter",
+      "docs": 3,
+      "steps": 2
+    },
+    {
+      "entity": "MOH",
+      "id": 110010,
+      "name_en": "Adding specialties to the private health institution",
+      "docs": 2,
+      "steps": 8
+    },
+    {
+      "entity": "MOH",
+      "id": 110009,
+      "name_en": "Upgrading the Private Health Intuition",
+      "docs": 2,
+      "steps": 5
+    },
+    {
+      "entity": "MOH",
+      "id": 110017,
+      "name_en": "Renewal of Private Health Establishments Licenses",
+      "docs": 2,
+      "steps": 3
+    },
+    {
+      "entity": "MOH",
+      "id": 110016,
+      "name_en": "eService Sick Leave Approval",
+      "docs": 0,
+      "steps": 4
+    },
+    {
+      "entity": "MOH",
+      "id": 110018,
+      "name_en": "Pharmacy Institution Temporary Closure",
+      "docs": 0,
+      "steps": 4
+    },
+    {
+      "entity": "MOH",
+      "id": 110011,
+      "name_en": "Interviews & Exam Online Booking Service",
+      "docs": 0,
+      "steps": 7
+    },
+    {
+      "entity": "MOH",
+      "id": 110014,
+      "name_en": "Health Advertisement License",
+      "docs": 3,
+      "steps": 1
+    },
+    {
+      "entity": "MOH",
+      "id": 110021,
+      "name_en": "Destruction of narcotic drugs and psychotropic substances in a legal manner",
+      "docs": 0,
+      "steps": 0
+    },
+    {
+      "entity": "MOH",
+      "id": 110022,
+      "name_en": "Reporting Changes to Pharmaceutical Products and Companies after Registration",
+      "docs": 2,
+      "steps": 3
+    },
+    {
+      "entity": "MOH",
+      "id": 110007,
+      "name_en": "Renewal of NOC for Dealing with Controlled Medicines",
+      "docs": 0,
+      "steps": 4
+    },
+    {
+      "entity": "MOL",
+      "id": 110000,
+      "name_en": "Pre-Arrival Medical Report Attestation Service",
+      "docs": 0,
+      "steps": 7
+    },
+    {
+      "entity": "MOL",
+      "id": 110001,
+      "name_en": "Post Arrival Medical Fitness Exam Service",
+      "docs": 0,
+      "steps": 6
+    },
+    {
+      "entity": "MOL",
+      "id": 110002,
+      "name_en": "Health Practitioners Registration e-Service",
+      "docs": 1,
+      "steps": 7
+    },
+    {
+      "entity": "MOL",
+      "id": 100270,
+      "name_en": "Training Contract At The Expense Of The Companyestablishments",
+      "docs": 0,
+      "steps": 6
+    },
+    {
+      "entity": "MOL",
+      "id": 100275,
+      "name_en": "Part Time Contract Establishments",
+      "docs": 2,
+      "steps": 4
+    },
+    {
+      "entity": "MOL",
+      "id": 100276,
+      "name_en": "Part Time Contract Individuals",
+      "docs": 2,
+      "steps": 3
+    },
+    {
+      "entity": "MOL",
+      "id": 100280,
+      "name_en": "Work Permit Transfer Establishments",
+      "docs": 0,
+      "steps": 7
+    },
+    {
+      "entity": "MOL",
+      "id": 100281,
+      "name_en": "Work Permit Amendment Establishments",
+      "docs": 0,
+      "steps": 5
+    },
+    {
+      "entity": "MOL",
+      "id": 100282,
+      "name_en": "Work Permit Renewal Establishments",
+      "docs": 0,
+      "steps": 4
+    },
+    {
+      "entity": "MOL",
+      "id": 100283,
+      "name_en": "Work Permit Issuance Establishments",
+      "docs": 0,
+      "steps": 3
+    },
+    {
+      "entity": "MOL",
+      "id": 100284,
+      "name_en": "Commercial Work Permit Establishments",
+      "docs": 3,
+      "steps": 7
+    },
+    {
+      "entity": "MOL",
+      "id": 100285,
+      "name_en": "Cancellation Of Work Permit Individuals",
+      "docs": 1,
+      "steps": 5
+    },
+    {
+      "entity": "MOL",
+      "id": 100286,
+      "name_en": "Work Permit Transfer Individuals",
+      "docs": 0,
+      "steps": 6
+    },
+    {
+      "entity": "MOL",
+      "id": 100287,
+      "name_en": "Work Permit Amendment Individuals",
+      "docs": 1,
+      "steps": 4
+    },
+    {
+      "entity": "MOL",
+      "id": 100288,
+      "name_en": "Work Permit Renewal Individuals",
+      "docs": 0,
+      "steps": 4
+    },
+    {
+      "entity": "MOL",
+      "id": 100289,
+      "name_en": "Work Permit Issuance Individual",
+      "docs": 0,
+      "steps": 3
+    },
+    {
+      "entity": "MOL",
+      "id": 100290,
+      "name_en": "Private Work Permit Individuals",
+      "docs": 4,
+      "steps": 7
+    },
+    {
+      "entity": "MOL",
+      "id": 100307,
+      "name_en": "Apply for a job in the private sector",
+      "docs": 0,
+      "steps": 5
+    },
+    {
+      "entity": "MOL",
+      "id": 100308,
+      "name_en": "Display Candidacy Requests Establishments",
+      "docs": 0,
+      "steps": 3
+    },
+    {
+      "entity": "MOL",
+      "id": 100310,
+      "name_en": "Get your CV or a To Whom It May Concern letter",
+      "docs": 0,
+      "steps": 4
+    }
+  ],
+  "not_found": [
+    {
+      "entity": "ROP",
+      "name_en": "Death Certificate Extraction",
+      "url": "https://www.rop.gov.om/arabic/deathregistration.aspx",
+      "reason": "no_catalogue_row"
+    },
+    {
+      "entity": "ROP",
+      "name_en": "Sports Events Permits",
+      "url": "https://www.rop.gov.om/arabic/sportseventspermits.aspx",
+      "reason": "no_catalogue_row"
+    },
+    {
+      "entity": "ROP",
+      "name_en": "Sea Activities Permits",
+      "url": "https://www.rop.gov.om/arabic/seaactivitiespermits.aspx",
+      "reason": "no_catalogue_row"
+    },
+    {
+      "entity": "ROP",
+      "name_en": "Key Copying License",
+      "url": "https://www.rop.gov.om/arabic/Licencekeys.aspx",
+      "reason": "no_catalogue_row"
+    },
+    {
+      "entity": "ROP",
+      "name_en": "Ten-Finger Fingerprint",
+      "url": "https://www.rop.gov.om/arabic/TenFingerprint.aspx",
+      "reason": "no_catalogue_row"
+    },
+    {
+      "entity": "ROP",
+      "name_en": "Fuel Station Establishment Permits",
+      "url": "https://www.rop.gov.om/arabic/FillingStationsEstablishingPermits.aspx",
+      "reason": "no_catalogue_row"
+    },
+    {
+      "entity": "ROP",
+      "name_en": "Vehicle Showroom Permits",
+      "url": "https://www.rop.gov.om/arabic/VehiclesSellingBuyingShowroomsPermits.aspx",
+      "reason": "no_catalogue_row"
+    },
+    {
+      "entity": "ROP",
+      "name_en": "Road Construction Permits",
+      "url": "https://www.rop.gov.om/arabic/RoadConstructionPermits.aspx",
+      "reason": "no_catalogue_row"
+    },
+    {
+      "entity": "ROP",
+      "name_en": "Entertainment Games Shops Permits",
+      "url": "https://www.rop.gov.om/arabic/EntertainmentGamesShopsOpeningPermits.aspx",
+      "reason": "no_catalogue_row"
+    }
+  ],
+  "skipped": [],
+  "by_entity": {
+    "ROP": {
+      "applied": 20,
+      "not_found": 9
+    },
+    "MOH": {
+      "applied": 16,
+      "not_found": 0
+    },
+    "MOL": {
+      "applied": 20,
+      "not_found": 0
+    }
+  }
+}
