@@ -327,7 +327,10 @@ window.addEventListener('unhandledrejection', e => {
       const msgs = r.messages || [];
       if (msgs.length === 0) {
         daySep();
-        bubble('👋 أهلاً! أنا **ساند**، مساعدك الذكي للخدمات الحكومية.\n\nاختر خدمة من الأعلى، أو اكتب ما تحتاجه — أُجهّز ملفك وأرسله إلى أحد مكاتب سند المرخّصة لينجز المعاملة عنك.', 'bot', { time: hhmm() });
+        // Plain text only — bubble() uses textContent (see ~line 248), so
+        // any **markdown** renders as literal asterisks. Same constraint
+        // as the agent.js welcome helpers and SYSTEM_V2.
+        bubble('👋 أهلاً! أنا ساند — مساعدك الذكي للخدمات الحكومية.\n\nاختر خدمة من الأعلى، أو اكتب ما تحتاجه. أُجهّز ملفك وأُرسله إلى أحد مكاتب سند المرخّصة لينجز المعاملة عنك.', 'bot', { time: hhmm() });
       } else {
         // Returning user already past the start → hide the quick-pick bar.
         document.getElementById('quickActions')?.classList.add('hidden');

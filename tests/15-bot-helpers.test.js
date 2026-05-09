@@ -14,7 +14,7 @@ import './helpers.js';
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-const { _welcomeMessage, _helpMessage, _firstDocPrompt } = await import('../lib/agent.js');
+const { _welcomeMessage, _helpMessage, _firstDocPrompt, stripMarkdownEmphasis } = await import('../lib/agent.js');
 
 // Reject **double-asterisk bold** anywhere in the string. Single asterisks
 // are WhatsApp's bold marker (and we don't use them either) — so the simpler
@@ -52,6 +52,41 @@ describe('helpMessage()', () => {
   test('contains no markdown bold (** or *)', () => assertNoMarkdownBold(h, 'helpMessage'));
   test('describes the 5-step prep + dispatch flow', () => {
     assert.ok(/1️⃣/.test(h) && /5️⃣/.test(h), 'must enumerate steps 1️⃣–5️⃣');
+  });
+});
+
+describe('stripMarkdownEmphasis() — central scrub for outbound bot text', () => {
+  test('strips **bold** anywhere in the string', () => {
+    assert.equal(stripMarkdownEmphasis('hello **world**!'), 'hello world!');
+    assert.equal(stripMarkdownEmphasis('**ساند** هنا'), 'ساند هنا');
+    assert.equal(stripMarkdownEmphasis('**a** then **b**'), 'a then b');
+  });
+  test('strips __bold__', () => {
+    assert.equal(stripMarkdownEmphasis('hello __world__!'), 'hello world!');
+  });
+  test('strips ***bold-italic*** as a triple-asterisk pair', () => {
+    assert.equal(stripMarkdownEmphasis('***urgent***: read this'), 'urgent: read this');
+  });
+  test('strips *italic* when adjoining word characters', () => {
+    assert.equal(stripMarkdownEmphasis('say *yes* or *no*'), 'say yes or no');
+  });
+  test('preserves bullet "* item" list lines', () => {
+    const before = '* first\n* second\n* third';
+    assert.equal(stripMarkdownEmphasis(before), before);
+  });
+  test('preserves Arabic content unchanged when no markdown is present', () => {
+    const ar = 'هل تقصد تجديد رخصة القيادة؟ ✅';
+    assert.equal(stripMarkdownEmphasis(ar), ar);
+  });
+  test('handles null/undefined safely', () => {
+    assert.equal(stripMarkdownEmphasis(null), null);
+    assert.equal(stripMarkdownEmphasis(undefined), undefined);
+    assert.equal(stripMarkdownEmphasis(''), '');
+  });
+  test('regression: a real confirming-state reply renders cleanly', () => {
+    const before = 'هل تقصد: **خدمة طلب تجديد رخصة سياقة** (شرطة عمان السلطانية)؟\n👉 اكتب **نعم** لنبدأ.';
+    const after  = 'هل تقصد: خدمة طلب تجديد رخصة سياقة (شرطة عمان السلطانية)؟\n👉 اكتب نعم لنبدأ.';
+    assert.equal(stripMarkdownEmphasis(before), after);
   });
 });
 
