@@ -59,9 +59,30 @@ export async function createThawaniSession({
   amountOmr,
   merchantReference,
   customerEmail,
+  // Customer identity → goes into the session `metadata` so Thawani's
+  // dashboard, receipts, support, and fraud review have a real name/phone
+  // (not just a synthetic email). Matches the metadata shape shared with
+  // Thawani at onboarding. All values are strings (Thawani requires a flat
+  // string→string metadata object — no nesting, no numbers).
+  customerName,
+  customerPhone,
+  serviceName,
+  requestId,
   description,
   productName,
-  publicBase
+  publicBase,
+  // Optional overrides — when a caller (e.g. office subscription checkout)
+  // needs the redirect to land on its own finalizer instead of the default
+  // request-payment success/cancel handlers. Pass full URLs (we'll still
+  // resolve `${base}` against them via simple substitution); the {ref}
+  // placeholder, if present, is replaced with the URL-encoded
+  // merchantReference so callers can stay declarative.
+  successUrl,
+  cancelUrl,
+  // Optional metadata sidecar — merged into the Thawani `metadata` object.
+  // Use it to tag the session with subject_type='office_subscription' so
+  // the webhook handler can route polymorphically without a DB lookup.
+  metadata: extraMetadata
 }) {
   if (!THAWANI_ENABLED) throw new Error('thawani_not_configured');
 
@@ -76,6 +97,25 @@ export async function createThawaniSession({
   // server env is stale or pointing at a different deploy.
   const base = (publicBase || PUBLIC_BASE).replace(/\/+$/, '');
 
+  // Build redirect URLs. Caller-supplied overrides win; otherwise fall
+  // back to the request-payment defaults. `{ref}` is substituted so
+  // callers can write `${base}/api/payments/thawani/sub/success?ref={ref}`
+  // declaratively without having to encode the ref themselves.
+  const sub = (tmpl, fallback) => {
+    if (!tmpl) return fallback;
+    return tmpl
+      .replace('{ref}', encodeURIComponent(merchantReference))
+      .replace('{base}', base);
+  };
+  const success_url = sub(
+    successUrl,
+    `${base}/api/payments/thawani/success?ref=${encodeURIComponent(merchantReference)}`
+  );
+  const cancel_url = sub(
+    cancelUrl,
+    `${base}/api/payments/thawani/cancel?ref=${encodeURIComponent(merchantReference)}`
+  );
+
   const body = {
     client_reference_id: merchantReference,
     mode: 'payment',
@@ -84,13 +124,22 @@ export async function createThawaniSession({
       quantity: 1,
       unit_amount
     }],
-    success_url: `${base}/api/payments/thawani/success?ref=${encodeURIComponent(merchantReference)}`,
-    cancel_url:  `${base}/api/payments/thawani/cancel?ref=${encodeURIComponent(merchantReference)}`,
-    metadata: {
-      merchant_ref: merchantReference,
-      description: safeDesc,
-      customer_email: customerEmail || ''
-    }
+    success_url,
+    cancel_url,
+    // Flat string→string metadata (Thawani requirement). Only include keys
+    // that have a value so we never send empty/odd entries. Each value is
+    // length-capped defensively.
+    metadata: Object.fromEntries(Object.entries({
+      merchant_ref:   merchantReference,
+      description:    safeDesc,
+      customer_name:  customerName,
+      customer_phone: customerPhone,
+      customer_email: customerEmail,
+      service:        serviceName,
+      request_id:     requestId != null ? String(requestId) : undefined,
+      ...(extraMetadata || {})
+    }).filter(([, v]) => v != null && String(v).trim() !== '')
+      .map(([k, v]) => [k, String(v).slice(0, 200)]))
   };
 
   const r = await fetch(`${BASE}/api/v1/checkout/session`, {
@@ -162,6 +211,14 @@ export function isThawaniPaid(sessionData) {
 //     using THAWANI_WEBHOOK_SECRET.
 // Either way the handler ALSO calls retrieveThawaniSession and that's the
 // real source of truth.
+//
+// NOTE: Thawani does not support recurring subscriptions, and the product
+// does not use them — office plans are sold as ONE-OFF charges (a single
+// checkout session per purchase). The customers / payment_methods /
+// payment_intents (saved-card) helpers were intentionally removed; if
+// recurring is ever revisited, reintroduce them here.
+// ════════════════════════════════════════════════════════════
+
 export function verifyThawaniSignature(rawBody, signatureHeader) {
   const secret = process.env.THAWANI_WEBHOOK_SECRET || '';
   if (!secret) return true; // soft mode — retrieve is the truth

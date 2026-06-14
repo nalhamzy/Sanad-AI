@@ -3,14 +3,17 @@ import { db } from '../lib/db.js';
 import { LLM_ENABLED, LLM_PROVIDER, LLM_MODEL } from '../lib/llm.js';
 import { storeMessage } from '../lib/agent.js';
 import { markRequestPaid } from '../features/payment-checkout/index.js';
+import { DEBUG_ENABLED } from '../lib/env.js';
 
 export const debugRouter = Router();
 
-// Gate every /simulate/* route behind DEBUG_MODE — these endpoints fast-forward
-// state transitions that normally require an authenticated office, so they
-// must NEVER ship to production.
+// Gate every state-changing / data-exposing debug route behind DEBUG_ENABLED,
+// which is HARD-OFF when NODE_ENV==='production' (see lib/env.js). These
+// endpoints fast-forward state transitions, dump other citizens' data, wipe
+// sessions, or inject OTPs — they must NEVER be reachable in production even
+// if DEBUG_MODE is accidentally left true.
 function requireDebug(req, res, next) {
-  if (process.env.DEBUG_MODE !== 'true') return res.status(403).json({ error: 'debug_only' });
+  if (!DEBUG_ENABLED) return res.status(403).json({ error: 'debug_only' });
   next();
 }
 
@@ -29,7 +32,7 @@ debugRouter.get('/health', async (_req, res) => {
   }
 });
 
-debugRouter.get('/state', async (_req, res) => {
+debugRouter.get('/state', requireDebug, async (_req, res) => {
   const counts = {};
   for (const t of ['service_catalog', 'request', 'request_document', 'message', 'citizen', 'office', 'officer', 'session']) {
     const { rows } = await db.execute(`SELECT COUNT(*) AS n FROM ${t}`);
@@ -50,8 +53,7 @@ debugRouter.get('/state', async (_req, res) => {
 //
 // Gated by DEBUG_MODE (same as /state). Citizen body text is included so
 // it's still PII-bearing — operator-only.
-debugRouter.get('/trace/:session_id', async (req, res) => {
-  if (process.env.DEBUG_MODE !== 'true') return res.status(403).json({ error: 'debug_only' });
+debugRouter.get('/trace/:session_id', requireDebug, async (req, res) => {
   const session_id = String(req.params.session_id || '');
   if (!session_id) return res.status(400).json({ error: 'session_id_required' });
   const n = Math.min(100, Math.max(1, Number(req.query.n) || 30));
@@ -86,7 +88,7 @@ debugRouter.get('/trace/:session_id', async (req, res) => {
 function safeParse(s) { try { return JSON.parse(s); } catch { return s; } }
 
 // Reset a session (nuclear — wipes state; keeps messages for audit)
-debugRouter.post('/reset/:session_id', async (req, res) => {
+debugRouter.post('/reset/:session_id', requireDebug, async (req, res) => {
   await db.execute({ sql: `DELETE FROM session WHERE id=?`, args: [req.params.session_id] });
   res.json({ ok: true });
 });
@@ -97,7 +99,7 @@ debugRouter.post('/reset/:session_id', async (req, res) => {
 // from WhatsApp without us having to SSH into the box.
 debugRouter.post('/clear-phone', async (req, res) => {
   try {
-  if (process.env.DEBUG_MODE !== 'true') return res.status(403).json({ error: 'debug_only' });
+  if (!DEBUG_ENABLED) return res.status(403).json({ error: 'debug_only' });
   const phone = (req.body?.phone || req.query?.phone || '').toString().trim();
   if (!phone) return res.status(400).json({ error: 'phone_required' });
   const variants = Array.from(new Set([
@@ -311,7 +313,7 @@ debugRouter.post('/simulate/complete/:request_id', requireDebug, async (req, res
 });
 
 // Inject a fake OTP (simulates the gov portal sending to the citizen's phone)
-debugRouter.post('/simulate-otp/:request_id', async (req, res) => {
+debugRouter.post('/simulate-otp/:request_id', requireDebug, async (req, res) => {
   const code = (req.body?.code || '').toString() || '123456';
   const id = Number(req.params.request_id);
   const { rows } = await db.execute({ sql: `SELECT session_id FROM request WHERE id=?`, args: [id] });

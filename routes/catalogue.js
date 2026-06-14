@@ -307,7 +307,11 @@ catalogueRouter.get('/:id', async (req, res) => {
   });
   if (!rows.length) return res.status(404).json({ error: 'not_found' });
   const svc = rows[0];
-  svc.required_documents = svc.required_documents_json ? JSON.parse(svc.required_documents_json) : [];
+  // parseRequiredDocs enriches each doc with a guaranteed Arabic label
+  // (most CSV-imported docs have an empty label_ar). Routing every read
+  // through this helper keeps apply.html / chat / officer in sync.
+  const { parseRequiredDocs } = await import('../lib/catalogue.js');
+  svc.required_documents = parseRequiredDocs(svc);
   delete svc.required_documents_json;
   delete svc.process_steps_json;
   res.json({ service: svc });

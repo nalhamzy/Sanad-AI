@@ -20,6 +20,8 @@ import { Router } from 'express';
 import { db } from '../lib/db.js';
 import { embedQuery, cosineTopK } from '../lib/embeddings.js';
 import { LLM_ENABLED } from '../lib/llm.js';
+import { requireOfficer, requirePlatformAdmin } from '../lib/auth.js';
+import { DEBUG_ENABLED } from '../lib/env.js';
 
 export const annotatorRouter = Router();
 
@@ -29,6 +31,25 @@ function actingAnnotator(req) {
     req.header('x-annotator-id') || req.query.annotator_id || req.body?.annotator_id || 0
   );
   return id > 0 ? id : null;
+}
+
+// Write-guard for catalogue mutations. The annotator endpoints can rewrite
+// service pricing (fee_omr), required documents, and active status — i.e.
+// what citizens are charged and asked for. The historical auth was a
+// self-asserted `X-Annotator-Id` header (no real identity), which is fine
+// for a local dev dashboard but a CRITICAL hole in production (anyone could
+// rewrite the whole catalogue).
+//
+// Policy: in production, mutations require a platform-admin (officer cookie
+// whose email is in ADMIN_EMAILS). In dev (DEBUG_ENABLED) we keep the stub
+// so the local annotator workflow is unchanged.
+const _officerGuard = requireOfficer({ allowPending: true });
+const _adminGuard   = requirePlatformAdmin();
+function requireAnnotatorWrite(req, res, next) {
+  if (DEBUG_ENABLED) return next();
+  // _officerGuard calls next() only on success; on failure it sends the
+  // response itself. So the admin guard only runs for a valid officer.
+  _officerGuard(req, res, () => _adminGuard(req, res, next));
 }
 
 const EDITABLE_FIELDS = [
@@ -61,7 +82,7 @@ annotatorRouter.get('/annotators', async (_req, res) => {
   res.json({ annotators: rows });
 });
 
-annotatorRouter.post('/annotators', async (req, res) => {
+annotatorRouter.post('/annotators', requireAnnotatorWrite, async (req, res) => {
   const { name, email } = req.body || {};
   if (!name || !name.trim()) return res.status(400).json({ error: 'name_required' });
   try {
@@ -339,7 +360,7 @@ annotatorRouter.get('/services/:id', async (req, res) => {
 
 // ─── Create service ─────────────────────────────────────────
 
-annotatorRouter.post('/services', async (req, res) => {
+annotatorRouter.post('/services', requireAnnotatorWrite, async (req, res) => {
   const actor = actingAnnotator(req);
   if (!actor) return res.status(401).json({ error: 'no_annotator' });
 
@@ -403,7 +424,7 @@ annotatorRouter.post('/services', async (req, res) => {
 
 // ─── Edit service ───────────────────────────────────────────
 
-annotatorRouter.patch('/services/:id', async (req, res) => {
+annotatorRouter.patch('/services/:id', requireAnnotatorWrite, async (req, res) => {
   const id = Number(req.params.id);
   const actor = actingAnnotator(req);
   if (!actor) return res.status(401).json({ error: 'no_annotator' });
@@ -477,7 +498,7 @@ annotatorRouter.patch('/services/:id', async (req, res) => {
 
 // ─── Validation actions ─────────────────────────────────────
 
-annotatorRouter.post('/services/:id/validate', async (req, res) => {
+annotatorRouter.post('/services/:id/validate', requireAnnotatorWrite, async (req, res) => {
   const id = Number(req.params.id);
   const actor = actingAnnotator(req);
   if (!actor) return res.status(401).json({ error: 'no_annotator' });
@@ -505,7 +526,7 @@ annotatorRouter.post('/services/:id/validate', async (req, res) => {
   res.json({ ok: true, id, validation_id: Number(r.lastInsertRowid), status });
 });
 
-annotatorRouter.post('/services/:id/unvalidate', async (req, res) => {
+annotatorRouter.post('/services/:id/unvalidate', requireAnnotatorWrite, async (req, res) => {
   const id = Number(req.params.id);
   const actor = actingAnnotator(req);
   if (!actor) return res.status(401).json({ error: 'no_annotator' });

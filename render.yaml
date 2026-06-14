@@ -57,18 +57,34 @@ services:
       # custom domain at the service.
       - key: PUBLIC_BASE_URL
         value: https://saned.ai
-      # ── Thawani Pay (sandbox-by-default; flip to production after onboarding).
-      # The keys below are Thawani's public sandbox test keys — safe to commit.
-      # Replace via the Render dashboard with your real merchant credentials
-      # once issued, and bump THAWANI_ENV to `production`.
+      # ── Thawani Pay.
+      # Keys are dashboard secrets (sync:false) so production merchant
+      # credentials are NEVER committed to the repo. For sandbox testing,
+      # set these in the Render dashboard to Thawani's public UAT keys
+      # (secret rRQ26GcsZzoEhbrP2HZvLYDbn9C9et /
+      #  publishable HGvTMLDssJghr9tlN9gr4DVYt0qyBy) and THAWANI_ENV=sandbox.
+      # For production: set the real merchant keys + THAWANI_ENV=production.
       - key: THAWANI_ENV
-        value: sandbox
+        value: production           # LIVE — production merchant keys set as dashboard secrets
       - key: THAWANI_SECRET_KEY
-        value: rRQ26GcsZzoEhbrP2HZvLYDbn9C9et
+        sync: false
       - key: THAWANI_PUBLISHABLE_KEY
-        value: HGvTMLDssJghr9tlN9gr4DVYt0qyBy
+        sync: false
       - key: THAWANI_WEBHOOK_SECRET   # optional; only set if you wired a signed webhook on Thawani's dashboard
         sync: false
+      # ── ADMIN_EMAILS — comma-separated platform-admin emails. REQUIRED in
+      # production: server boot (lib/env.js assertProductionConfig) fails fast
+      # without it, and it's the only way to reach the admin console + payouts
+      # (the DEBUG fallback is hard-off in production).
+      - key: ADMIN_EMAILS
+        sync: false
+      # ── Office plans (one-off time-based access purchases; NOT recurring —
+      # Thawani doesn't support subscriptions). Off by default; enable per-rollout.
+      - key: SANAD_SUBS_V1
+        value: "false"              # set "true" to enable office plan purchases
+      # ── Platform fee per settled request, in baisa (1000 baisa = 1 OMR).
+      - key: PLATFORM_FEE_BAISA
+        value: "500"                # 0.5 OMR per request
       # ── Test mirror — every outbound bot/officer message on a web session
       # also lands on this WhatsApp number. Lets you drive a session from any
       # browser while the conversation lands on your phone in real time.

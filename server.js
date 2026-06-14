@@ -19,6 +19,8 @@ import { citizenAuthRouter } from './routes/citizen_auth.js';
 import { attachSession, attachCitizenSession } from './lib/auth.js';
 import { originCheck } from './lib/csrf.js';
 import { startSLAWatcher } from './lib/sla.js';
+import { startSubscriptionWatcher } from './lib/subscription_watcher.js';
+import { DEBUG_ENABLED, assertProductionConfig } from './lib/env.js';
 import { LLM_ENABLED } from './lib/llm.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -27,6 +29,10 @@ const DEBUG = process.env.DEBUG_MODE === 'true';
 
 const app = express();
 app.disable('x-powered-by');
+// Render (and most PaaS) put us behind a reverse proxy. Trust the first
+// hop so req.ip / X-Forwarded-For reflect the real client — needed for
+// rate-limiting and correct logging.
+app.set('trust proxy', 1);
 // `verify` captures the raw body bytes so signature-validating routes
 // (e.g. WhatsApp webhook X-Hub-Signature-256, payments webhook) can hash
 // the original payload — express.json() consumes the stream otherwise.
@@ -114,8 +120,28 @@ app.get(/^\/(?!api|uploads).*/, (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// ─── Terminal error handler ─────────────────────────────────
+// Express only treats a 4-arg function as an error handler, and it must be
+// the LAST `app.use`. Without this, an error thrown in a route (or passed
+// to next(err)) returns Express's default HTML stack trace — leaking
+// internals — or, for an unhandled async rejection, can take down the
+// worker. We log the full error server-side and return a generic JSON body;
+// the raw message is only echoed when DEBUG_ENABLED (never in production).
+app.use((err, req, res, _next) => {
+  console.error('[unhandled]', req.method, req.originalUrl, '—', err?.stack || err);
+  if (res.headersSent) return;  // delegate to Express if streaming already began
+  res.status(err?.status || 500).json({
+    error: 'internal_error',
+    ...(DEBUG_ENABLED ? { detail: String(err?.message || err) } : {})
+  });
+});
+
 // Boot helpers — exported so tests can drive setup without auto-listening
 export async function prepare() {
+  // Fail fast + loud if a production deployment is missing a secret that
+  // would silently disable a security control (webhook signature, admin
+  // allow-list). No-op outside production. See lib/env.js.
+  assertProductionConfig();
   fs.mkdirSync('./data/uploads', { recursive: true });
   await migrate();
 
@@ -195,6 +221,10 @@ export async function start(port = PORT) {
       // Kick off the office SLA watcher AFTER the server is listening so
       // the sweep doesn't fire before migrate() finishes.
       startSLAWatcher();
+      // Plan expiry/reminder watcher — flips expired office plans and sends
+      // 7/3/1-day "renew" reminders (manual re-purchase; no auto-renew).
+      // No-op in tests or when SANAD_SKIP_SUB_WATCHER=true.
+      startSubscriptionWatcher();
       resolve({ server, app, port: bound });
     });
   });

@@ -38,18 +38,26 @@
   .grid-3{grid-template-columns:repeat(3,1fr)}
 
   /* Cover */
-  .cover{background:radial-gradient(ellipse at 30% 20%,#5eead4 0%,#0f766e 35%,#042f2e 100%);color:#fff;min-height:760px;position:relative;overflow:hidden}
+  .cover{background:radial-gradient(ellipse at 30% 20%,#5eead4 0%,#0f766e 35%,#042f2e 100%);color:#fff;min-height:620px;position:relative;overflow:hidden}
+  .cover::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle at 1px 1px,rgba(255,255,255,.09) 1px,transparent 0);background-size:22px 22px;-webkit-mask-image:radial-gradient(ellipse at 50% 45%,#000 30%,transparent 78%);mask-image:radial-gradient(ellipse at 50% 45%,#000 30%,transparent 78%);pointer-events:none;z-index:1}
+  .cover-shine{position:absolute;inset:0;background:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.07) 50%,transparent 62%);pointer-events:none;z-index:1}
   .cover .page-num,.cover .page-tag{color:rgba(255,255,255,.7)}
-  .cover-grid{position:relative;z-index:2;height:100%;padding:80px 72px;display:flex;flex-direction:column;justify-content:space-between;min-height:760px}
-  .cover h1{font-size:104px;font-weight:900;letter-spacing:-.04em;color:#fff;line-height:.95;margin:0}
+  .cover-grid{position:relative;z-index:2;height:100%;padding:48px 72px 44px;display:flex;flex-direction:column;justify-content:space-between;min-height:620px;gap:40px}
+  .cover h1{font-size:104px;font-weight:900;letter-spacing:-.04em;color:#fff;line-height:.95;margin:0;text-shadow:0 4px 32px rgba(94,234,212,.32),0 0 90px rgba(94,234,212,.14)}
+  .cover h1 .accent{background:linear-gradient(180deg,#fff 0%,#a7f3d0 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
   .cover .latin{font-family:'Inter';font-size:30px;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:-.01em;margin-top:6px}
   .cover-tag{font-size:22px;font-weight:600;color:rgba(255,255,255,.92);max-width:560px;line-height:1.55}
   .cover-foot{display:flex;justify-content:space-between;align-items:flex-end;font-size:13px;color:rgba(255,255,255,.7)}
   .cover-blob{position:absolute;border-radius:50%;filter:blur(60px)}
   .blob-1{width:480px;height:480px;background:#5eead4;opacity:.45;top:-100px;right:-120px}
   .blob-2{width:320px;height:320px;background:#0e7490;opacity:.6;bottom:-60px;left:-60px}
+  .blob-3{width:260px;height:260px;background:#10b981;opacity:.28;top:42%;left:48%;filter:blur(80px)}
+  .ai-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.14);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.26);font-size:10px;font-weight:800;color:#ecfdf5;letter-spacing:.16em;text-transform:uppercase;font-family:'Inter';margin-top:8px}
+  .ai-chip .pulse{width:5px;height:5px;border-radius:50%;background:#5eead4;box-shadow:0 0 0 3px rgba(94,234,212,.28);animation:cover-pulse 2.2s ease-in-out infinite}
+  @keyframes cover-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
+  .cover-divider{height:1px;width:120px;background:linear-gradient(90deg,rgba(94,234,212,.6),transparent);margin:24px 0 12px}
   .logo-mono{display:inline-flex;align-items:center;gap:14px}
-  .logo-mark{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#fff,#a7f3d0);display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:900;color:#064e3b;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+  .logo-mark{width:64px;height:64px;border-radius:14px;background:rgba(255,255,255,.08);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1.5px solid rgba(255,255,255,.38);display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#fff;letter-spacing:-.02em;box-shadow:0 10px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.22)}
 
   /* Big stat */
   .bigstat{background:linear-gradient(135deg,#ecfdf5,#fff);border:1px solid var(--teal-100);border-radius:18px;padding:28px}
@@ -184,6 +192,14 @@
     .cover h1{font-size:64px}.cover .latin{font-size:22px}
     .cover-grid{padding:48px 28px}
   }
+  /* Print — one slide per PDF page, no extra space */
+  @media print{
+    @page{size:1100px 720px;margin:0}
+    html,body{background:#fff;margin:0;padding:0}
+    .page{width:1100px;min-height:720px;height:720px;margin:0;border-radius:0;box-shadow:none;page-break-after:always;break-after:page;overflow:hidden}
+    .cover{min-height:720px;height:720px}
+    .cover-grid{min-height:720px;height:720px}
+  }
 </style>
 </head>
 <body>
@@ -192,20 +208,34 @@
 <section class="page cover">
   <span class="cover-blob blob-1"></span>
   <span class="cover-blob blob-2"></span>
+  <span class="cover-blob blob-3"></span>
+  <div class="cover-shine"></div>
   <span class="page-tag">2026 · Pitch Deck</span>
   <div class="cover-grid">
     <div class="logo-mono">
-      <div class="logo-mark">س</div>
+      <div class="logo-mark" aria-label="Saned">
+        <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 21h18"/>
+          <path d="M4 10h16"/>
+          <path d="M5 7l7-4 7 4"/>
+          <path d="M6 10v11"/>
+          <path d="M10 10v11"/>
+          <path d="M14 10v11"/>
+          <path d="M18 10v11"/>
+        </svg>
+      </div>
       <div>
         <div style="font-size:22px;font-weight:800">ساند</div>
         <div class="latin" style="font-size:14px;margin-top:0">Saned</div>
+        <span class="ai-chip"><span class="pulse"></span>AI · powered</span>
       </div>
     </div>
     <div>
       <h1>ساند</h1>
       <div class="latin">Saned · Government services on WhatsApp</div>
-      <p class="cover-tag" style="margin-top:32px">
-        رقم واتساب واحد. شبكة مكاتب سند مرخّصة.<br/>
+      <div class="cover-divider"></div>
+      <p class="cover-tag" style="margin-top:8px">
+        محادثة واحدة... ومعاملاتك جاهزة.<br/>
         المواطن يطلب — والمكتب يُنجز.
       </p>
       <div style="margin-top:28px;display:flex;gap:10px;flex-wrap:wrap">
@@ -214,7 +244,7 @@
           مباشر الآن — saned.ai
         </span>
         <span style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,.12);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.22);font-size:12.5px;font-weight:700;color:#ecfdf5">
-          601 خدمة · 6 جهات حكومية · عربي أوّلاً
+          كل خدماتك الحكومية، بين يديك
         </span>
       </div>
     </div>
@@ -321,7 +351,7 @@
   <div class="page-pad">
     <div class="section-num">03 — Citizen experience</div>
     <h2>تجربة المواطن — قناتان، تجربة واحدة</h2>
-    <p class="lede">ابدأ على واتساب — أو من لوحتك على الموقع. نفس المحرّك، نفس النتيجة.</p>
+    <p class="lede">ابدأ على واتساب — أو من لوحتك على الموقع.<br/>نفس المحرّك، نفس النتيجة.</p>
 
     <div class="grid grid-2" style="margin-top:28px;gap:28px;align-items:start">
 
@@ -339,7 +369,7 @@
           <div class="wa-body" style="min-height:300px">
             <div class="bubble in"><span>السلام عليكم، فقدت سند ملكية أرضي وأبغى بدل فاقد</span><div class="meta">14:12 ✓✓</div></div>
             <div class="bubble out">
-              <span>📝 طلب إصدار سند ملكية بدل فاقد<br/>وزارة الإسكان والتخطيط العمراني<br/>💰 الرسوم تُحدّد عند مراجعة المكتب<br/><br/>📎 الملفات المطلوبة:<br/>1) البطاقة المدنية<br/>2) بلاغ فقدان من الشرطة<br/>3) إستمارة إعلان فقدان سند ملكية<br/><br/>تحب أحد مكاتب سند يساعدك تقدّمه؟</span>
+              <span>📝 طلب بدل فاقد سند ملكية<br/>وزارة الإسكان والتخطيط العمراني<br/>💰 الرسوم تُحدّد عند مراجعة المكتب<br/><br/>📎 الملفات المطلوبة:<br/>1) البطاقة المدنية<br/>2) بلاغ فقدان من الشرطة<br/>3) إستمارة إعلان فقدان سند ملكية<br/><br/>تحب أحد مكاتب سند يساعدك تقدّمه؟</span>
               <div class="meta">14:12</div>
             </div>
             <div class="bubble btn-row">
@@ -348,7 +378,7 @@
             </div>
             <div class="bubble in"><span>نعم</span><div class="meta">14:13 ✓✓</div></div>
             <div class="bubble out">
-              <span>✅ تمام — جهزنا ملف طلب إصدار سند ملكية بدل فاقد.<br/>أرسل الملفات بأي ترتيب وسأرتّبها لك.</span>
+              <span>✅ تمام — جهزنا ملف طلب بدل فاقد سند ملكية.<br/>أرسل الملفات بأي ترتيب وسأرتّبها لك.</span>
               <div class="meta">14:13</div>
             </div>
             <div class="bubble attach"><span>📎 civil-id.jpg</span></div>
@@ -416,8 +446,8 @@
             <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
                 <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#10b981,#0d9488);color:#fff;font-size:10px;font-weight:800">٢</span>
-                <span style="font-weight:700;font-size:12px">الفحص الطبي</span>
-                <span style="font-size:10px;color:var(--mute);font-family:'Inter'">Medical Fitness Form</span>
+                <span style="font-weight:700;font-size:12px">فحص النظر</span>
+                <span style="font-size:10px;color:var(--mute);font-family:'Inter'">Eye Test</span>
               </div>
               <div style="display:flex;align-items:center;gap:6px;font-size:10.5px">
                 <button style="padding:4px 10px;background:#f1f5f9;border:1px solid var(--line);border-radius:6px;font-weight:700;font-size:10px">Choose File</button>
@@ -434,7 +464,7 @@
 
     <!-- Shared traits row -->
     <div class="grid grid-3" style="margin-top:28px;gap:14px">
-      <div class="shared-trait"><span class="ico">🗣️</span><div><b>عربي أوّلاً</b><br/><span class="small">مع فهم اللهجة العُمانية</span></div></div>
+      <div class="shared-trait"><span class="ico">🌐</span><div><b>ثنائي اللغة</b><br/><span class="small">عربي وإنجليزي بنفس الكفاءة</span></div></div>
       <div class="shared-trait"><span class="ico">🔍</span><div><b>رؤية حاسوبية للمستندات</b><br/><span class="small">تصنيف تلقائي لكل مستند</span></div></div>
       <div class="shared-trait"><span class="ico">🔄</span><div><b>محرّك واحد</b><br/><span class="small">نفس النتيجة على القناتين</span></div></div>
     </div>
@@ -449,7 +479,7 @@
     <div class="section-num">04 — Why citizens trust the answers</div>
     <h2>كل خدمة — مستنداتها وخطواتها مأخوذة من المصدر</h2>
     <p class="lede">
-      الفرق بين «بوت ذكي» و«بوت يعمل» هو دقّة البيانات. ساند يربط مباشرة بصفحات الجهات الحكومية ويستخرج المستندات والخطوات من المصدر — لا تخمين، لا اختراع.
+      الفرق بين «وكيل ذكي» و«وكيل يعمل» هو دقّة البيانات. ساند يربط مباشرة بصفحات الجهات الحكومية ويستخرج المستندات والخطوات من المصدر — لا تخمين، لا اختراع.
     </p>
 
     <div class="grid grid-3" style="margin-top:32px">
@@ -569,7 +599,7 @@
 
     <div class="grid grid-3" style="margin-top:32px">
       <div class="concept">
-        <div class="hdr"><div class="ico">⚡</div><h3>استلام ذرّي</h3></div>
+        <div class="hdr"><div class="ico">⚡</div><h3>حصرية الاستلام</h3></div>
         <p>أوّل مكتب يضغط «استلام» يحصل على الطلب. لا تكرار، لا اشتباك — مضمون على مستوى قاعدة البيانات.</p>
       </div>
       <div class="concept">
@@ -577,7 +607,7 @@
         <p>الطلب يبدأ في محافظة المواطن. إذا لم يُستلم خلال ٢٠ دقيقة، يتوسّع للمحافظات المجاورة، ثم لكامل عُمان.</p>
       </div>
       <div class="concept">
-        <div class="hdr"><div class="ico">⚖</div><h3>مهلات SLA</h3></div>
+        <div class="hdr"><div class="ico">⚖</div><h3>مواعيد التزام واضحة</h3></div>
         <p>مهلة ٥ دقائق للمراجعة، و٤٥ دقيقة للتنفيذ بعد الدفع. عند انتهاء المهلة، الطلب ينتقل تلقائياً لمكتب آخر — والدفع محفوظ.</p>
       </div>
     </div>
@@ -590,9 +620,9 @@
   <span class="page-num">7 / 8</span>
   <div class="page-pad">
     <div class="section-num">06 — Built to be reliable</div>
-    <h2>منصّة لا تكذب — حتى تحت الضغط</h2>
+    <h2>منصّة تُؤتمَن — حتى عند الذروة</h2>
     <p class="lede">
-      أكثر ما يُؤذي ثقة المواطن: بوت يُضيع ملفه، أو يُعطي رسوماً وهميّة، أو يحوّل الطلب لمكتبَين فيتنازعان. ساند مهندَس بحيث لا يحدث أيّ من ذلك.
+      أكثر ما يُؤذي ثقة المواطن: وكيل يُضيع ملفه، أو يُعطي رسوماً وهميّة، أو يحوّل الطلب لمكتبَين فيتنازعان. ساند مهندَس بحيث لا يحدث أيّ من ذلك.
     </p>
 
     <div class="grid grid-2" style="margin-top:32px;gap:22px">
@@ -610,7 +640,7 @@
         <div style="display:flex;gap:14px;align-items:flex-start">
           <div style="width:48px;height:48px;border-radius:14px;background:#ecfdf5;color:#0d9488;display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid var(--teal-100);flex-shrink:0">📥</div>
           <div>
-            <h3 style="font-size:16px;margin:0">عدّ صادق للملفات</h3>
+            <h3 style="font-size:16px;margin:0">تأكيد دقيق لعدد الملفات</h3>
             <p style="margin:6px 0 0;font-size:12.5px;line-height:1.6">إذا أرسلت ٤ ملفات ووصل ٣ — ساند يُخبرك صراحةً: «وصلتني ٤ ملفات — رتّبت ٣ منها، و١ لم يكتمل تحميله». لا اختفاء صامت.</p>
           </div>
         </div>
@@ -620,7 +650,7 @@
         <div style="display:flex;gap:14px;align-items:flex-start">
           <div style="width:48px;height:48px;border-radius:14px;background:#ecfdf5;color:#0d9488;display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid var(--teal-100);flex-shrink:0">⚛️</div>
           <div>
-            <h3 style="font-size:16px;margin:0">استلام ذرّيّ — لا تنازع</h3>
+            <h3 style="font-size:16px;margin:0">حصرية الاستلام</h3>
             <p style="margin:6px 0 0;font-size:12.5px;line-height:1.6">أوّل مكتب يضغط «استلام» يحصل على الطلب. مضمون على مستوى قاعدة البيانات. لا يحدث أبداً أن يستلمه مكتبان معاً.</p>
           </div>
         </div>
@@ -640,7 +670,7 @@
         <div style="display:flex;gap:14px;align-items:flex-start">
           <div style="width:48px;height:48px;border-radius:14px;background:#ecfdf5;color:#0d9488;display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid var(--teal-100);flex-shrink:0">⏱️</div>
           <div>
-            <h3 style="font-size:16px;margin:0">SLA حازم — لا انتظار خفيّ</h3>
+            <h3 style="font-size:16px;margin:0">مواعيد التزام واضحة</h3>
             <p style="margin:6px 0 0;font-size:12.5px;line-height:1.6">٥ دقائق للمراجعة، ٤٥ دقيقة للتنفيذ بعد الدفع. عند انتهاء المهلة، الطلب ينتقل لمكتب آخر تلقائياً — والدفع محفوظ.</p>
           </div>
         </div>
@@ -674,12 +704,12 @@
       <div class="ready-tile">
         <div class="ico">📱</div>
         <h3>تجربة المواطن</h3>
-        <p>محادثة عربية على واتساب وعلى الموقع — مع رؤية حاسوبية لتصنيف المستندات.</p>
+        <p>محادثة طبيعية على واتساب وعلى الموقع — مع رؤية حاسوبية لتصنيف المستندات.</p>
       </div>
       <div class="ready-tile">
         <div class="ico">🏢</div>
         <h3>لوحة المكتب</h3>
-        <p>سوق طلبات حيّ، استلام ذرّي، مراجعة مستندات، شريط تقدّم واضح، ومهلات SLA.</p>
+        <p>سوق طلبات حيّ، استلام ذرّي، مراجعة مستندات، شريط تقدّم واضح، ومواعيد التزام واضحة.</p>
       </div>
       <div class="ready-tile">
         <div class="ico">💳</div>
@@ -700,7 +730,7 @@
         <div style="font-size:11px;font-weight:800;color:var(--brand);letter-spacing:.16em;text-transform:uppercase;margin-bottom:8px">للمواطن</div>
         <div style="font-weight:800;font-size:14px;margin-bottom:4px">ابدأ من الواتساب</div>
         <div style="font-size:11.5px;color:var(--mute);line-height:1.55">رقم واتساب موحّد — اكتب «تجديد رخصة سياقة» أو «جواز السفر».</div>
-        <div style="margin-top:10px;font-size:12px;font-weight:800;color:var(--brand-dark);direction:ltr;text-align:start">📱 +968 9220 0199</div>
+        <div style="margin-top:10px;font-size:12px;font-weight:800;color:var(--brand-dark);direction:ltr;text-align:start">📱 +968 xxxx xxxx</div>
       </a>
       <a href="mailto:idealailabs@gmail.com?subject=انضمام%20شبكة%20ساند%20-%20مكتب%20سند" style="text-decoration:none;color:inherit;display:block;border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow-soft);border-color:var(--teal-100);background:linear-gradient(180deg,#ecfdf5,#fff);transition:transform .15s,box-shadow .15s">
         <div style="font-size:11px;font-weight:800;color:var(--brand-dark);letter-spacing:.16em;text-transform:uppercase;margin-bottom:8px">لمكاتب سند</div>

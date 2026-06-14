@@ -158,6 +158,242 @@
     </div>
   </section>
 
+  <!-- ─── Payments console ──────────────────────────────────── -->
+  <!-- One page, four cleanly-divided sections:
+         1. KPI strip — active subs, MRR, expiring 7d, citizen pmts today.
+         2. Subscriptions table — v2 plans (monthly/quarterly/semi-annual/annual).
+         3. Citizen payments table — request_id payments via Thawani.
+         4. Payment events log — last 100 raw payment_event rows.
+       Polls /api/platform-admin/payments/kpis every 12s for fresh totals;
+       tables refresh on demand via the section's filter chips. -->
+  <section id="paymentsSection" class="rounded-xl border border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900 overflow-hidden">
+    <div class="flex items-center gap-3 px-4 py-3 border-b border-ink-100 dark:border-ink-800">
+      <div>
+        <div class="text-[12.5px] font-bold">Payments</div>
+        <div class="text-[10.5px] text-ink-400">Office subscriptions · citizen payments · Thawani event log</div>
+      </div>
+      <div class="ms-auto flex items-center gap-1">
+        <button data-paytab="subs"     class="payTab px-2.5 h-8 rounded-lg text-[11.5px] font-bold bg-brand-100 text-brand-800 dark:bg-brand-900/40 dark:text-brand-300">Subscriptions</button>
+        <button data-paytab="payments" class="payTab px-2.5 h-8 rounded-lg text-[11.5px] font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Citizen payments</button>
+        <button data-paytab="payouts"  class="payTab px-2.5 h-8 rounded-lg text-[11.5px] font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Payouts</button>
+        <button data-paytab="events"   class="payTab px-2.5 h-8 rounded-lg text-[11.5px] font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Events log</button>
+      </div>
+    </div>
+
+    <!-- KPI strip — always visible above the active sub-tab -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-px bg-ink-100 dark:bg-ink-800" id="payKpis">
+      <div class="bg-white dark:bg-ink-900 p-3">
+        <div class="text-[10px] uppercase tracking-wider text-ink-400">Active subs</div>
+        <div id="kpiActive" class="text-[20px] font-extrabold mt-1 mono">—</div>
+      </div>
+      <div class="bg-white dark:bg-ink-900 p-3">
+        <div class="text-[10px] uppercase tracking-wider text-ink-400">MRR (OMR)</div>
+        <div id="kpiMrr" class="text-[20px] font-extrabold mt-1 mono">—</div>
+      </div>
+      <div class="bg-white dark:bg-ink-900 p-3">
+        <div class="text-[10px] uppercase tracking-wider text-ink-400">Expiring 7d</div>
+        <div id="kpiExpiring" class="text-[20px] font-extrabold mt-1 mono">—</div>
+      </div>
+      <div class="bg-white dark:bg-ink-900 p-3">
+        <div class="text-[10px] uppercase tracking-wider text-ink-400">Pmts today</div>
+        <div id="kpiPmtsToday" class="text-[20px] font-extrabold mt-1 mono">—</div>
+      </div>
+      <div class="bg-white dark:bg-ink-900 p-3">
+        <div class="text-[10px] uppercase tracking-wider text-ink-400">OMR today</div>
+        <div id="kpiOmrToday" class="text-[20px] font-extrabold mt-1 mono">—</div>
+      </div>
+    </div>
+
+    <!-- Tab body 1: subscriptions -->
+    <div id="paySubsBody">
+      <div class="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-ink-100 dark:border-ink-800 text-[11px]">
+        <span class="text-ink-500">Status:</span>
+        <button data-substatus="all"     class="subFilter px-2 h-7 rounded-md font-bold bg-ink-100 dark:bg-ink-800">All</button>
+        <button data-substatus="active"  class="subFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Active</button>
+        <button data-substatus="pending" class="subFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Pending</button>
+        <button data-substatus="expired" class="subFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Expired</button>
+        <button data-substatus="failed"  class="subFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Failed</button>
+        <span class="text-ink-500 ms-3">Plan:</span>
+        <button data-subplan="all"          class="planFilter px-2 h-7 rounded-md font-bold bg-ink-100 dark:bg-ink-800">All</button>
+        <button data-subplan="monthly"      class="planFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Monthly</button>
+        <button data-subplan="quarterly"    class="planFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Quarterly</button>
+        <button data-subplan="semi-annual"  class="planFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Semi</button>
+        <button data-subplan="annual"       class="planFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Annual</button>
+        <span id="subsCount" class="ms-auto text-ink-400">—</span>
+      </div>
+      <div class="overflow-x-auto scroll-y">
+        <table class="w-full text-[13px]">
+          <thead class="bg-ink-50 dark:bg-ink-800 text-[10.5px] uppercase tracking-wider text-ink-500 dark:text-ink-400">
+            <tr>
+              <th class="px-4 py-2.5 text-start">#</th>
+              <th class="px-4 py-2.5 text-start">Office</th>
+              <th class="px-4 py-2.5 text-start">Plan</th>
+              <th class="px-4 py-2.5 text-end">Amount</th>
+              <th class="px-4 py-2.5 text-start">Status</th>
+              <th class="px-4 py-2.5 text-start">Started</th>
+              <th class="px-4 py-2.5 text-start">Expires</th>
+              <th class="px-4 py-2.5 text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="subsTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab body 2: citizen payments (hidden by default) -->
+    <div id="payPaymentsBody" class="hidden">
+      <div class="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-ink-100 dark:border-ink-800 text-[11px]">
+        <span class="text-ink-500">Status:</span>
+        <button data-pmtstatus="all"       class="pmtFilter px-2 h-7 rounded-md font-bold bg-ink-100 dark:bg-ink-800">All</button>
+        <button data-pmtstatus="paid"      class="pmtFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Paid</button>
+        <button data-pmtstatus="awaiting"  class="pmtFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Awaiting</button>
+        <button data-pmtstatus="failed"    class="pmtFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Failed</button>
+        <button data-pmtstatus="refunded"  class="pmtFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Refunded</button>
+        <span id="pmtsCount" class="ms-auto text-ink-400">—</span>
+      </div>
+      <div class="overflow-x-auto scroll-y">
+        <table class="w-full text-[13px]">
+          <thead class="bg-ink-50 dark:bg-ink-800 text-[10.5px] uppercase tracking-wider text-ink-500 dark:text-ink-400">
+            <tr>
+              <th class="px-4 py-2.5 text-start">Req #</th>
+              <th class="px-4 py-2.5 text-start">Date</th>
+              <th class="px-4 py-2.5 text-start">Service</th>
+              <th class="px-4 py-2.5 text-start">Citizen</th>
+              <th class="px-4 py-2.5 text-start">Office</th>
+              <th class="px-4 py-2.5 text-end">Amount</th>
+              <th class="px-4 py-2.5 text-start">Status</th>
+              <th class="px-4 py-2.5 text-start">Session ID</th>
+            </tr>
+          </thead>
+          <tbody id="pmtsTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab body 3: payouts (hidden by default) -->
+    <div id="payPayoutsBody" class="hidden">
+      <!-- Period chooser + generate flow -->
+      <div class="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-ink-100 dark:border-ink-800 text-[11px]">
+        <span class="text-ink-500">Period:</span>
+        <button data-payout-preset="last_week"  class="payoutPresetBtn px-2 h-7 rounded-md font-bold bg-ink-100 dark:bg-ink-800">Last week</button>
+        <button data-payout-preset="this_week"  class="payoutPresetBtn px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">This week</button>
+        <button data-payout-preset="this_month" class="payoutPresetBtn px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">This month</button>
+        <input id="payoutFrom" type="date" class="px-2 h-7 rounded-md border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 text-[11px]"/>
+        <span class="text-ink-400">→</span>
+        <input id="payoutTo"   type="date" class="px-2 h-7 rounded-md border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 text-[11px]"/>
+        <button id="payoutRefresh" class="px-3 h-7 rounded-md bg-brand-500 hover:bg-brand-600 text-white font-bold">Refresh</button>
+        <button id="payoutExport"  class="px-3 h-7 rounded-md hover:bg-ink-100 dark:hover:bg-ink-800 font-semibold">⤓ Export CSV</button>
+        <span id="payoutPeriodLabel" class="ms-auto text-ink-400"></span>
+      </div>
+
+      <!-- "Who do we owe" summary card -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-px bg-ink-100 dark:bg-ink-800">
+        <div class="bg-white dark:bg-ink-900 p-3">
+          <div class="text-[10px] uppercase tracking-wider text-ink-400">Offices owed</div>
+          <div id="payoutOfficesCount" class="text-[20px] font-extrabold mt-1 mono">—</div>
+        </div>
+        <div class="bg-white dark:bg-ink-900 p-3">
+          <div class="text-[10px] uppercase tracking-wider text-ink-400">Requests</div>
+          <div id="payoutReqCount" class="text-[20px] font-extrabold mt-1 mono">—</div>
+        </div>
+        <div class="bg-white dark:bg-ink-900 p-3">
+          <div class="text-[10px] uppercase tracking-wider text-ink-400">Gross OMR</div>
+          <div id="payoutGross" class="text-[20px] font-extrabold mt-1 mono">—</div>
+        </div>
+        <div class="bg-white dark:bg-ink-900 p-3">
+          <div class="text-[10px] uppercase tracking-wider text-ink-400">Platform fee</div>
+          <div id="payoutFee" class="text-[20px] font-extrabold mt-1 mono">—</div>
+          <div class="text-[10px] text-ink-400 mt-0.5"><span id="payoutFeePerReq">—</span> OMR/req</div>
+        </div>
+        <div class="bg-white dark:bg-ink-900 p-3">
+          <div class="text-[10px] uppercase tracking-wider text-ink-400">Net to transfer</div>
+          <div id="payoutNet" class="text-[20px] font-extrabold mt-1 mono text-good-700 dark:text-good-300">—</div>
+        </div>
+      </div>
+
+      <!-- Eligible-by-office table + per-row generate button -->
+      <div class="px-4 py-2 border-b border-ink-100 dark:border-ink-800 flex items-center gap-2">
+        <div class="text-[12px] font-bold">Eligible for next payout</div>
+        <button id="payoutGenerateAll" class="ms-auto px-3 h-7 rounded-md bg-brand-500 hover:bg-brand-600 text-white text-[11px] font-bold">⚡ Generate for all eligible</button>
+      </div>
+      <div class="overflow-x-auto scroll-y">
+        <table class="w-full text-[13px]">
+          <thead class="bg-ink-50 dark:bg-ink-800 text-[10.5px] uppercase tracking-wider text-ink-500 dark:text-ink-400">
+            <tr>
+              <th class="px-4 py-2.5 text-start">Office</th>
+              <th class="px-4 py-2.5 text-end">Requests</th>
+              <th class="px-4 py-2.5 text-end">Gross OMR</th>
+              <th class="px-4 py-2.5 text-end">Fee</th>
+              <th class="px-4 py-2.5 text-end">Net</th>
+              <th class="px-4 py-2.5 text-end">Action</th>
+            </tr>
+          </thead>
+          <tbody id="payoutEligibleTbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Past payouts list -->
+      <div class="px-4 py-2 border-y border-ink-100 dark:border-ink-800 flex items-center gap-2">
+        <div class="text-[12px] font-bold">Generated payouts</div>
+        <span class="text-ink-500">Status:</span>
+        <button data-payoutstatus="all"       class="payoutStatusBtn px-2 h-7 rounded-md font-bold bg-ink-100 dark:bg-ink-800">All</button>
+        <button data-payoutstatus="pending"   class="payoutStatusBtn px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Pending</button>
+        <button data-payoutstatus="paid"      class="payoutStatusBtn px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Paid</button>
+        <button data-payoutstatus="cancelled" class="payoutStatusBtn px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Cancelled</button>
+        <span id="payoutsListCount" class="ms-auto text-ink-400">—</span>
+      </div>
+      <div class="overflow-x-auto scroll-y">
+        <table class="w-full text-[13px]">
+          <thead class="bg-ink-50 dark:bg-ink-800 text-[10.5px] uppercase tracking-wider text-ink-500 dark:text-ink-400">
+            <tr>
+              <th class="px-4 py-2.5 text-start">#</th>
+              <th class="px-4 py-2.5 text-start">Office</th>
+              <th class="px-4 py-2.5 text-start">Period</th>
+              <th class="px-4 py-2.5 text-end">Req</th>
+              <th class="px-4 py-2.5 text-end">Gross</th>
+              <th class="px-4 py-2.5 text-end">Fee</th>
+              <th class="px-4 py-2.5 text-end">Net</th>
+              <th class="px-4 py-2.5 text-start">Status</th>
+              <th class="px-4 py-2.5 text-start">Paid at</th>
+              <th class="px-4 py-2.5 text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="payoutsListTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab body 4: events log (hidden by default) -->
+    <div id="payEventsBody" class="hidden">
+      <div class="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-ink-100 dark:border-ink-800 text-[11px]">
+        <span class="text-ink-500">Event type:</span>
+        <button data-evtype=""                  class="evFilter px-2 h-7 rounded-md font-bold bg-ink-100 dark:bg-ink-800">All</button>
+        <button data-evtype="session_created"   class="evFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Created</button>
+        <button data-evtype="paid"              class="evFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Paid</button>
+        <button data-evtype="fetch_verified"    class="evFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Verified</button>
+        <button data-evtype="webhook_received"  class="evFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Webhook</button>
+        <button data-evtype="expired"           class="evFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Expired</button>
+        <button data-evtype="cancelled"         class="evFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800">Cancelled</button>
+        <span id="evCount" class="ms-auto text-ink-400">—</span>
+      </div>
+      <div class="overflow-x-auto scroll-y">
+        <table class="w-full text-[12.5px]">
+          <thead class="bg-ink-50 dark:bg-ink-800 text-[10.5px] uppercase tracking-wider text-ink-500 dark:text-ink-400">
+            <tr>
+              <th class="px-4 py-2.5 text-start">#</th>
+              <th class="px-4 py-2.5 text-start">When</th>
+              <th class="px-4 py-2.5 text-start">Subject</th>
+              <th class="px-4 py-2.5 text-start">Event</th>
+              <th class="px-4 py-2.5 text-end">Amount</th>
+              <th class="px-4 py-2.5 text-start">Session</th>
+            </tr>
+          </thead>
+          <tbody id="evTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
   <!-- Service editor modal -->
   <div id="svcModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm items-center justify-center p-4">
     <div class="bg-white dark:bg-ink-900 rounded-xl shadow-2xl max-w-lg w-full border border-ink-100 dark:border-ink-800">
@@ -606,6 +842,481 @@ document.getElementById('svcNext').onclick = () => {
     loadServices();
   }
 };
+
+// ════════════════════════════════════════════════════════════
+// PAYMENTS CONSOLE wiring
+// ════════════════════════════════════════════════════════════
+// Lightweight client — uses fetch + DOM only (matches the rest of this
+// page's pattern). State is in `payState`; each tab has its own filter
+// set so flipping between tabs preserves the user's chosen filters.
+
+const payState = {
+  tab: 'subs',
+  subStatus: 'all',
+  subPlan:   'all',
+  pmtStatus: 'all',
+  evType:    '',
+};
+
+// Format helpers — keep dates short, OMR with 3-decimal precision (baisa).
+function fmtDt(s) {
+  if (!s) return '—';
+  // Trim seconds for readability ('2026-05-21 14:09:33' → '2026-05-21 14:09').
+  const m = String(s).match(/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})/);
+  return m ? `${m[1]} ${m[2]}` : s;
+}
+function fmtOmr(n) {
+  if (n == null || n === '') return '—';
+  return Number(n).toFixed(2);
+}
+function escHtml(s) {
+  return String(s ?? '').replace(/[&<>"]/g,
+    c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+// ─── KPI strip ─────────────────────────────────────────────
+async function loadPaymentKpis() {
+  try {
+    const r = await fetch('/api/platform-admin/payments/kpis');
+    if (!r.ok) return;
+    const k = await r.json();
+    document.getElementById('kpiActive').textContent     = k.active_subscriptions ?? '—';
+    document.getElementById('kpiMrr').textContent        = fmtOmr(k.mrr_omr);
+    document.getElementById('kpiExpiring').textContent   = k.expiring_7d ?? '—';
+    document.getElementById('kpiPmtsToday').textContent  = k.citizen_payments_today ?? '—';
+    document.getElementById('kpiOmrToday').textContent   = fmtOmr(k.omr_collected_today);
+  } catch {}
+}
+
+// ─── Subscriptions table ───────────────────────────────────
+async function loadSubscriptions() {
+  const q = new URLSearchParams();
+  if (payState.subStatus !== 'all') q.set('status', payState.subStatus);
+  if (payState.subPlan   !== 'all') q.set('plan', payState.subPlan);
+  q.set('limit', '200');
+  const r = await fetch('/api/platform-admin/subscriptions?' + q.toString());
+  if (!r.ok) return;
+  const { subscriptions, count } = await r.json();
+  document.getElementById('subsCount').textContent =
+    `${count} row${count === 1 ? '' : 's'}`;
+  const statusChip = (s) => {
+    const map = {
+      active:  'bg-good-50 text-good-700 dark:bg-good-950 dark:text-good-300',
+      pending: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+      expired: 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300',
+      failed:  'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300',
+    };
+    return `<span class="chip ${map[s] || 'bg-ink-100 text-ink-700'}">${s}</span>`;
+  };
+  document.getElementById('subsTbody').innerHTML = subscriptions.map(s => `
+    <tr class="border-t border-ink-100 dark:border-ink-800 hover:bg-ink-50/50 dark:hover:bg-ink-800/30">
+      <td class="px-4 py-2 mono text-ink-500">${s.id}</td>
+      <td class="px-4 py-2">
+        <div class="font-semibold">${escHtml(s.office_name_en || s.office_name_ar || `#${s.office_id}`)}</div>
+        <div class="text-[10.5px] text-ink-400">${escHtml(s.governorate || '')}</div>
+      </td>
+      <td class="px-4 py-2"><span class="chip bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300">${s.plan_code}</span></td>
+      <td class="px-4 py-2 text-end mono">${fmtOmr(s.amount_omr)}</td>
+      <td class="px-4 py-2">${statusChip(s.payment_status)}</td>
+      <td class="px-4 py-2 text-[11.5px]">${fmtDt(s.starts_at)}</td>
+      <td class="px-4 py-2 text-[11.5px]">${fmtDt(s.expires_at)}</td>
+      <td class="px-4 py-2 text-end">
+        <button class="subExtend px-2 h-7 rounded-md hover:bg-ink-100 dark:hover:bg-ink-800 text-[11px] font-semibold" data-id="${s.id}">+30d</button>
+        ${s.payment_status === 'active'
+          ? `<button class="subCancel px-2 h-7 rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/30 text-[11px] font-semibold text-rose-600" data-id="${s.id}">Cancel</button>`
+          : ''}
+      </td>
+    </tr>
+  `).join('') || `<tr><td colspan="8" class="px-4 py-6 text-center text-ink-400">No subscriptions match.</td></tr>`;
+
+  // Wire row actions.
+  document.querySelectorAll('.subExtend').forEach(b => {
+    b.onclick = async () => {
+      if (!confirm(`Extend subscription #${b.dataset.id} by 30 days?`)) return;
+      const r = await fetch(`/api/platform-admin/subscriptions/${b.dataset.id}/extend`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ days: 30 })
+      });
+      if (r.ok) { Sanad.toast('Extended by 30 days', 'ok'); loadSubscriptions(); loadPaymentKpis(); }
+      else      { Sanad.toast('Extend failed', 'err'); }
+    };
+  });
+  document.querySelectorAll('.subCancel').forEach(b => {
+    b.onclick = async () => {
+      const reason = prompt('Cancellation reason (optional):') || '';
+      if (reason === null) return;
+      const r = await fetch(`/api/platform-admin/subscriptions/${b.dataset.id}/cancel`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ reason })
+      });
+      if (r.ok) { Sanad.toast('Subscription cancelled', 'ok'); loadSubscriptions(); loadPaymentKpis(); }
+      else      { Sanad.toast('Cancel failed', 'err'); }
+    };
+  });
+}
+
+// ─── Citizen payments table ────────────────────────────────
+async function loadPayments() {
+  const q = new URLSearchParams();
+  if (payState.pmtStatus !== 'all') q.set('status', payState.pmtStatus);
+  q.set('limit', '200');
+  const r = await fetch('/api/platform-admin/payments?' + q.toString());
+  if (!r.ok) return;
+  const { payments, count } = await r.json();
+  document.getElementById('pmtsCount').textContent =
+    `${count} row${count === 1 ? '' : 's'}`;
+  const statusChip = (s) => {
+    const map = {
+      paid:     'bg-good-50 text-good-700 dark:bg-good-950 dark:text-good-300',
+      awaiting: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+      failed:   'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300',
+      refunded: 'bg-ink-100 text-ink-700 dark:bg-ink-800 dark:text-ink-300',
+      none:     'bg-ink-50 text-ink-500',
+    };
+    return `<span class="chip ${map[s] || 'bg-ink-100'}">${s || '—'}</span>`;
+  };
+  document.getElementById('pmtsTbody').innerHTML = payments.map(p => `
+    <tr class="border-t border-ink-100 dark:border-ink-800 hover:bg-ink-50/50 dark:hover:bg-ink-800/30">
+      <td class="px-4 py-2 mono text-ink-500">${p.request_id}</td>
+      <td class="px-4 py-2 text-[11.5px]">${fmtDt(p.paid_at || p.last_event_at || p.created_at)}</td>
+      <td class="px-4 py-2 text-[12px]">
+        <div class="font-semibold">${escHtml(p.service_name_en || p.service_name_ar || '—')}</div>
+      </td>
+      <td class="px-4 py-2 text-[11.5px]">${escHtml(p.citizen_name || p.citizen_phone || '—')}</td>
+      <td class="px-4 py-2 text-[11.5px]">${escHtml(p.office_name_en || p.office_name_ar || (p.office_id ? `#${p.office_id}` : '—'))}</td>
+      <td class="px-4 py-2 text-end mono">${fmtOmr(p.payment_amount_omr)}</td>
+      <td class="px-4 py-2">${statusChip(p.payment_status)}</td>
+      <td class="px-4 py-2 mono text-[10.5px] text-ink-500" title="${escHtml(p.payment_session_id || '')}">
+        ${p.payment_session_id ? escHtml(String(p.payment_session_id).slice(0, 16)) + '…' : '—'}
+      </td>
+    </tr>
+  `).join('') || `<tr><td colspan="8" class="px-4 py-6 text-center text-ink-400">No payments match.</td></tr>`;
+}
+
+// ─── Events log ─────────────────────────────────────────────
+async function loadPaymentEvents() {
+  const q = new URLSearchParams();
+  if (payState.evType) q.set('event_type', payState.evType);
+  q.set('limit', '200');
+  const r = await fetch('/api/platform-admin/payments/events?' + q.toString());
+  if (!r.ok) return;
+  const { events, count } = await r.json();
+  document.getElementById('evCount').textContent =
+    `${count} event${count === 1 ? '' : 's'}`;
+  const evTone = (e) => {
+    const map = {
+      paid: 'bg-good-50 text-good-700',
+      session_created: 'bg-brand-50 text-brand-700',
+      webhook_received: 'bg-indigo-50 text-indigo-700',
+      fetch_verified: 'bg-indigo-50 text-indigo-700',
+      expired: 'bg-rose-50 text-rose-700',
+      cancelled: 'bg-amber-50 text-amber-700',
+      manual_extend: 'bg-ink-100 text-ink-700',
+    };
+    return map[e] || 'bg-ink-100 text-ink-700';
+  };
+  document.getElementById('evTbody').innerHTML = events.map(e => `
+    <tr class="border-t border-ink-100 dark:border-ink-800 hover:bg-ink-50/50 dark:hover:bg-ink-800/30">
+      <td class="px-4 py-2 mono text-ink-500">${e.id}</td>
+      <td class="px-4 py-2 text-[11.5px]">${fmtDt(e.created_at)}</td>
+      <td class="px-4 py-2 text-[11.5px]">
+        <span class="text-ink-400">${e.subject_type}</span>
+        <span class="mono">#${e.subject_id}</span>
+      </td>
+      <td class="px-4 py-2"><span class="chip ${evTone(e.event_type)}">${e.event_type}</span></td>
+      <td class="px-4 py-2 text-end mono">${fmtOmr(e.amount_omr)}</td>
+      <td class="px-4 py-2 mono text-[10.5px] text-ink-500" title="${escHtml(e.thawani_session_id || '')}">
+        ${e.thawani_session_id ? escHtml(String(e.thawani_session_id).slice(0, 16)) + '…' : '—'}
+      </td>
+    </tr>
+  `).join('') || `<tr><td colspan="6" class="px-4 py-6 text-center text-ink-400">No events.</td></tr>`;
+}
+
+// Tab switcher
+function setPayTab(tab) {
+  payState.tab = tab;
+  document.querySelectorAll('.payTab').forEach(b => {
+    const on = b.dataset.paytab === tab;
+    b.className = on
+      ? 'payTab px-2.5 h-8 rounded-lg text-[11.5px] font-bold bg-brand-100 text-brand-800 dark:bg-brand-900/40 dark:text-brand-300'
+      : 'payTab px-2.5 h-8 rounded-lg text-[11.5px] font-semibold hover:bg-ink-100 dark:hover:bg-ink-800';
+  });
+  document.getElementById('paySubsBody').classList.toggle('hidden', tab !== 'subs');
+  document.getElementById('payPaymentsBody').classList.toggle('hidden', tab !== 'payments');
+  document.getElementById('payPayoutsBody').classList.toggle('hidden', tab !== 'payouts');
+  document.getElementById('payEventsBody').classList.toggle('hidden', tab !== 'events');
+  if (tab === 'subs')     loadSubscriptions();
+  if (tab === 'payments') loadPayments();
+  if (tab === 'payouts')  { loadEligible(); loadPayoutsList(); }
+  if (tab === 'events')   loadPaymentEvents();
+}
+
+// ─── Payouts tab state + loaders ───────────────────────────
+const payoutState = { preset: 'last_week', from: '', to: '', listStatus: 'all' };
+
+// Build URL with either preset OR explicit from/to (preset wins if no dates).
+function payoutPeriodParams() {
+  const p = new URLSearchParams();
+  if (payoutState.from && payoutState.to) {
+    p.set('from', payoutState.from);
+    p.set('to',   payoutState.to);
+  } else {
+    p.set('preset', payoutState.preset);
+  }
+  return p;
+}
+
+async function loadEligible() {
+  const q = payoutPeriodParams();
+  const r = await fetch('/api/platform-admin/payouts/eligible-by-office?' + q.toString());
+  if (!r.ok) return;
+  const data = await r.json();
+  document.getElementById('payoutPeriodLabel').textContent =
+    `${data.period.from} → ${data.period.to}`;
+  // KPIs
+  document.getElementById('payoutOfficesCount').textContent = data.totals.offices_count;
+  document.getElementById('payoutReqCount').textContent     = data.totals.request_count;
+  document.getElementById('payoutGross').textContent        = fmtOmr(data.totals.gross_omr);
+  document.getElementById('payoutFee').textContent          = fmtOmr(data.totals.platform_fee_omr);
+  document.getElementById('payoutNet').textContent          = fmtOmr(data.totals.net_omr);
+  document.getElementById('payoutFeePerReq').textContent    = fmtOmr(data.fee_per_request_omr);
+  // Table
+  document.getElementById('payoutEligibleTbody').innerHTML = data.offices.map(o => {
+    // Bank readiness chip — green if verified, yellow if complete-but-unverified,
+    // red if missing. Operator can spot transfer-blockers in one glance.
+    let bankChip;
+    if (o.bank_verified_at) {
+      bankChip = `<span class="chip" style="background:rgba(16,185,129,.15);color:#0d9488" title="${escHtml(o.iban)}">✓ ${escHtml((o.iban || '').slice(0,4))}…${escHtml((o.iban || '').slice(-4))}</span>`;
+    } else if (o.has_bank_details) {
+      bankChip = `<span class="chip" style="background:rgba(245,158,11,.15);color:#b45309" title="${escHtml(o.iban)}">⏳ ${escHtml((o.iban || '').slice(0,4))}…${escHtml((o.iban || '').slice(-4))}</span>`;
+    } else {
+      bankChip = `<span class="chip" style="background:rgba(244,63,94,.12);color:#b91c1c">⚠ no bank details</span>`;
+    }
+    const canGenerate = true;  // always allow generate; bank only gates mark-paid
+    return `
+    <tr class="border-t border-ink-100 dark:border-ink-800 hover:bg-ink-50/50 dark:hover:bg-ink-800/30">
+      <td class="px-4 py-2">
+        <div class="font-semibold">${escHtml(o.office_name_ar || o.office_name_en || '#' + o.office_id)}</div>
+        <div class="text-[10.5px] text-ink-400">${escHtml(o.office_email || '')}</div>
+        <div class="mt-1">${bankChip}</div>
+      </td>
+      <td class="px-4 py-2 text-end mono">${o.request_count}</td>
+      <td class="px-4 py-2 text-end mono">${fmtOmr(o.gross_omr)}</td>
+      <td class="px-4 py-2 text-end mono text-ink-500">${fmtOmr(o.platform_fee_omr)}</td>
+      <td class="px-4 py-2 text-end mono font-bold text-good-700 dark:text-good-300">${fmtOmr(o.net_omr)}</td>
+      <td class="px-4 py-2 text-end">
+        <button class="payoutGenBtn px-2.5 h-7 rounded-md bg-brand-500 hover:bg-brand-600 text-white text-[11px] font-bold" data-office-id="${o.office_id}">
+          Generate
+        </button>
+      </td>
+    </tr>
+  `;}).join('') || `<tr><td colspan="6" class="px-4 py-6 text-center text-ink-400">No eligible payouts for this period.</td></tr>`;
+
+  // Per-row Generate handler.
+  document.querySelectorAll('.payoutGenBtn').forEach(b => {
+    b.onclick = async () => {
+      const officeId = Number(b.dataset.officeId);
+      if (!confirm('Generate a payout for this office?')) return;
+      const body = { office_id: officeId };
+      if (payoutState.from && payoutState.to) { body.from = payoutState.from; body.to = payoutState.to; }
+      else body.preset = payoutState.preset;
+      const r = await fetch('/api/platform-admin/payouts/generate', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (r.ok) {
+        Sanad.toast('Payout generated', 'ok');
+        loadEligible(); loadPayoutsList();
+      } else {
+        const e = await r.json().catch(() => ({}));
+        Sanad.toast('Failed: ' + (e.error || r.status), 'err');
+      }
+    };
+  });
+}
+
+async function loadPayoutsList() {
+  const q = new URLSearchParams();
+  if (payoutState.listStatus !== 'all') q.set('status', payoutState.listStatus);
+  const r = await fetch('/api/platform-admin/payouts?' + q.toString());
+  if (!r.ok) return;
+  const { payouts, count } = await r.json();
+  document.getElementById('payoutsListCount').textContent = `${count} payout${count === 1 ? '' : 's'}`;
+  const statusChip = (s) => {
+    const map = {
+      pending:   'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+      paid:      'bg-good-50 text-good-700 dark:bg-good-950 dark:text-good-300',
+      cancelled: 'bg-ink-100 text-ink-700 dark:bg-ink-800 dark:text-ink-300'
+    };
+    return `<span class="chip ${map[s] || 'bg-ink-100'}">${s}</span>`;
+  };
+  document.getElementById('payoutsListTbody').innerHTML = payouts.map(p => `
+    <tr class="border-t border-ink-100 dark:border-ink-800 hover:bg-ink-50/50 dark:hover:bg-ink-800/30">
+      <td class="px-4 py-2 mono text-ink-500">${p.id}</td>
+      <td class="px-4 py-2">${escHtml(p.office_name_ar || p.office_name_en || '#' + p.office_id)}</td>
+      <td class="px-4 py-2 text-[11.5px]">${p.period_start} → ${p.period_end}</td>
+      <td class="px-4 py-2 text-end mono">${p.request_count}</td>
+      <td class="px-4 py-2 text-end mono">${fmtOmr(p.gross_omr)}</td>
+      <td class="px-4 py-2 text-end mono text-ink-500">${fmtOmr(p.platform_fee_omr)}</td>
+      <td class="px-4 py-2 text-end mono font-bold">${fmtOmr(p.net_omr)}</td>
+      <td class="px-4 py-2">${statusChip(p.status)}</td>
+      <td class="px-4 py-2 text-[11.5px]">${fmtDt(p.paid_at)}</td>
+      <td class="px-4 py-2 text-end">
+        ${p.status === 'pending' ? `
+          <button class="payoutPayBtn    px-2 h-7 rounded-md hover:bg-good-50 text-[11px] font-semibold text-good-700" data-id="${p.id}">Mark paid</button>
+          <button class="payoutCancelBtn px-2 h-7 rounded-md hover:bg-rose-50 text-[11px] font-semibold text-rose-600" data-id="${p.id}">Cancel</button>
+        ` : ''}
+      </td>
+    </tr>
+  `).join('') || `<tr><td colspan="10" class="px-4 py-6 text-center text-ink-400">No payouts generated yet.</td></tr>`;
+
+  document.querySelectorAll('.payoutPayBtn').forEach(b => {
+    b.onclick = async () => {
+      const reference = prompt('Bank transfer reference (optional):') || '';
+      if (reference === null) return;
+      const doMark = async (force) => {
+        return fetch(`/api/platform-admin/payouts/${b.dataset.id}/mark-paid`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ reference, force })
+        });
+      };
+      let r = await doMark(false);
+      if (r.status === 409) {
+        // Probably "office_missing_bank_details" — confirm + retry with force.
+        const body = await r.json().catch(() => ({}));
+        if (body.error === 'office_missing_bank_details') {
+          if (!confirm('Office has no IBAN on file. Mark paid anyway?\n\nThe transfer reference will be recorded but no bank-side validation is possible. Recommend you ask the office to fill in their bank details first.')) {
+            return;
+          }
+          r = await doMark(true);
+        }
+      }
+      if (r.ok) { Sanad.toast('Marked paid', 'ok'); loadPayoutsList(); }
+      else      { Sanad.toast('Failed', 'err'); }
+    };
+  });
+  document.querySelectorAll('.payoutCancelBtn').forEach(b => {
+    b.onclick = async () => {
+      if (!confirm('Cancel this payout? Its requests will return to the eligible pool.')) return;
+      const r = await fetch(`/api/platform-admin/payouts/${b.dataset.id}/cancel`, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ notes: 'cancelled by admin' })
+      });
+      if (r.ok) { Sanad.toast('Cancelled', 'ok'); loadEligible(); loadPayoutsList(); }
+      else      { Sanad.toast('Failed', 'err'); }
+    };
+  });
+}
+
+function bindPayoutControls() {
+  document.querySelectorAll('.payoutPresetBtn').forEach(b => {
+    b.onclick = () => {
+      payoutState.preset = b.dataset.payoutPreset;
+      payoutState.from = ''; payoutState.to = '';
+      document.getElementById('payoutFrom').value = '';
+      document.getElementById('payoutTo').value   = '';
+      document.querySelectorAll('.payoutPresetBtn').forEach(x => {
+        x.className = (x.dataset.payoutPreset === payoutState.preset)
+          ? 'payoutPresetBtn px-2 h-7 rounded-md font-bold bg-ink-100 dark:bg-ink-800'
+          : 'payoutPresetBtn px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800';
+      });
+      loadEligible();
+    };
+  });
+  document.getElementById('payoutRefresh').onclick = () => {
+    payoutState.from = document.getElementById('payoutFrom').value;
+    payoutState.to   = document.getElementById('payoutTo').value;
+    loadEligible();
+  };
+  document.getElementById('payoutExport').onclick = () => {
+    const q = new URLSearchParams();
+    if (payoutState.from) q.set('from', payoutState.from);
+    if (payoutState.to)   q.set('to',   payoutState.to);
+    window.location = '/api/platform-admin/payouts/export?' + q.toString();
+  };
+  document.getElementById('payoutGenerateAll').onclick = async () => {
+    if (!confirm('Generate payouts for ALL eligible offices in this period?')) return;
+    const body = (payoutState.from && payoutState.to)
+      ? { from: payoutState.from, to: payoutState.to }
+      : { preset: payoutState.preset };
+    const r = await fetch('/api/platform-admin/payouts/generate-all', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (r.ok) {
+      const d = await r.json();
+      Sanad.toast(`Generated ${d.created_count} payouts`, 'ok');
+      loadEligible(); loadPayoutsList();
+    } else { Sanad.toast('Failed', 'err'); }
+  };
+  document.querySelectorAll('.payoutStatusBtn').forEach(b => {
+    b.onclick = () => {
+      payoutState.listStatus = b.dataset.payoutstatus;
+      document.querySelectorAll('.payoutStatusBtn').forEach(x => {
+        x.className = (x.dataset.payoutstatus === payoutState.listStatus)
+          ? 'payoutStatusBtn px-2 h-7 rounded-md font-bold bg-ink-100 dark:bg-ink-800'
+          : 'payoutStatusBtn px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800';
+      });
+      loadPayoutsList();
+    };
+  });
+}
+bindPayoutControls();
+
+// Filter chip wire-up (delegated, idempotent — re-applied on every refresh).
+function bindPayFilters() {
+  const setChip = (els, attr, val, applied) => {
+    els.forEach(b => {
+      const on = b.dataset[attr] === val;
+      b.className = applied(b, on);
+    });
+  };
+  document.querySelectorAll('.payTab').forEach(b => {
+    b.onclick = () => setPayTab(b.dataset.paytab);
+  });
+  document.querySelectorAll('.subFilter').forEach(b => {
+    b.onclick = () => {
+      payState.subStatus = b.dataset.substatus;
+      setChip(document.querySelectorAll('.subFilter'), 'substatus', payState.subStatus,
+        (el, on) => on ? 'subFilter px-2 h-7 rounded-md font-bold bg-ink-100 dark:bg-ink-800' : 'subFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800');
+      loadSubscriptions();
+    };
+  });
+  document.querySelectorAll('.planFilter').forEach(b => {
+    b.onclick = () => {
+      payState.subPlan = b.dataset.subplan;
+      setChip(document.querySelectorAll('.planFilter'), 'subplan', payState.subPlan,
+        (el, on) => on ? 'planFilter px-2 h-7 rounded-md font-bold bg-ink-100 dark:bg-ink-800' : 'planFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800');
+      loadSubscriptions();
+    };
+  });
+  document.querySelectorAll('.pmtFilter').forEach(b => {
+    b.onclick = () => {
+      payState.pmtStatus = b.dataset.pmtstatus;
+      setChip(document.querySelectorAll('.pmtFilter'), 'pmtstatus', payState.pmtStatus,
+        (el, on) => on ? 'pmtFilter px-2 h-7 rounded-md font-bold bg-ink-100 dark:bg-ink-800' : 'pmtFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800');
+      loadPayments();
+    };
+  });
+  document.querySelectorAll('.evFilter').forEach(b => {
+    b.onclick = () => {
+      payState.evType = b.dataset.evtype;
+      setChip(document.querySelectorAll('.evFilter'), 'evtype', payState.evType,
+        (el, on) => on ? 'evFilter px-2 h-7 rounded-md font-bold bg-ink-100 dark:bg-ink-800' : 'evFilter px-2 h-7 rounded-md font-semibold hover:bg-ink-100 dark:hover:bg-ink-800');
+      loadPaymentEvents();
+    };
+  });
+}
+
+bindPayFilters();
+loadPaymentKpis();
+loadSubscriptions();
+setInterval(loadPaymentKpis, 12000);
 
 load();
 loadOffices();

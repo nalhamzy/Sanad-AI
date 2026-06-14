@@ -5,21 +5,135 @@
 import { Router } from 'express';
 import { db } from '../lib/db.js';
 import { hashPassword, requireOfficer } from '../lib/auth.js';
+import { validateIban } from '../lib/iban.js';
 
 export const officeRouter = Router();
 
 // ─── GET /profile ──────────────────────────────────────────
-// Full profile (stats included). Available to any active officer of the office.
+// Full profile (stats + bank details + flags). Available to any active officer
+// of the office. The `has_bank_details` flag drives the dashboard banner that
+// nudges owners to fill in IBAN before the next payout.
 officeRouter.get('/profile', requireOfficer({ allowPending: true }), async (req, res) => {
   const { rows } = await db.execute({
     sql: `SELECT id, name_en, name_ar, governorate, wilayat, email, phone, cr_number,
                  status, plan, wallet_baisa, rating, offers_won, offers_abandoned,
                  total_completed, avg_completion_hours, reviewed_at, reject_reason,
-                 credits_remaining, subscription_status, default_office_fee_omr, created_at
+                 credits_remaining, subscription_status, default_office_fee_omr, created_at,
+                 iban, bank_name, account_holder_name, bank_swift, billing_email,
+                 bank_updated_at, bank_verified_at
             FROM office WHERE id=?`,
     args: [req.office.id]
   });
-  res.json({ office: rows[0] || null });
+  const o = rows[0] || null;
+  if (o) {
+    o.has_bank_details = !!(o.iban && o.bank_name && o.account_holder_name);
+  }
+  res.json({ office: o });
+});
+
+// ─── GET /bank ─────────────────────────────────────────────
+// Returns only the bank+billing block. Lets the settings panel poll just
+// this fragment without re-reading the whole profile + stats.
+officeRouter.get('/bank', requireOfficer({ allowPending: true }), async (req, res) => {
+  const { rows } = await db.execute({
+    sql: `SELECT iban, bank_name, account_holder_name, bank_swift, billing_email,
+                 phone, email,
+                 bank_updated_at, bank_verified_at
+            FROM office WHERE id=?`,
+    args: [req.office.id]
+  });
+  const o = rows[0] || {};
+  res.json({
+    bank: {
+      iban:                 o.iban || '',
+      bank_name:            o.bank_name || '',
+      account_holder_name:  o.account_holder_name || '',
+      bank_swift:           o.bank_swift || '',
+      billing_email:        o.billing_email || '',
+      bank_updated_at:      o.bank_updated_at || null,
+      bank_verified_at:     o.bank_verified_at || null
+    },
+    contact: {
+      phone: o.phone || '',
+      email: o.email || ''
+    },
+    has_bank_details: !!(o.iban && o.bank_name && o.account_holder_name)
+  });
+});
+
+// ─── PATCH /bank ───────────────────────────────────────────
+// Owner-only edit of bank + contact info. IBAN is validated (length +
+// mod-97 checksum) — we 400 with a precise error tag so the form can
+// render "Please check IBAN — bad checksum" rather than a generic "save
+// failed". Setting a new IBAN clears bank_verified_at so the admin
+// re-verifies after the next successful transfer.
+//
+// Accepts any subset of fields — undefined keys are left untouched. To
+// CLEAR a value pass an empty string; null is treated as "don't touch".
+officeRouter.patch('/bank', requireOfficer({ roles: ['owner'], allowPending: true }), async (req, res) => {
+  const b = req.body || {};
+  /** @type {Record<string,string|null>} */
+  const updates = {};
+
+  // IBAN: trim → normalise → validate. Empty string clears.
+  if (typeof b.iban === 'string') {
+    const raw = b.iban.trim();
+    if (raw === '') {
+      updates.iban = null;
+    } else {
+      const v = validateIban(raw);
+      if (!v.ok) {
+        return res.status(400).json({ error: 'bad_iban', detail: v.error });
+      }
+      updates.iban = v.normalised;
+    }
+  }
+
+  // String fields with sane length caps to keep the DB tidy.
+  const setStr = (key, max) => {
+    if (typeof b[key] !== 'string') return;
+    const v = b[key].trim();
+    updates[key] = v ? v.slice(0, max) : null;
+  };
+  setStr('bank_name',           120);
+  setStr('account_holder_name', 200);
+  setStr('bank_swift',           20);
+  setStr('billing_email',       200);
+  setStr('phone',                40);
+
+  // Light validation on contact email/swift so we catch obvious typos.
+  if (typeof updates.billing_email === 'string' && updates.billing_email !== null &&
+      !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(updates.billing_email)) {
+    return res.status(400).json({ error: 'bad_billing_email' });
+  }
+  if (typeof updates.bank_swift === 'string' && updates.bank_swift !== null &&
+      !/^[A-Z0-9]{8,11}$/i.test(updates.bank_swift)) {
+    return res.status(400).json({ error: 'bad_swift', detail: 'SWIFT/BIC is 8 or 11 alphanumeric chars' });
+  }
+
+  if (!Object.keys(updates).length) return res.status(400).json({ error: 'no_fields' });
+
+  // If IBAN changed, drop any prior verification flag — admin re-verifies.
+  const ibanChanged = Object.prototype.hasOwnProperty.call(updates, 'iban');
+
+  // Build the UPDATE dynamically. We always stamp bank_updated_at so the
+  // admin can see staleness; bank_verified_at clears when IBAN changes.
+  const cols = Object.keys(updates);
+  const setSql = cols.map(c => `${c}=?`).join(', ')
+                + ', bank_updated_at=datetime(\'now\')'
+                + (ibanChanged ? ', bank_verified_at=NULL' : '');
+  await db.execute({
+    sql: `UPDATE office SET ${setSql} WHERE id=?`,
+    args: [...cols.map(c => updates[c]), req.office.id]
+  });
+
+  await db.execute({
+    sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
+          VALUES ('officer',?, 'update_bank', 'office', ?, ?)`,
+    args: [req.officer.officer_id, req.office.id,
+           JSON.stringify({ keys: cols, iban_changed: ibanChanged })]
+  });
+  res.json({ ok: true, updated: cols, iban_verification_cleared: ibanChanged });
 });
 
 // ─── PATCH /settings ───────────────────────────────────────

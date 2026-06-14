@@ -112,7 +112,12 @@ chatRouter.post('/apply',
       if (!svc) return res.status(404).json({ error: 'service_not_found' });
 
       let requiredDocs = [];
-      try { requiredDocs = JSON.parse(svc.required_documents_json || '[]'); } catch {}
+      try {
+        requiredDocs = JSON.parse(svc.required_documents_json || '[]');
+        // Backfill Arabic labels (catalog CSV left label_ar='' on most rows).
+        const { enrichDocsWithArabicLabels } = await import('../lib/doc_labels.js');
+        enrichDocsWithArabicLabels(requiredDocs);
+      } catch {}
       const requiredCodes = new Set(requiredDocs.map(d => d.code).filter(Boolean));
 
       function arr(v) { return Array.isArray(v) ? v : (v == null ? [] : [v]); }

@@ -21,13 +21,26 @@ import { requireOfficer } from '../../lib/auth.js';
 import { createPaymentLink, verifyWebhookSignature, newMerchantRef, AMWAL_ENABLED } from './providers/amwal.js';
 import {
   THAWANI_ENABLED,
+  createThawaniSession,
   retrieveThawaniSession,
   isThawaniPaid,
-  verifyThawaniSignature
+  verifyThawaniSignature,
 } from './providers/thawani.js';
+import {
+  PLANS, PLAN_CODES, getPlan, isValidPlanCode,
+  computeExpiry, toSqlDatetime
+} from '../../lib/plans.js';
+import { DEBUG_ENABLED } from '../../lib/env.js';
 import { storeMessage } from '../../lib/agent.js';
 import { sendWhatsAppText, isWhatsAppSession } from '../../lib/whatsapp_send.js';
 import { audit } from '../../lib/officer_helpers.js';
+
+// Feature flag for the time-based subscription plans (monthly/quarterly/
+// semi-annual/annual). Off by default in production — flip it on per
+// deploy as you roll out. DEBUG_MODE turns it on for local development.
+// Legacy /subscription/checkout (starter-70 pack) keeps working either way.
+const SUBS_V1_ENABLED =
+  process.env.SANAD_SUBS_V1 === 'true' || process.env.DEBUG_MODE === 'true';
 
 export const paymentsRouter = Router();
 
@@ -104,7 +117,12 @@ export async function markRequestPaid(requestId, source = 'webhook') {
 // open up the rest of the debug surface). Use during pilot demos so the
 // post-pay flow can be exercised without typing card numbers.
 paymentsRouter.post('/request/:id/confirm-stub', async (req, res) => {
-  const allowed = process.env.DEBUG_MODE === 'true' || process.env.SANAD_TEST_PAY === 'true';
+  // DEBUG_ENABLED is hard-off in production. SANAD_TEST_PAY remains an
+  // explicit opt-in escape hatch for a controlled pilot demo, but it too
+  // is refused once NODE_ENV==='production' unless the operator also kept
+  // a non-prod NODE_ENV. (Use a staging deploy for demos, not prod.)
+  const allowed = DEBUG_ENABLED ||
+    (process.env.SANAD_TEST_PAY === 'true' && process.env.NODE_ENV !== 'production');
   if (!allowed) return res.status(403).json({ error: 'test_pay_disabled' });
   const id = Number(req.params.id);
   const result = await markRequestPaid(id, 'stub-confirm');
@@ -129,8 +147,12 @@ paymentsRouter.post('/request/:id/confirm-stub', async (req, res) => {
 // dummy-gateway window).
 
 function dummyAllowed() {
-  // Allow when the real gateway is off (stub mode) OR explicitly in debug.
-  return !AMWAL_ENABLED || process.env.DEBUG_MODE === 'true';
+  // The dummy/stub gateway lets a caller mark a request PAID without real
+  // money. That must NEVER be reachable in production. Previously this was
+  // gated on `!AMWAL_ENABLED`, which is TRUE in production (we use Thawani,
+  // not Amwal) — so the stubs were silently live. Now gated on DEBUG_ENABLED,
+  // which is hard-off when NODE_ENV==='production'.
+  return DEBUG_ENABLED;
 }
 
 paymentsRouter.get('/dummy/session/:ref', async (req, res) => {
@@ -195,8 +217,8 @@ paymentsRouter.post('/dummy/pay', async (req, res) => {
 // the citizen's tracking page. Distinct from /_stub/pay which handles the
 // office-subscription stub.
 paymentsRouter.get('/_stub/request_pay', async (req, res) => {
-  if (AMWAL_ENABLED && process.env.DEBUG_MODE !== 'true')
-    return res.status(404).end();
+  // Stub mark-paid — debug-only, hard-off in production.
+  if (!DEBUG_ENABLED) return res.status(404).end();
   const ref = String(req.query.ref || '');
   const { rows } = await db.execute({
     sql: `SELECT id FROM request WHERE payment_ref=? LIMIT 1`,
@@ -421,7 +443,7 @@ paymentsRouter.post('/webhook', async (req, res) => {
 // Dev-only: the stub payment URL from createPaymentLink() lands here. It flips
 // the subscription to active immediately and redirects back to the client page.
 paymentsRouter.get('/_stub/pay', async (req, res) => {
-  if (AMWAL_ENABLED) return res.status(404).end();
+  if (!DEBUG_ENABLED) return res.status(404).end();
   const ref = String(req.query.ref || '');
   const { rows } = await db.execute({
     sql: `SELECT * FROM office_subscription WHERE amwal_merchant_ref=? LIMIT 1`,
@@ -436,7 +458,7 @@ paymentsRouter.get('/_stub/pay', async (req, res) => {
 
 // Also expose stub as POST for the test suite to trigger without following redirects.
 paymentsRouter.post('/_stub/activate', async (req, res) => {
-  if (AMWAL_ENABLED) return res.status(404).end();
+  if (!DEBUG_ENABLED) return res.status(404).end();
   const ref = String(req.body?.ref || '');
   const { rows } = await db.execute({
     sql: `SELECT * FROM office_subscription WHERE amwal_merchant_ref=? LIMIT 1`,
@@ -538,39 +560,93 @@ paymentsRouter.get('/thawani/cancel', async (req, res) => {
   res.redirect(`/request.html?id=${r.id}&pay_cancelled=1`);
 });
 
-paymentsRouter.post('/webhook/thawani', async (req, res) => {
-  // Optional signature gate (THAWANI_WEBHOOK_SECRET). Soft-true if unset
-  // because Thawani's webhook contract isn't formally signed in their
-  // public docs — the retrieve-then-verify call below is our real trust.
-  const sig = req.get('x-thawani-signature') || req.get('x-signature') || '';
-  if (!verifyThawaniSignature(req.rawBody, sig)) {
-    return res.status(401).json({ error: 'bad_signature' });
+// ─── UNIFIED Thawani webhook ────────────────────────────────
+// ONE endpoint for EVERY Thawani payment — both citizen request payments
+// and office plan purchases. Thawani's merchant dashboard accepts a single
+// webhook URL, so this is the only URL you configure there:
+//
+//     https://saned.ai/api/payments/webhook/thawani
+//
+// Routing: extract the session_id (or our merchant_ref) from the payload,
+// look it up in the `request` table first, then `office_subscription`.
+// Whichever matches gets its idempotent finalizer. The webhook body is
+// NEVER trusted to mark anything paid — each finalizer re-fetches the
+// session from Thawani server-to-server and only acts on payment_status
+// === 'paid'. So a spoofed webhook can't flip an unpaid order.
+//
+// (`/webhook/thawani/sub` below is kept as a backward-compatible alias
+// that delegates here, in case it was already configured on Thawani.)
+async function handleThawaniWebhook(body) {
+  const data = body?.data || body || {};
+  const ref = data.client_reference_id || data.merchant_ref || data.ref || null;
+  const sessionId = data.session_id || null;
+
+  // ── 1) Citizen request payment ──────────────────────────
+  // Resolve a merchant_ref: either the one in the payload, or look it up
+  // from the session_id. If we find a matching request, finalize it.
+  let requestRef = ref;
+  if (!requestRef && sessionId) {
+    const { rows } = await db.execute({
+      sql: `SELECT payment_ref FROM request WHERE payment_session_id=? LIMIT 1`,
+      args: [sessionId]
+    });
+    requestRef = rows[0]?.payment_ref || null;
   }
-  // Webhook payload may be either { client_reference_id } (our merchant_ref),
-  // { session_id }, or a Thawani envelope { data: {...} }.
-  const body = req.body || {};
-  const data = body.data || body;
-  const ref = data.client_reference_id || data.merchant_ref || data.ref;
-  const sessionId = data.session_id;
+  if (requestRef) {
+    const r = await thawaniConfirmAndMark(requestRef, 'thawani-webhook');
+    // unknown_ref → not a request payment; fall through to plan lookup.
+    if (r.ok || r.error !== 'unknown_ref') {
+      if (!r.ok) console.warn('[thawani:webhook:request]', r);
+      return { handled: 'request', result: r };
+    }
+  }
 
-  // We respond 200 fast (Thawani retries on timeout) then verify.
-  res.json({ ok: true, received: true });
-
-  try {
-    let resolvedRef = ref;
-    if (!resolvedRef && sessionId) {
+  // ── 2) Office plan purchase ──────────────────────────────
+  if (SUBS_V1_ENABLED) {
+    let planSessionId = sessionId;
+    if (!planSessionId && ref) {
       const { rows } = await db.execute({
-        sql: `SELECT payment_ref FROM request WHERE payment_session_id=? LIMIT 1`,
-        args: [sessionId]
+        sql: `SELECT thawani_session_id FROM office_subscription WHERE amwal_merchant_ref=? LIMIT 1`,
+        args: [ref]
       });
-      resolvedRef = rows[0]?.payment_ref;
+      planSessionId = rows[0]?.thawani_session_id || null;
     }
-    if (!resolvedRef) {
-      console.warn('[thawani:webhook] no resolvable ref', body);
-      return;
+    if (planSessionId) {
+      const r = await finalizeSubscriptionPayment(planSessionId, 'thawani-webhook');
+      if (!r.ok) console.warn('[thawani:webhook:plan]', r);
+      return { handled: 'plan', result: r };
     }
-    const result = await thawaniConfirmAndMark(resolvedRef, 'thawani-webhook');
-    if (!result.ok) console.warn('[thawani:webhook]', result);
+  }
+
+  console.warn('[thawani:webhook] no resolvable request or plan', JSON.stringify(body).slice(0, 300));
+  return { handled: 'none' };
+}
+
+// Signature check that NEVER drops a webhook. Thawani's webhook-signing
+// scheme is undocumented, so if THAWANI_WEBHOOK_SECRET is set and our HMAC
+// guess doesn't match their actual format, a hard 401 would silently kill
+// ALL webhook delivery. Instead we log a mismatch and proceed — the real
+// trust boundary is the server-to-server re-fetch inside the finalizers
+// (we only mark paid when Thawani itself reports payment_status='paid', so
+// a forged webhook just triggers a harmless re-fetch that finds nothing).
+function softCheckThawaniSignature(req) {
+  const sig = req.get('x-thawani-signature') || req.get('x-signature') || '';
+  // Only meaningful when a secret is configured. When unset, verify returns
+  // true (soft mode) and we skip the warning entirely.
+  if (!(process.env.THAWANI_WEBHOOK_SECRET || '').trim()) return;
+  if (!verifyThawaniSignature(req.rawBody, sig)) {
+    console.warn('[thawani:webhook] signature mismatch — proceeding via re-fetch trust ' +
+      '(Thawani\'s signing format may differ from our HMAC-SHA256 guess; payment is still ' +
+      'verified server-side before anything is marked paid)');
+  }
+}
+
+paymentsRouter.post('/webhook/thawani', async (req, res) => {
+  softCheckThawaniSignature(req);
+  // ACK fast (Thawani retries on timeout) then verify+dispatch async.
+  res.json({ ok: true, received: true });
+  try {
+    await handleThawaniWebhook(req.body || {});
   } catch (e) {
     console.error('[thawani:webhook] error', e);
   }
@@ -580,10 +656,451 @@ paymentsRouter.post('/webhook/thawani', async (req, res) => {
 // "paid" verification without going through the real Thawani UI. Useful
 // for the AR/EN happy-path screencast.
 paymentsRouter.post('/thawani/_dev/mark-paid', async (req, res) => {
-  if (process.env.DEBUG_MODE !== 'true') return res.status(404).end();
+  if (!DEBUG_ENABLED) return res.status(404).end();
   const ref = String(req.body?.ref || req.query?.ref || '');
   const r = await loadThawaniRequest(ref);
   if (!r) return res.status(404).json({ error: 'unknown_ref' });
   const result = await markRequestPaid(r.id, 'thawani-dev-stub');
   res.json({ ok: true, ...result });
 });
+
+// ════════════════════════════════════════════════════════════
+// SUBSCRIPTIONS v2 — time-based plans (monthly/quarterly/semi-annual/annual)
+// ════════════════════════════════════════════════════════════
+// Distinct from the legacy 'starter-70' credit pack above. Where the pack
+// granted N credits, v2 grants TIME (the office's subscription_expires_at
+// moves forward by the plan's months). Quota gating (100 claims/month) is
+// done in routes/officer.js at claim-time — see PR 3.
+//
+// Hardening notes:
+//   • Thawani webhooks aren't HMAC-signed. We dedupe via payment_event:
+//     before doing anything mutating, check whether a 'paid' row already
+//     exists for this session_id. If so, no-op. Both the success redirect
+//     and the webhook converge on finalizeSubscriptionPayment() — that's
+//     the only place that writes 'paid'.
+//   • Pending-row reuse: if an office bounces off the checkout twice
+//     within the same plan, we return the existing checkout URL instead
+//     of spawning a parallel session.
+//   • Feature flag SANAD_SUBS_V1 gates the WHOLE thing. When off, every
+//     route in this block returns 404 — no behaviour change for anyone
+//     still on the legacy pack.
+// ────────────────────────────────────────────────────────────
+
+// Write a row to payment_event. Best-effort — never throws. Used for both
+// the audit dashboard AND idempotency dedupe.
+async function logPaymentEvent({ subjectType, subjectId, sessionId = null, eventType, amountOmr = null, raw = null }) {
+  try {
+    await db.execute({
+      sql: `INSERT INTO payment_event
+              (subject_type, subject_id, provider, thawani_session_id, event_type, amount_omr, raw_json)
+            VALUES (?, ?, 'thawani', ?, ?, ?, ?)`,
+      args: [
+        subjectType, subjectId, sessionId, eventType, amountOmr,
+        raw ? JSON.stringify(raw).slice(0, 8000) : null
+      ]
+    });
+  } catch (e) { console.warn('[payment_event]', e.message); }
+}
+
+// Idempotency dedupe — is there already a 'paid' event for this session?
+// If yes, finalizeSubscriptionPayment short-circuits. Cheap (indexed lookup).
+async function isSubscriptionAlreadyPaid(sessionId) {
+  if (!sessionId) return false;
+  const { rows } = await db.execute({
+    sql: `SELECT 1 FROM payment_event
+           WHERE subject_type='office_subscription'
+             AND thawani_session_id=?
+             AND event_type='paid' LIMIT 1`,
+    args: [sessionId]
+  });
+  return !!rows[0];
+}
+
+// The single source of truth for "this subscription got paid". Both
+// /thawani/sub/success (browser redirect) and /webhook/thawani (server-
+// to-server ping) call this with the same session_id. Safe to call any
+// number of times — multiple concurrent calls converge on the same state
+// thanks to the (a) payment_event dedupe and (b) WHERE payment_status<>'active'
+// guard on the UPDATE.
+//
+// Returns { ok, alreadyActive?, subscription_id, expires_at, plan } on
+// success, { ok:false, error } on failure. NEVER throws — callers can
+// rely on the shape.
+async function finalizeSubscriptionPayment(sessionId, source = 'thawani') {
+  if (!sessionId) return { ok: false, error: 'no_session_id' };
+
+  const { rows } = await db.execute({
+    sql: `SELECT id, office_id, plan_code, amount_omr, months, payment_status
+            FROM office_subscription
+           WHERE thawani_session_id=? LIMIT 1`,
+    args: [sessionId]
+  });
+  const sub = rows[0];
+  if (!sub) return { ok: false, error: 'unknown_session' };
+
+  // Fast-path idempotency: either the row is already active OR we've
+  // already written a 'paid' event for this session.
+  if (sub.payment_status === 'active') {
+    return { ok: true, alreadyActive: true, subscription_id: sub.id };
+  }
+  if (await isSubscriptionAlreadyPaid(sessionId)) {
+    return { ok: true, alreadyActive: true, subscription_id: sub.id };
+  }
+
+  // Server-to-server verify with Thawani. The only thing we trust.
+  let session;
+  try {
+    session = await retrieveThawaniSession(sessionId);
+  } catch (e) {
+    await logPaymentEvent({
+      subjectType: 'office_subscription', subjectId: sub.id,
+      sessionId, eventType: 'fetch_verified', raw: { error: e.message }
+    });
+    return { ok: false, error: 'verify_failed', detail: e.message };
+  }
+  await logPaymentEvent({
+    subjectType: 'office_subscription', subjectId: sub.id,
+    sessionId, eventType: 'fetch_verified', raw: session
+  });
+
+  if (!isThawaniPaid(session)) {
+    return { ok: false, error: 'not_paid', payment_status: session?.payment_status || null };
+  }
+
+  // Plan-driven expiry math. PR 1's lib/plans.js owns the calendar logic.
+  const startsAt  = toSqlDatetime(new Date());
+  const expiresAt = computeExpiry(sub.plan_code, new Date());
+
+  // Atomic flip. WHERE payment_status<>'active' guards against a race where
+  // two concurrent finalizers both passed the early idempotency check.
+  const upd = await db.execute({
+    sql: `UPDATE office_subscription
+             SET payment_status='active',
+                 paid_at=datetime('now'),
+                 starts_at=?, expires_at=?,
+                 thawani_invoice=?, thawani_payment_id=?,
+                 raw_webhook_json=COALESCE(?, raw_webhook_json)
+           WHERE id=? AND payment_status<>'active'`,
+    args: [
+      startsAt, expiresAt,
+      session?.invoice || null,
+      session?.payment_id || session?.session_id || null,
+      JSON.stringify(session).slice(0, 8000),
+      sub.id
+    ]
+  });
+  if (!upd.rowsAffected) {
+    // Lost the race — another worker activated this row between our
+    // checks. That's fine; we treat it as already-active.
+    return { ok: true, alreadyActive: true, subscription_id: sub.id };
+  }
+
+  // Snapshot the active plan on the office row so quota checks and the
+  // admin dashboard don't have to join office_subscription every time.
+  await db.execute({
+    sql: `UPDATE office
+             SET current_plan=?,
+                 subscription_expires_at=?,
+                 subscription_status='active',
+                 subscription_since=COALESCE(subscription_since, datetime('now'))
+           WHERE id=?`,
+    args: [sub.plan_code, expiresAt, sub.office_id]
+  });
+
+  await audit({
+    actor: { type: 'system', id: null },
+    action: 'subscription_active',
+    target: 'office_subscription',
+    targetId: sub.id,
+    diff: { plan: sub.plan_code, amount_omr: sub.amount_omr, expires_at: expiresAt, source }
+  });
+  await logPaymentEvent({
+    subjectType: 'office_subscription', subjectId: sub.id, sessionId,
+    eventType: 'paid', amountOmr: sub.amount_omr,
+    raw: { source, plan: sub.plan_code, expires_at: expiresAt }
+  });
+
+  return {
+    ok: true,
+    subscription_id: sub.id,
+    office_id: sub.office_id,
+    plan: sub.plan_code,
+    expires_at: expiresAt
+  };
+}
+
+// ─── POST /sub/start ────────────────────────────────────────
+// Office owner initiates a v2 plan purchase. Returns a Thawani hosted-
+// checkout URL the browser should redirect to. The office row in
+// office_subscription is created in 'pending' state and only flips to
+// 'active' via finalizeSubscriptionPayment() once Thawani confirms.
+//
+// allowPending=true: a just-signed-up office (status='pending_review')
+// is still allowed to subscribe — approval and payment are independent
+// gates.
+paymentsRouter.post(
+  '/sub/start',
+  requireOfficer({ roles: ['owner'], allowPending: true }),
+  async (req, res) => {
+    if (!SUBS_V1_ENABLED) return res.status(404).json({ error: 'subs_v1_disabled' });
+    try {
+      const planCode = String(req.body?.plan_code || '').trim();
+      if (!isValidPlanCode(planCode)) {
+        return res.status(400).json({ error: 'invalid_plan', allowed: PLAN_CODES });
+      }
+      const plan = getPlan(planCode);
+      const office_id = req.office.id;
+
+      // Pending-row reuse — if the office already has a pending row for
+      // this exact plan, hand back its existing checkout URL instead of
+      // spawning a parallel Thawani session. Avoids accidental double-
+      // create when the user double-clicks the "Subscribe" button.
+      const { rows: existing } = await db.execute({
+        sql: `SELECT id, thawani_session_id, amwal_merchant_ref, amwal_payment_link
+                FROM office_subscription
+               WHERE office_id=? AND plan_code=? AND payment_status='pending'
+               ORDER BY id DESC LIMIT 1`,
+        args: [office_id, planCode]
+      });
+      if (existing[0] && existing[0].amwal_payment_link) {
+        return res.json({
+          checkout_url: existing[0].amwal_payment_link,
+          session_id:   existing[0].thawani_session_id,
+          merchant_ref: existing[0].amwal_merchant_ref,
+          plan: planCode,
+          amount_omr: plan.total_omr,
+          reused: true,
+          provider: 'thawani'
+        });
+      }
+
+      // Real Thawani flow. We do NOT support a sandbox stub here — if the
+      // env is missing keys we surface a clear 503 so the operator knows
+      // to wire them up. (DEBUG-mode devs can use POST /sub/_stub/activate
+      // below to skip the gateway entirely.)
+      if (!THAWANI_ENABLED) {
+        return res.status(503).json({
+          error: 'thawani_not_configured',
+          hint: 'Set THAWANI_SECRET_KEY and THAWANI_PUBLISHABLE_KEY in env.'
+        });
+      }
+
+      const merchantRef = `sub2-${office_id}-${planCode}-${Date.now().toString(36)}`;
+      const publicBase  = `${req.protocol}://${req.get('host')}`;
+
+      // One-off plan purchase — a single Thawani charge for N months of
+      // access. NOT a recurring subscription (Thawani doesn't support those):
+      // when the plan expires the office simply buys again. The default
+      // success/cancel URLs are overridden to land on the plan finalizer.
+      const link = await createThawaniSession({
+        amountOmr: plan.total_omr,
+        merchantReference: merchantRef,
+        customerEmail: req.officer.email,
+        description:
+          `Sanad-AI ${plan.label_en} plan — ${plan.months}mo, ${plan.claim_quota} claims/mo`,
+        productName: `Sanad-AI ${plan.label_en}`,
+        publicBase,
+        successUrl: `{base}/api/payments/thawani/sub/success?ref={ref}`,
+        cancelUrl:  `{base}/api/payments/thawani/sub/cancel?ref={ref}`,
+        metadata: {
+          subject_type: 'office_subscription',
+          plan_code:    planCode,
+          office_id:    String(office_id)
+        }
+      });
+
+      // Persist the pending row. credits_granted=0 so the legacy credit
+      // ledger doesn't count v2 plans. auto_renew is always 0 (no recurring).
+      const ins = await db.execute({
+        sql: `INSERT INTO office_subscription
+                (office_id, plan_code, amount_omr, credits_granted, months,
+                 amwal_merchant_ref, amwal_order_id, amwal_payment_link,
+                 thawani_session_id, payment_status, auto_renew)
+              VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?, 'pending', 0)`,
+        args: [
+          office_id, planCode, plan.total_omr, plan.months,
+          merchantRef, link.session_id, link.url, link.session_id
+        ]
+      });
+      const subId = Number(ins.lastInsertRowid);
+
+      await audit({
+        actor: { type: 'officer', id: req.officer.officer_id },
+        action: 'sub_checkout_start',
+        target: 'office_subscription',
+        targetId: subId,
+        diff: { plan: planCode, amount_omr: plan.total_omr, session_id: link.session_id }
+      });
+      await logPaymentEvent({
+        subjectType: 'office_subscription', subjectId: subId,
+        sessionId: link.session_id, eventType: 'session_created',
+        amountOmr: plan.total_omr,
+        raw: { plan: planCode, merchant_ref: merchantRef }
+      });
+
+      res.json({
+        checkout_url: link.url,
+        session_id:   link.session_id,
+        merchant_ref: merchantRef,
+        plan: planCode,
+        amount_omr: plan.total_omr,
+        months: plan.months,
+        provider: 'thawani'
+      });
+    } catch (e) {
+      console.error('[payments/sub/start]', e);
+      res.status(500).json({ error: 'start_failed', detail: e.message });
+    }
+  }
+);
+
+// ─── GET /sub/status ────────────────────────────────────────
+// Lightweight poller for the post-checkout waiting page. Returns the
+// latest v2 subscription row for the calling office plus the office's
+// current_plan / subscription_expires_at / subscription_status snapshot.
+// Distinct from the legacy /subscription/status above (which returns
+// credits-bearing rows). When SUBS_V1 is off, returns 404 so the
+// dashboard knows to use the legacy endpoint.
+paymentsRouter.get(
+  '/sub/status',
+  requireOfficer({ allowPending: true }),
+  async (req, res) => {
+    if (!SUBS_V1_ENABLED) return res.status(404).json({ error: 'subs_v1_disabled' });
+    const { rows: subs } = await db.execute({
+      sql: `SELECT id, plan_code, payment_status, amount_omr, months,
+                   starts_at, expires_at, paid_at, created_at,
+                   thawani_session_id, amwal_payment_link AS checkout_url
+              FROM office_subscription
+             WHERE office_id=? AND plan_code IN (?, ?, ?, ?)
+             ORDER BY id DESC LIMIT 1`,
+      args: [req.office.id, ...PLAN_CODES]
+    });
+    const { rows: o } = await db.execute({
+      sql: `SELECT current_plan, subscription_status, subscription_expires_at,
+                   subscription_since
+              FROM office WHERE id=?`,
+      args: [req.office.id]
+    });
+    res.json({ latest: subs[0] || null, office: o[0] || null });
+  }
+);
+
+// ─── GET /thawani/sub/success ───────────────────────────────
+// Thawani redirects the browser here after a successful checkout. We
+// verify with Thawani, finalize the sub, then redirect to the office
+// dashboard with a flag. Never trust the redirect's "success" — only
+// trust the retrieve.
+paymentsRouter.get('/thawani/sub/success', async (req, res) => {
+  if (!SUBS_V1_ENABLED) return res.status(404).end();
+  const ref = String(req.query.ref || '');
+  // Look up the sub by merchant_ref so we can find the session_id we stashed.
+  const { rows } = await db.execute({
+    sql: `SELECT id, thawani_session_id, payment_status
+            FROM office_subscription WHERE amwal_merchant_ref=? LIMIT 1`,
+    args: [ref]
+  });
+  const sub = rows[0];
+  if (!sub) return res.redirect('/officer.html?sub_error=unknown_ref');
+
+  const result = await finalizeSubscriptionPayment(sub.thawani_session_id, 'thawani-redirect');
+  if (!result.ok) {
+    const tag = result.error === 'not_paid' ? 'unpaid' : 'verify_error';
+    return res.redirect(`/officer.html?sub_error=${tag}&ref=${encodeURIComponent(ref)}`);
+  }
+  res.redirect(
+    `/officer.html?sub_active=1${result.alreadyActive ? '&already=1' : ''}` +
+    `&plan=${encodeURIComponent(result.plan || '')}`
+  );
+});
+
+// ─── GET /thawani/sub/cancel ────────────────────────────────
+// Citizen abandoned checkout. We log it and bounce back to the dashboard
+// with a clear flag so the UI can offer "try again". No state change.
+paymentsRouter.get('/thawani/sub/cancel', async (req, res) => {
+  if (!SUBS_V1_ENABLED) return res.status(404).end();
+  const ref = String(req.query.ref || '');
+  const { rows } = await db.execute({
+    sql: `SELECT id, thawani_session_id FROM office_subscription WHERE amwal_merchant_ref=? LIMIT 1`,
+    args: [ref]
+  });
+  const sub = rows[0];
+  if (sub) {
+    await logPaymentEvent({
+      subjectType: 'office_subscription', subjectId: sub.id,
+      sessionId: sub.thawani_session_id, eventType: 'cancelled',
+      raw: { source: 'thawani-redirect', ref }
+    });
+    await audit({
+      actor: { type: 'officer', id: null },
+      action: 'sub_payment_cancelled',
+      target: 'office_subscription',
+      targetId: sub.id,
+      diff: { ref }
+    }).catch(() => {});
+  }
+  res.redirect(`/officer.html?sub_cancelled=1&ref=${encodeURIComponent(ref)}`);
+});
+
+// Backward-compatible alias. The canonical webhook is /webhook/thawani
+// (handles BOTH request payments and plan purchases — see handleThawaniWebhook).
+// This /sub alias just delegates, so if Thawani's dashboard was already
+// pointed here it keeps working. New deployments configure /webhook/thawani only.
+paymentsRouter.post('/webhook/thawani/sub', async (req, res) => {
+  softCheckThawaniSignature(req);
+  res.json({ ok: true, received: true });
+  try { await handleThawaniWebhook(req.body || {}); }
+  catch (e) { console.error('[thawani:webhook alias] error', e); }
+});
+
+// ─── POST /sub/_stub/activate (DEBUG only) ──────────────────
+// Lets a dev exercise the post-payment flow without a real Thawani key.
+// Bypasses the verify-with-Thawani step by directly running the same
+// activate-side logic finalizeSubscriptionPayment would run.
+paymentsRouter.post(
+  '/sub/_stub/activate',
+  requireOfficer({ roles: ['owner'], allowPending: true }),
+  async (req, res) => {
+    if (!DEBUG_ENABLED) return res.status(404).end();
+    if (!SUBS_V1_ENABLED) return res.status(404).end();
+    const { subscription_id } = req.body || {};
+    const id = Number(subscription_id);
+    if (!id) return res.status(400).json({ error: 'missing_subscription_id' });
+
+    const { rows } = await db.execute({
+      sql: `SELECT id, office_id, plan_code, amount_omr, months, payment_status
+              FROM office_subscription WHERE id=? AND office_id=? LIMIT 1`,
+      args: [id, req.office.id]
+    });
+    const sub = rows[0];
+    if (!sub) return res.status(404).json({ error: 'not_found' });
+    if (sub.payment_status === 'active') return res.json({ ok: true, alreadyActive: true });
+
+    const startsAt  = toSqlDatetime(new Date());
+    const expiresAt = computeExpiry(sub.plan_code, new Date());
+    await db.execute({
+      sql: `UPDATE office_subscription
+               SET payment_status='active', paid_at=datetime('now'),
+                   starts_at=?, expires_at=?
+             WHERE id=? AND payment_status<>'active'`,
+      args: [startsAt, expiresAt, sub.id]
+    });
+    await db.execute({
+      sql: `UPDATE office
+               SET current_plan=?, subscription_expires_at=?,
+                   subscription_status='active',
+                   subscription_since=COALESCE(subscription_since, datetime('now'))
+             WHERE id=?`,
+      args: [sub.plan_code, expiresAt, sub.office_id]
+    });
+    await logPaymentEvent({
+      subjectType: 'office_subscription', subjectId: sub.id,
+      sessionId: null, eventType: 'paid', amountOmr: sub.amount_omr,
+      raw: { source: 'stub', plan: sub.plan_code, expires_at: expiresAt }
+    });
+    res.json({ ok: true, subscription_id: sub.id, plan: sub.plan_code, expires_at: expiresAt });
+  }
+);
+
+// Exported for tests — lets the test suite call the idempotent finalizer
+// without spinning up a real HTTP request. Not part of the public API.
+export const __test__ = { finalizeSubscriptionPayment, logPaymentEvent, isSubscriptionAlreadyPaid };

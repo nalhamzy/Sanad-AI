@@ -26,9 +26,85 @@ import { db } from '../lib/db.js';
 import { storeMessage } from '../lib/agent.js';
 import { requireOfficer } from '../lib/auth.js';
 import { sendWhatsAppText, isWhatsAppSession } from '../lib/whatsapp_send.js';
-import { createPaymentLink, newMerchantRef, AMWAL_ENABLED } from '../features/payment-checkout/index.js';
+import { createPaymentLink, newMerchantRef, AMWAL_ENABLED,
+         THAWANI_ENABLED, createThawaniSession } from '../features/payment-checkout/index.js';
 import { SLA_MINUTES, REVIEW_SLA_MINUTES } from '../lib/sla.js';
 import { loadOwnedRequest, audit, notifyCitizen } from '../lib/officer_helpers.js';
+import { PLANS, startOfCurrentMonthSqlDatetime } from '../lib/plans.js';
+
+// Subscription v2 gate is opt-in: only offices that have purchased a v2
+// plan have `office.current_plan` set. Legacy offices on the credit pack
+// keep claiming as before — this preserves backwards compatibility for the
+// rollout. To force everyone to v2, the operator runs a one-off SQL to
+// default existing active offices to a plan (out of PR 3 scope).
+const SUBS_V1_ENABLED =
+  process.env.SANAD_SUBS_V1 === 'true' || process.env.DEBUG_MODE === 'true';
+
+/**
+ * Check whether an office can claim a NEW request right now.
+ *
+ * Three-step gate:
+ *   1. If SUBS_V1 is off OR the office has no current_plan, allow (legacy mode).
+ *   2. Reject if the subscription is expired (subscription_expires_at < now).
+ *   3. Reject if the office has already used its monthly claim quota
+ *      (COUNT(*) of requests claimed since the 1st of the current month).
+ *
+ * Returns { ok:true } when the office may proceed, or
+ * { ok:false, reason, http, ...details } when blocked. NEVER throws.
+ * `http` is the HTTP status the route should respond with; `reason` is
+ * a stable machine-friendly tag for the client UI.
+ *
+ * @param {number} officeId
+ */
+export async function checkClaimQuota(officeId) {
+  if (!SUBS_V1_ENABLED) return { ok: true, gate: 'disabled' };
+
+  const { rows } = await db.execute({
+    sql: `SELECT current_plan, subscription_status, subscription_expires_at
+            FROM office WHERE id=?`,
+    args: [officeId]
+  });
+  const o = rows[0];
+  // Legacy office (no v2 plan) → don't enforce. They'll be migrated separately.
+  if (!o || !o.current_plan) return { ok: true, gate: 'legacy' };
+
+  // Expired (subscription_status flipped by the watcher, OR expires_at past).
+  if (o.subscription_status === 'expired') {
+    return {
+      ok: false, http: 402, reason: 'subscription_expired',
+      expires_at: o.subscription_expires_at
+    };
+  }
+  if (o.subscription_expires_at) {
+    const expiresMs = new Date(o.subscription_expires_at.replace(' ', 'T') + 'Z').getTime();
+    if (Number.isFinite(expiresMs) && expiresMs < Date.now()) {
+      return {
+        ok: false, http: 402, reason: 'subscription_expired',
+        expires_at: o.subscription_expires_at
+      };
+    }
+  }
+
+  // Quota: count claims since the 1st of the current month.
+  const plan = PLANS[o.current_plan];
+  if (!plan) return { ok: true, gate: 'unknown_plan' }; // defensive — shouldn't happen
+  const monthStart = startOfCurrentMonthSqlDatetime();
+  const { rows: qRows } = await db.execute({
+    sql: `SELECT COUNT(*) AS n
+            FROM request
+           WHERE office_id=? AND claimed_at >= ?`,
+    args: [officeId, monthStart]
+  });
+  const used = Number(qRows[0]?.n || 0);
+  if (used >= plan.claim_quota) {
+    return {
+      ok: false, http: 402, reason: 'quota_exceeded',
+      plan: o.current_plan, quota: plan.claim_quota, used,
+      resets_at: 'start of next month'
+    };
+  }
+  return { ok: true, gate: 'v2', plan: o.current_plan, used, quota: plan.claim_quota };
+}
 
 export const officerRouter = Router();
 
@@ -1229,6 +1305,15 @@ officerRouter.post('/request/:id/claim',
     const office_id = req.office.id;
     const officer_id = req.officer.officer_id;
 
+    // v2 subscription gate. Fails fast before the pricing read so an
+    // expired/over-quota office never even races for the atomic claim.
+    // No-op for legacy offices (no current_plan) so existing flows keep
+    // working unchanged.
+    const gate = await checkClaimQuota(office_id);
+    if (!gate.ok) {
+      return res.status(gate.http).json(gate);
+    }
+
     // Resolve the predefined pricing in one read so we have it for the audit
     // entry and the citizen-facing notification. Also pull paid_at: if a
     // previous office had this request and the SLA timer auto-transferred
@@ -1343,7 +1428,8 @@ officerRouter.post('/request/:id/payment/start',
       sql: `SELECT r.id, r.status, r.office_id, r.session_id, r.payment_status,
                    r.payment_link, r.payment_amount_omr, r.payment_ref,
                    r.office_fee_omr, r.government_fee_omr,
-                   c.phone AS citizen_phone, c.email AS citizen_email, c.language_pref,
+                   c.phone AS citizen_phone, c.email AS citizen_email,
+                   c.name AS citizen_name, c.display_name AS citizen_display, c.language_pref,
                    s.name_en AS service_name, s.name_ar AS service_name_ar
               FROM request r
               LEFT JOIN citizen c        ON c.id = r.citizen_id
@@ -1417,13 +1503,40 @@ officerRouter.post('/request/:id/payment/start',
     const publicBase = reqHost ? `${reqProto}://${reqHost}` : (process.env.PUBLIC_BASE_URL || '');
     let link;
     try {
-      link = await createPaymentLink({
-        amountOmr: total,
-        merchantReference: merchantRef,
-        customerEmail: r.citizen_email || `citizen-${id}@saned.local`,
-        description: `Saned · ${r.service_name || r.service_name_ar || 'Sanad request'} (req #${id})`,
-        publicBase
-      });
+      // Thawani is the live gateway. createThawaniSession's DEFAULT
+      // success/cancel URLs already point at /api/payments/thawani/success|cancel
+      // (the request-payment verifier), so we pass no overrides. Amwal stays
+      // as a dormant fallback only if Thawani isn't configured but Amwal is.
+      const desc = `Saned · ${r.service_name || r.service_name_ar || 'Sanad request'} (req #${id})`;
+      // Customer identity for Thawani's session metadata (receipts, support,
+      // reconciliation, fraud review). Sending PII to the PAYMENT PROCESSOR is
+      // standard + expected — the anonymity rule only governs what OFFICES see.
+      const custName  = r.citizen_display || r.citizen_name || '';
+      const custPhone = r.citizen_phone || '';
+      if (THAWANI_ENABLED) {
+        const sess = await createThawaniSession({
+          amountOmr: total,
+          merchantReference: merchantRef,
+          customerEmail: r.citizen_email || `citizen-${id}@saned.local`,
+          customerName: custName,
+          customerPhone: custPhone,
+          serviceName: r.service_name_ar || r.service_name || '',
+          requestId: id,
+          description: desc,
+          productName: r.service_name_ar || r.service_name || 'خدمة',
+          publicBase
+        });
+        link = { provider: 'thawani', url: sess.url, session_id: sess.session_id,
+                 merchantReference: merchantRef };
+      } else {
+        link = await createPaymentLink({
+          amountOmr: total,
+          merchantReference: merchantRef,
+          customerEmail: r.citizen_email || `citizen-${id}@saned.local`,
+          description: desc,
+          publicBase
+        });
+      }
     } catch (gwErr) {
       // Gateway failure (Thawani API down / bad keys / rejected payload).
       // Log the full error to Render logs for diagnosis, then surface a
@@ -1496,15 +1609,21 @@ officerRouter.post('/request/:id/payment/start',
     });
     if (isWhatsAppSession(r.session_id)) {
       const phone = r.citizen_phone || r.session_id.replace(/^wa:/, '');
-      // Use a CTA URL button so the citizen taps "💳 ادفع الآن" instead of
-      // long-pressing the URL. Helper falls back to plain-text + URL on any
-      // Meta API rejection (template-window edge case, account not yet
-      // verified for cta_url, etc.) so the link always lands.
-      const { sendWhatsAppCTAUrl } = await import('../lib/whatsapp_send.js');
-      const ctaBody = lang === 'ar'
-        ? `💳 طلبك "${sname}" جاهز للبدء.\nالمبلغ الإجمالي: ${total.toFixed(3)} OMR`
-        : `💳 Your "${sname}" request is ready. Total: ${total.toFixed(3)} OMR`;
-      sendWhatsAppCTAUrl(phone, ctaBody, '💳 ادفع الآن', link.url).catch(() => {});
+      // Three-tier fallback: approved Meta template → CTA URL button →
+      // plain text. The link always lands; only the rendering differs.
+      // See lib/whatsapp_payment_messages.js for the tier rules and
+      // docs/META_TEMPLATES.md for the template body templates.
+      const { sendPaymentLink } = await import('../lib/whatsapp_payment_messages.js');
+      sendPaymentLink({
+        phone, lang,
+        amountOmr: total,
+        serviceName: sname,
+        link: link.url
+      }).then(r => {
+        if (r?.tier && r.tier !== 'template') {
+          console.log(`[wa:pay-link] sent via tier=${r.tier} (template not approved or fallback used)`);
+        }
+      }).catch(() => {});
     }
 
     res.json({
