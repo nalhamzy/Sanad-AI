@@ -2844,14 +2844,19 @@
     }
   }
   function closeSettingsModal() {
-    document.getElementById('settingsOverlay').classList.add('hidden');
+    document.getElementById('settingsOverlay')?.classList.add('hidden');
   }
-  document.getElementById('closeSettings').addEventListener('click', closeSettingsModal);
-  document.getElementById('cancelSettings').addEventListener('click', closeSettingsModal);
-  document.getElementById('settingsOverlay').addEventListener('click', e => {
+  // Null-safe: a missing settings element must NOT throw during init — an
+  // uncaught throw here aborts the rest of the IIFE, including the marketplace
+  // render, leaving the office stuck on "0 طلب" even when requests exist.
+  // (Prod bug: there is no #cancelSettings element, so line 2 below threw and
+  // broke the entire office dashboard.)
+  document.getElementById('closeSettings')?.addEventListener('click', closeSettingsModal);
+  document.getElementById('cancelSettings')?.addEventListener('click', closeSettingsModal);
+  document.getElementById('settingsOverlay')?.addEventListener('click', e => {
     if (e.target.id === 'settingsOverlay') closeSettingsModal();
   });
-  document.getElementById('settingsForm').addEventListener('submit', async e => {
+  document.getElementById('settingsForm')?.addEventListener('submit', async e => {
     e.preventDefault();
     const fee = Number(document.getElementById('settingsDefaultFee').value);
     if (!(fee >= 0) || !(fee <= 500) || !Number.isFinite(fee)) {
