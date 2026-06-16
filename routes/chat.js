@@ -284,7 +284,9 @@ chatRouter.get('/my-requests', async (req, res) => {
              r.payment_status, r.payment_amount_omr, r.payment_link, r.paid_at,
              r.quoted_fee_omr, r.office_fee_omr, r.government_fee_omr,
              s.name_en AS service_name, s.name_ar AS service_name_ar,
-             s.entity_en, s.entity_ar
+             s.entity_en, s.entity_ar,
+             (SELECT COUNT(*) FROM request_document d
+               WHERE d.request_id = r.id AND d.is_issued = 1) AS issued_count
         FROM request r
         LEFT JOIN service_catalog s ON s.id = r.service_id
        WHERE r.citizen_id = ?
@@ -337,10 +339,12 @@ chatRouter.get('/my-request/:id', async (req, res) => {
   const r = rows[0];
   if (!r) return res.status(404).json({ error: 'not_found' });
 
-  // Documents
+  // Documents. `storage_url` + `is_issued` are returned so the citizen can
+  // DOWNLOAD office-issued deliverables (is_issued=1 — e.g. a renewed CR) from
+  // the web app, rendered as a separate "documents issued to you" section.
   const { rows: docs } = await db.execute({
     sql: `SELECT id, doc_code, label, mime, size_bytes, status,
-                 caption, original_name, is_extra, note,
+                 caption, original_name, is_extra, is_issued, note, storage_url,
                  verified_by, verified_at, reject_reason, uploaded_at
             FROM request_document
            WHERE request_id = ?

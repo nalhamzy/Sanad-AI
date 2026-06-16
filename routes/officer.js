@@ -22,6 +22,10 @@
 //   when their subscription is inactive.
 
 import { Router } from 'express';
+import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
 import { db } from '../lib/db.js';
 import { storeMessage } from '../lib/agent.js';
 import { requireOfficer } from '../lib/auth.js';
@@ -39,6 +43,55 @@ import { PLANS, startOfCurrentMonthSqlDatetime } from '../lib/plans.js';
 // default existing active offices to a plan (out of PR 3 scope).
 const SUBS_V1_ENABLED =
   process.env.SANAD_SUBS_V1 === 'true' || process.env.DEBUG_MODE === 'true';
+
+// ── Office-issued document uploads ───────────────────────────
+// The deliverable the office produces (e.g. a renewed CR with a new activity)
+// is stored under data/uploads/issued/<request_id>/ — same persistent disk +
+// public /uploads mount as citizen uploads, so Meta can fetch the file by link
+// when we push it to the citizen's WhatsApp. Allow-list mirrors citizen uploads
+// (images + PDF only) so an office can't drop an executable into a citizen's
+// thread.
+const ISSUED_DIR = path.resolve('./data/uploads/issued');
+fs.mkdirSync(ISSUED_DIR, { recursive: true });
+const ISSUED_ALLOWED_MIMES = new Set([
+  'image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif', 'image/webp',
+  'application/pdf'
+]);
+const ISSUED_ALLOWED_EXTS = new Set(['.jpg', '.jpeg', '.png', '.heic', '.heif', '.webp', '.pdf']);
+const issuedUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, _file, cb) => {
+      const dir = path.join(ISSUED_DIR, String(req.params.id || '_'));
+      fs.mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename: (_req, file, cb) => {
+      const mime = (file.mimetype || '').toLowerCase();
+      const ext =
+        mime === 'application/pdf' ? '.pdf' :
+        mime === 'image/png'       ? '.png' :
+        mime === 'image/webp'      ? '.webp' :
+        mime === 'image/heic' || mime === 'image/heif' ? '.heic' :
+        '.jpg';
+      cb(null, `${Date.now()}_${crypto.randomBytes(4).toString('hex')}${ext}`);
+    }
+  }),
+  fileFilter: (_req, file, cb) => {
+    const mime = (file.mimetype || '').toLowerCase();
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    if (!ISSUED_ALLOWED_MIMES.has(mime) || (ext && !ISSUED_ALLOWED_EXTS.has(ext))) {
+      const err = new Error('unsupported_file_type');
+      err.code = 'UNSUPPORTED_FILE_TYPE';
+      return cb(err);
+    }
+    cb(null, true);
+  },
+  limits: { fileSize: 15 * 1024 * 1024, files: 1 }
+});
+// Statuses where attaching a deliverable makes no sense (already dead).
+const ISSUED_BLOCKED_STATUSES = new Set([
+  'cancelled', 'cancelled_by_citizen', 'cancelled_by_office', 'rejected_by_office', 'flagged'
+]);
 
 /**
  * Check whether an office can claim a NEW request right now.
@@ -794,6 +847,127 @@ officerRouter.post('/request/:id/document/:docId/verify', async (req, res) => {
     args: [req.officer.officer_id, docId, id]
   });
   if (!r.rowsAffected) return res.status(404).json({ error: 'not_found' });
+  res.json({ ok: true });
+});
+
+// ─── Office-issued documents — the deliverable back to the citizen ──────────
+// The office uploads the RESULT of the transaction (e.g. a renewed CR with a
+// newly-added activity). Stored as a request_document with is_issued=1 so it
+// is visually separate from the citizen's requirement docs, surfaced in the
+// citizen's "my requests" view, and — best-effort — pushed straight into their
+// WhatsApp thread (issue #1 cross-channel delivery + issue #5 deliverables).
+function issuedUploadError(err, _req, res, next) {
+  if (!err) return next();
+  if (err.code === 'UNSUPPORTED_FILE_TYPE') {
+    return res.status(400).json({
+      error: 'unsupported_file_type',
+      message_ar: 'نوع الملف غير مدعوم. ارفع صورة (JPG/PNG) أو ملف PDF فقط.',
+      message_en: 'Unsupported file type. Upload a JPG/PNG image or a PDF only.'
+    });
+  }
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({
+      error: 'file_too_large',
+      message_ar: 'الملف أكبر من 15 ميجابايت. اضغطه أو ارفع نسخة أصغر.',
+      message_en: 'File exceeds 15 MB. Compress or upload a smaller copy.'
+    });
+  }
+  return res.status(400).json({ error: 'upload_failed', detail: err.message });
+}
+
+officerRouter.post('/request/:id/issued-document',
+  (req, res, next) => issuedUpload.single('file')(req, res,
+    (err) => err ? issuedUploadError(err, req, res, next) : next()),
+  async (req, res) => {
+    const id = Number(req.params.id);
+    const { ok, row, status, error } = await loadOwnedRequest(req.office.id, id, {
+      extra: ', c.phone AS citizen_phone'
+    });
+    if (!ok) {
+      if (req.file?.path) { try { fs.unlinkSync(req.file.path); } catch {} }
+      return res.status(status).json({ error });
+    }
+    if (ISSUED_BLOCKED_STATUSES.has(row.status)) {
+      if (req.file?.path) { try { fs.unlinkSync(req.file.path); } catch {} }
+      return res.status(409).json({ error: 'request_closed', current: row.status });
+    }
+    if (!req.file) return res.status(400).json({ error: 'no_file' });
+
+    const label = String(req.body?.label || '').trim().slice(0, 120) || 'مستند صادر من المكتب';
+    const storage_url = `/uploads/issued/${id}/${req.file.filename}`;
+    const mime = (req.file.mimetype || '').toLowerCase();
+
+    const ins = await db.execute({
+      sql: `INSERT INTO request_document
+              (request_id, doc_code, label, storage_url, mime, size_bytes,
+               status, is_issued, original_name, uploaded_at)
+            VALUES (?, 'issued', ?, ?, ?, ?, 'issued', 1, ?, datetime('now'))`,
+      args: [id, label, storage_url, mime, req.file.size,
+             String(req.file.originalname || '').slice(0, 200)]
+    });
+    const docId = Number(ins.lastInsertRowid);
+
+    // Public absolute link so Meta can fetch the file for the WhatsApp push.
+    // Self-correcting host (matches the payment-link logic) so it works even
+    // if PUBLIC_BASE_URL is stale.
+    const reqProto = String(req.headers['x-forwarded-proto'] || req.protocol || 'https').split(',')[0].trim();
+    const reqHost = req.get('host');
+    const publicBase = (reqHost ? `${reqProto}://${reqHost}`
+                                : (process.env.PUBLIC_BASE_URL || 'https://saned.ai')).replace(/\/+$/, '');
+
+    await notifyCitizen({
+      session_id: row.session_id,
+      request_id: id,
+      actor_type: 'office',
+      citizen_phone: row.citizen_phone,
+      body: `📄 أصدر المكتب وثيقة جاهزة لطلبك:\n«${label}»\n\nيمكنك تحميلها من «طلباتي» في سند.\n` +
+            `———\nThe office issued a document for your request: "${label}". Download it from "My Requests".`,
+      media: {
+        link: `${publicBase}${storage_url}`,
+        filename: `${label}${path.extname(req.file.filename)}`,
+        mime,
+        caption: label
+      },
+      meta: { officer_id: req.officer.officer_id, issued_doc_id: docId }
+    });
+
+    await audit({
+      actor: { type: 'officer', id: req.officer.officer_id },
+      action: 'issued_document_upload',
+      target: 'request_document',
+      targetId: docId,
+      diff: { request_id: id, label, mime, size_bytes: req.file.size }
+    });
+
+    res.json({
+      ok: true,
+      document: { id: docId, label, storage_url, mime,
+                  size_bytes: req.file.size, is_issued: 1, status: 'issued' }
+    });
+  }
+);
+
+// Remove a mis-uploaded issued document (own request only).
+officerRouter.delete('/request/:id/issued-document/:docId', async (req, res) => {
+  const id = Number(req.params.id);
+  const docId = Number(req.params.docId);
+  const { ok, status, error } = await loadOwnedRequest(req.office.id, id);
+  if (!ok) return res.status(status).json({ error });
+  const { rows } = await db.execute({
+    sql: `SELECT storage_url FROM request_document WHERE id=? AND request_id=? AND is_issued=1`,
+    args: [docId, id]
+  });
+  if (!rows[0]) return res.status(404).json({ error: 'not_found' });
+  await db.execute({ sql: `DELETE FROM request_document WHERE id=? AND request_id=?`, args: [docId, id] });
+  try {
+    const rel = String(rows[0].storage_url || '').replace(/^\/uploads\//, '');
+    if (rel) fs.unlinkSync(path.join(path.resolve('./data/uploads'), rel));
+  } catch { /* file already gone — fine */ }
+  await audit({
+    actor: { type: 'officer', id: req.officer.officer_id },
+    action: 'issued_document_delete', target: 'request_document', targetId: docId,
+    diff: { request_id: id }
+  });
   res.json({ ok: true });
 });
 
