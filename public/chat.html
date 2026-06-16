@@ -245,8 +245,23 @@ window.addEventListener('unhandledrejection', e => {
     el.className = 'bubble bubble-' + kind;
     if (isAr(text)) el.setAttribute('dir', 'rtl');
     const body = document.createElement('div');
-    body.textContent = text;
-    el.appendChild(body);
+    // #2 — surface a Thawani payment link as a clear "Pay now" button instead
+    // of a raw, unclickable URL buried in the bubble text.
+    const payMatch = String(text || '').match(/https?:\/\/[^\s]*checkout\.thawani\.om\/pay\/[^\s)]+/i);
+    if (payMatch) {
+      const cleaned = String(text).replace(payMatch[0], '')
+        .replace(/[ \t]+\n/g, '\n').replace(/\n{2,}/g, '\n').trim();
+      body.textContent = cleaned || (isAr(text) ? 'تم إنشاء رابط الدفع — اضغط للدفع الآن.' : 'Payment link ready — tap to pay.');
+      el.appendChild(body);
+      const pay = document.createElement('a');
+      pay.href = payMatch[0]; pay.target = '_blank'; pay.rel = 'noopener noreferrer';
+      pay.className = 'pay-now-btn';
+      pay.textContent = isAr(text) ? '💳 ادفع الآن' : '💳 Pay now';
+      el.appendChild(pay);
+    } else {
+      body.textContent = text;
+      el.appendChild(body);
+    }
     if (opts.time || kind === 'out') {
       const meta = document.createElement('div');
       meta.className = 'meta';

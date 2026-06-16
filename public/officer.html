@@ -1542,6 +1542,30 @@
   }
   setInterval(updateSlaCountdowns, 1000);
 
+  // #4 — live request refresh: while a request detail is open, poll it so the
+  // office sees the citizen's payment (and other status changes) the instant
+  // they happen, instead of having to close + reopen the request. Re-renders
+  // ONLY on an actual change (≈once per request), so it never disrupts an
+  // office that's mid-action (reviewing docs, typing a note).
+  let _detailLiveSig = '';
+  async function pollDetailLive() {
+    if (!currentRequestId || document.hidden) return;
+    try {
+      const data = await api('/api/officer/request/' + currentRequestId);
+      const r = data.request;
+      const sig = r.status + '|' + (r.payment_status || '') + '|' + (r.paid_at || '');
+      if (!_detailLiveSig) { _detailLiveSig = sig; return; }
+      if (sig === _detailLiveSig) return;
+      const oldPaidAt = _detailLiveSig.split('|')[2] || '';
+      const newlyPaid = !oldPaidAt && !!r.paid_at;
+      _detailLiveSig = sig;
+      await openDetail(currentRequestId);          // re-render with the new state
+      if (newlyPaid) { try { Sanad.toast(t('officer.paid_live', '✅ تم استلام دفعة المواطن'), 'ok', 3200); } catch {} }
+      try { loadInbox(); } catch {}                // keep the board in sync too
+    } catch {}
+  }
+  setInterval(pollDetailLive, 7000);
+
   // ─ Card ─
   function cardHtml(r, idx) {
     const name = pickName(r) || '(service)';
@@ -1955,6 +1979,8 @@
 
       renderChat(msgs, chatUnlocked);
       switchTab('docs');
+      // #4 baseline for the live-refresh poll (pollDetailLive).
+      _detailLiveSig = r.status + '|' + (r.payment_status || '') + '|' + (r.paid_at || '');
     } catch (e) {
       // Surface the actual reason: server-supplied AR hint (when present)
       // or the JS error message + line. Logged in full to console for
@@ -1967,6 +1993,7 @@
 
   function closeDetail() {
     currentRequestId = null;
+    _detailLiveSig = '';
     document.getElementById('workspace').classList.add('hidden');
     document.getElementById('workspace').classList.remove('flex');
     document.getElementById('emptyState').classList.remove('hidden');
