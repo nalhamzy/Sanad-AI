@@ -693,6 +693,33 @@
                   <div id="overviewContent"></div>
                 </div>
                 <div id="tab-docs" data-tab-panel class="flex-1 overflow-y-auto scroll-y p-5">
+                  <!-- Office-issued deliverables: the RESULT the office hands back
+                       to the citizen (e.g. a renewed CR). Sent in-app + WhatsApp. -->
+                  <div id="issuedSection" class="mb-5">
+                    <div class="text-[13px] font-bold mb-2" style="color:var(--text)">
+                      📤 المستندات الصادرة للمواطن
+                      <span style="color:var(--text-mute);font-weight:500">· Issued to citizen</span>
+                      <span id="issuedCount" class="chip chip-sm" style="margin-inline-start:6px;background:rgba(16,185,129,.15);color:rgb(5,120,87)" hidden></span>
+                    </div>
+                    <div style="background:var(--surface-2);border:1px dashed var(--line);border-radius:12px;padding:12px" class="mb-3">
+                      <div class="flex flex-col sm:flex-row gap-2 items-stretch">
+                        <input id="issuedLabel" type="text" maxlength="120"
+                               placeholder="اسم المستند (مثال: السجل التجاري الجديد)"
+                               style="flex:1;min-width:0;height:34px;padding:0 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:var(--surface);color:var(--text)"/>
+                        <input id="issuedFile" type="file" accept="image/jpeg,image/png,image/webp,application/pdf"
+                               style="font-size:11.5px;max-width:210px;align-self:center"/>
+                        <button id="issuedUploadBtn" type="button" onclick="uploadIssued()" class="btn btn-primary"
+                                style="height:34px;font-size:12px;white-space:nowrap;padding:0 14px">⬆ إرسال للمواطن</button>
+                      </div>
+                      <div id="issuedHint" class="text-[10.5px] mt-1.5" style="color:var(--text-mute)">
+                        صورة (JPG/PNG) أو PDF حتى 15MB · تُرسَل للمواطن داخل التطبيق وعلى واتساب.
+                      </div>
+                    </div>
+                    <div id="issuedGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                  </div>
+                  <div class="text-[13px] font-bold mb-2" style="color:var(--text)">
+                    📥 مستندات المواطن <span style="color:var(--text-mute);font-weight:500">· From citizen</span>
+                  </div>
                   <div id="docsGrid" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4"></div>
                 </div>
                 <div id="tab-timeline" data-tab-panel hidden class="flex-1 overflow-y-auto scroll-y p-5">
@@ -2034,8 +2061,11 @@
       </div>`;
   }
 
-  function renderDocs(docs) {
-    docs = Array.isArray(docs) ? docs : [];
+  function renderDocs(allDocs) {
+    allDocs = Array.isArray(allDocs) ? allDocs : [];
+    // Office-issued deliverables render in their own section (no verify/reject).
+    renderIssued(allDocs.filter(d => Number(d.is_issued) === 1));
+    const docs = allDocs.filter(d => Number(d.is_issued) !== 1);
     document.getElementById('docsPillCount').textContent = docs.length;
     if (!docs.length) {
       document.getElementById('docsGrid').innerHTML = `<div class="col-span-full empty">
@@ -2134,6 +2164,101 @@
           </div>
         </div>`;
     }).join('');
+  }
+
+  // ── Office-issued deliverables ───────────────────────────────
+  // The RESULT the office produces for the citizen (e.g. a renewed CR).
+  // Rendered separately from citizen uploads — no verify/reject, just
+  // download + remove. Uploading pushes it to the citizen in-app + WhatsApp.
+  function renderIssued(docs) {
+    docs = Array.isArray(docs) ? docs : [];
+    const badge = document.getElementById('issuedCount');
+    if (badge) {
+      if (docs.length) { badge.textContent = docs.length; badge.hidden = false; }
+      else badge.hidden = true;
+    }
+    const grid = document.getElementById('issuedGrid');
+    if (!grid) return;
+    if (!docs.length) {
+      grid.innerHTML = `<div class="col-span-full text-[11.5px]" style="color:var(--text-mute);padding:2px">لا توجد مستندات صادرة بعد — ارفع الناتج النهائي للمواطن من الأعلى.</div>`;
+      return;
+    }
+    grid.innerHTML = docs.map(d => {
+      const mime = d.mime || '';
+      const url  = d.storage_url || '';
+      const isImg = mime.startsWith('image/');
+      const isPdf = mime === 'application/pdf' || /\.pdf($|\?)/i.test(url);
+      const ext = ((mime.split('/')[1] || 'bin').split(';')[0]) || 'bin';
+      const safeLabel = (d.label || 'document').replace(/[^\w؀-ۿ\-]+/g, '_').slice(0, 40);
+      const downloadName = `R-${currentRequestId || 'req'}_${safeLabel}.${ext}`;
+      const preview = isImg
+        ? `<a href="${url}" target="_blank" rel="noopener"><img src="${url}" style="width:100%;height:120px;object-fit:cover;display:block"/></a>`
+        : `<a href="${url}" target="_blank" rel="noopener" style="display:flex;height:120px;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--surface-3),var(--surface-2));color:var(--text-mute);flex-direction:column;gap:4px">
+             <span style="font-size:30px">${isPdf ? '📄' : '📎'}</span>
+             <span style="font-size:10.5px">${isPdf ? 'PDF' : (mime || 'file')}</span>
+           </a>`;
+      return `
+        <div class="doc" style="border:1px solid rgba(16,185,129,.4)">
+          <div style="position:relative">
+            ${preview}
+            <span class="chip chip-sm" style="position:absolute;top:8px;right:8px;background:rgba(16,185,129,.92);color:#fff">صادر</span>
+          </div>
+          <div class="p-3">
+            <div class="text-[12.5px] font-semibold truncate" title="${escapeHtml(d.label || '')}">${escapeHtml(d.label || 'مستند صادر')}</div>
+            <div class="text-[10.5px] mono mt-0.5" style="color:var(--text-mute)">${humanSize(d.size_bytes)} · ${ext.toUpperCase()}</div>
+            <div class="flex gap-1.5 mt-2.5">
+              <a class="btn btn-primary flex-1" href="${url}" download="${downloadName}" style="height:28px;font-size:11px;display:flex;align-items:center;justify-content:center;gap:4px;text-decoration:none">⬇ تحميل</a>
+              <button class="btn btn-secondary" onclick="deleteIssued(${d.id})" title="حذف" style="height:28px;font-size:11px;padding:0 10px;background:#fee2e2;color:#991b1b;border-color:#fca5a5">🗑</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  async function uploadIssued() {
+    if (!currentRequestId) return;
+    const fileEl  = document.getElementById('issuedFile');
+    const labelEl = document.getElementById('issuedLabel');
+    const btn     = document.getElementById('issuedUploadBtn');
+    const file = fileEl && fileEl.files && fileEl.files[0];
+    if (!file) { Sanad.toast('اختر ملفًا أولًا', 'warn', 2000); return; }
+    const fd = new FormData();
+    fd.append('label', (labelEl ? labelEl.value : '').trim());
+    fd.append('file', file);
+    const prev = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = '… جارٍ الإرسال'; }
+    try {
+      const res = await fetch(`/api/officer/request/${currentRequestId}/issued-document`, {
+        method: 'POST', body: fd, credentials: 'include'
+      });
+      if (!res.ok) {
+        let msg = 'تعذّر رفع المستند';
+        try { const j = await res.json(); msg = j.message_ar || j.error || msg; } catch {}
+        Sanad.toast('❌ ' + msg, 'err', 4000);
+        return;
+      }
+      if (fileEl) fileEl.value = '';
+      if (labelEl) labelEl.value = '';
+      Sanad.toast('✓ تم إرسال المستند للمواطن', 'ok', 2600);
+      await openDetail(currentRequestId);   // refresh the issued list
+    } catch {
+      Sanad.toast('خطأ في الشبكة', 'err', 3000);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = prev || '⬆ إرسال للمواطن'; }
+    }
+  }
+
+  async function deleteIssued(docId) {
+    if (!currentRequestId) return;
+    if (!confirm('حذف هذا المستند الصادر؟ لن يظهر للمواطن بعد الآن.')) return;
+    try {
+      const res = await fetch(`/api/officer/request/${currentRequestId}/issued-document/${docId}`, {
+        method: 'DELETE', credentials: 'include'
+      });
+      if (!res.ok) { Sanad.toast('تعذّر الحذف', 'err', 2600); return; }
+      Sanad.toast('تم الحذف', 'ok', 1800);
+      await openDetail(currentRequestId);
+    } catch { Sanad.toast('خطأ في الشبكة', 'err', 3000); }
   }
 
   // Helpers used by the doc grid

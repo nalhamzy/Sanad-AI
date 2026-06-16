@@ -137,6 +137,17 @@
       <div id="timeline" class="space-y-1"></div>
     </section>
 
+    <!-- Issued documents (office deliverables — the result handed back) -->
+    <section id="issuedSection" class="mt-6 bg-emerald-50 rounded-2xl border border-emerald-200 shadow-sm p-6 sm:p-7 hidden">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-extrabold text-emerald-900">📤 مستنداتك الجاهزة
+          <span class="text-sm font-medium text-emerald-600">· Documents issued to you</span>
+        </h2>
+        <span class="text-xs text-emerald-700 font-semibold" id="issuedCount">—</span>
+      </div>
+      <div id="issuedList" class="grid sm:grid-cols-2 gap-3"></div>
+    </section>
+
     <!-- Documents -->
     <section class="mt-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7">
       <div class="flex items-center justify-between mb-4">
@@ -329,8 +340,13 @@
     }
     $('#timeline').innerHTML = timelineHtml;
 
-    // Documents
-    const docs = payload.documents || [];
+    // Documents — split office-issued deliverables (is_issued=1) from the
+    // citizen's own requirement uploads. Issued docs get their own download
+    // section above; the list below stays the citizen's submitted documents.
+    const allDocs = payload.documents || [];
+    const issuedDocs = allDocs.filter(d => Number(d.is_issued) === 1);
+    const docs = allDocs.filter(d => Number(d.is_issued) !== 1);
+    renderIssuedDocs(issuedDocs);
     $('#docCount').textContent = `${docs.length} ${I18N.t('req.docs.count_label')}`;
     $('#docList').innerHTML = docs.length ? docs.map(d => {
       const statusBadge = d.status === 'verified' ? `<span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">✓ ${I18N.t('status.verified')}</span>`
@@ -356,6 +372,31 @@
         </div>
       </div>`;
     }).join('') : `<div class="text-sm text-slate-500 italic col-span-2">${I18N.t('req.docs.empty')}</div>`;
+
+    // Render office-issued deliverables (download each). Hides the section
+    // entirely when the office hasn't issued anything yet.
+    function renderIssuedDocs(list) {
+      list = Array.isArray(list) ? list : [];
+      const sec = $('#issuedSection');
+      if (!sec) return;
+      if (!list.length) { sec.classList.add('hidden'); return; }
+      sec.classList.remove('hidden');
+      $('#issuedCount').textContent = String(list.length);
+      $('#issuedList').innerHTML = list.map(d => {
+        const isImage = (d.mime || '').startsWith('image/');
+        const icon = isImage ? '🖼️' : ((d.mime || '').includes('pdf') ? '📄' : '📎');
+        const url = d.storage_url || '';
+        const dl = (d.label || 'document').replace(/[^\w؀-ۿ\-]+/g, '_').slice(0, 40);
+        return `<div class="doc-card border border-emerald-200 bg-white rounded-xl p-3 flex items-start gap-3">
+          <div class="text-2xl shrink-0">${icon}</div>
+          <div class="flex-1 min-w-0">
+            <div class="font-semibold text-sm text-slate-800 truncate" title="${escapeHtml(d.label || '')}">${escapeHtml(d.label || '—')}</div>
+            <div class="mt-0.5 text-[11px] text-slate-500">${d.size_bytes ? Math.round(d.size_bytes / 1024) + ' KB · ' : ''}${escapeHtml((d.uploaded_at || '').split(' ')[0])}</div>
+            <a href="${url}" download="${dl}" class="mt-2 inline-flex items-center gap-1.5 text-[12px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded-lg no-underline">⬇ تحميل · Download</a>
+          </div>
+        </div>`;
+      }).join('');
+    }
 
     // Chat-gate banner (visible only when chat is locked pre-pay)
     if (!payload.chat_unlocked_for_office) $('#threadGate').classList.remove('hidden');

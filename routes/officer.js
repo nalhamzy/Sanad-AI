@@ -482,7 +482,7 @@ officerRouter.get('/request/:id', async (req, res) => {
   // until payment is committed. After paid_at, the full thread unlocks.
   const { rows: docs } = await db.execute({
     sql: `SELECT id, doc_code, label, storage_url, mime, size_bytes, status,
-                 caption, matched_via, original_name,
+                 caption, matched_via, original_name, is_issued,
                  verified_by, verified_at, reject_reason, uploaded_at
             FROM request_document WHERE request_id=? ORDER BY id ASC`,
     args: [id]
