@@ -160,9 +160,20 @@ export async function prepare() {
       // Cascade: blow away dependent message/request_document/request rows
       // that pointed at the old IDs so the new catalogue isn't carrying
       // dangling FKs. Citizens / officers / offices are preserved.
-      await db.execute(`DELETE FROM message WHERE request_id IN (SELECT id FROM request)`);
-      await db.execute(`DELETE FROM request_document`);
-      await db.execute(`DELETE FROM request`);
+      //
+      // SAFETY (prod incident 2026-06): SANAD_FORCE_RELOAD_CATALOGUE was left
+      // ="true", so EVERY redeploy wiped ALL citizen requests. The catalogue
+      // CSV ids are deterministic, so a reload re-creates the SAME ids and
+      // existing requests' service_id FKs stay valid — there is no need to
+      // delete live requests. Never wipe citizen requests in production unless
+      // an operator explicitly opts in with SANAD_ALLOW_REQUEST_WIPE=true.
+      if (process.env.NODE_ENV !== 'production' || process.env.SANAD_ALLOW_REQUEST_WIPE === 'true') {
+        await db.execute(`DELETE FROM message WHERE request_id IN (SELECT id FROM request)`);
+        await db.execute(`DELETE FROM request_document`);
+        await db.execute(`DELETE FROM request`);
+      } else {
+        console.warn('[migrate] PRODUCTION: catalogue reloaded but citizen requests PRESERVED (set SANAD_ALLOW_REQUEST_WIPE=true to force-wipe).');
+      }
       await db.execute(`DELETE FROM service_catalog`);
       try { await db.execute(`INSERT INTO service_catalog_fts(service_catalog_fts) VALUES('rebuild')`); } catch {}
     } finally {
