@@ -291,7 +291,12 @@ chatRouter.get('/my-requests', async (req, res) => {
           OR (? IS NOT NULL AND r.session_id = ?)
        ORDER BY r.last_event_at DESC, r.id DESC
        LIMIT 50`,
-    args: [c.id, c.phone, c.phone ? `wa:${c.phone}` : null]
+    // WhatsApp sessions are keyed by digits-only phone (Meta sends `from`
+    // without "+", e.g. wa:96892888715), but the citizen's stored phone is
+    // omanised WITH "+" (+96892888715). Strip non-digits so the session match
+    // works — otherwise a citizen who signs in by OTP can't see the request
+    // they created over WhatsApp. (Prod: phone +96892888715, request 1095.)
+    args: [c.id, c.phone, c.phone ? `wa:${String(c.phone).replace(/\D/g, '')}` : null]
   });
   res.json({ requests: rows });
 });
@@ -325,7 +330,9 @@ chatRouter.get('/my-request/:id', async (req, res) => {
        WHERE r.id = ?
          AND (r.citizen_id = ? OR (? IS NOT NULL AND r.session_id = ?))
        LIMIT 1`,
-    args: [id, c.id, c.phone, c.phone ? `wa:${c.phone}` : null]
+    // Digits-only wa: session match (see /my-requests note) so an OTP-signed-in
+    // citizen can open the request they created over WhatsApp.
+    args: [id, c.id, c.phone, c.phone ? `wa:${String(c.phone).replace(/\D/g, '')}` : null]
   });
   const r = rows[0];
   if (!r) return res.status(404).json({ error: 'not_found' });
