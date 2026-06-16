@@ -114,12 +114,17 @@ describe('pickButtons(candidates) — search-result UX', () => {
       `expected no "خدمة طلب" prefix in: ${out[0].title}`);
     assert.ok(out[0].title.includes('تجديد'));
   });
-  test('long names are ellipsis-truncated, never crash', () => {
+  test('long names fall back to a clean number glyph (not unreadable truncation)', () => {
+    // WhatsApp caps button titles at 20 chars. Truncating a long Arabic name
+    // produces an unreadable fragment — and when several results share a prefix
+    // the truncations are identical. So long names show the number glyph only;
+    // the full numbered list lives in the message body.
     const out = pickButtons([
       { name_ar: 'خدمة تسجيل وتوثيق عقود الزواج وعقود الإيجار التجارية' }
     ]);
     assert.ok(out[0].title.length <= BUTTON_TITLE_MAX);
-    assert.ok(out[0].title.endsWith('…'));
+    assert.equal(out[0].title, '1️⃣');
+    assert.ok(!out[0].title.includes('…'), 'no unreadable ellipsis fragment');
   });
   test('falls back to canonical label when name is missing', () => {
     const out = pickButtons([{ /* no name */ }, {}]);
