@@ -9,6 +9,8 @@ process.env.DB_URL = 'file:./data/sanad-test.db';
 process.env.QWEN_API_KEY = '';          // force heuristic mode for deterministic tests
 process.env.ANTHROPIC_API_KEY = '';     // also stub Anthropic — tests must never hit a real LLM
 process.env.LLM_PROVIDER = '';          // let llm.js auto-detect (will land on 'none')
+process.env.WHATSAPP_ACCESS_TOKEN = ''; // never hit the real WhatsApp Cloud API in tests —
+process.env.WHATSAPP_PHONE_NUMBER_ID = ''; // sends run in stub mode (deterministic, matches CI)
 process.env.DEBUG_MODE = 'true';
 process.env.SANAD_NO_AUTOSTART = '1';   // prevent server.js from auto-listening
 

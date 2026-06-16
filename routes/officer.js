@@ -33,7 +33,7 @@ import { sendWhatsAppText, isWhatsAppSession } from '../lib/whatsapp_send.js';
 import { createPaymentLink, newMerchantRef, AMWAL_ENABLED,
          THAWANI_ENABLED, createThawaniSession } from '../features/payment-checkout/index.js';
 import { SLA_MINUTES, REVIEW_SLA_MINUTES } from '../lib/sla.js';
-import { loadOwnedRequest, audit, notifyCitizen } from '../lib/officer_helpers.js';
+import { loadOwnedRequest, audit, notifyCitizen, deliverablePhone } from '../lib/officer_helpers.js';
 import { PLANS, startOfCurrentMonthSqlDatetime } from '../lib/plans.js';
 
 // Subscription v2 gate is opt-in: only offices that have purchased a v2
@@ -690,13 +690,14 @@ officerRouter.post('/request/:id/message', async (req, res) => {
     meta: { officer_id: req.officer.officer_id }
   });
 
-  // Push to WhatsApp when the citizen's session is on WhatsApp. Uses citizen
-  // table phone as the source of truth; falls back to the phone embedded in
-  // session_id ("wa:+96890…") when the citizen row doesn't have one yet.
-  let waResult = { ok: false, channel: 'skipped', skipped: 'not_whatsapp' };
-  if (isWhatsAppSession(r.session_id)) {
-    const phone = r.citizen_phone || r.session_id.replace(/^wa:/, '');
-    waResult = await sendWhatsAppText(phone, text);
+  // Push to WhatsApp whenever we know the citizen's phone — a WhatsApp session
+  // OR a web citizen who verified a phone via OTP (so dashboard messages reach
+  // web-applied citizens too, not just wa: sessions). Best-effort: Meta's 24h
+  // window means free-text only lands if the citizen messaged us recently.
+  let waResult = { ok: false, channel: 'skipped', skipped: 'no_phone' };
+  const deliverTo = deliverablePhone(r);
+  if (deliverTo) {
+    waResult = await sendWhatsAppText(deliverTo, text);
     if (!waResult.ok) {
       console.warn(`[officer→wa] send failed for request ${id}: ${waResult.error}`);
     }
@@ -1252,9 +1253,11 @@ officerRouter.post('/request/:id/reclassify',
       const out = await db.execute({
         sql: `SELECT r.session_id, r.office_id, r.status, r.paid_at, r.service_id AS old_service_id,
                      r.payment_status, r.office_fee_omr AS old_office_fee, r.government_fee_omr AS old_gov_fee,
+                     c.phone AS citizen_phone,
                      s.name_en AS new_service_name, s.name_ar AS new_service_name_ar, s.fee_omr AS new_catalog_fee
                 FROM request r
                 LEFT JOIN service_catalog s ON s.id = ?
+                LEFT JOIN citizen c ON c.id = r.citizen_id
                WHERE r.id=?`,
         args: [newServiceId, id]
       });
@@ -1371,16 +1374,21 @@ officerRouter.post('/request/:id/reclassify',
         new_total: total, reclassify_pending: true
       }
     });
-    // WhatsApp interactive buttons — only when the citizen is on WhatsApp.
-    // Web sessions get the same flow via the bot bubble + the citizen
-    // typing موافق/رفض (or a future web-side button row).
-    if (isWhatsAppSession(r.session_id)) {
-      const phone = r.session_id.replace(/^wa:/, '');
-      const { sendWhatsAppButtons } = await import('../lib/whatsapp_send.js');
-      sendWhatsAppButtons(phone, proposalBody, [
-        { id: 'reclassify:accept', title: '✅ موافق' },
-        { id: 'reclassify:reject', title: '❌ رفض' }
-      ]).catch(e => console.warn('[reclassify wa-btns]', e.message));
+    // Push to WhatsApp whenever the phone is known. WhatsApp-native sessions
+    // get interactive accept/reject buttons; web-applied citizens (phone known
+    // post-OTP) get the same proposal as plain text and reply موافق/رفض.
+    const reclassifyPhone = deliverablePhone(r);
+    if (reclassifyPhone) {
+      if (isWhatsAppSession(r.session_id)) {
+        const { sendWhatsAppButtons } = await import('../lib/whatsapp_send.js');
+        sendWhatsAppButtons(reclassifyPhone, proposalBody, [
+          { id: 'reclassify:accept', title: '✅ موافق' },
+          { id: 'reclassify:reject', title: '❌ رفض' }
+        ]).catch(e => console.warn('[reclassify wa-btns]', e.message));
+      } else {
+        sendWhatsAppText(reclassifyPhone, proposalBody)
+          .catch(e => console.warn('[reclassify wa-text]', e.message));
+      }
     }
     res.json({
       ok: true, status: 'awaiting_reclassify_ack',
@@ -1781,15 +1789,16 @@ officerRouter.post('/request/:id/payment/start',
       body_text: payMsg,
       meta: { payment_link: link.url, amount_omr: total }
     });
-    if (isWhatsAppSession(r.session_id)) {
-      const phone = r.citizen_phone || r.session_id.replace(/^wa:/, '');
+    const payPhone = deliverablePhone(r);
+    if (payPhone) {
       // Three-tier fallback: approved Meta template → CTA URL button →
       // plain text. The link always lands; only the rendering differs.
-      // See lib/whatsapp_payment_messages.js for the tier rules and
-      // docs/META_TEMPLATES.md for the template body templates.
+      // Delivers to web-applied citizens too (phone known post-OTP), not just
+      // wa: sessions. See lib/whatsapp_payment_messages.js for the tier rules
+      // and docs/META_TEMPLATES.md for the template body templates.
       const { sendPaymentLink } = await import('../lib/whatsapp_payment_messages.js');
       sendPaymentLink({
-        phone, lang,
+        phone: payPhone, lang,
         amountOmr: total,
         serviceName: sname,
         link: link.url

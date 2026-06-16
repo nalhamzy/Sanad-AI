@@ -6,6 +6,7 @@ import './helpers.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { bootTestEnv, spawnServer, registerAndApproveOffice, createReadyRequest } from './helpers.js';
+import { deliverablePhone } from '../lib/officer_helpers.js';
 
 test('office can upload an issued document, citizen can see + download it', async (t) => {
   await bootTestEnv();
@@ -124,4 +125,50 @@ test('citizen my-request view exposes issued docs with storage_url + is_issued',
   assert.ok(issued, 'issued doc present');
   assert.ok(issued.storage_url && issued.storage_url.startsWith('/uploads/issued/'),
     'citizen-facing row has a downloadable storage_url');
+});
+
+test('deliverablePhone: delivers to wa: sessions AND web citizens with a known phone', () => {
+  // WhatsApp session — the phone IS the session id.
+  assert.equal(deliverablePhone({ session_id: 'wa:96890000001' }), '96890000001');
+  // Web session, phone verified via OTP → deliverable (THIS is the fix).
+  assert.equal(deliverablePhone({ session_id: 'web-abc', citizen_phone: '+96890000002' }), '+96890000002');
+  // Web session, no phone yet → not deliverable (pre-OTP).
+  assert.equal(deliverablePhone({ session_id: 'web-abc', citizen_phone: null }), null);
+  // citizen_phone wins for wa: sessions too (canonical table value).
+  assert.equal(deliverablePhone({ session_id: 'wa:96890000003', citizen_phone: '+96890000003' }), '+96890000003');
+});
+
+test('office dashboard message reaches a WEB-applied citizen by phone (not just wa: sessions)', async (t) => {
+  await bootTestEnv();
+  const srv = await spawnServer();
+  t.after(() => srv.stop());
+  const { db } = await import('../lib/db.js');
+
+  const office = await registerAndApproveOffice(srv.origin);
+  const { request_id } = await createReadyRequest(srv.origin);
+
+  // A WEB request (session_id is a web uuid, not wa:) owned by this office,
+  // paid (so the chat is unlocked), linked to a citizen who verified a phone.
+  await db.execute({ sql: `INSERT INTO citizen (phone, name) VALUES ('+96890000123', 'Web Citizen')` });
+  const { rows: cit } = await db.execute({ sql: `SELECT id FROM citizen WHERE phone='+96890000123'` });
+  await db.execute({
+    sql: `UPDATE request SET office_id=?, citizen_id=?, status='in_progress', paid_at=datetime('now') WHERE id=?`,
+    args: [office.office_id, cit[0].id, request_id]
+  });
+
+  const res = await fetch(`${srv.origin}/api/officer/request/${request_id}/message`, {
+    method: 'POST',
+    headers: { cookie: office.cookie, 'content-type': 'application/json' },
+    body: JSON.stringify({ text: 'مرحبًا، نحتاج توضيحًا بسيطًا.' })
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  // The invariant: delivery is ATTEMPTED for a web citizen because the phone is
+  // known. Channel is 'whatsapp' when creds are present (real send), 'stub'
+  // when absent — never 'skipped'. Pre-fix a web session returned
+  // { channel: 'skipped', skipped: 'not_whatsapp' }.
+  assert.notEqual(body.delivery.channel, 'skipped',
+    'WA delivery must be attempted for a web citizen with a known phone');
+  assert.ok(['whatsapp', 'stub'].includes(body.delivery.channel),
+    `expected an attempted-delivery channel, got '${body.delivery.channel}'`);
 });

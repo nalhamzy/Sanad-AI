@@ -102,8 +102,14 @@ export async function markRequestPaid(requestId, source = 'webhook') {
     direction: 'out', actor_type: 'bot',
     body_text: paidMsg
   });
-  if (isWhatsAppSession(r.session_id) && r.citizen_phone) {
-    sendWhatsAppText(r.citizen_phone, paidMsg).catch(() => {});
+  // Deliver to the citizen's phone whenever known — WhatsApp session OR a web
+  // citizen who paid (phone known post-OTP) — so the "payment received" note
+  // reaches web-applied citizens on WhatsApp too, not just wa: sessions.
+  const paidPhone = isWhatsAppSession(r.session_id)
+    ? (r.citizen_phone || String(r.session_id || '').replace(/^wa:/, ''))
+    : (r.citizen_phone || null);
+  if (paidPhone) {
+    sendWhatsAppText(paidPhone, paidMsg).catch(() => {});
   }
 
   return { ok: true, request_id: requestId, office_id: r.office_id };
