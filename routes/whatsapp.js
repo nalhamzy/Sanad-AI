@@ -327,11 +327,36 @@ function extForMime(mime) {
   return '.jpg';
 }
 
+// Meta's media API transient-fails (429 / 5xx / network blips) under rapid
+// multi-image uploads — 6 images at once → ~6 concurrent downloads → some get
+// throttled. A single failed GET used to DROP that file silently (citizen sent
+// 6 images, office saw only 4 — prod report 2026-06-17). Retry transient
+// failures with a short staggered backoff so every image lands.
+async function fetchWithRetry(url, opts, { tries = 4, label = '' } = {}) {
+  let last = '';
+  for (let attempt = 1; attempt <= tries; attempt++) {
+    try {
+      const r = await fetch(url, opts);
+      if (r.ok) return r;
+      if (r.status === 429 || r.status >= 500) last = `HTTP ${r.status}`;
+      else return r; // permanent (non-retryable 4xx) — let the caller decide
+    } catch (e) { last = e?.message || String(e); }
+    if (attempt < tries) await new Promise(res => setTimeout(res, 250 * attempt));
+  }
+  console.warn(`[whatsapp] media ${label}: gave up after ${tries} tries — ${last}`);
+  return null;
+}
+
 async function fetchMedia(mediaId, sessionId) {
-  // Step 1: ask Meta for the signed URL + metadata.
-  const meta = await fetch(`https://graph.facebook.com/v20.0/${mediaId}`, {
-    headers: { 'authorization': `Bearer ${ACCESS_TOKEN}` }
-  }).then(r => r.json());
+  // Step 1: ask Meta for the signed URL + metadata (retried — a transient
+  // 429/5xx on a bursty upload must not silently drop the file).
+  const metaRes = await fetchWithRetry(
+    `https://graph.facebook.com/v20.0/${mediaId}`,
+    { headers: { 'authorization': `Bearer ${ACCESS_TOKEN}` } },
+    { label: `meta ${mediaId}` }
+  );
+  let meta = {};
+  if (metaRes) { try { meta = await metaRes.json(); } catch {} }
   const cdnUrl = meta?.url;
   const mime = meta?.mime_type || '';
   const size = meta?.file_size || 0;
@@ -344,18 +369,21 @@ async function fetchMedia(mediaId, sessionId) {
     return null;
   }
 
-  // Step 2: download the binary using the SAME bearer token. Lookaside URLs
-  // 401 without it.
+  // Step 2: download the binary using the SAME bearer token (lookaside URLs
+  // 401 without it). Retried for the same burst-throttling reason as step 1.
+  const r = await fetchWithRetry(
+    cdnUrl, { headers: { 'authorization': `Bearer ${ACCESS_TOKEN}` } },
+    { label: `binary ${mediaId}` }
+  );
+  if (!r || !r.ok) {
+    if (r) console.warn(`[whatsapp] media fetch failed ${r.status} for ${mediaId}`);
+    return null;
+  }
   let buf;
   try {
-    const r = await fetch(cdnUrl, { headers: { 'authorization': `Bearer ${ACCESS_TOKEN}` } });
-    if (!r.ok) {
-      console.warn(`[whatsapp] media fetch failed ${r.status} for ${mediaId}`);
-      return null;
-    }
     buf = Buffer.from(await r.arrayBuffer());
   } catch (e) {
-    console.warn('[whatsapp] media fetch threw:', e.message);
+    console.warn('[whatsapp] media body read threw:', e.message);
     return null;
   }
 
