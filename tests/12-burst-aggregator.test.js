@@ -145,6 +145,59 @@ describe('lib/agent.js · burst aggregator + in-flight gate', () => {
     assert.equal(cur.buttons, null, 'no buttons should be set');
   });
 
+  test('uploading files against a PROPOSED service auto-starts it (no "اختر الخدمة" loop)', async () => {
+    // Regression — real prod report (+96892888715, 2026-06-17): the citizen
+    // picked a service (confirm card shown → pending_service_id set), then
+    // UPLOADED their files instead of tapping «نعم، ابدأ». The buffered files
+    // used to re-prompt "اختر الخدمة" with dead-end confirm buttons → loop.
+    // Now the upload IS the "yes": drainBurst starts the proposed service and
+    // flushes the buffered files into its checklist.
+    const { loadSession, saveSession } = await import('../lib/agent.js');
+    const { db } = await import('../lib/db.js');
+    // Self-sufficient: the test DB isn't seeded with the full catalogue, so
+    // insert a service with a 2-doc checklist (getServiceById reads the DB).
+    const svcId = 990012; // service_catalog.id is not AUTOINCREMENT — fix it
+    await db.execute({
+      sql: `INSERT OR REPLACE INTO service_catalog
+              (id, name_en, name_ar, entity_en, entity_ar, fee_omr, required_documents_json, is_active)
+            VALUES (?, 'Replacement Title Deed', 'إصدار سند ملكية بدل فاقد',
+                    'MOHUP', 'وزارة الإسكان', 5, ?, 1)`,
+      args: [svcId, JSON.stringify([
+        { code: 'civil_id',      label_en: 'Civil ID',      label_ar: 'البطاقة المدنية' },
+        { code: 'police_report', label_en: 'Police report', label_ar: 'محضر الشرطة' }
+      ])]
+    });
+
+    const sid = 'wa:+proposed-' + Date.now();
+    await loadSession(sid);            // create the session row (saveSession UPDATEs)
+    await saveSession(sid, {
+      status: 'confirming',            // card shown, awaiting «نعم»
+      pending_service_id: svcId,       // ← the proposed service
+      pending_service_name_ar: 'خدمة مقترحة',
+      docs: [],                        // not started yet → no checklist
+      collected: {},
+      pending_uploads: [               // citizen uploaded instead of tapping نعم
+        { idx: 0, url: '/uploads/x/a.jpg', name: 'a.jpg', mime: 'image/jpeg' },
+        { idx: 1, url: '/uploads/x/b.jpg', name: 'b.jpg', mime: 'image/jpeg' }
+      ]
+    });
+
+    armBurst(sid, { reply: '' });
+    armBurst(sid, { reply: '' });      // 2-file burst
+    await sleep(160);                  // > BURST_QUIET_MS → drain fires
+
+    const st = await loadSession(sid);
+    assert.ok(['collecting', 'reviewing'].includes(st.status),
+      `the proposed service must auto-start when the citizen uploads instead of tapping نعم (got status='${st.status}')`);
+    assert.ok((st.docs || []).filter(d => d && d.code).length > 0,
+      'the service checklist should now be loaded');
+    assert.ok(!st.pending_service_id, 'pending_service_id consumed by the implicit start');
+    assert.equal((st.pending_uploads || []).length, 0,
+      'buffered uploads flushed into the submission (none left orphaned)');
+    const placed = Object.keys(st.collected || {}).length + (st.extras || []).length;
+    assert.equal(placed, 2, 'both uploaded files attached to the started service');
+  });
+
   test('drainBurst stores the solo reply itself (centralised storage)', async () => {
     // Updated 2026-05-07: contract changed — handler (runAgentV2) now
     // SKIPS storeMessage for attachment turns; drainBurst is the single
