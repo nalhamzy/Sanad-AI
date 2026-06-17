@@ -198,6 +198,49 @@ describe('lib/agent.js · burst aggregator + in-flight gate', () => {
     assert.equal(placed, 2, 'both uploaded files attached to the started service');
   });
 
+  test('extra file uploaded AFTER submission attaches to the request (not "لم نبدأ بعد")', async () => {
+    // Regression — +96892888715 (2026-06-17): after the request was submitted
+    // (status=queued), uploading a forgotten extra file wrongly hit "لم نبدأ
+    // بعد أي معاملة. أخبرني الخدمة" instead of attaching it to the existing
+    // request as a supplementary doc. The in-flight attachment must reach
+    // handleInFlight(), which records it with is_extra=1 and notifies the office.
+    const { runTurn, loadSession, saveSession } = await import('../lib/agent.js');
+    const { db } = await import('../lib/db.js');
+
+    const svcId = 990013;
+    await db.execute({
+      sql: `INSERT OR REPLACE INTO service_catalog (id, name_en, name_ar, required_documents_json, is_active)
+            VALUES (?, 'Extra Test', 'خدمة اختبار الإضافي', ?, 1)`,
+      args: [svcId, JSON.stringify([{ code: 'civil_id', label_en: 'Civil ID', label_ar: 'البطاقة المدنية' }])]
+    });
+    const sid = 'wa:+extra-' + Date.now();
+    const ins = await db.execute({
+      sql: `INSERT INTO request (session_id, service_id, status, fee_omr, governorate)
+            VALUES (?, ?, 'queued', 5, 'Muscat')`,
+      args: [sid, svcId]
+    });
+    const reqId = Number(ins.lastInsertRowid);
+    await loadSession(sid);
+    await saveSession(sid, {
+      status: 'queued', request_id: reqId, service_id: svcId,
+      docs: [{ code: 'civil_id' }], collected: { civil_id: { storage_url: '/uploads/x/id.jpg' } }
+    });
+
+    await runTurn({
+      session_id: sid, raw: '',
+      attachment: { url: '/uploads/x/extra.jpg', mime: 'image/jpeg', name: 'extra.jpg' }
+    });
+    await sleep(120); // let any burst drain settle
+
+    const { rows } = await db.execute({
+      sql: `SELECT id, is_extra, storage_url FROM request_document WHERE request_id=? AND is_extra=1`,
+      args: [reqId]
+    });
+    assert.ok(rows.length >= 1,
+      'the post-submission upload must attach to the request as an extra doc');
+    assert.equal(rows[0].storage_url, '/uploads/x/extra.jpg');
+  });
+
   test('drainBurst stores the solo reply itself (centralised storage)', async () => {
     // Updated 2026-05-07: contract changed — handler (runAgentV2) now
     // SKIPS storeMessage for attachment turns; drainBurst is the single
