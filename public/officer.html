@@ -1574,20 +1574,33 @@
   // they happen, instead of having to close + reopen the request. Re-renders
   // ONLY on an actual change (≈once per request), so it never disrupts an
   // office that's mid-action (reviewing docs, typing a note).
+  // Signature of the citizen's document set — so a re-upload (a replacement
+  // after the office rejected an unclear photo, OR an extra file) LIVE-refreshes
+  // the open detail view. Previously the poll only watched status/payment, so a
+  // fresh image sat unseen until the office reopened the request (prod report
+  // 2026-06-17). Keyed on id + status + storage_url tail so new rows, status
+  // flips (rejected→replaced/pending), and replaced files all register.
+  function _docSig(docs) {
+    docs = Array.isArray(docs) ? docs : [];
+    return docs.length + ':' + docs.map(d => `${d.id}.${d.status || ''}.${(d.storage_url || '').slice(-12)}`).join(',');
+  }
   let _detailLiveSig = '';
   async function pollDetailLive() {
     if (!currentRequestId || document.hidden) return;
     try {
       const data = await api('/api/officer/request/' + currentRequestId);
       const r = data.request;
-      const sig = r.status + '|' + (r.payment_status || '') + '|' + (r.paid_at || '');
+      const docSig = _docSig(data.documents);
+      const sig = r.status + '|' + (r.payment_status || '') + '|' + (r.paid_at || '') + '|' + docSig;
       if (!_detailLiveSig) { _detailLiveSig = sig; return; }
       if (sig === _detailLiveSig) return;
-      const oldPaidAt = _detailLiveSig.split('|')[2] || '';
-      const newlyPaid = !oldPaidAt && !!r.paid_at;
+      const parts = _detailLiveSig.split('|');
+      const newlyPaid  = !(parts[2] || '') && !!r.paid_at;
+      const docsChanged = (parts[3] || '') !== docSig;
       _detailLiveSig = sig;
       await openDetail(currentRequestId);          // re-render with the new state
       if (newlyPaid) { try { Sanad.toast(t('officer.paid_live', '✅ تم استلام دفعة المواطن'), 'ok', 3200); } catch {} }
+      else if (docsChanged) { try { Sanad.toast('📎 وصل تحديث على مستندات المواطن', 'info', 2800); } catch {} }
       try { loadInbox(); } catch {}                // keep the board in sync too
     } catch {}
   }
@@ -2006,8 +2019,9 @@
 
       renderChat(msgs, chatUnlocked);
       switchTab('docs');
-      // #4 baseline for the live-refresh poll (pollDetailLive).
-      _detailLiveSig = r.status + '|' + (r.payment_status || '') + '|' + (r.paid_at || '');
+      // #4 baseline for the live-refresh poll (pollDetailLive) — include the
+      // document signature so a citizen re-upload triggers a live refresh.
+      _detailLiveSig = r.status + '|' + (r.payment_status || '') + '|' + (r.paid_at || '') + '|' + _docSig(docs);
     } catch (e) {
       // Surface the actual reason: server-supplied AR hint (when present)
       // or the JS error message + line. Logged in full to console for
