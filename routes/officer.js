@@ -758,7 +758,9 @@ officerRouter.get('/request/:id/otp', async (req, res) => {
 // a no-op (returns {already:true}).
 officerRouter.post('/request/:id/complete', async (req, res) => {
   const id = Number(req.params.id);
-  const { ok, row: r, status, error } = await loadOwnedRequest(req.office.id, id);
+  const { ok, row: r, status, error } = await loadOwnedRequest(req.office.id, id, {
+    extra: ', c.phone AS citizen_phone'
+  });
   if (!ok) return res.status(status).json({ error });
   if (['completed', 'cancelled_by_citizen', 'cancelled_by_office'].includes(r.status)) {
     // Already in a terminal state — don't mutate, don't re-bill.
@@ -779,12 +781,17 @@ officerRouter.post('/request/:id/complete', async (req, res) => {
     sql: `UPDATE office SET total_completed = COALESCE(total_completed,0)+1 WHERE id=?`,
     args: [req.office.id]
   });
-  await storeMessage({
-    session_id: r.session_id, request_id: id,
-    direction: 'out', actor_type: 'bot',
-    body_text: '✅ تم إنجاز معاملتك! شكراً لاستخدامك سند.'
+  // Push the completion to the citizen's WhatsApp too (was in-app only —
+  // prod report: "office completed the request, nothing was sent to the user").
+  const notify = await notifyCitizen({
+    session_id: r.session_id, request_id: id, actor_type: 'bot',
+    citizen_phone: r.citizen_phone,
+    body: '✅ تم إنجاز معاملتك بنجاح! شكراً لاستخدامك سند.\n📄 إن وُجدت مستندات صادرة فستجدها في «طلباتي».'
   });
-  res.json({ ok: true });
+  res.json({
+    ok: true,
+    delivery: { whatsapp_attempted: notify.wa_attempted, whatsapp_ok: !!notify.text?.ok }
+  });
 });
 
 // ─── Per-document un-reject — recovery from a misclick ──────
@@ -797,9 +804,11 @@ officerRouter.post('/request/:id/document/:docId/unreject', async (req, res) => 
   const docId = Number(req.params.docId);
   const accept = !!req.body?.accept; // optional: also verify on un-reject
   const { rows } = await db.execute({
-    sql: `SELECT r.office_id, r.session_id, d.status AS doc_status, d.label, d.doc_code
+    sql: `SELECT r.office_id, r.session_id, c.phone AS citizen_phone,
+                 d.status AS doc_status, d.label, d.doc_code
             FROM request r
             JOIN request_document d ON d.id=? AND d.request_id=r.id
+            LEFT JOIN citizen c ON c.id = r.citizen_id
            WHERE r.id=?`,
     args: [docId, id]
   });
@@ -823,12 +832,12 @@ officerRouter.post('/request/:id/document/:docId/unreject', async (req, res) => 
     targetId: docId,
     diff: { request_id: id, new_status: newStatus }
   });
-  // Tell the citizen so they don't keep hunting for a replacement they
-  // already submitted. Bot voice (not officer) — this is a correction.
-  await storeMessage({
-    session_id: rows[0].session_id, request_id: id,
-    direction: 'out', actor_type: 'bot',
-    body_text: `↩ تراجع المكتب عن رفض المستند "${rows[0].label || rows[0].doc_code}". لا حاجة لإعادة الإرسال.`,
+  // Tell the citizen — on WhatsApp too — so they don't keep hunting for a
+  // replacement they already submitted. Bot voice (a correction).
+  await notifyCitizen({
+    session_id: rows[0].session_id, request_id: id, actor_type: 'bot',
+    citizen_phone: rows[0].citizen_phone,
+    body: `↩ تراجع المكتب عن رفض المستند "${rows[0].label || rows[0].doc_code}". لا حاجة لإعادة الإرسال.`,
     meta: { officer_id: req.officer.officer_id, doc_id: docId, action: 'unreject' }
   });
   res.json({ ok: true, new_status: newStatus });
@@ -916,15 +925,21 @@ officerRouter.post('/request/:id/issued-document',
     const publicBase = (reqHost ? `${reqProto}://${reqHost}`
                                 : (process.env.PUBLIC_BASE_URL || 'https://saned.ai')).replace(/\/+$/, '');
 
-    await notifyCitizen({
+    // Always include a direct download LINK in the text — so the citizen can
+    // get the file even if Meta refuses the inline media push (outside the 24h
+    // window, link-fetch blocked, etc.). The actual file is also attached via
+    // media below, and always available in the web app's "My Requests".
+    const fileUrl = `${publicBase}${storage_url}`;
+    const notify = await notifyCitizen({
       session_id: row.session_id,
       request_id: id,
       actor_type: 'office',
       citizen_phone: row.citizen_phone,
-      body: `📄 أصدر المكتب وثيقة جاهزة لطلبك:\n«${label}»\n\nيمكنك تحميلها من «طلباتي» في سند.\n` +
-            `———\nThe office issued a document for your request: "${label}". Download it from "My Requests".`,
+      body: `📄 أصدر المكتب وثيقة جاهزة لطلبك «${label}».\n` +
+            `📥 للتحميل: ${fileUrl}\n` +
+            `أو من «طلباتي» في تطبيق سند.`,
       media: {
-        link: `${publicBase}${storage_url}`,
+        link: fileUrl,
         filename: `${label}${path.extname(req.file.filename)}`,
         mime,
         caption: label
@@ -943,7 +958,14 @@ officerRouter.post('/request/:id/issued-document',
     res.json({
       ok: true,
       document: { id: docId, label, storage_url, mime,
-                  size_bytes: req.file.size, is_issued: 1, status: 'issued' }
+                  size_bytes: req.file.size, is_issued: 1, status: 'issued' },
+      // Tell the office whether it actually reached the citizen's WhatsApp.
+      delivery: {
+        whatsapp_attempted: notify.wa_attempted,
+        whatsapp_text_ok: !!notify.text?.ok,
+        whatsapp_file_ok: !!notify.media?.ok,
+        whatsapp_error: notify.media?.error || notify.text?.error || null
+      }
     });
   }
 );
@@ -1150,8 +1172,10 @@ officerRouter.post('/request/:id/request-info',
 
     const { rows } = await db.execute({
       sql: `SELECT r.session_id, r.office_id, r.status, r.paid_at,
+                   c.phone AS citizen_phone,
                    s.name_en AS service_name, s.name_ar AS service_name_ar
               FROM request r
+              LEFT JOIN citizen c ON c.id = r.citizen_id
               LEFT JOIN service_catalog s ON s.id = r.service_id
              WHERE r.id=?`,
       args: [id]
@@ -1211,13 +1235,18 @@ officerRouter.post('/request/:id/request-info',
     }
     lines.push('');
     lines.push('برجاء الردّ هنا أو على واتساب بأقرب وقت لاستئناف المعالجة.');
-    await storeMessage({
-      session_id: r.session_id, request_id: id,
-      direction: 'out', actor_type: 'officer',
-      body_text: lines.join('\n'),
+    // 'bot' voice (not 'officer') so it shows in the citizen's web view even
+    // pre-payment, and notifyCitizen pushes it to WhatsApp too (was in-app only).
+    const notify = await notifyCitizen({
+      session_id: r.session_id, request_id: id, actor_type: 'bot',
+      citizen_phone: r.citizen_phone,
+      body: lines.join('\n'),
       meta: { officer_id: req.officer.officer_id, missing }
     });
-    res.json({ ok: true });
+    res.json({
+      ok: true,
+      delivery: { whatsapp_attempted: notify.wa_attempted, whatsapp_ok: !!notify.text?.ok }
+    });
   }
 );
 

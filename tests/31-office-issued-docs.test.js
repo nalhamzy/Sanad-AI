@@ -172,3 +172,39 @@ test('office dashboard message reaches a WEB-applied citizen by phone (not just 
   assert.ok(['whatsapp', 'stub'].includes(body.delivery.channel),
     `expected an attempted-delivery channel, got '${body.delivery.channel}'`);
 });
+
+test('completing a request notifies the citizen on WhatsApp (not just in-app)', async (t) => {
+  // Regression — prod report: "office completed the request, nothing was sent
+  // to the user". The complete endpoint used storeMessage (in-app only); it now
+  // goes through notifyCitizen so it also reaches the citizen's phone.
+  await bootTestEnv();
+  const srv = await spawnServer();
+  t.after(() => srv.stop());
+  const { db } = await import('../lib/db.js');
+
+  const office = await registerAndApproveOffice(srv.origin);
+  const { request_id } = await createReadyRequest(srv.origin);
+  await db.execute({ sql: `INSERT INTO citizen (phone, name) VALUES ('+96890000777', 'Done Citizen')` });
+  const { rows: cit } = await db.execute({ sql: `SELECT id FROM citizen WHERE phone='+96890000777'` });
+  await db.execute({
+    sql: `UPDATE request SET office_id=?, citizen_id=?, status='in_progress' WHERE id=?`,
+    args: [office.office_id, cit[0].id, request_id]
+  });
+
+  const res = await fetch(`${srv.origin}/api/officer/request/${request_id}/complete`, {
+    method: 'POST', headers: { cookie: office.cookie }
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.delivery.whatsapp_attempted, true,
+    'completion must attempt WhatsApp delivery to the citizen phone');
+
+  const { rows: msgs } = await db.execute({
+    sql: `SELECT body_text FROM message WHERE request_id=? AND direction='out' ORDER BY id DESC LIMIT 1`,
+    args: [request_id]
+  });
+  assert.match(msgs[0].body_text, /تم إنجاز معاملتك/, 'completion message stored in the thread');
+
+  const { rows: rr } = await db.execute({ sql: `SELECT status FROM request WHERE id=?`, args: [request_id] });
+  assert.equal(rr[0].status, 'completed');
+});

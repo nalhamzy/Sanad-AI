@@ -2253,7 +2253,16 @@
       }
       if (fileEl) fileEl.value = '';
       if (labelEl) labelEl.value = '';
-      Sanad.toast('✓ تم إرسال المستند للمواطن', 'ok', 2600);
+      // Tell the office whether the FILE actually reached the citizen's WhatsApp
+      // (vs only saved to the app) so they know if a phone call / follow-up is needed.
+      let data = {}; try { data = await res.json(); } catch {}
+      const d = data.delivery || {};
+      const msg = d.whatsapp_file_ok
+        ? '✓ وصل المستند للمواطن على واتساب'
+        : d.whatsapp_attempted
+          ? '✓ حُفظ المستند — يظهر للمواطن في التطبيق (تعذّر إرساله على واتساب الآن)'
+          : '✓ حُفظ المستند للمواطن';
+      Sanad.toast(msg, d.whatsapp_file_ok ? 'ok' : 'info', 4200);
       await openDetail(currentRequestId);   // refresh the issued list
     } catch {
       Sanad.toast('خطأ في الشبكة', 'err', 3000);
