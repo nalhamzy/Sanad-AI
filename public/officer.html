@@ -629,6 +629,14 @@
               </div>
             </div>
 
+            <!-- Triage banner — shown only for "unsure which service" requests.
+                 Surfaces the citizen's free-text need prominently so the office
+                 can set the right service (via 🔄 تغيير الخدمة) and continue. -->
+            <div id="triageBanner" class="hidden px-5 py-3 shrink-0" style="border-bottom:1px solid var(--line);background:rgba(245,158,11,0.12)">
+              <div class="text-[12px] font-bold" style="color:#f59e0b">🤔 طلب غير محدّد الخدمة — اقرأ طلب المواطن، ثم اضغط «🔄 تغيير الخدمة» لتحديد الخدمة المناسبة وإكمال المعاملة.</div>
+              <div class="text-[13.5px] mt-1.5" id="triageSummary" style="color:var(--text);line-height:1.6"></div>
+            </div>
+
             <!-- PROGRESSIVE STEP STRIP — Review → Payment → Work → Done.
                  The current step is highlighted; the primary CTA below is
                  the action that advances to the NEXT step. Replaces the old
@@ -1118,7 +1126,13 @@
   }
 
   const isAr = s => /[\u0600-\u06FF]/.test(s || '');
-  const pickName = r => I18N.lang === 'ar' ? (r.service_name_ar || r.service_name) : (r.service_name || r.service_name_ar);
+  const pickName = r => {
+    const n = I18N.lang === 'ar' ? (r.service_name_ar || r.service_name) : (r.service_name || r.service_name_ar);
+    // Triage request — no service set yet; the claiming office picks one. Show
+    // a clear placeholder instead of a blank/(service) label.
+    if (!n && r && r.intent_summary) return I18N.lang === 'ar' ? '🤔 خدمة غير محددة' : '🤔 Unspecified service';
+    return n;
+  };
   const avatarGradient = id => {
     const list = ['linear-gradient(135deg,#f43f5e,#ec4899)','linear-gradient(135deg,#f97316,#f59e0b)','linear-gradient(135deg,#10b981,#14b8a6)','linear-gradient(135deg,#0ea5e9,#6366f1)','linear-gradient(135deg,#8b5cf6,#a855f7)','linear-gradient(135deg,#d946ef,#f43f5e)'];
     return list[(id || 0) % list.length];
@@ -1981,6 +1995,19 @@
       if (entityName) meta.push(entityName);
       if (r.governorate) meta.push(r.governorate);
       document.getElementById('detailMeta').textContent = meta.join(' · ');
+
+      // Triage request — surface the citizen's free-text intent prominently so
+      // the office can set the right service via reclassify, then continue.
+      const triageBanner = document.getElementById('triageBanner');
+      if (triageBanner) {
+        const isTriage = !r.service_name && !r.service_name_ar && r.intent_summary;
+        if (isTriage) {
+          document.getElementById('triageSummary').textContent = '« ' + r.intent_summary + ' »';
+          triageBanner.classList.remove('hidden');
+        } else {
+          triageBanner.classList.add('hidden');
+        }
+      }
 
       const claimedAt = r.claimed_at ? new Date(r.claimed_at.replace(' ','T')+'Z').getTime() : null;
       if (claimedAt) {

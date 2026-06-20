@@ -284,6 +284,7 @@ officerRouter.get('/inbox', async (req, res) => {
              r.status,
              r.governorate,
              r.created_at,
+             r.intent_summary,
              s.name_en  AS service_name,
              s.name_ar  AS service_name_ar,
              s.entity_en,
@@ -345,7 +346,8 @@ officerRouter.get('/inbox', async (req, res) => {
                     AND (r.last_office_view_at IS NULL OR r.last_citizen_reply_at > r.last_office_view_at)
                THEN 1 ELSE 0
              END AS fresh_reply,
-             s.name_en AS service_name, s.name_ar AS service_name_ar
+             s.name_en AS service_name, s.name_ar AS service_name_ar,
+             r.intent_summary
         FROM request r
         LEFT JOIN service_catalog s ON s.id = r.service_id
        WHERE r.office_id = ?
@@ -1386,13 +1388,22 @@ officerRouter.post('/request/:id/reclassify',
 
     const newName = r.new_service_name_ar || r.new_service_name;
     const oldTotal = (Number(r.office_fee_omr) || 0) + (Number(r.government_fee_omr) || 0);
-    const proposalBody =
-      `🔄 المكتب يقترح تغيير خدمتك إلى:\n` +
-      `**${newName}**\n` +
-      `الإجمالي الجديد: **${total.toFixed(3)} ر.ع** (السابق: ${oldTotal.toFixed(3)} ر.ع)\n` +
-      `السبب: ${reason}\n\n` +
-      `مستنداتك تنتقل كما هي. اضغط الزر للموافقة أو الرفض (أو اكتب **موافق** / **رفض**).\n` +
-      `(لن نُطبّق التغيير ولن نُرسل رابط دفع قبل موافقتك.)`;
+    // Triage requests had NO prior service — frame this as "setting" the service
+    // (and skip the meaningless "previous total: 0.000") rather than "changing".
+    const isTriageSet = !r.old_service_id;
+    const proposalBody = isTriageSet
+      ? (`✅ حدّد مكتب سند الخدمة المناسبة لطلبك:\n` +
+         `**${newName}**\n` +
+         `الإجمالي: **${total.toFixed(3)} ر.ع**\n` +
+         `السبب: ${reason}\n\n` +
+         `مستنداتك تنتقل كما هي. اضغط الزر للموافقة أو الرفض (أو اكتب **موافق** / **رفض**).\n` +
+         `(لن نُرسل رابط دفع قبل موافقتك.)`)
+      : (`🔄 المكتب يقترح تغيير خدمتك إلى:\n` +
+         `**${newName}**\n` +
+         `الإجمالي الجديد: **${total.toFixed(3)} ر.ع** (السابق: ${oldTotal.toFixed(3)} ر.ع)\n` +
+         `السبب: ${reason}\n\n` +
+         `مستنداتك تنتقل كما هي. اضغط الزر للموافقة أو الرفض (أو اكتب **موافق** / **رفض**).\n` +
+         `(لن نُطبّق التغيير ولن نُرسل رابط دفع قبل موافقتك.)`);
     await storeMessage({
       session_id: r.session_id, request_id: id,
       direction: 'out', actor_type: 'officer',
@@ -1597,13 +1608,16 @@ officerRouter.post('/request/:id/claim',
     //   • transfer: "another office took over (no re-payment); they're working on it now"
     const lang = (r.language_pref || 'ar') === 'en' ? 'en' : 'ar';
     const sname = (lang === 'ar' && r.service_name_ar) ? r.service_name_ar : (r.service_name || '');
+    // Triage requests have no service yet → omit the quoted name so the citizen
+    // doesn't see an empty "". The office sets the service via reclassify next.
+    const subj = sname ? `"${sname}" ` : '';
     const claimMsg = isTransfer
       ? (lang === 'ar'
-          ? `🤝 مكتب سند جديد استلم طلبك "${sname}" وبدأ المعالجة فوراً (الدفع قائم — لن تدفع مجدداً).`
-          : `🤝 A new Sanad office took over your "${sname}" request and started working immediately (payment is preserved — you won't be charged again).`)
+          ? `🤝 مكتب سند جديد استلم طلبك ${subj}وبدأ المعالجة فوراً (الدفع قائم — لن تدفع مجدداً).`
+          : `🤝 A new Sanad office took over your ${subj}request and started working immediately (payment is preserved — you won't be charged again).`)
       : (lang === 'ar'
-          ? `📥 تم استلام طلبك "${sname}" من قِبَل أحد مكاتب سند المرخّصة. يراجع الموظف مستنداتك الآن وسيرسل لك رابط الدفع قريباً.`
-          : `📥 Your request "${sname}" was picked up by a licensed Sanad office. The officer is reviewing your documents and will send you a payment link shortly.`);
+          ? `📥 تم استلام طلبك ${subj}من قِبَل أحد مكاتب سند المرخّصة. يراجع الموظف مستنداتك الآن وسيرسل لك رابط الدفع قريباً.`
+          : `📥 Your request ${subj}was picked up by a licensed Sanad office. The officer is reviewing your documents and will send you a payment link shortly.`);
     await notifyCitizen({
       session_id: r.session_id,
       request_id: id,
