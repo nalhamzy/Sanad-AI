@@ -242,3 +242,40 @@ describe('Admin routes — /api/platform-admin/payouts/*', () => {
     assert.ok(body.includes('Net OMR'),   'CSV must contain Net OMR column');
   });
 });
+
+describe('lib/payouts.js — reconcile() cash position', () => {
+  // Isolated date window (2026-03) so reconcile only sees this test's rows,
+  // not paid requests seeded by other tests in the shared test DB.
+  const MY_DT = '2026-03-15 12:00:00', MY_FROM = '2026-03-10', MY_TO = '2026-03-25';
+  const r3 = (n) => Math.round(Number(n) * 1000) / 1000;
+
+  test('buckets paid requests into transferred / pending / unsettled', async () => {
+    const { generatePayout, markPayoutPaid, reconcile, platformFeeOmr } = await import('../lib/payouts.js');
+    const { office_id } = await registerAndApproveOffice(env.origin);
+    const fee = platformFeeOmr();
+
+    // reqA → into a payout we MARK PAID (transferred)
+    await seedPaidRequest({ officeId: office_id, amountOmr: 10, paidAtSqlDt: MY_DT });
+    const g1 = await generatePayout({ officeId: office_id, from: MY_FROM, to: MY_TO });
+    await markPayoutPaid({ payoutId: g1.payout.id, reference: 'TXN-1' });
+
+    // reqB → into a payout we LEAVE PENDING (awaiting transfer)
+    await seedPaidRequest({ officeId: office_id, amountOmr: 20, paidAtSqlDt: MY_DT });
+    await generatePayout({ officeId: office_id, from: MY_FROM, to: MY_TO });
+
+    // reqC → never batched (unsettled)
+    await seedPaidRequest({ officeId: office_id, amountOmr: 30, paidAtSqlDt: MY_DT });
+
+    const rec = await reconcile({ from: MY_FROM, to: MY_TO });
+    assert.equal(rec.buckets.transferred.request_count, 1, 'one transferred');
+    assert.equal(rec.buckets.pending.request_count,     1, 'one pending');
+    assert.equal(rec.buckets.unsettled.request_count,   1, 'one unsettled');
+
+    assert.equal(rec.collected_omr,       60, 'collected = 10+20+30');
+    assert.equal(rec.platform_fee_omr,    r3(3 * fee));
+    assert.equal(rec.owed_to_offices_omr, r3(60 - 3 * fee));
+    assert.equal(rec.transferred_omr,     r3(10 - fee));
+    assert.equal(rec.pending_omr,         r3(20 - fee));
+    assert.equal(rec.unsettled_omr,       r3(30 - fee));
+  });
+});

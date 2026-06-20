@@ -311,6 +311,34 @@
         </div>
       </div>
 
+      <!-- Cash position (reconciliation): where the money is for this period -->
+      <div class="grid grid-cols-2 md:grid-cols-6 gap-px bg-ink-100 dark:bg-ink-800 border-t border-ink-100 dark:border-ink-800">
+        <div class="bg-white dark:bg-ink-900 p-3">
+          <div class="text-[10px] uppercase tracking-wider text-ink-400">Collected · citizens</div>
+          <div id="rec_collected" class="text-[18px] font-extrabold mt-1 mono">—</div>
+        </div>
+        <div class="bg-white dark:bg-ink-900 p-3">
+          <div class="text-[10px] uppercase tracking-wider text-ink-400">Platform kept</div>
+          <div id="rec_fee" class="text-[18px] font-extrabold mt-1 mono">—</div>
+        </div>
+        <div class="bg-white dark:bg-ink-900 p-3">
+          <div class="text-[10px] uppercase tracking-wider text-ink-400">Owed to offices</div>
+          <div id="rec_owed" class="text-[18px] font-extrabold mt-1 mono">—</div>
+        </div>
+        <div class="bg-white dark:bg-ink-900 p-3">
+          <div class="text-[10px] uppercase tracking-wider text-ink-400">✅ Transferred</div>
+          <div id="rec_transferred" class="text-[18px] font-extrabold mt-1 mono" style="color:#059669">—</div>
+        </div>
+        <div class="bg-white dark:bg-ink-900 p-3">
+          <div class="text-[10px] uppercase tracking-wider text-ink-400">⏳ Pending transfer</div>
+          <div id="rec_pending" class="text-[18px] font-extrabold mt-1 mono" style="color:#d97706">—</div>
+        </div>
+        <div class="bg-white dark:bg-ink-900 p-3">
+          <div class="text-[10px] uppercase tracking-wider text-ink-400">Not yet batched</div>
+          <div id="rec_unsettled" class="text-[18px] font-extrabold mt-1 mono">—</div>
+        </div>
+      </div>
+
       <!-- Eligible-by-office table + per-row generate button -->
       <div class="px-4 py-2 border-b border-ink-100 dark:border-ink-800 flex items-center gap-2">
         <div class="text-[12px] font-bold">Eligible for next payout</div>
@@ -1068,7 +1096,23 @@ function payoutPeriodParams() {
   return p;
 }
 
+// Cash position for the period — collected / kept / owed, split by transfer state.
+async function loadReconciliation() {
+  try {
+    const r = await fetch('/api/platform-admin/payouts/reconciliation?' + payoutPeriodParams().toString());
+    if (!r.ok) return;
+    const d = await r.json();
+    document.getElementById('rec_collected').textContent   = fmtOmr(d.collected_omr);
+    document.getElementById('rec_fee').textContent         = fmtOmr(d.platform_fee_omr);
+    document.getElementById('rec_owed').textContent        = fmtOmr(d.owed_to_offices_omr);
+    document.getElementById('rec_transferred').textContent = fmtOmr(d.transferred_omr);
+    document.getElementById('rec_pending').textContent     = fmtOmr(d.pending_omr);
+    document.getElementById('rec_unsettled').textContent   = fmtOmr(d.unsettled_omr);
+  } catch {}
+}
+
 async function loadEligible() {
+  loadReconciliation();
   const q = payoutPeriodParams();
   const r = await fetch('/api/platform-admin/payouts/eligible-by-office?' + q.toString());
   if (!r.ok) return;

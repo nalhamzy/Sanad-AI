@@ -7,7 +7,7 @@ import { db } from '../lib/db.js';
 import { requireOfficer, requirePlatformAdmin } from '../lib/auth.js';
 import {
   previewPayout, generatePayout, markPayoutPaid, cancelPayout,
-  exportPayoutsCsv, platformFeeOmr, recomputeTotals
+  exportPayoutsCsv, platformFeeOmr, recomputeTotals, reconcile
 } from '../lib/payouts.js';
 
 export const platformAdminRouter = Router();
@@ -663,6 +663,20 @@ function expandPreset(preset, from, to) {
   return { from: ymd(back), to: ymd(now) };
 }
 function ymd(d) { return d.toISOString().slice(0, 10); }
+
+// ─── GET /payouts/reconciliation ───────────────────────────
+// Top-line cash position for the period: collected from citizens, platform
+// fee retained, and net owed to offices split into transferred / pending /
+// unsettled. The "where is the money + what's left to transfer" view.
+platformAdminRouter.get('/payouts/reconciliation', async (req, res) => {
+  const { from, to } = expandPreset(req.query.preset || 'last_week', req.query.from, req.query.to);
+  try {
+    res.json(await reconcile({ from, to }));
+  } catch (e) {
+    console.error('[payouts/reconciliation]', e);
+    res.status(500).json({ error: 'reconciliation_failed', detail: e.message });
+  }
+});
 
 // ─── GET /payouts/eligible-by-office ───────────────────────
 // One-row-per-office summary of UNSETTLED paid requests for the period.
