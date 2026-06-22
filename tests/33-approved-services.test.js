@@ -70,3 +70,30 @@ describe('approved-services loader', () => {
     assert.equal(report.length, N);
   });
 });
+
+describe('verified-only gate (SANAD_VERIFIED_ONLY)', () => {
+  test('gate keeps verified services and hides unverified ones', async () => {
+    await loadApprovedServices({ apply: true });
+    // A distinctive UNVERIFIED row, findable by likeSearch on its English name.
+    await db.execute(
+      `INSERT INTO service_catalog(name_ar,name_en,is_active,verification_status,search_blob)
+       VALUES ('خدمة اختبار','Zzz Unverified Widget Service',1,'unverified','zzz unverified widget service')`);
+    const { searchServices } = await import('../lib/hybrid_search.js');
+
+    // Gate OFF — the unverified row is searchable (current behaviour preserved).
+    delete process.env.SANAD_VERIFIED_ONLY;
+    const off = await searchServices('unverified widget', {}, { k: 5 });
+    assert.ok(off.count > 0, 'unverified found when gate is off');
+
+    // Gate ON — verified offered, unverified hidden.
+    process.env.SANAD_VERIFIED_ONLY = 'true';
+    try {
+      const ver = await searchServices('renew worker residence', {}, { k: 5 });
+      assert.ok(ver.services.some(s => /residence/i.test(s.name_en || '')), 'verified service offered under gate');
+      const on = await searchServices('unverified widget', {}, { k: 5 });
+      assert.equal(on.count, 0, 'unverified hidden under gate');
+    } finally {
+      delete process.env.SANAD_VERIFIED_ONLY;
+    }
+  });
+});

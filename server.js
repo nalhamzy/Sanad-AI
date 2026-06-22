@@ -185,6 +185,18 @@ export async function prepare() {
     // Normal boot: import only when the table is empty. Idempotent.
     await autoImportCatalog();
   }
+
+  // Load the office-APPROVED services (the verified, fulfillable set). Real data
+  // (not demo) → runs every boot, idempotent (keyed by source_url='approved:*').
+  // Tests load these explicitly, so skip there.
+  if (process.env.NODE_ENV !== 'test') {
+    try {
+      const { loadApprovedServices } = await import('./scripts/load_approved_services.mjs');
+      const rep = await loadApprovedServices({ apply: true });
+      console.log(`[boot] approved services loaded/updated: ${rep.length}`);
+    } catch (e) { console.warn('[boot] approved-services load failed:', e.message); }
+  }
+
   await seedDemoOffices();
   await seedDemoAnnotators();
   await seedDemoRequests();  // no-op unless DEBUG_MODE=true
