@@ -1350,12 +1350,13 @@ officerRouter.post('/request/:id/reclassify',
     // Re-resolve pricing for the new service (per-service override → office
     // default → 5.0 OMR fallback), then update the request row.
     const { rows: priceRows } = await db.execute({
-      sql: `SELECT COALESCE(osp.office_fee_omr, off.default_office_fee_omr, 5.0) AS office_fee,
-                   COALESCE(osp.government_fee_omr, ?, 0)                       AS gov_fee
+      sql: `SELECT COALESCE(osp.office_fee_omr, sc.office_fee_omr, off.default_office_fee_omr, 5.0) AS office_fee,
+                   COALESCE(osp.government_fee_omr, sc.fee_omr, 0)                                  AS gov_fee
               FROM office off
-              LEFT JOIN office_service_price osp ON osp.office_id = off.id AND osp.service_id = ?
+              LEFT JOIN service_catalog sc       ON sc.id = ?
+              LEFT JOIN office_service_price osp  ON osp.office_id = off.id AND osp.service_id = ?
              WHERE off.id = ?`,
-      args: [r.new_catalog_fee, newServiceId, req.office.id]
+      args: [newServiceId, newServiceId, req.office.id]
     });
     const office_fee = Number(priceRows[0]?.office_fee || 0);
     const gov_fee    = Number(priceRows[0]?.gov_fee || 0);
@@ -1546,7 +1547,8 @@ officerRouter.post('/request/:id/claim',
                    r.paid_at, r.payment_amount_omr, r.payment_ref,
                    c.phone AS citizen_phone, c.language_pref,
                    s.fee_omr AS catalog_gov_fee, s.name_en AS service_name, s.name_ar AS service_name_ar,
-                   COALESCE(osp.office_fee_omr, off.default_office_fee_omr, 5.0) AS office_fee,
+                   s.gov_fee_tbd AS gov_fee_tbd,
+                   COALESCE(osp.office_fee_omr, s.office_fee_omr, off.default_office_fee_omr, 5.0) AS office_fee,
                    COALESCE(osp.government_fee_omr, s.fee_omr, 0) AS gov_fee
               FROM request r
               LEFT JOIN service_catalog s ON s.id = r.service_id
