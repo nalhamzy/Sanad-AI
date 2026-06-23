@@ -289,8 +289,8 @@ officerRouter.get('/inbox', async (req, res) => {
              s.name_ar  AS service_name_ar,
              s.entity_en,
              s.fee_omr  AS catalog_fee_omr,
-             osp.office_fee_omr      AS office_fee_override,
-             osp.government_fee_omr  AS government_fee_override,
+             s.office_fee_omr        AS office_fee_override,
+             NULL                    AS government_fee_override,
              CAST((julianday('now') - julianday(r.created_at)) * 24 * 60 AS INTEGER) AS minutes_old,
              (SELECT COUNT(*) FROM request_document d WHERE d.request_id = r.id) AS doc_count,
              (SELECT COUNT(*) FROM request_flag rf WHERE rf.request_id = r.id) AS flag_count,
@@ -305,8 +305,6 @@ officerRouter.get('/inbox', async (req, res) => {
         LEFT JOIN service_catalog s  ON s.id = r.service_id
         LEFT JOIN request_offer   mine
                ON mine.request_id = r.id AND mine.office_id = ?
-        LEFT JOIN office_service_price osp
-               ON osp.service_id = r.service_id AND osp.office_id = ?
        WHERE r.status='ready'
          AND NOT EXISTS (SELECT 1 FROM request_flag rf
                           WHERE rf.request_id = r.id AND rf.office_id = ?)
@@ -323,7 +321,7 @@ officerRouter.get('/inbox', async (req, res) => {
          )
        ORDER BY r.created_at ASC
        LIMIT 50`,
-    args: [office_id, office_id, office_id, myGov, ...adj, myGov]
+    args: [office_id, office_id, myGov, ...adj, myGov]
   });
 
   // My board: requests my office has claimed. Now grouped by lifecycle stage:
@@ -615,31 +613,9 @@ officerRouter.post(
       diff: { office_fee_omr, government_fee_omr, total, estimated_hours }
     });
 
-    // Auto-learn: remember this office's fee for this specific service, so
-    // the next time the same service appears in the marketplace the card
-    // pre-fills with what the office quoted last time. Government fee is NOT
-    // cached here — it stays admin-owned via the catalog. (If the office
-    // wants to lock a local gov-fee override they can do so explicitly on
-    // /pricing.html; passing null here preserves any existing override.)
-    try {
-      const { rows: svcRows } = await db.execute({
-        sql: `SELECT service_id FROM request WHERE id=?`, args: [id]
-      });
-      const service_id = svcRows[0]?.service_id;
-      if (service_id) {
-        await db.execute({
-          sql: `
-            INSERT INTO office_service_price (office_id, service_id, office_fee_omr, government_fee_omr, updated_at)
-            VALUES (?, ?, ?, NULL, datetime('now'))
-            ON CONFLICT(office_id, service_id) DO UPDATE SET
-              office_fee_omr = excluded.office_fee_omr,
-              updated_at     = datetime('now')
-          `,
-          args: [office_id, service_id, office_fee_omr]
-        });
-      }
-    } catch (_) { /* best-effort; never block offer submission */ }
-
+    // (No per-office price cache: the office commission is global + consistent
+    // for all offices — service_catalog.office_fee_omr — so there's nothing to
+    // learn or override per office.)
     res.status(201).json({ ok: true, office_fee_omr, government_fee_omr, total });
   }
 );
@@ -1355,16 +1331,15 @@ officerRouter.post('/request/:id/reclassify',
       });
     }
 
-    // Re-resolve pricing for the new service (per-service override → office
-    // default → 5.0 OMR fallback), then update the request row.
+    // Re-resolve pricing for the new service — the global office commission
+    // (service_catalog.office_fee_omr, consistent for all offices) + the catalog
+    // government fee, with a 5.0 OMR fallback.
     const { rows: priceRows } = await db.execute({
-      sql: `SELECT COALESCE(osp.office_fee_omr, sc.office_fee_omr, off.default_office_fee_omr, 5.0) AS office_fee,
-                   COALESCE(osp.government_fee_omr, sc.fee_omr, 0)                                  AS gov_fee
-              FROM office off
-              LEFT JOIN service_catalog sc       ON sc.id = ?
-              LEFT JOIN office_service_price osp  ON osp.office_id = off.id AND osp.service_id = ?
-             WHERE off.id = ?`,
-      args: [newServiceId, newServiceId, req.office.id]
+      sql: `SELECT COALESCE(sc.office_fee_omr, 5.0) AS office_fee,
+                   COALESCE(sc.fee_omr, 0)          AS gov_fee
+              FROM service_catalog sc
+             WHERE sc.id = ?`,
+      args: [newServiceId]
     });
     const office_fee = Number(priceRows[0]?.office_fee || 0);
     const gov_fee    = Number(priceRows[0]?.gov_fee || 0);
@@ -1565,16 +1540,13 @@ officerRouter.post('/request/:id/claim',
                    c.phone AS citizen_phone, c.language_pref,
                    s.fee_omr AS catalog_gov_fee, s.name_en AS service_name, s.name_ar AS service_name_ar,
                    s.gov_fee_tbd AS gov_fee_tbd,
-                   COALESCE(osp.office_fee_omr, s.office_fee_omr, off.default_office_fee_omr, 5.0) AS office_fee,
-                   COALESCE(osp.government_fee_omr, s.fee_omr, 0) AS gov_fee
+                   COALESCE(s.office_fee_omr, 5.0) AS office_fee,
+                   COALESCE(s.fee_omr, 0)          AS gov_fee
               FROM request r
               LEFT JOIN service_catalog s ON s.id = r.service_id
-              LEFT JOIN office off        ON off.id = ?
-              LEFT JOIN office_service_price osp
-                     ON osp.office_id = ? AND osp.service_id = r.service_id
               LEFT JOIN citizen c         ON c.id = r.citizen_id
              WHERE r.id = ?`,
-      args: [office_id, office_id, id]
+      args: [id]
     });
     const r = priceRows[0];
     if (!r) return res.status(404).json({ error: 'not_found' });

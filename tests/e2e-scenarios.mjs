@@ -332,37 +332,24 @@ async function s4_withdrawDoesNotBreakOthers() {
   await http('POST', `/api/chat/${seed.session_id}/request/${seed.request_id}/offers/${offers.offers[0].id}/accept`, { expect: 200 });
 }
 
-// S5 — Auto-learn pricing: an office's fee for a service is cached on first
-//      quote and pre-filled (via office_fee_override) on the next one.
+// S5 — Global commission: the inbox pre-fills office_fee_override straight from
+//      the service's GLOBAL commission (service_catalog.office_fee_omr) — the
+//      same for every office, with no per-office override / auto-learn.
 async function s5_autoLearnPricing() {
-  const svc = await pickAnyActiveService();
   const c1 = await login('khalid@nahdha.om', 'demo123');
+  const { rows: svcRows } = await db.execute(
+    `SELECT id, office_fee_omr FROM service_catalog
+      WHERE is_active=1 AND office_fee_omr IS NOT NULL LIMIT 1`);
+  if (!svcRows.length) { console.log('  S5 skipped — no priced active service'); return; }
+  const svc = svcRows[0];
+  const expected = Number(svc.office_fee_omr);
 
-  // Clear any prior override from earlier test runs
-  await db.execute({ sql: `DELETE FROM office_service_price WHERE office_id=1 AND service_id=?`, args: [svc.id] });
-
-  const seedA = await seedReadyRequest({ serviceId: svc.id });
-  // Office quotes at a distinctive fee: 7.777
-  await http('POST', `/api/officer/request/${seedA.request_id}/offer`,
-    { cookie: c1, body: { office_fee_omr: 7.777, government_fee_omr: seedA.catalog_fee_omr }, expect: 201 });
-
-  // Verify cache row exists
-  const { rows: cache } = await db.execute({
-    sql: `SELECT office_fee_omr FROM office_service_price WHERE office_id=1 AND service_id=?`,
-    args: [svc.id]
-  });
-  assert(Number(cache[0]?.office_fee_omr).toFixed(3) === '7.777', `auto-learn row missing/mismatch: ${JSON.stringify(cache)}`);
-
-  // Seed a NEW request for the same service — inbox must pre-fill with 7.777
-  const seedB = await seedReadyRequest({ serviceId: svc.id });
+  const seed = await seedReadyRequest({ serviceId: svc.id });
   const inbox = (await http('GET', '/api/officer/inbox', { cookie: c1, expect: 200 })).json;
-  const b = inbox.marketplace.find(x => x.id === seedB.request_id);
-  assert(b, 'second request not in marketplace');
-  assert(Number(b.office_fee_override).toFixed(3) === '7.777',
-    `new card should pre-fill 7.777, got office_fee_override=${b.office_fee_override}`);
-
-  // Cleanup
-  await db.execute({ sql: `DELETE FROM office_service_price WHERE office_id=1 AND service_id=?`, args: [svc.id] });
+  const card = inbox.marketplace.find(x => x.id === seed.request_id);
+  assert(card, 'request not in marketplace');
+  assert(Number(card.office_fee_override).toFixed(3) === expected.toFixed(3),
+    `card should pre-fill the global commission ${expected}, got office_fee_override=${card.office_fee_override}`);
 }
 
 // S6 — Document reject flow: officer rejects a doc with a reason, the reason

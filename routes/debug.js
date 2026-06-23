@@ -193,14 +193,12 @@ debugRouter.post('/simulate/claim/:request_id', requireDebug, async (req, res) =
   const { rows } = await db.execute({
     sql: `SELECT r.session_id, r.status, r.paid_at, r.service_id,
                  s.fee_omr AS catalog_gov_fee, s.name_en AS service_name, s.name_ar AS service_name_ar,
-                 COALESCE(osp.office_fee_omr, off.default_office_fee_omr, 5.0) AS office_fee,
-                 COALESCE(osp.government_fee_omr, s.fee_omr, 0) AS gov_fee
+                 COALESCE(s.office_fee_omr, 5.0) AS office_fee,
+                 COALESCE(s.fee_omr, 0) AS gov_fee
             FROM request r
             LEFT JOIN service_catalog s ON s.id = r.service_id
-            LEFT JOIN office off        ON off.id = ?
-            LEFT JOIN office_service_price osp ON osp.office_id = ? AND osp.service_id = r.service_id
            WHERE r.id = ?`,
-    args: [office.id, office.id, id]
+    args: [id]
   });
   const r = rows[0];
   if (!r) return res.status(404).json({ error: 'not_found' });
