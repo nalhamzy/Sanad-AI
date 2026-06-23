@@ -13,7 +13,7 @@ const { bootTestEnv } = await import('./helpers.js');
 await bootTestEnv();
 
 const { loadApprovedServices } = await import('../scripts/load_approved_services.mjs');
-const { APPROVED_SERVICES } = await import('../data/approved_services.mjs');
+const { APPROVED_SERVICES } = await import('../scripts/approved_services_data.mjs');
 const { db } = await import('../lib/db.js');
 
 const N = APPROVED_SERVICES.length;

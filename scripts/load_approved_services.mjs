@@ -19,7 +19,11 @@
 
 import { db, migrate } from '../lib/db.js';
 import { normalize } from '../lib/catalogue.js';
-import { APPROVED_SERVICES, APPROVED_ENTITY } from '../data/approved_services.mjs';
+// NOTE: this data lives in scripts/ (NOT data/) on purpose — on Render the
+// data/ directory is a mounted persistent disk that SHADOWS the repo's data/
+// folder at runtime, so a file committed to data/ is invisible to the running
+// app. Keep deployed reference data outside data/.
+import { APPROVED_SERVICES, APPROVED_ENTITY } from './approved_services_data.mjs';
 
 const DUP_THRESHOLD = 0.5;
 
