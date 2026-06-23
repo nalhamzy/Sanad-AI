@@ -1866,6 +1866,7 @@ officerRouter.post('/request/:id/payment/start',
       body_text: payMsg,
       meta: { payment_link: link.url, amount_omr: total }
     });
+    let waDelivery = null;
     const payPhone = deliverablePhone(r);
     if (payPhone) {
       // Three-tier fallback: approved Meta template → CTA URL button →
@@ -1874,16 +1875,25 @@ officerRouter.post('/request/:id/payment/start',
       // wa: sessions. See lib/whatsapp_payment_messages.js for the tier rules
       // and docs/META_TEMPLATES.md for the template body templates.
       const { sendPaymentLink } = await import('../lib/whatsapp_payment_messages.js');
-      sendPaymentLink({
-        phone: payPhone, lang,
-        amountOmr: total,
-        serviceName: sname,
-        link: link.url
-      }).then(r => {
-        if (r?.tier && r.tier !== 'template') {
-          console.log(`[wa:pay-link] sent via tier=${r.tier} (template not approved or fallback used)`);
+      try {
+        const wr = await sendPaymentLink({
+          phone: payPhone, lang,
+          amountOmr: total,
+          serviceName: sname,
+          link: link.url
+        });
+        waDelivery = { ok: !!wr?.ok, tier: wr?.tier || null, error: wr?.error || null };
+        if (!wr?.ok) {
+          // All tiers failed — most often the citizen is OUTSIDE Meta's 24h
+          // window and the sanad_payment_link template isn't approved yet, so
+          // free-form can't initiate. The link is still in the web thread + the
+          // office's clipboard; we report this so the office shares it manually.
+          console.warn(`[wa:pay-link] all tiers failed for req ${id}: ${wr?.error}`);
         }
-      }).catch(() => {});
+      } catch (e) {
+        waDelivery = { ok: false, tier: null, error: e.message };
+        console.warn(`[wa:pay-link] threw for req ${id}: ${e.message}`);
+      }
     }
 
     res.json({
@@ -1892,7 +1902,10 @@ officerRouter.post('/request/:id/payment/start',
       payment_link: link.url,
       amount_omr: total,
       merchant_ref: merchantRef,
-      stubbed: !AMWAL_ENABLED
+      stubbed: !AMWAL_ENABLED,
+      // null when the citizen has no phone (web-only — link lands in their web
+      // chat). Otherwise { ok, tier, error } for the WhatsApp delivery attempt.
+      whatsapp: waDelivery
     });
   }
 );

@@ -643,7 +643,7 @@
                  cramped action cluster. -->
             <div id="stepStrip" class="px-5 py-3 flex items-center gap-2 shrink-0" style="border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--surface),var(--surface-2))">
               <div class="step-pill" data-step="review">
-                <span class="step-num">1</span><span class="step-label">مراجعة المستندات</span>
+                <span class="step-num">1</span><span class="step-label">اكتمال المستندات</span>
               </div>
               <div class="step-arrow">›</div>
               <div class="step-pill" data-step="payment">
@@ -2618,7 +2618,7 @@
       // appears if the office hasn't accepted/rejected any docs yet.
       primary = `<button data-act="send-payment" class="cta-primary">💳 <span>إرسال رابط الدفع للمواطن</span></button>`;
       const total = (r.office_fee_omr || 0) + (r.government_fee_omr || 0);
-      hint = `الإجمالي المقفل: <b>${fee(total)}</b> — راجع المستندات قبل إرسال رابط الدفع`;
+      hint = `الإجمالي المقفل: <b>${fee(total)}</b> — تأكّد من اكتمال المستندات واعتمادها قبل إرسال رابط الدفع`;
       secondaryBtns.push(`<button data-act="request-info" class="cta-secondary">📝 طلب مستند أو استفسار</button>`);
       secondaryBtns.push(`<button data-act="reclassify" class="cta-secondary">🔄 تغيير الخدمة</button>`);
       secondaryBtns.push(`<button data-act="release" class="cta-secondary cta-danger">↩ إرجاع للسوق</button>`);
@@ -2684,6 +2684,12 @@
             Sanad.toast(msg, 'ok', 2800);
             if (resp.stubbed) {
               Sanad.toast('⚠ بوابة الدفع غير مهيّأة — استُخدم رابط اختباري', 'warn', 3600);
+            }
+            // WhatsApp delivery feedback: if the citizen has a phone but no tier
+            // landed (usually outside Meta's 24h window + template not approved),
+            // tell the office to share the copied link — don't fail silently.
+            if (resp.whatsapp && resp.whatsapp.ok === false) {
+              Sanad.toast('⚠ لم يصل الرابط عبر واتساب (غالباً خارج نافذة 24 ساعة) — الرابط منسوخ، شاركه مع المواطن. يظهر له أيضاً في المحادثة.', 'warn', 6500);
             }
             if (resp.payment_link) {
               try {
