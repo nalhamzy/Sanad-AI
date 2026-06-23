@@ -4,7 +4,7 @@ import path from 'path';
 import cookieParser from 'cookie-parser';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import { db, migrate, seedDemoOffices, seedDemoAnnotators, seedDemoRequests, autoImportCatalog } from './lib/db.js';
+import { db, migrate, seedDemoOffices, seedDemoAnnotators, seedDemoRequests, autoImportCatalog, deactivateUnverifiedServices } from './lib/db.js';
 import { chatRouter } from './routes/chat.js';
 import { officerRouter } from './routes/officer.js';
 import { whatsappRouter } from './routes/whatsapp.js';
@@ -194,6 +194,10 @@ export async function prepare() {
       const { loadApprovedServices } = await import('./scripts/load_approved_services.mjs');
       const rep = await loadApprovedServices({ apply: true });
       console.log(`[boot] approved services loaded/updated: ${rep.length}`);
+      // Curated catalogue: keep ONLY verified services active (the ~29 office-
+      // approved + any annotator-validated). Scraped/unverified rows → is_active=0.
+      const cur = await deactivateUnverifiedServices();
+      if (!cur.skipped) console.log(`[boot] curated-only: deactivated ${cur.deactivated} unverified · ${cur.active} active`);
     } catch (e) { console.warn('[boot] approved-services load failed:', e.message); }
   }
 

@@ -517,6 +517,24 @@ annotatorRouter.post('/services/:id/validate', requireAnnotatorWrite, async (req
     args: [id, actor, status, notes || null]
   });
 
+  // Reflect the verdict in the catalogue itself so the work actually takes
+  // effect: a validated service goes LIVE (is_active=1) + verified, which also
+  // lets it survive the curated-only boot gate; a rejected one is deactivated.
+  // Never downgrades an office-approved row.
+  if (status === 'validated') {
+    await db.execute({
+      sql: `UPDATE service_catalog
+               SET is_active=1,
+                   verification_status=CASE WHEN verification_status='office_approved' THEN verification_status ELSE 'annotator_validated' END,
+                   verification_source=CASE WHEN verification_source='office' THEN verification_source ELSE 'annotator' END,
+                   verified_at=datetime('now'), updated_at=datetime('now')
+             WHERE id=?`,
+      args: [id]
+    });
+  } else if (status === 'rejected') {
+    await db.execute({ sql: `UPDATE service_catalog SET is_active=0, updated_at=datetime('now') WHERE id=?`, args: [id] });
+  }
+
   await db.execute({
     sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
           VALUES ('annotator',?, ?, 'service', ?, ?)`,
@@ -534,6 +552,16 @@ annotatorRouter.post('/services/:id/unvalidate', requireAnnotatorWrite, async (r
   await db.execute({
     sql: `DELETE FROM service_validation
            WHERE id = (SELECT id FROM service_validation WHERE service_id=? ORDER BY created_at DESC LIMIT 1)`,
+    args: [id]
+  });
+
+  // If this service was annotator-validated (not office-approved), undoing the
+  // validation reverts it to unverified + inactive so it leaves the active set.
+  await db.execute({
+    sql: `UPDATE service_catalog
+             SET is_active=0, verification_status='unverified', verification_source=NULL,
+                 verified_at=NULL, updated_at=datetime('now')
+           WHERE id=? AND verification_source='annotator'`,
     args: [id]
   });
 
