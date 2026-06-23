@@ -2662,7 +2662,22 @@
         }
         if (a === 'send-payment') {
           try {
-            const resp = await api('/api/officer/request/' + r.id + '/payment/start', { method: 'POST' });
+            // The office sets the TOTAL. Many services' government fee isn't known
+            // until the office logs into the gov portal — so prompt for the amount,
+            // pre-filled with the commission+gov computed total, or blank + required
+            // when the gov fee is "to be determined" (gov_fee_tbd).
+            const computed = (Number(r.office_fee_omr) || 0) + (Number(r.government_fee_omr) || 0);
+            const govTbd = !!r.gov_fee_tbd;
+            const ask = govTbd
+              ? ('الرسوم الحكومية لهذه الخدمة غير محددة مسبقاً.\nأدخل الإجمالي بالريال (عمولة المكتب ' + fee(r.office_fee_omr) + ' + الرسوم الحكومية):')
+              : 'إجمالي مبلغ الدفع بالريال (يمكنك تعديله قبل الإرسال):';
+            const input = window.prompt(ask, govTbd ? '' : (computed > 0 ? String(computed) : ''));
+            if (input === null) return;                       // office cancelled
+            const amount = Number(String(input).trim());
+            if (!(amount > 0)) { Sanad.toast('❌ مبلغ غير صالح', 'err', 2400); return; }
+            const resp = await api('/api/officer/request/' + r.id + '/payment/start', {
+              method: 'POST', body: JSON.stringify({ amount_omr: amount })
+            });
             const msg = resp.reused
               ? `↻ أُعيد إرسال رابط الدفع · ${fee(resp.amount_omr)}`
               : `💳 أُرسل رابط الدفع للمواطن · ${fee(resp.amount_omr)}`;

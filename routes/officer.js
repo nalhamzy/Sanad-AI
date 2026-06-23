@@ -433,7 +433,7 @@ officerRouter.get('/request/:id', async (req, res) => {
 
   const { rows } = await db.execute({
     sql: `SELECT r.*, s.name_en AS service_name, s.name_ar AS service_name_ar,
-                 s.entity_en, s.required_documents_json
+                 s.entity_en, s.required_documents_json, s.gov_fee_tbd AS gov_fee_tbd
             FROM request r
             LEFT JOIN service_catalog s ON s.id = r.service_id
            WHERE r.id=?`,
@@ -497,9 +497,10 @@ officerRouter.get('/request/:id', async (req, res) => {
   //     they can actually progress the request. Without this, when the
   //     citizen replies "give me an hour, I'll upload tonight" the office
   //     can't see it and the whole flow stalls.
-  // chat_unlocked still flips at paid_at — the UI uses it to enable the
-  // free-text composer.
-  const chatUnlocked = !!r.paid_at;
+  // Chat opens once the office CLAIMS the request (no longer sealed until
+  // payment). Office→citizen free text is sanitized (no phone/URL/email) to
+  // block off-platform poaching. The UI uses this to enable the composer.
+  const chatUnlocked = !!(r.office_id) || !!r.paid_at;
   const messages = (await db.execute({
     sql: `SELECT id, direction, actor_type, body_text, media_url, created_at
             FROM message
@@ -676,11 +677,17 @@ officerRouter.post('/request/:id/message', async (req, res) => {
     extra: ', c.phone AS citizen_phone'
   });
   if (!ok) return res.status(status).json({ error });
-  // Pre-payment chat is sealed in production — only DEBUG_MODE bypasses for tests.
-  if (!r.paid_at && process.env.DEBUG_MODE !== 'true') {
-    return res.status(403).json({
-      error: 'chat_locked_until_paid',
-      hint: 'Send the payment link first; chat unlocks automatically when the citizen pays.'
+
+  // Chat is OPEN from claim onward (kept open, not sealed until payment).
+  // Sanitize office→citizen free text so an office can't pull the citizen
+  // off-platform — strip phone / URL / email / handles, the same as the
+  // structured actions (reclassify reason, doc-reject notes) already do.
+  const san = sanitizeOfficeText(text);
+  const clean = san.clean;
+  if (!clean) {
+    return res.status(400).json({
+      error: 'empty_after_sanitize',
+      hint: 'لا يمكن إرسال أرقام هواتف أو روابط أو بريد إلكتروني في الرسالة.'
     });
   }
 
@@ -688,7 +695,7 @@ officerRouter.post('/request/:id/message', async (req, res) => {
   await storeMessage({
     session_id: r.session_id, request_id: id,
     direction: 'out', actor_type: 'officer',
-    body_text: text,
+    body_text: clean,
     meta: { officer_id: req.officer.officer_id }
   });
 
@@ -699,7 +706,7 @@ officerRouter.post('/request/:id/message', async (req, res) => {
   let waResult = { ok: false, channel: 'skipped', skipped: 'no_phone' };
   const deliverTo = deliverablePhone(r);
   if (deliverTo) {
-    waResult = await sendWhatsAppText(deliverTo, text);
+    waResult = await sendWhatsAppText(deliverTo, clean);
     if (!waResult.ok) {
       console.warn(`[officer→wa] send failed for request ${id}: ${waResult.error}`);
     }
@@ -708,7 +715,7 @@ officerRouter.post('/request/:id/message', async (req, res) => {
   await db.execute({
     sql: `UPDATE request
              SET last_event_at=datetime('now'),
-                 status=CASE WHEN status='claimed' THEN 'in_progress' ELSE status END
+                 status=CASE WHEN status='claimed' AND paid_at IS NOT NULL THEN 'in_progress' ELSE status END
            WHERE id=?`,
     args: [id]
   });
@@ -1285,7 +1292,8 @@ officerRouter.post('/request/:id/reclassify',
         sql: `SELECT r.session_id, r.office_id, r.status, r.paid_at, r.service_id AS old_service_id,
                      r.payment_status, r.office_fee_omr AS old_office_fee, r.government_fee_omr AS old_gov_fee,
                      c.phone AS citizen_phone,
-                     s.name_en AS new_service_name, s.name_ar AS new_service_name_ar, s.fee_omr AS new_catalog_fee
+                     s.name_en AS new_service_name, s.name_ar AS new_service_name_ar, s.fee_omr AS new_catalog_fee,
+                     s.gov_fee_tbd AS new_gov_fee_tbd
                 FROM request r
                 LEFT JOIN service_catalog s ON s.id = ?
                 LEFT JOIN citizen c ON c.id = r.citizen_id
@@ -1392,16 +1400,25 @@ officerRouter.post('/request/:id/reclassify',
     // Triage requests had NO prior service — frame this as "setting" the service
     // (and skip the meaningless "previous total: 0.000") rather than "changing".
     const isTriageSet = !r.old_service_id;
+    // When the government fee isn't known up front, don't quote a (misleading)
+    // total here — show the office commission and note the full amount is
+    // confirmed at payment. Otherwise show the concrete total.
+    const govTbd = !!r.new_gov_fee_tbd;
+    const feeLine = govTbd
+      ? `عمولة المكتب: **${office_fee.toFixed(3)} ر.ع** + الرسوم الحكومية (يؤكّدها المكتب عند إرسال رابط الدفع)`
+      : (isTriageSet
+          ? `الإجمالي: **${total.toFixed(3)} ر.ع**`
+          : `الإجمالي الجديد: **${total.toFixed(3)} ر.ع** (السابق: ${oldTotal.toFixed(3)} ر.ع)`);
     const proposalBody = isTriageSet
       ? (`✅ حدّد مكتب سند الخدمة المناسبة لطلبك:\n` +
          `**${newName}**\n` +
-         `الإجمالي: **${total.toFixed(3)} ر.ع**\n` +
+         `${feeLine}\n` +
          `السبب: ${reason}\n\n` +
          `مستنداتك تنتقل كما هي. اضغط الزر للموافقة أو الرفض (أو اكتب **موافق** / **رفض**).\n` +
          `(لن نُرسل رابط دفع قبل موافقتك.)`)
       : (`🔄 المكتب يقترح تغيير خدمتك إلى:\n` +
          `**${newName}**\n` +
-         `الإجمالي الجديد: **${total.toFixed(3)} ر.ع** (السابق: ${oldTotal.toFixed(3)} ر.ع)\n` +
+         `${feeLine}\n` +
          `السبب: ${reason}\n\n` +
          `مستنداتك تنتقل كما هي. اضغط الزر للموافقة أو الرفض (أو اكتب **موافق** / **رفض**).\n` +
          `(لن نُطبّق التغيير ولن نُرسل رابط دفع قبل موافقتك.)`);
@@ -1657,7 +1674,8 @@ officerRouter.post('/request/:id/payment/start',
                    r.office_fee_omr, r.government_fee_omr,
                    c.phone AS citizen_phone, c.email AS citizen_email,
                    c.name AS citizen_name, c.display_name AS citizen_display, c.language_pref,
-                   s.name_en AS service_name, s.name_ar AS service_name_ar
+                   s.name_en AS service_name, s.name_ar AS service_name_ar,
+                   s.gov_fee_tbd AS gov_fee_tbd
               FROM request r
               LEFT JOIN citizen c        ON c.id = r.citizen_id
               LEFT JOIN service_catalog s ON s.id = r.service_id
@@ -1705,7 +1723,21 @@ officerRouter.post('/request/:id/payment/start',
       });
     }
 
-    const total = Number(r.payment_amount_omr) || (Number(r.office_fee_omr) || 0) + (Number(r.government_fee_omr) || 0);
+    // The office may set the TOTAL explicitly. This is REQUIRED for services
+    // whose government fee isn't known up front (gov_fee_tbd) — there the
+    // computed fallback is only the office commission, which would undercharge.
+    // A valid custom amount always wins; otherwise reuse a prior amount or the
+    // commission+gov computed fallback.
+    const customAmount = req.body?.amount_omr != null ? Number(req.body.amount_omr) : null;
+    if (r.gov_fee_tbd && !(customAmount > 0) && !(Number(r.payment_amount_omr) > 0)) {
+      return res.status(400).json({
+        error: 'amount_required',
+        hint: 'الرسوم الحكومية لهذه الخدمة غير محددة مسبقاً — حدِّد الإجمالي (عمولة المكتب + الرسوم الحكومية) قبل إرسال الرابط.'
+      });
+    }
+    const total = (customAmount > 0)
+      ? customAmount
+      : (Number(r.payment_amount_omr) || (Number(r.office_fee_omr) || 0) + (Number(r.government_fee_omr) || 0));
     if (!(total > 0)) {
       return res.status(400).json({
         error: 'bad_amount',
