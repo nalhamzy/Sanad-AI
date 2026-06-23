@@ -49,7 +49,7 @@ describe('Auth · /signup', () => {
 
   test('rejects invalid governorate', async () => {
     const { status, body } = await postJSON('/api/auth/signup', {
-      office_name_en: 'X', governorate: 'Narnia', cr_number: '1',
+      office_name_en: 'X', phone: '+96890000000', governorate: 'Narnia', cr_number: '1',
       email: `x${Date.now()}@t.om`, full_name: 'T', password: 'TestPass2026!'
     });
     assert.equal(status, 400);
@@ -59,7 +59,7 @@ describe('Auth · /signup', () => {
   test('rejects duplicate officer email', async () => {
     const email = `dup-${Date.now()}@t.om`;
     const base = {
-      office_name_en: 'Office', governorate: 'Muscat', cr_number: '11',
+      office_name_en: 'Office', phone: '+96890000000', governorate: 'Muscat', cr_number: '11',
       full_name: 'Owner', password: 'TestPass2026!', email
     };
     const first = await postJSON('/api/auth/signup', base);
@@ -73,7 +73,7 @@ describe('Auth · /signup', () => {
     const res = await fetch(ctx.origin + '/api/auth/signup', {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        office_name_en: 'Pending Office', governorate: 'Dhofar',
+        office_name_en: 'Pending Office', phone: '+96890000000', governorate: 'Dhofar',
         cr_number: '90001', email: `pend-${Date.now()}@t.om`,
         full_name: 'Pending Owner', password: 'TestPass2026!'
       })
@@ -97,7 +97,7 @@ describe('Auth · /login + /me + /logout', () => {
     const r = await fetch(ctx.origin + '/api/auth/signup', {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        office_name_en: 'Login Office', governorate: 'Muscat',
+        office_name_en: 'Login Office', phone: '+96890000000', governorate: 'Muscat',
         cr_number: '9002', email, full_name: 'Login User', password
       })
     });
@@ -145,7 +145,7 @@ describe('Auth · pending-review office is gated from /api/officer/*', () => {
     const r = await fetch(ctx.origin + '/api/auth/signup', {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        office_name_en: 'Gated Office', governorate: 'Al Wusta',
+        office_name_en: 'Gated Office', phone: '+96890000000', governorate: 'Al Wusta',
         cr_number: '9003', email: `gate-${Date.now()}@t.om`,
         full_name: 'Gate Owner', password: 'TestPass2026!'
       })
@@ -168,7 +168,7 @@ describe('Platform-admin · approve / reject / suspend', () => {
     const signup = await fetch(ctx.origin + '/api/auth/signup', {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        office_name_en: 'Approve Me', governorate: 'Muscat',
+        office_name_en: 'Approve Me', phone: '+96890000000', governorate: 'Muscat',
         cr_number: '9100', email: `app-${Date.now()}@t.om`,
         full_name: 'Owner', password: 'TestPass2026!'
       })
@@ -191,7 +191,7 @@ describe('Platform-admin · approve / reject / suspend', () => {
     const signup = await fetch(ctx.origin + '/api/auth/signup', {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        office_name_en: 'Reject Me', governorate: 'Muscat',
+        office_name_en: 'Reject Me', phone: '+96890000000', governorate: 'Muscat',
         cr_number: '9101', email: `rej-${Date.now()}@t.om`,
         full_name: 'Owner', password: 'TestPass2026!'
       })

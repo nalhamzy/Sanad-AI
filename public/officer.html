@@ -897,6 +897,31 @@
           <button type="submit" class="btn btn-primary">حفظ بيانات البنك · Save bank details</button>
         </div>
       </form>
+
+      <hr style="border:0;border-top:1px solid var(--line)"/>
+
+      <!-- Section 3: Change password (any signed-in officer changes their own) -->
+      <form id="pwForm" class="space-y-3">
+        <div class="font-bold text-[13px]" style="color:var(--text-strong)">كلمة المرور · Change password</div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label class="block mb-1 font-semibold">الحالية · Current</label>
+            <input id="pwCurrent" type="password" class="input w-full" autocomplete="current-password"/>
+          </div>
+          <div>
+            <label class="block mb-1 font-semibold">الجديدة · New</label>
+            <input id="pwNew" type="password" class="input w-full" autocomplete="new-password" placeholder="8 أحرف على الأقل"/>
+          </div>
+          <div>
+            <label class="block mb-1 font-semibold">تأكيد · Confirm</label>
+            <input id="pwConfirm" type="password" class="input w-full" autocomplete="new-password"/>
+          </div>
+        </div>
+        <div id="pwErr" class="hidden text-[12px] p-2 rounded-md" style="background:rgba(244,63,94,.08);color:#b91c1c"></div>
+        <div class="flex items-center justify-end gap-2 pt-1">
+          <button type="submit" class="btn btn-primary">تحديث كلمة المرور · Update password</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -3137,6 +3162,32 @@
         'فشل الحفظ — تحقّق من البيانات';
       errBox.textContent = friendly;
       errBox.classList.remove('hidden');
+    }
+  });
+
+  // ─ Change password ─ (any signed-in officer changes their own)
+  document.getElementById('pwForm')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const cur = document.getElementById('pwCurrent').value;
+    const nw  = document.getElementById('pwNew').value;
+    const cf  = document.getElementById('pwConfirm').value;
+    const err = document.getElementById('pwErr');
+    const fail = (m) => { err.textContent = m; err.classList.remove('hidden'); };
+    err.classList.add('hidden');
+    if (!cur || !nw) return fail('أدخل كلمة المرور الحالية والجديدة.');
+    if (nw !== cf)   return fail('كلمتا المرور الجديدتان غير متطابقتين.');
+    if (nw.length < 8) return fail('كلمة المرور الجديدة: 8 أحرف على الأقل.');
+    try {
+      await api('/api/office/change-password', {
+        method: 'POST',
+        body: JSON.stringify({ old_password: cur, new_password: nw })
+      });
+      Sanad.toast('✅ تم تحديث كلمة المرور', 'ok', 1600);
+      document.getElementById('pwForm').reset();
+    } catch (err2) {
+      const msg = err2.message || '';
+      fail(/wrong_old_password|401/.test(msg) ? 'كلمة المرور الحالية غير صحيحة.'
+         : 'تعذّر التحديث — حاول مرة أخرى.');
     }
   });
 

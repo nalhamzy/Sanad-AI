@@ -639,13 +639,33 @@ document.getElementById('btnSimOtp').onclick = async () => {
 
 // ─── Offices review — only visible to platform admins ─────
 let officeTab = 'pending_review';
+let adminBlocked = false;
+
+// Replace the page with a clear "admins only" notice instead of a silent blank
+// (a non-admin officer who opens /admin.html otherwise just sees an empty page).
+function showNotAdmin() {
+  adminBlocked = true;
+  document.body.innerHTML = `<div style="min-height:100vh;display:grid;place-items:center;padding:2rem;font-family:system-ui,sans-serif" dir="rtl">
+    <div style="max-width:30rem;text-align:center">
+      <div style="font-size:2.75rem">🔒</div>
+      <h1 style="font-size:1.3rem;font-weight:800;margin:.6rem 0">هذه الصفحة لمشرفي المنصّة فقط</h1>
+      <p style="color:#64748b;margin-bottom:1.25rem;line-height:1.7">أنت مسجّل الدخول، لكن حسابك ليس حساب مشرف منصّة. إدارة المكاتب تتطلّب صلاحية المشرف (بريدك ضمن ADMIN_EMAILS).</p>
+      <a href="/officer.html" style="display:inline-block;padding:.65rem 1.3rem;border-radius:.8rem;background:#0f766e;color:#fff;font-weight:700;text-decoration:none">→ الذهاب إلى لوحة المكتب</a>
+    </div>
+  </div>`;
+}
 
 async function loadOffices() {
+  if (adminBlocked) return;
   // Probe the endpoint; 401/403 means this viewer isn't a platform admin.
   const r = await fetch('/api/platform-admin/offices?status=' + encodeURIComponent(officeTab), {
     credentials: 'include'
   });
-  if (!r.ok) return; // stay hidden
+  if (!r.ok) {
+    if (r.status === 401) { location.href = '/office-login.html?next=/admin.html'; return; }
+    if (r.status === 403) { showNotAdmin(); return; }
+    return; // transient (5xx) — leave the page as-is
+  }
   const { offices } = await r.json();
   document.getElementById('officesSection').classList.remove('hidden');
 
@@ -674,6 +694,8 @@ async function loadOffices() {
     } else if (o.status === 'suspended' || o.status === 'rejected') {
       actions.push(`<button data-act="approve" data-id="${o.id}" class="px-2.5 h-7 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold">Reinstate</button>`);
     }
+    // Admin-initiated password reset is available for every office.
+    actions.push(`<button data-act="reset-password" data-id="${o.id}" class="px-2.5 h-7 rounded-lg bg-slate-600 hover:bg-slate-700 text-white text-[11px] font-bold" title="Generate a temporary password">Reset PW</button>`);
     return `<tr class="border-t border-ink-100 dark:border-ink-800 hover:bg-ink-50 dark:hover:bg-ink-800/50 transition">
       <td class="px-4 py-2.5 mono font-bold">O-${o.id}</td>
       <td class="px-4 py-2.5">
@@ -693,6 +715,20 @@ async function loadOffices() {
     b.addEventListener('click', async () => {
       const id = b.getAttribute('data-id');
       const act = b.getAttribute('data-act');
+
+      if (act === 'reset-password') {
+        if (!confirm('Reset this office\'s password? A new temporary password is generated; the office must change it after signing in.')) return;
+        const rr = await fetch(`/api/platform-admin/office/${id}/reset-password`, {
+          method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: '{}'
+        });
+        const dd = await rr.json().catch(() => ({}));
+        if (rr.ok && dd.temp_password) {
+          window.prompt(`Temp password for ${dd.email} — copy it and send to the office (they change it after login):`, dd.temp_password);
+          Sanad.toast('Temp password generated for #' + id, 'ok');
+        } else Sanad.toast('Reset failed: ' + rr.status, 'err');
+        return;
+      }
+
       let body = {};
       if (act === 'reject') {
         const reason = prompt('Reject reason (shown to the office):');

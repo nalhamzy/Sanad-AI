@@ -63,6 +63,9 @@
       <label class="block text-sm font-semibold mb-1.5" data-i18n="login.password">كلمة المرور</label>
       <input name="password" type="password" required autocomplete="current-password" class="w-full border border-slate-300 rounded-lg px-3 py-2" dir="ltr"/>
     </div>
+    <div class="-mt-1">
+      <button type="button" id="forgotLink" class="text-[13px] text-teal-700 font-semibold hover:underline">نسيت كلمة المرور؟</button>
+    </div>
     <button type="submit" id="submitBtn"
       class="w-full py-2.5 rounded-xl bg-gradient-to-br from-teal-600 to-green-700 text-white font-bold shadow-lg hover:shadow-xl disabled:opacity-50"
       data-i18n="login.submit">
@@ -84,6 +87,30 @@
     <button type="button" id="demoFill" class="mt-2 text-[12px] underline font-semibold" data-i18n="login.demo.fill">تعبئة النموذج بالبيانات التجريبية</button>
   </div>
 </main>
+
+<!-- Forgot-password modal -->
+<div id="forgotModal" class="hidden fixed inset-0 z-50 bg-black/40 grid place-items-center px-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-lg font-extrabold">إعادة تعيين كلمة المرور</h2>
+      <button type="button" id="forgotClose" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">&times;</button>
+    </div>
+    <!-- Step 1: request code -->
+    <div id="forgotStep1" class="space-y-3">
+      <p class="text-[13px] text-slate-600">أدخل بريدك الإلكتروني وسنرسل رمزاً إلى رقم واتساب المكتب المسجّل.</p>
+      <input id="forgotEmail" type="email" placeholder="email@example.com" class="w-full border border-slate-300 rounded-lg px-3 py-2" dir="ltr"/>
+      <button type="button" id="forgotSend" class="w-full py-2.5 rounded-xl bg-teal-700 text-white font-bold disabled:opacity-50">أرسل الرمز</button>
+    </div>
+    <!-- Step 2: enter code + new password -->
+    <div id="forgotStep2" class="hidden space-y-3">
+      <p class="text-[13px] text-slate-600">أدخل الرمز الذي وصلك عبر واتساب وكلمة المرور الجديدة.</p>
+      <input id="forgotCode" inputmode="numeric" maxlength="6" placeholder="رمز التحقق" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-center tracking-[0.4em]" dir="ltr"/>
+      <input id="forgotNewPw" type="password" placeholder="كلمة مرور جديدة (10 أحرف، حرف ورقم)" class="w-full border border-slate-300 rounded-lg px-3 py-2" dir="ltr"/>
+      <button type="button" id="forgotReset" class="w-full py-2.5 rounded-xl bg-teal-700 text-white font-bold disabled:opacity-50">تعيين كلمة المرور</button>
+    </div>
+    <div id="forgotMsg" class="hidden text-sm rounded-lg px-3 py-2 mt-3"></div>
+  </div>
+</div>
 
 <script src="/i18n.js"></script>
 <script>
@@ -175,6 +202,75 @@ if (!qs.has('fresh')) {
     })
     .catch(function () {});
 }
+
+// ── Forgot-password flow ────────────────────────────────────
+(function () {
+  const modal = document.getElementById('forgotModal');
+  const fMsg  = document.getElementById('forgotMsg');
+  const step1 = document.getElementById('forgotStep1');
+  const step2 = document.getElementById('forgotStep2');
+  function fShow(text, ok) {
+    fMsg.textContent = text;
+    fMsg.className = `text-sm rounded-lg px-3 py-2 mt-3 ${ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}`;
+    fMsg.classList.remove('hidden');
+  }
+  function openModal() {
+    modal.classList.remove('hidden');
+    document.getElementById('forgotEmail').value = form.email.value || '';
+  }
+  function closeModal() {
+    modal.classList.add('hidden');
+    step1.classList.remove('hidden'); step2.classList.add('hidden'); fMsg.classList.add('hidden');
+  }
+  document.getElementById('forgotLink').addEventListener('click', openModal);
+  document.getElementById('forgotClose').addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  document.getElementById('forgotSend').addEventListener('click', async () => {
+    const email = document.getElementById('forgotEmail').value.trim();
+    if (!email) { fShow('أدخل البريد الإلكتروني.', false); return; }
+    const b = document.getElementById('forgotSend'); b.disabled = true;
+    try {
+      const r = await fetch('/api/auth/forgot-password', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email }), credentials: 'include'
+      });
+      const d = await r.json().catch(() => ({}));
+      step1.classList.add('hidden'); step2.classList.remove('hidden');
+      fShow(d.hint || 'إن كان البريد مسجّلاً، وصلك رمز عبر واتساب.', true);
+    } catch { fShow('تعذّر الاتصال. حاول مرة أخرى.', false); }
+    finally { b.disabled = false; }
+  });
+
+  document.getElementById('forgotReset').addEventListener('click', async () => {
+    const email    = document.getElementById('forgotEmail').value.trim();
+    const code     = document.getElementById('forgotCode').value.trim();
+    const password = document.getElementById('forgotNewPw').value;
+    if (!code || !password) { fShow('أدخل الرمز وكلمة المرور الجديدة.', false); return; }
+    const b = document.getElementById('forgotReset'); b.disabled = true;
+    try {
+      const r = await fetch('/api/auth/reset-password', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, code, password }), credentials: 'include'
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.ok) {
+        fShow('✅ تم تغيير كلمة المرور. سجّل الدخول بكلمتك الجديدة.', true);
+        form.email.value = email; form.password.value = '';
+        setTimeout(closeModal, 1800);
+      } else {
+        const map = {
+          invalid_code:      'رمز غير صحيح.',
+          code_expired:      'انتهت صلاحية الرمز — اطلب رمزاً جديداً.',
+          too_many_attempts: 'محاولات كثيرة — اطلب رمزاً جديداً.',
+          weak_password:     'كلمة المرور ضعيفة (10 أحرف على الأقل، حرف ورقم).'
+        };
+        fShow(map[d.error] || 'تعذّر إعادة التعيين. حاول مرة أخرى.', false);
+      }
+    } catch { fShow('تعذّر الاتصال. حاول مرة أخرى.', false); }
+    finally { b.disabled = false; }
+  });
+})();
 </script>
 </body>
 </html>

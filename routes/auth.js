@@ -18,6 +18,9 @@ import {
   loadOfficer, requireOfficer
 } from '../lib/auth.js';
 import { rateLimit } from '../lib/rate_limit.js';
+import bcrypt from 'bcryptjs';
+import { randomInt } from 'crypto';
+import { sendWhatsAppText, sendWhatsAppTemplate } from '../lib/whatsapp_send.js';
 
 export const authRouter = Router();
 
@@ -45,6 +48,33 @@ function passwordIssues(p) {
   return issues;
 }
 
+// ─── Oman phone ────────────────────────────────────────────
+// Normalize common shapes to the canonical +968XXXXXXXX, then require it.
+// Accepts: +968XXXXXXXX · 00968XXXXXXXX · 968XXXXXXXX · bare 8-digit local.
+function normalizeOmanPhone(raw) {
+  let p = String(raw || '').trim().replace(/[\s\-()]/g, '');
+  if (!p) return '';
+  if (p.startsWith('+968'))  return p;
+  if (p.startsWith('00968')) return '+' + p.slice(2);
+  if (p.startsWith('968'))   return '+' + p;
+  if (/^\d{8}$/.test(p))     return '+968' + p;
+  return p; // leave as-is → phoneIssues rejects it
+}
+function phoneIssues(normalized) {
+  if (!normalized) return ['required'];
+  if (!/^\+968\d{8}$/.test(normalized)) return ['must_be_oman_+968_8_digits'];
+  return [];
+}
+
+// ─── Password-reset OTP config ─────────────────────────────
+const RESET_OTP_TTL_MIN      = Number(process.env.RESET_OTP_TTL_MIN || 10);
+const RESET_OTP_MAX_ATTEMPTS = Number(process.env.RESET_OTP_MAX_ATTEMPTS || 5);
+const RESET_OTP_COOLDOWN_S   = Number(process.env.RESET_OTP_COOLDOWN_S || 45);
+const OTP_TEMPLATE      = process.env.WHATSAPP_OTP_TEMPLATE || 'sanad_otp';
+const OTP_TEMPLATE_LANG = process.env.WHATSAPP_OTP_TEMPLATE_LANG || 'en';
+function genOtp() { return String(randomInt(100000, 1000000)); }
+function sqliteUtcToMs(s) { return new Date(String(s).replace(' ', 'T') + 'Z').getTime(); }
+
 // Oman governorates — used for signup validation
 const GOVERNORATES = new Set([
   'Muscat','Dhofar','Musandam','Al Buraimi','Ad Dakhiliyah','Al Batinah North',
@@ -69,7 +99,7 @@ authRouter.post('/signup', signupLimiter, async (req, res) => {
     const governorate    = safeStr(b.governorate, 40);
     const wilayat        = safeStr(b.wilayat, 60);
     const cr_number      = safeStr(b.cr_number, 40);
-    const office_phone   = safeStr(b.phone, 40);
+    const office_phone   = normalizeOmanPhone(b.phone);  // canonical +968XXXXXXXX
     const email          = normEmail(b.email);
     const full_name      = safeStr(b.full_name, 120);
     const password       = String(b.password || '');
@@ -81,6 +111,8 @@ authRouter.post('/signup', signupLimiter, async (req, res) => {
     if (!cr_number) missing.push('cr_number');
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) missing.push('email');
     if (!full_name) missing.push('full_name');
+    const phIssues = phoneIssues(office_phone);
+    if (phIssues.length) missing.push(...phIssues.map(i => `phone:${i}`));
     const pwIssues = passwordIssues(password);
     if (pwIssues.length) missing.push(...pwIssues.map(i => `password:${i}`));
     if (missing.length) return res.status(400).json({ error: 'validation', missing });
@@ -155,6 +187,108 @@ authRouter.post('/login', loginLimiter, async (req, res) => {
 
   const fresh = await loadOfficer(officer.id);
   res.json({ ok: true, officer: publicOfficer(fresh) });
+});
+
+// ─── POST /forgot-password ─────────────────────────────────
+// Body: { email }. Sends a 6-digit reset code to the office's WhatsApp number.
+// ALWAYS responds ok (never reveals whether the email is registered).
+authRouter.post('/forgot-password', signupLimiter, async (req, res) => {
+  // Generic body — identical whether or not the account exists.
+  const generic = { ok: true, hint: 'إن كان البريد مسجّلاً ومرتبطاً برقم واتساب، فسيصلك رمز خلال لحظات.' };
+  try {
+    const email = normEmail(req.body?.email);
+    if (!email) return res.status(400).json({ error: 'email_required' });
+
+    const { rows } = await db.execute({
+      sql: `SELECT id, phone FROM officer WHERE lower(email)=? LIMIT 1`, args: [email]
+    });
+    const officer = rows[0];
+    if (!officer || !officer.phone) return res.json(generic);
+
+    // Cooldown — block rapid resends per account.
+    const { rows: last } = await db.execute({
+      sql: `SELECT last_sent_at FROM password_reset_otp WHERE officer_id=? ORDER BY id DESC LIMIT 1`,
+      args: [officer.id]
+    });
+    if (last[0] && (Date.now() - sqliteUtcToMs(last[0].last_sent_at)) / 1000 < RESET_OTP_COOLDOWN_S) {
+      return res.json(generic);
+    }
+
+    const code = genOtp();
+    const code_hash = await bcrypt.hash(code, 8);
+    await db.execute({
+      sql: `INSERT INTO password_reset_otp(officer_id, code_hash, expires_at)
+            VALUES (?,?, datetime('now', ?))`,
+      args: [officer.id, code_hash, `+${RESET_OTP_TTL_MIN} minutes`]
+    });
+
+    // Deliver: approved template (works outside Meta's 24h window) → free-form
+    // text fallback (only lands if a 24h session is already open).
+    let delivered = false;
+    try {
+      const t = await sendWhatsAppTemplate(officer.phone, OTP_TEMPLATE, OTP_TEMPLATE_LANG, [code, String(RESET_OTP_TTL_MIN)]);
+      delivered = !!t?.ok;
+    } catch (e) { console.warn('[auth/forgot] template send failed:', e.message); }
+    if (!delivered) {
+      try {
+        const r = await sendWhatsAppText(officer.phone,
+          `🔐 رمز إعادة تعيين كلمة مرور ساند: ${code}\nصالح لمدة ${RESET_OTP_TTL_MIN} دقائق. لا تُشاركه مع أحد.`);
+        delivered = !!r?.ok;
+      } catch (e) { console.warn('[auth/forgot] text send failed:', e.message); }
+    }
+    res.json(generic);
+  } catch (e) {
+    console.error('[auth/forgot-password]', e);
+    res.json(generic); // stay generic even on error
+  }
+});
+
+// ─── POST /reset-password ──────────────────────────────────
+// Body: { email, code, password }. Verifies the OTP, sets the new password.
+authRouter.post('/reset-password', loginLimiter, async (req, res) => {
+  try {
+    const email    = normEmail(req.body?.email);
+    const code     = String(req.body?.code || '').trim();
+    const password = String(req.body?.password || '');
+    if (!email || !code) return res.status(400).json({ error: 'missing_fields' });
+    const pwIssues = passwordIssues(password);
+    if (pwIssues.length) return res.status(400).json({ error: 'weak_password', issues: pwIssues });
+
+    const { rows } = await db.execute({
+      sql: `SELECT id FROM officer WHERE lower(email)=? LIMIT 1`, args: [email]
+    });
+    const officer = rows[0];
+    if (!officer) return res.status(400).json({ error: 'invalid_code' });
+
+    const { rows: otps } = await db.execute({
+      sql: `SELECT id, code_hash, expires_at, attempts, consumed_at
+              FROM password_reset_otp WHERE officer_id=? ORDER BY id DESC LIMIT 1`,
+      args: [officer.id]
+    });
+    const otp = otps[0];
+    if (!otp || otp.consumed_at) return res.status(400).json({ error: 'invalid_code' });
+    if (sqliteUtcToMs(otp.expires_at) < Date.now()) return res.status(400).json({ error: 'code_expired' });
+    if (otp.attempts >= RESET_OTP_MAX_ATTEMPTS) return res.status(429).json({ error: 'too_many_attempts' });
+
+    const match = await bcrypt.compare(code, otp.code_hash);
+    if (!match) {
+      await db.execute({ sql: `UPDATE password_reset_otp SET attempts=attempts+1 WHERE id=?`, args: [otp.id] });
+      return res.status(400).json({ error: 'invalid_code' });
+    }
+
+    const password_hash = await hashPassword(password);
+    await db.execute({ sql: `UPDATE officer SET password_hash=? WHERE id=?`, args: [password_hash, officer.id] });
+    await db.execute({ sql: `UPDATE password_reset_otp SET consumed_at=datetime('now') WHERE id=?`, args: [otp.id] });
+    await db.execute({
+      sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id)
+            VALUES ('officer', ?, 'password_reset', 'officer', ?)`,
+      args: [officer.id, officer.id]
+    });
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[auth/reset-password]', e);
+    res.status(500).json({ error: 'reset_failed' });
+  }
 });
 
 // ─── POST /logout ──────────────────────────────────────────

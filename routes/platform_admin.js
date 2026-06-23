@@ -4,11 +4,18 @@
 
 import { Router } from 'express';
 import { db } from '../lib/db.js';
-import { requireOfficer, requirePlatformAdmin } from '../lib/auth.js';
+import { requireOfficer, requirePlatformAdmin, hashPassword } from '../lib/auth.js';
+import { randomBytes, randomInt } from 'crypto';
 import {
   previewPayout, generatePayout, markPayoutPaid, cancelPayout,
   exportPayoutsCsv, platformFeeOmr, recomputeTotals, reconcile
 } from '../lib/payouts.js';
+
+// Temp password for admin-initiated resets: 10 chars, always has a letter + a digit.
+function genTempPassword() {
+  const raw = randomBytes(12).toString('base64url').replace(/[-_]/g, '');
+  return 'S' + raw.slice(0, 8) + randomInt(0, 10);
+}
 
 export const platformAdminRouter = Router();
 
@@ -88,6 +95,40 @@ platformAdminRouter.post('/office/:id/approve', async (req, res) => {
     args: [req.officer.officer_id, id]
   });
   res.json({ ok: true });
+});
+
+// ─── POST /office/:id/reset-password ──────────────────────
+// Admin-initiated reset: sets a NEW temporary password on the office's owner
+// account and returns it ONCE. The admin relays it to the office, who signs in
+// and changes it via /api/office/change-password. No WhatsApp dependency — the
+// reliable path when an office is locked out and can't receive an OTP.
+platformAdminRouter.post('/office/:id/reset-password', async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: 'bad_id' });
+  // Target the owner; fall back to the earliest officer of the office.
+  const { rows } = await db.execute({
+    sql: `SELECT id, email, full_name FROM officer
+           WHERE office_id=? ORDER BY (role='owner') DESC, id ASC LIMIT 1`,
+    args: [id]
+  });
+  const officer = rows[0];
+  if (!officer) return res.status(404).json({ error: 'no_officer' });
+
+  const temp = genTempPassword();
+  const password_hash = await hashPassword(temp);
+  await db.execute({ sql: `UPDATE officer SET password_hash=? WHERE id=?`, args: [password_hash, officer.id] });
+  // Invalidate any pending self-service reset codes for that officer.
+  await db.execute({
+    sql: `UPDATE password_reset_otp SET consumed_at=datetime('now')
+           WHERE officer_id=? AND consumed_at IS NULL`,
+    args: [officer.id]
+  });
+  await db.execute({
+    sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id)
+          VALUES ('officer', ?, 'admin_password_reset', 'officer', ?)`,
+    args: [req.officer.officer_id, officer.id]
+  });
+  res.json({ ok: true, email: officer.email, full_name: officer.full_name, temp_password: temp });
 });
 
 // ─── POST /office/:id/reject ──────────────────────────────
