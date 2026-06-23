@@ -392,3 +392,72 @@ officeRouter.post('/change-password', requireOfficer({ allowPending: true }), as
   });
   res.json({ ok: true });
 });
+
+// ─── POST /catalog/service ─────────────────────────────────
+// Any active office (owner/manager) can add a service to the GLOBAL catalog.
+// Services are shared across all offices with a single, consistent office
+// commission — so the new row is immediately live + searchable for everyone
+// (verification_source 'office', status 'office_approved'). We record who added
+// it (audit log + source_url) and soft-block obvious duplicate names.
+officeRouter.post('/catalog/service', requireOfficer({ roles: ['owner', 'manager'] }), async (req, res) => {
+  const b = req.body || {};
+  const name_ar   = String(b.name_ar   || '').trim().slice(0, 200);
+  const name_en   = String(b.name_en   || '').trim().slice(0, 200);
+  const entity_ar = String(b.entity_ar || '').trim().slice(0, 200);
+  const entity_en = String(b.entity_en || '').trim().slice(0, 200);
+  const office_fee_omr = Number(b.office_fee_omr);
+
+  if (!name_ar && !name_en) return res.status(400).json({ error: 'name_required' });
+  if (!(office_fee_omr > 0) || office_fee_omr > 500) return res.status(400).json({ error: 'bad_commission' });
+
+  const { normalize } = await import('../lib/catalogue.js');
+  const nAr = normalize(name_ar), nEn = normalize(name_en);
+  // Soft dup-check against active services — keep the shared catalog clean.
+  const { rows: existing } = await db.execute({
+    sql: `SELECT id, name_ar, name_en FROM service_catalog WHERE is_active=1`
+  });
+  const dup = existing.find(s =>
+    (nAr && normalize(s.name_ar || '') === nAr) || (nEn && normalize(s.name_en || '') === nEn));
+  if (dup) return res.status(409).json({ error: 'already_exists', service: { id: dup.id, name_ar: dup.name_ar, name_en: dup.name_en } });
+
+  // Required documents: [{label_ar, label_en, type}] — type ∈ file|text|date|number.
+  const TYPES = new Set(['file', 'text', 'date', 'number']);
+  const docs = (Array.isArray(b.documents) ? b.documents : []).slice(0, 30).map((d, i) => {
+    const la = String(d?.label_ar || '').trim().slice(0, 160);
+    const le = String(d?.label_en || '').trim().slice(0, 160);
+    if (!la && !le) return null;
+    return { code: `doc_${i + 1}`, label_ar: la || le, label_en: le || la, type: TYPES.has(d?.type) ? d.type : 'file' };
+  }).filter(Boolean);
+
+  const blob = [name_en, name_ar, entity_en, entity_ar].filter(Boolean).join(' ').toLowerCase();
+  const ins = await db.execute({
+    sql: `INSERT INTO service_catalog
+            (entity_en,entity_ar,name_en,name_ar,required_documents_json,
+             fee_omr,office_fee_omr,gov_fee_tbd,
+             verification_status,verification_source,verified_at,
+             is_active,is_launch,version,search_blob,source_url,updated_at)
+          VALUES (?,?,?,?,?, NULL,?,1, 'office_approved','office',datetime('now'),
+                  1,0,1,?,?,datetime('now'))`,
+    args: [entity_en || null, entity_ar || null, name_en || name_ar, name_ar || name_en,
+           JSON.stringify(docs), office_fee_omr, blob, `office_added:${req.office.id}`]
+  });
+  const serviceId = Number(ins.lastInsertRowid);
+  // Stamp a unique provenance key now that we have the row id.
+  await db.execute({
+    sql: `UPDATE service_catalog SET source_url=? WHERE id=?`,
+    args: [`office_added:${req.office.id}:${serviceId}`, serviceId]
+  });
+  try {
+    await db.execute({
+      sql: `INSERT INTO service_catalog_fts(rowid,name_en,name_ar,description_en,description_ar,entity_en,entity_ar)
+            VALUES (?,?,?,?,?,?,?)`,
+      args: [serviceId, name_en || name_ar, name_ar || name_en, '', '', entity_en || '', entity_ar || '']
+    });
+  } catch { /* contentless FTS — safe to ignore */ }
+  await db.execute({
+    sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
+          VALUES ('officer', ?, 'service_add', 'service', ?, ?)`,
+    args: [req.officer.officer_id, serviceId, JSON.stringify({ name_ar, name_en, office_fee_omr, docs: docs.length })]
+  });
+  res.status(201).json({ ok: true, service_id: serviceId });
+});
