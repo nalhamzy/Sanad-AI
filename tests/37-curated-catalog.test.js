@@ -46,10 +46,11 @@ const validate = (id, body) => fetchJSON(srv.origin, `/api/annotator/services/${
 
 describe('curated catalogue', () => {
   test('keeps only office-approved + annotator-validated active (scraped + launch off)', async () => {
-    const office  = await addSvc({ name: 'OfficeApproved ' + Date.now(), status: 'office_approved', source: 'office' });
-    const annot   = await addSvc({ name: 'AnnotValidated ' + Date.now(), status: 'annotator_validated', source: 'annotator' });
-    const launch  = await addSvc({ name: 'LaunchSvc ' + Date.now(), status: 'unverified', launch: 1 });
-    const scraped = await addSvc({ name: 'ScrapedSvc ' + Date.now(), status: 'unverified' });
+    const office   = await addSvc({ name: 'OfficeApproved ' + Date.now(), status: 'office_approved', source: 'office' });
+    const annot    = await addSvc({ name: 'AnnotValidated ' + Date.now(), status: 'annotator_validated', source: 'annotator' });
+    const launch   = await addSvc({ name: 'LaunchSvc ' + Date.now(), status: 'unverified', launch: 1 });
+    const scraped  = await addSvc({ name: 'ScrapedSvc ' + Date.now(), status: 'unverified' });
+    const nullStat = await addSvc({ name: 'NullStatusSvc ' + Date.now(), status: null });  // verification_status = NULL
 
     const res = await deactivateUnverifiedServices();
     assert.equal(res.skipped, false);
@@ -57,6 +58,7 @@ describe('curated catalogue', () => {
     assert.equal(await isActive(annot), 1);
     assert.equal(await isActive(launch), 0, 'launch-tagged scraped rows are NOT exempt — still unverified');
     assert.equal(await isActive(scraped), 0);
+    assert.equal(await isActive(nullStat), 0, 'NULL verification_status is deactivated (COALESCE handles NULL NOT IN)');
   });
 
   test('annotator validate → service goes live + verified, survives the gate', async () => {

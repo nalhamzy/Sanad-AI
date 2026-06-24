@@ -194,11 +194,16 @@ export async function prepare() {
       const { loadApprovedServices } = await import('./scripts/load_approved_services.mjs');
       const rep = await loadApprovedServices({ apply: true });
       console.log(`[boot] approved services loaded/updated: ${rep.length}`);
-      // Curated catalogue: keep ONLY verified services active (the ~29 office-
-      // approved + any annotator-validated). Scraped/unverified rows → is_active=0.
-      const cur = await deactivateUnverifiedServices();
-      if (!cur.skipped) console.log(`[boot] curated-only: deactivated ${cur.deactivated} unverified · ${cur.active} active`);
     } catch (e) { console.warn('[boot] approved-services load failed:', e.message); }
+    // Curated catalogue: keep ONLY verified services active (the ~29 office-
+    // approved + any annotator-validated). Scraped/unverified rows → is_active=0.
+    // Own try block so a transient approved-load hiccup can't skip it — the 29
+    // persist from earlier boots, so the guard still passes.
+    try {
+      const cur = await deactivateUnverifiedServices();
+      if (cur.skipped) console.warn('[boot] curated-only: skipped (no verified service active)');
+      else console.log(`[boot] curated-only: deactivated ${cur.deactivated} unverified · ${cur.active} active`);
+    } catch (e) { console.warn('[boot] curated-only failed:', e.message); }
   }
 
   await seedDemoOffices();
