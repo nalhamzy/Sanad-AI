@@ -89,4 +89,24 @@ describe('curated catalogue', () => {
     assert.equal(await isActive(id), 0);
     assert.equal(await vStatus(id), 'unverified');
   });
+
+  test('deterministic launch resolution excludes a deactivated service', async () => {
+    const { matchService } = await import('../lib/catalogue.js');
+    // 1. The phrase still maps to a launch code (static keyword map, unchanged).
+    const m = await matchService('renew my passport', { useHybrid: false });
+    assert.ok(m && m.source === 'launch', 'phrase maps to a launch code');
+
+    // 2. The agent resolves that code to a row via `WHERE name_ar=? AND is_active=1`
+    //    (lib/agent.js) — so a deactivated launch service resolves to NOTHING and
+    //    the agent cannot start it. Ensure a row exists, then toggle is_active.
+    const NAME_AR = m.service.name_ar;
+    const { rows: ex } = await db.execute({ sql: `SELECT id FROM service_catalog WHERE name_ar=? LIMIT 1`, args: [NAME_AR] });
+    if (!ex.length) await addSvc({ name: NAME_AR, status: 'unverified', active: 1 });
+    const resolve = () => db.execute({ sql: `SELECT id FROM service_catalog WHERE name_ar=? AND is_active=1 LIMIT 1`, args: [NAME_AR] });
+
+    await db.execute({ sql: `UPDATE service_catalog SET is_active=1 WHERE name_ar=?`, args: [NAME_AR] });
+    assert.ok((await resolve()).rows.length > 0, 'active launch service resolves to a row');
+    await db.execute({ sql: `UPDATE service_catalog SET is_active=0 WHERE name_ar=?`, args: [NAME_AR] });
+    assert.equal((await resolve()).rows.length, 0, 'deactivated launch service resolves to nothing');
+  });
 });
