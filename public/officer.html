@@ -1164,27 +1164,33 @@
   }
 
   function showPendingReview(status) {
-    const body = document.body;
-    body.innerHTML = `
+    const icon  = status === 'suspended' ? '⛔' : status === 'rejected' ? '❌' : '⏳';
+    const title = status === 'suspended' ? 'Your office is suspended' :
+                  status === 'rejected'  ? 'Your office application was rejected' :
+                  'Pending review';
+    const msg   = status === 'suspended' ? 'Contact the Saned team to restore access.' :
+                  status === 'rejected'  ? 'Please contact the Saned team for details.' :
+                  'Your office is under review by the Saned team. We will email you when approved — usually within 1–2 business days.';
+    document.body.innerHTML = `
       <div style="min-height:100vh;display:grid;place-items:center;padding:40px;font-family:Inter,sans-serif;background:linear-gradient(180deg,#fbf8f3,#f5efe4)">
         <div style="max-width:520px;background:white;padding:40px;border-radius:20px;box-shadow:0 20px 40px -18px rgba(14,124,134,.3);text-align:center">
-          <div style="font-size:48px;margin-bottom:12px">${status === 'suspended' ? '⛔' : status === 'rejected' ? '❌' : '⏳'}</div>
-          <h1 style="font-size:28px;font-weight:800;margin-bottom:12px">
-            ${status === 'suspended' ? 'Your office is suspended' :
-              status === 'rejected' ? 'Your office application was rejected' :
-              'Pending review'}
-          </h1>
-          <p style="color:#475569;line-height:1.6;margin-bottom:24px">
-            ${status === 'suspended' ? 'Contact the Saned team to restore access.' :
-              status === 'rejected' ? 'Please contact the Saned team for details.' :
-              'Your office is under review by the Saned team. We will email you when approved — usually within 1–2 business days.'}
-          </p>
-          <button onclick="fetch('/api/auth/logout',{method:'POST',credentials:'include'}).then(()=>location.href='/office-login.html')"
-            style="padding:10px 24px;background:linear-gradient(135deg,#0e7c86,#126e3d);color:white;border-radius:10px;font-weight:700;border:0;cursor:pointer">
-            Sign out
-          </button>
+          <div style="font-size:48px;margin-bottom:12px">${icon}</div>
+          <h1 style="font-size:28px;font-weight:800;margin-bottom:12px">${title}</h1>
+          <p style="color:#475569;line-height:1.6;margin-bottom:24px">${msg}</p>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <a id="adminPanelBtn" href="/admin.html" style="display:none;padding:10px 24px;background:linear-gradient(135deg,#0e7c86,#126e3d);color:white;border-radius:10px;font-weight:700;text-decoration:none">→ لوحة المشرف · Admin panel</a>
+            <button onclick="fetch('/api/auth/logout',{method:'POST',credentials:'include'}).then(()=>location.href='/office-login.html')"
+              style="padding:10px 24px;background:white;border:1px solid #cbd5e1;color:#334155;border-radius:10px;font-weight:700;cursor:pointer">
+              Sign out
+            </button>
+          </div>
         </div>
       </div>`;
+    // An admin who also owns a not-yet-approved office would otherwise be stuck on
+    // this wall. Probe the admin API; if it's a platform admin, reveal the shortcut.
+    fetch('/api/platform-admin/offices?status=pending_review', { credentials: 'include' })
+      .then(r => { if (r.ok) { const b = document.getElementById('adminPanelBtn'); if (b) b.style.display = 'inline-block'; } })
+      .catch(() => {});
   }
 
   const isAr = s => /[\u0600-\u06FF]/.test(s || '');
