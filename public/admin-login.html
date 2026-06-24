@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin · Saned</title>
+<meta name="robots" content="noindex,nofollow"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<style>body{font-family:Inter,system-ui,sans-serif}</style>
+</head>
+<body class="min-h-screen grid place-items-center bg-slate-900 text-slate-100 px-4">
+  <main class="w-full max-w-sm">
+    <div class="text-center mb-6">
+      <div class="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-br from-teal-500 to-green-700 grid place-items-center text-xl font-extrabold text-white">S</div>
+      <h1 class="mt-3 text-xl font-extrabold">Platform Admin</h1>
+      <p class="text-slate-400 text-sm">Saned-AI internal — admin console sign-in</p>
+    </div>
+    <form id="f" class="bg-slate-800 rounded-2xl p-6 space-y-4 shadow-xl border border-slate-700">
+      <div>
+        <label class="block text-sm font-semibold mb-1.5">Email</label>
+        <input name="email" type="email" required autocomplete="username" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" dir="ltr"/>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1.5">Password</label>
+        <input name="password" type="password" required autocomplete="current-password" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" dir="ltr"/>
+      </div>
+      <button type="submit" id="b" class="w-full py-2.5 rounded-xl bg-gradient-to-br from-teal-600 to-green-700 text-white font-bold disabled:opacity-50">Sign in</button>
+      <div id="m" class="hidden text-sm rounded-lg px-3 py-2"></div>
+    </form>
+    <p class="text-center text-slate-500 text-[11px] mt-4">Office staff: use <a href="/office-login.html" class="underline">the office login</a> instead.</p>
+  </main>
+<script>
+const f = document.getElementById('f'), m = document.getElementById('m'), b = document.getElementById('b');
+function msg(t, ok) { m.textContent = t; m.className = `text-sm rounded-lg px-3 py-2 ${ok ? 'bg-emerald-900/50 text-emerald-200' : 'bg-rose-900/50 text-rose-200'}`; m.classList.remove('hidden'); }
+f.addEventListener('submit', async (e) => {
+  e.preventDefault(); b.disabled = true; b.textContent = 'Signing in…';
+  const body = Object.fromEntries(new FormData(f).entries());
+  try {
+    const r = await fetch('/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), credentials: 'include' });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      msg(d.error === 'invalid_credentials' ? 'Invalid email or password.' : 'Sign-in failed: ' + (d.error || r.status));
+      b.disabled = false; b.textContent = 'Sign in'; return;
+    }
+    // Confirm this account is actually a platform admin before sending them in.
+    const chk = await fetch('/api/platform-admin/offices?status=all', { credentials: 'include' });
+    if (chk.ok) { msg('✓ Signed in — opening the console…', true); setTimeout(() => location.href = '/admin.html', 400); }
+    else {
+      msg('This account is signed in but is not a platform admin.');
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      b.disabled = false; b.textContent = 'Sign in';
+    }
+  } catch (err) { msg('Network error — try again.'); b.disabled = false; b.textContent = 'Sign in'; }
+});
+</script>
+</body>
+</html>

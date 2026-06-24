@@ -154,3 +154,47 @@ describe('admin-initiated reset', () => {
     assert.equal((await login(target.officer.email, 'TestPass2026!')).status, 401, 'old password rejected');
   });
 });
+
+describe('standalone platform admin (no office)', () => {
+  async function seedNoOfficeOfficer(role, pw) {
+    const { hashPassword } = await import('../lib/auth.js');
+    const email = `${role.replace('_', '')}-${Date.now()}@saned.test`;
+    const hash = await hashPassword(pw);
+    await db.execute({
+      sql: `INSERT INTO officer(office_id, full_name, email, role, password_hash, status)
+            VALUES (NULL, ?, ?, ?, ?, 'active')`,
+      args: ['Test Platform Admin', email, role, hash]
+    });
+    const res = await fetch(srv.origin + '/api/auth/login', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, password: pw })
+    });
+    return { email, status: res.status, cookie: (res.headers.get('set-cookie') || '').split(';')[0] };
+  }
+  // Force the role path (not the DEBUG admin fallback): an ADMIN_EMAILS list that
+  // excludes our test accounts, so ONLY role='platform_admin' can grant access.
+  async function withAdminEmails(fn) {
+    const prev = process.env.ADMIN_EMAILS;
+    process.env.ADMIN_EMAILS = 'someone-else@nowhere.om';
+    try { return await fn(); }
+    finally { if (prev === undefined) delete process.env.ADMIN_EMAILS; else process.env.ADMIN_EMAILS = prev; }
+  }
+
+  test('no-office officer with role=platform_admin logs in + reaches admin routes', async () => {
+    const a = await seedNoOfficeOfficer('platform_admin', 'AdminPass2026x');
+    assert.equal(a.status, 200, 'no-office admin can log in (loadOfficer LEFT JOIN)');
+    await withAdminEmails(async () => {
+      const r = await fetchJSON(srv.origin, '/api/platform-admin/offices?status=all', { headers: { cookie: a.cookie } });
+      assert.equal(r.status, 200, 'role=platform_admin grants admin access without an office or ADMIN_EMAILS');
+    });
+  });
+
+  test('no-office officer WITHOUT the admin role is rejected by the admin API', async () => {
+    const o = await seedNoOfficeOfficer('officer', 'PlainPass2026x');
+    assert.equal(o.status, 200);
+    await withAdminEmails(async () => {
+      const r = await fetchJSON(srv.origin, '/api/platform-admin/offices?status=all', { headers: { cookie: o.cookie } });
+      assert.equal(r.status, 403, 'a plain no-office officer is not an admin');
+    });
+  });
+});
