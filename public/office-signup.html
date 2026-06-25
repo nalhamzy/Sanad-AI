@@ -180,7 +180,7 @@ document.getElementById('langBtn').addEventListener('click', () => {
 
 function showMsg(text, ok = false) {
   msg.textContent = text;
-  msg.className = `text-sm rounded-lg px-3 py-2 ${ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}`;
+  msg.className = `text-sm whitespace-pre-line leading-relaxed rounded-lg px-3 py-2.5 ${ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}`;
   msg.classList.remove('hidden');
 }
 
@@ -201,8 +201,30 @@ form.addEventListener('submit', async (e) => {
     const data = await r.json();
     if (!r.ok) {
       const code = data.error || 'signup_failed';
-      const missing = data.missing ? ` (${data.missing.join(', ')})` : '';
-      showMsg(t('signup.err.' + code, code) + missing);
+      const ar = (typeof I18N !== 'undefined' && I18N.lang !== 'en');
+      const FIELD = ar
+        ? { office_name: 'اسم المكتب', governorate: 'المحافظة', cr_number: 'رقم السجل التجاري', email: 'بريد إلكتروني صحيح', full_name: 'اسم المالك' }
+        : { office_name: 'office name', governorate: 'governorate', cr_number: 'CR number', email: 'a valid email', full_name: 'owner name' };
+      let parts = [];
+      if (code === 'email_taken')
+        parts = [ar ? 'هذا البريد مُسجّل بالفعل — سجّل الدخول بدلاً من ذلك.' : 'That email is already registered — sign in instead.'];
+      else if (code === 'bad_governorate')
+        parts = [ar ? 'اختر محافظة صحيحة من القائمة.' : 'Choose a valid governorate from the list.'];
+      else if (Array.isArray(data.missing)) {
+        const m = data.missing;
+        if (m.some(x => x.indexOf('password:') === 0))
+          parts.push(ar ? '🔑 كلمة المرور: 10 أحرف على الأقل، وتحتوي على حرف واحد ورقم واحد على الأقل، وألا تكون شائعة.'
+                        : '🔑 Password: at least 10 characters, including at least one letter and one number, and not a common one.');
+        if (m.some(x => x.indexOf('phone:') === 0))
+          parts.push(ar ? '📱 رقم هاتف عُماني صحيح يبدأ بـ +968 ثم 8 أرقام.'
+                        : '📱 A valid Oman phone number: +968 followed by 8 digits.');
+        const fields = m.filter(x => FIELD[x]).map(x => FIELD[x]);
+        if (fields.length)
+          parts.push((ar ? '📝 يرجى تعبئة: ' : '📝 Please fill in: ') + fields.join(ar ? '، ' : ', '));
+      }
+      if (!parts.length)
+        parts = [t('signup.err.' + code, ar ? 'تعذّر التسجيل — حاول مرة أخرى.' : 'Sign-up failed — please try again.')];
+      showMsg(parts.join('\n'));
       btn.disabled = false; btn.textContent = t('signup.submit');
       return;
     }
