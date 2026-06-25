@@ -218,6 +218,9 @@ form.addEventListener('submit', async (e) => {
         if (m.some(x => x.indexOf('phone:') === 0))
           parts.push(ar ? '📱 رقم هاتف عُماني صحيح يبدأ بـ +968 ثم 8 أرقام.'
                         : '📱 A valid Oman phone number: +968 followed by 8 digits.');
+        if (m.some(x => x === 'email:duplicate_tld'))
+          parts.push(ar ? '📧 تأكّد من البريد الإلكتروني — يبدو أن النطاق مُكرّر، مثل: name@gmail.com.com'
+                        : '📧 Please check the email — the domain looks duplicated, e.g. name@gmail.com.com');
         const fields = m.filter(x => FIELD[x]).map(x => FIELD[x]);
         if (fields.length)
           parts.push((ar ? '📝 يرجى تعبئة: ' : '📝 Please fill in: ') + fields.join(ar ? '، ' : ', '));

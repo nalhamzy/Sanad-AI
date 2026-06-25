@@ -59,6 +59,35 @@ describe('signup — +968 phone enforcement', () => {
   });
 });
 
+describe('signup — email validation', () => {
+  test('rejects a duplicated-TLD typo like name@gmail.com.com', async () => {
+    const r = await fetchJSON(srv.origin, '/api/auth/signup', J({
+      office_name_en: 'DupTLD', governorate: 'Muscat', cr_number: 'CR-DT-' + Date.now(),
+      email: `dup-${Date.now()}@gmail.com.com`, full_name: 'X', password: 'TestPass2026!', phone: '92345678'
+    }));
+    assert.equal(r.status, 400);
+    assert.equal(r.body.error, 'validation');
+    assert.ok(r.body.missing.includes('email:duplicate_tld'), 'dup-tld flagged: ' + JSON.stringify(r.body.missing));
+  });
+
+  test('rejects a malformed email (double dot / empty label)', async () => {
+    const r = await fetchJSON(srv.origin, '/api/auth/signup', J({
+      office_name_en: 'BadEmail', governorate: 'Muscat', cr_number: 'CR-BE-' + Date.now(),
+      email: `bad-${Date.now()}@gmail..com`, full_name: 'X', password: 'TestPass2026!', phone: '92345678'
+    }));
+    assert.equal(r.status, 400);
+    assert.ok(r.body.missing.includes('email'), 'email flagged: ' + JSON.stringify(r.body.missing));
+  });
+
+  test('accepts an ordinary single-TLD email', async () => {
+    const r = await fetchJSON(srv.origin, '/api/auth/signup', J({
+      office_name_en: 'GoodEmail', governorate: 'Muscat', cr_number: 'CR-GE-' + Date.now(),
+      email: `good-${Date.now()}@gmail.com`, full_name: 'X', password: 'TestPass2026!', phone: '92345678'
+    }));
+    assert.equal(r.status, 201);
+  });
+});
+
 describe('forgot-password', () => {
   test('registered office → ok + an OTP row is created', async () => {
     const { officer } = await registerAndApproveOffice(srv.origin);

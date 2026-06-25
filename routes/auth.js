@@ -109,7 +109,10 @@ authRouter.post('/signup', signupLimiter, async (req, res) => {
     if (!office_name_en && !office_name_ar) missing.push('office_name');
     if (!governorate) missing.push('governorate');
     if (!cr_number) missing.push('cr_number');
-    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) missing.push('email');
+    // Email: stricter format (non-empty labels, real TLD, no trailing dot),
+    // and reject an obviously-duplicated TLD typo like "name@gmail.com.com".
+    if (!email || !/^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/.test(email)) missing.push('email');
+    else if (/(\.[a-z]{2,})\1$/i.test(email)) missing.push('email:duplicate_tld');
     if (!full_name) missing.push('full_name');
     const phIssues = phoneIssues(office_phone);
     if (phIssues.length) missing.push(...phIssues.map(i => `phone:${i}`));
