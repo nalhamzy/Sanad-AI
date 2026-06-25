@@ -43,6 +43,35 @@ debugRouter.get('/state', requireDebug, async (_req, res) => {
   res.json({ counts, latestRequests, latestMessages });
 });
 
+// Inspect ONE request + all its documents (is_issued / request_id /
+// storage_url / status) — operator-only, gated by DEBUG_MODE. Built to confirm
+// during live testing whether an office-issued deliverable actually attached to
+// the expected request_id. Usage: GET /api/debug/request/1126
+debugRouter.get('/request/:id', requireDebug, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) return res.status(400).json({ error: 'id_required' });
+  try {
+    const { rows: reqRows } = await db.execute({ sql: `SELECT * FROM request WHERE id = ?`, args: [id] });
+    const { rows: docs } = await db.execute({
+      sql: `SELECT id, request_id, doc_code, label, status, is_issued, is_extra,
+                   mime, size_bytes, storage_url, original_name, uploaded_at
+              FROM request_document
+             WHERE request_id = ?
+             ORDER BY id ASC`,
+      args: [id]
+    });
+    res.json({
+      found: !!reqRows[0],
+      request: reqRows[0] || null,
+      document_count: docs.length,
+      issued_count: docs.filter(d => Number(d.is_issued) === 1).length,
+      documents: docs
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'query_failed', detail: e.message });
+  }
+});
+
 // Per-session trace dump — narrow alternative to /state for debugging a
 // specific session in production without exposing global counts / other
 // citizens' data. Returns the last N message rows (default 30, max 100)
