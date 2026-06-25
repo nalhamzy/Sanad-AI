@@ -250,11 +250,29 @@ whatsappRouter.post('/webhook', async (req, res) => {
     // citizen saw 'تعذّر الاتصال' as a phantom 'first reply' before the
     // real burst summary landed for files 2+. Intercept here:
     if (!effectiveText && !attachment) {
-      const noticeText = '⚠️ لم أستلم محتوى أتعرف عليه. أرسل صورة (JPG/PNG/HEIC) أو ملف PDF أو رسالة نصية.';
+      const mt = msg.type || '';
+      // Non-content events: a reaction (👍), a read/delivery echo, an
+      // unsupported Meta event, or a welcome ping. The citizen didn't send us
+      // anything to act on — stay SILENT. Replying "I didn't understand" to a
+      // thumbs-up is exactly the confusing behaviour the user reported when
+      // tapping/reacting between uploads.
+      const SILENT_TYPES = new Set(['reaction', 'system', 'unsupported', 'ephemeral', 'request_welcome', 'order']);
+      if (SILENT_TYPES.has(mt)) {
+        console.warn('[whatsapp] ignoring non-content msg type (silent):', mt);
+        return;
+      }
+      // Media we genuinely received but can't read as a document: voice note,
+      // video, sticker, location, contact card. Name it so the citizen knows
+      // exactly what to resend instead of a vague "unrecognised content".
+      const TYPE_AR = { audio: 'مقطعًا صوتيًا', video: 'فيديو', sticker: 'ملصقًا', location: 'موقعًا', contacts: 'جهة اتصال' };
+      const what = TYPE_AR[mt];
+      const noticeText = what
+        ? `📎 وصلني ${what} ولا أستطيع قراءته كمستند. أرسل صورة (JPG/PNG/HEIC) أو ملف PDF، أو اكتب رسالة نصية.`
+        : `📎 لم تصلني صورة أو ملف. أرسل صورة (JPG/PNG/HEIC) أو ملف PDF، أو اكتب ما تحتاجه نصًّا.`;
       try {
         await sendWhatsAppText(from, noticeText);
       } catch (e) { console.warn('[whatsapp] empty-payload notice send failed:', e.message); }
-      console.warn('[whatsapp] received empty payload (no text, no media). msg type:', msg.type, 'keys:', Object.keys(msg));
+      console.warn('[whatsapp] received empty payload (no text, no media). msg type:', mt, 'keys:', Object.keys(msg));
       return; // do NOT call runTurn — nothing to process
     }
 

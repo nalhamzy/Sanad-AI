@@ -251,6 +251,29 @@
   const TERMINAL = ['completed','cancelled_by_citizen','cancelled_by_office'];
   let lastSeenMsgId = 0;
   let pollTimer = null;
+  let _wasPaid = null;          // null until first paint; then boolean
+  let _paidCelebrated = false;  // fire the pay-success notice once per page life
+
+  // #1 — the moment payment lands, confirm it loudly and bring the citizen to
+  // the status area. Triggered from paint() on the not-paid → paid transition
+  // (the 6s poll catches it whether they stayed here or returned from Thawani).
+  function onPaymentConfirmed() {
+    if (_paidCelebrated) return;
+    _paidCelebrated = true;
+    try { sessionStorage.removeItem('sanad.paying.' + reqId); } catch {}
+    let toast = $('#paidToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'paidToast';
+      toast.style.cssText = 'position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:9999;background:#059669;color:#fff;font-weight:800;padding:13px 22px;border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.20);font-size:14px;max-width:92vw;text-align:center;transition:opacity .5s';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = '✅ ' + I18N.t('req.pay.confirmed', 'تم استلام دفعتك! بدأ تنفيذ معاملتك.');
+    toast.style.opacity = '1';
+    setTimeout(() => { toast.style.opacity = '0'; }, 5500);
+    const sec = $('#statusChip') && $('#statusChip').closest('section');
+    if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   function paint(payload) {
     const req = payload.request;
@@ -294,9 +317,20 @@
       $('#payBreakdown').textContent =
         `${I18N.t('req.pay.gov')} ${(req.government_fee_omr || req.catalog_fee_omr || 0).toFixed(3)} · ${I18N.t('req.pay.office')} ${(req.office_fee_omr || 0).toFixed(3)}`;
       $('#payNowBtn').href = req.payment_link;
+      // Remember we sent them to Thawani so a return-after-pay still celebrates.
+      $('#payNowBtn').onclick = () => { try { sessionStorage.setItem('sanad.paying.' + reqId, '1'); } catch {} };
     } else {
       payBlock.classList.add('hidden');
     }
+
+    // #1 — pay-success: fire once on the not-paid → paid transition. The 6s
+    // poll catches the stay-on-page case; the sessionStorage flag catches a
+    // return/reload from the Thawani checkout (first paint already shows paid).
+    const paidNow = req.payment_status === 'paid' || ['in_progress','completed'].includes(req.status);
+    let wasPaying = false;
+    try { wasPaying = sessionStorage.getItem('sanad.paying.' + reqId) === '1'; } catch {}
+    if (paidNow && (_wasPaid === false || wasPaying)) onPaymentConfirmed();
+    _wasPaid = paidNow;
 
     // ANONYMITY: never render the office card on the citizen-side request
     // page. The detail API no longer returns office_name_*/governorate/rating

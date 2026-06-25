@@ -153,9 +153,14 @@ chatRouter.post('/apply',
         const isExtra  = (isExtras[i] === '1' || isExtras[i] === 1) ? 1 : 0;
         const label = (labels[i] || '').toString().slice(0, 200);
         const requiredEntry = requiredDocs.find(d => d.code === slotCode);
-        const finalLabel = label
+        // Arabic-first: for a recognised required doc, use the catalogue's
+        // (backfilled) Arabic label so the citizen's request never shows an
+        // English slot name. The form-supplied label is still kept as `caption`
+        // below; fall back to it (then English) only for extras / unmatched.
+        const finalLabel =
+             (requiredEntry?.label_ar || '').trim()
+          || (label || '').trim()
           || requiredEntry?.label_en
-          || requiredEntry?.label_ar
           || f.originalname
           || slotCode
           || `document_${i + 1}`;
