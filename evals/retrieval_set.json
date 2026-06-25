@@ -1,0 +1,35 @@
+[
+  { "id": 140017, "name": "تجديد رخصة سياقة", "lang": "ar", "query": "أبغى أجدد رخصة السياقة" },
+  { "id": 140017, "name": "تجديد رخصة سياقة", "lang": "ar", "query": "تجديد رخصة القيادة" },
+  { "id": 140017, "name": "تجديد رخصة سياقة", "lang": "ar", "query": "كيف اجدد رخصة القياده" },
+  { "id": 140017, "name": "تجديد رخصة سياقة", "lang": "ar", "query": "رخصتي خلصت وأبي أجددها" },
+  { "id": 140017, "name": "تجديد رخصة سياقة", "lang": "en", "query": "my driving license expired, I want to renew it" },
+
+  { "id": 140024, "name": "إصدار رخصة سياقة جديدة", "lang": "ar", "query": "أريد استخراج رخصة قيادة جديدة لأول مرة" },
+  { "id": 140024, "name": "إصدار رخصة سياقة جديدة", "lang": "en", "query": "how do I get a brand new driver's license" },
+
+  { "id": 176000, "name": "رخصة الصيد", "lang": "ar", "query": "أبي رخصة لصيد السمك" },
+  { "id": 176000, "name": "رخصة الصيد", "lang": "ar", "query": "استخراج رخصة صيد جديدة" },
+
+  { "id": 140020, "name": "إصدار الجواز العماني", "lang": "ar", "query": "أبغى أطلع جواز سفر عماني" },
+  { "id": 140020, "name": "إصدار الجواز العماني", "lang": "ar", "query": "إصدار جواز سفر جديد" },
+  { "id": 140020, "name": "إصدار الجواز العماني", "lang": "en", "query": "I need to issue an Omani passport" },
+
+  { "id": 170005, "name": "فقدان جواز سفر", "lang": "ar", "query": "ضاع جوازي وش الإجراءات" },
+
+  { "id": 110102, "name": "بطاقة مقيم وعمل جديد", "lang": "ar", "query": "إصدار بطاقة عمل ومقيم لعامل جديد" },
+  { "id": 110102, "name": "بطاقة مقيم وعمل جديد", "lang": "en", "query": "issue a resident and work card for a new worker" },
+
+  { "id": 120008, "name": "إنشاء سجل تجاري جديد", "lang": "ar", "query": "أبغى أفتح سجل تجاري" },
+  { "id": 120008, "name": "إنشاء سجل تجاري جديد", "lang": "ar", "query": "تسجيل شركة جديدة وعمل سجل تجاري" },
+  { "id": 120008, "name": "إنشاء سجل تجاري جديد", "lang": "en", "query": "I want to start a company in Oman" },
+
+  { "id": 140028, "name": "إصدار بطاقات الإقامة جديد", "lang": "ar", "query": "إصدار بطاقة إقامة لأول مرة" },
+
+  { "id": 140014, "name": "شهادة ميلاد", "lang": "ar", "query": "أبغى استخرج شهادة ميلاد لمولودي" },
+  { "id": 140014, "name": "شهادة ميلاد", "lang": "ar", "query": "شهادة ميلاد جديدة" },
+  { "id": 140014, "name": "شهادة ميلاد", "lang": "en", "query": "get a birth certificate for my newborn" },
+
+  { "id": null, "lang": "ar", "query": "أبغى أجدد البطاقة الشخصية", "note": "civil-ID RENEWAL — intentionally absent (only first issuance exists) → should triage" },
+  { "id": null, "lang": "ar", "query": "تجديد جواز السفر", "note": "passport RENEWAL — absent (only issuance #140020) → triage or surface issuance" }
+]

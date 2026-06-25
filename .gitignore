@@ -10,6 +10,7 @@ data/uploads/
 dist/
 eval-report.json
 eval-whatsapp-report.json
+evals/report_retrieval.json
 
 # Claude Code session cache (local-only)
 .claude/
