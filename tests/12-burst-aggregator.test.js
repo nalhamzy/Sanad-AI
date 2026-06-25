@@ -198,6 +198,53 @@ describe('lib/agent.js · burst aggregator + in-flight gate', () => {
     assert.equal(placed, 2, 'both uploaded files attached to the started service');
   });
 
+  test('STARTED service with NO doc-checklist: upload does NOT re-prompt «اختر الخدمة» + file is filed as an extra', async () => {
+    // Regression (user report 2026-06-26): the citizen SELECTED a service whose
+    // catalogue row lists no required documents (start_submission → service_id
+    // set, docs=[]), then uploaded a file. The old `_noService = docs.length===0`
+    // gate wrongly fired «اختر الخدمة المطلوبة أولاً» even though a service was
+    // active, and the file orphaned in pending_uploads (submit_request files
+    // `collected` + `extras` only — never pending_uploads).
+    const { loadSession, saveSession } = await import('../lib/agent.js');
+    const { db } = await import('../lib/db.js');
+
+    const svcId = 990014;
+    await db.execute({
+      sql: `INSERT OR REPLACE INTO service_catalog
+              (id, name_en, name_ar, fee_omr, required_documents_json, is_active)
+            VALUES (?, 'No-Docs Service', 'خدمة بدون مستندات مطلوبة', 5, '[]', 1)`,
+      args: [svcId]
+    });
+
+    const sid = 'wa:+nodocs-' + Date.now();
+    await loadSession(sid);
+    await saveSession(sid, {
+      status: 'collecting',
+      service_id: svcId,           // ← a service IS selected
+      docs: [],                    // ← but the checklist is empty
+      collected: {},
+      pending_uploads: [{ idx: 0, url: '/uploads/x/a.jpg', name: 'a.jpg', mime: 'image/jpeg' }]
+    });
+
+    armBurst(sid, { reply: '' });
+    await sleep(160);              // > BURST_QUIET_MS → drain fires
+
+    const st = await loadSession(sid);
+    assert.equal((st.pending_uploads || []).length, 0,
+      'the uploaded file must not be left orphaned in pending_uploads');
+    assert.equal((st.extras || []).length, 1,
+      'the file must be filed as an extra (the service has no required-doc slot)');
+    assert.equal(st.extras[0].storage_url, '/uploads/x/a.jpg',
+      'the extra must carry storage_url — the key submit_request files extras by');
+
+    const { rows } = await db.execute({
+      sql: `SELECT body_text FROM message WHERE session_id=? AND direction='out' ORDER BY id DESC LIMIT 5`,
+      args: [sid]
+    });
+    assert.ok(!rows.some(r => /اختر الخدمة/.test(r.body_text || '')),
+      'must NOT re-prompt «اختر الخدمة» when a service is already selected');
+  });
+
   test('extra file uploaded AFTER submission attaches to the request (not "لم نبدأ بعد")', async () => {
     // Regression — +96892888715 (2026-06-17): after the request was submitted
     // (status=queued), uploading a forgotten extra file wrongly hit "لم نبدأ
