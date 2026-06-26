@@ -209,6 +209,24 @@ export async function prepare() {
   await seedDemoOffices();
   await seedDemoAnnotators();
   await seedDemoRequests();  // no-op unless DEBUG_MODE=true
+
+  // One-shot prod seed of the 25 verified Qurm-office services (driving licences,
+  // work/visit visas, vehicle transfers, customs, …). Flag-gated + idempotent —
+  // the script dup-checks by normalized name, so re-running on every boot is a
+  // no-op after the first. Fire-and-forget (spawned, not awaited) so embeddings
+  // never delay boot. Rows insert as annotator_validated + is_active=1 and are
+  // therefore kept active by deactivateUnverifiedServices on every later boot.
+  // Set SEED_QURM=true on Render once to populate; safe to leave on.
+  if (process.env.SEED_QURM === 'true' && process.env.NODE_ENV !== 'test') {
+    import('node:child_process').then(({ spawn }) => {
+      const child = spawn(process.execPath, ['scripts/seed_qurm_services.mjs'], {
+        stdio: 'inherit', cwd: process.cwd(), env: process.env,
+      });
+      child.on('exit', (code) => console.log(`[seed_qurm] one-shot seed finished (exit ${code})`));
+      child.on('error', (e) => console.warn('[seed_qurm] spawn error:', e.message));
+    }).catch((e) => console.warn('[seed_qurm] import failed:', e.message));
+  }
+
   const { rows } = await db.execute(`SELECT COUNT(*) AS n FROM service_catalog`);
 
   // Fire-and-forget: embed rows that still lack vectors. Runs in the
