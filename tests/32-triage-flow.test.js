@@ -153,6 +153,43 @@ describe('lib/agent · triage / unsure-service intake', () => {
       assert.equal(rows[0].status, 'awaiting_reclassify_ack');
     });
 
+    test('reclassify onto an INACTIVE service activates it immediately', async () => {
+      // Seed a deactivated (not-yet-verified) catalogue row.
+      const ins = await db.execute({
+        sql: `INSERT INTO service_catalog (entity_en, entity_ar, name_en, name_ar, fee_omr, is_active, version)
+              VALUES ('Test Entity','جهة اختبار','Inactive Test Svc','خدمة اختبار غير مفعّلة', 3, 0, 1)`,
+        args: []
+      });
+      const inactiveId = Number(ins.lastInsertRowid);
+      let chk = await db.execute({ sql: 'SELECT is_active FROM service_catalog WHERE id=?', args: [inactiveId] });
+      assert.equal(Number(chk.rows[0].is_active), 0, 'precondition: service starts inactive');
+
+      // Citizen triage → office claim → reclassify ONTO the inactive service.
+      const r = await TOOL_IMPL_V2.submit_triage(
+        { state: { status: 'triage', pending_uploads: [] }, session_id: 'wa:+96890000106', citizen_phone: '+96890000106', trace: [] },
+        { intent_summary: 'أحتاج خدمة غير مُدرجة بعد' }
+      );
+      const id = r.request_id;
+      const claim = await fetchJSON(srv.origin, `/api/officer/request/${id}/claim`, { method: 'POST', headers: { cookie } });
+      assert.equal(claim.status, 200, 'claim: ' + JSON.stringify(claim.body));
+      const recl = await fetchJSON(srv.origin, `/api/officer/request/${id}/reclassify`, {
+        method: 'POST', headers: { cookie, 'content-type': 'application/json' },
+        body: JSON.stringify({ new_service_id: inactiveId, reason: 'الخدمة الصحيحة لهذا الطلب' })
+      });
+      assert.equal(recl.status, 200, 'reclassify: ' + JSON.stringify(recl.body));
+
+      // The office assigning it is the vetting step → it is now ACTIVE.
+      chk = await db.execute({ sql: 'SELECT is_active FROM service_catalog WHERE id=?', args: [inactiveId] });
+      assert.equal(Number(chk.rows[0].is_active), 1, 'assigning an inactive service must activate it');
+
+      // …and the activation is audit-logged.
+      const aud = await db.execute({
+        sql: `SELECT COUNT(*) AS n FROM audit_log WHERE action='service_activated_on_assign' AND target_id=?`,
+        args: [inactiveId]
+      });
+      assert.ok(Number(aud.rows[0].n) >= 1, 'activation should be audit-logged');
+    });
+
     test('cleanup: stop server', async () => { await srv.stop(); });
   });
 });
