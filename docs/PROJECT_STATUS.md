@@ -2,7 +2,38 @@
 
 > **Single source of truth for the latest status, setup, deployment, and how things run.**
 > If you're an engineer or AI agent picking this project up, **read this first.**
-> Last updated: **2026-06-27**.
+> Last updated: **2026-06-28**.
+
+---
+
+## 📋 Work log — what we last worked on (newest first)
+
+> **Append a short dated entry at the end of each working session** so the next session
+> (human or agent) sees the latest at a glance. `git log --oneline` is the full record;
+> this is the curated narrative. Keep newest on top.
+
+### 2026-06-28
+- **Offices co-maintain the catalog.** New owner/manager-gated, audit-logged endpoints
+  `GET /api/office/catalog/services` (full list incl. inactive, search/filter) + `PATCH
+  /api/office/catalog/service/:id` (edit + activate/deactivate). New **"📚 إدارة الكتالوج"**
+  manager in the office dashboard (browse all, search, add / edit / activate / deactivate);
+  citizens still see only active. Fixed edit-modal z-index. (`eff7d5b`, `3f1d913`)
+- **Full payment cycle tested live** on prod (Thawani UAT sandbox): WhatsApp request **#9**
+  → office claim → payment link → paid with test card `4242…` / OTP `1234` → request flipped
+  to `paid` / `in_progress`. ✅
+- **Added ROP service** «خدمة زيارة سجين» (id 200026, active, office commission 3 OMR, 3 docs).
+- **Office↔citizen chat opened from CLAIM** — removed the pre-pay `request-info` cap. (`e568f63`)
+- **Citizen-chat hardening**: thanks + out-of-scope gates no longer fall through to search;
+  entity-browse with 0 active → clean empty-state; number-pick 1–10. (`93ddb16`, `c0807f5`, `d7b719c`)
+- **Catalog → citizen-active-only** + office-activates-inactive-on-assign. (`d720ec3`)
+- Created this doc + `docs/credentials.html`; migrated prod DB to **Turso**; created
+  platform-admin account `nalhamzy@gmail.com`. Tests: **497 green**.
+
+**Next up / open:**
+- Optional visual-simplification pass on the office board (many filter chips — all
+  functional; needs a steer on what to hide).
+- Known soft edge: free-text search for a genuinely non-existent service shows nearest
+  active matches + the «لم أجد خدمتي» inquiry escape (a strict relevance-floor was reverted as too noisy).
 
 ---
 
@@ -20,7 +51,7 @@ actual transaction. (See `SANED_PROJECT_OVERVIEW.md` for the product narrative.)
 
 - **Production:** https://saned.ai (Render, auto-deploys from `main`)
 - **Stack:** Node 18.17+ · Express · libSQL/Turso · Anthropic (chat) + Qwen (embeddings)
-- **Tests:** `npm test` → 492 passing (node:test)
+- **Tests:** `npm test` → 497 passing (node:test)
 
 ---
 
@@ -34,6 +65,7 @@ docs/agent-behavior). This section is authoritative.
 | **Production DB** | Migrated to **Turso/libSQL** (env `DB_URL` + `DB_AUTH_TOKEN`). `file:./data/sanad.db` is the local-dev fallback only. `lib/db.js` has a Turso HTTP-driver compat shim. |
 | **Catalog model** | **Curated**: 655 services total, only **54 active** (`is_active=1`). Citizens see **only active** services in **both** free-text search **and** entity-browse. |
 | **Office activates services** | An office promotes an inactive service by **assigning it to a request** (reclassify) → `is_active` flips 0→1 (audit `service_activated_on_assign`). The reclassify picker shows inactive rows to **signed-in officers only** via `/api/catalogue/hybrid?include_inactive=1`. |
+| **Offices co-maintain the catalog** | Owner/manager officers can **view the full catalog** (active + inactive), **add / edit / activate / deactivate** any service — via the **"📚 إدارة الكتالوج"** manager (office dashboard) backed by `GET /api/office/catalog/services` + `PATCH /api/office/catalog/service/:id` (audit-logged). Citizens still see only active. |
 | **Office↔citizen chat** | **Open from CLAIM — no payment lock.** Free-text `POST /api/officer/request/:id/message` is claim-gated; the old 2-message pre-pay cap on `request-info` is **removed**. Off-platform poaching still blocked by `sanitizeOfficeText` (phone/URL/email stripped). |
 | **Citizen numbered-pick** | Works for **1–10** (was 1–3); item 10 renders 🔟. |
 | **Deterministic gates** | greeting / thanks / out-of-scope / triage short-circuit **before** the LLM. Thanks classifier strips tashkeel. Entity-browse with 0 active services → clean empty-state (not unrelated results). |
