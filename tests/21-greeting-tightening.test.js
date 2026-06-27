@@ -102,3 +102,26 @@ describe('B — entity-listing intent (regex shape only)', () => {
     }
   });
 });
+
+// C — thanks classification survives tashkeel + intensifiers/trailers.
+// Live prod bug (2026-06-27): "شكراً جزيلاً لك" returned a 6-service search
+// list instead of an acknowledgement — the fatHatan on "شكراً" broke the
+// start-anchored regex, and "لك" wasn't a recognised filler.
+describe('C — thanks is recognised despite tashkeel + trailing words', () => {
+  describe('classifies polite thanks as thanks', () => {
+    for (const t of [
+      'شكراً جزيلاً لك', 'شكراً جزيلاً', 'شكرا', 'شكراً',
+      'مشكور ما قصرت', 'يعطيك العافية', 'thanks a lot', 'thank you so much'
+    ]) {
+      test(`"${t}" → thanks`, () => assert.equal(greetingIntent(t), 'thanks', t));
+    }
+  });
+  describe('does NOT swallow thanks + a real request', () => {
+    for (const t of [
+      'شكرا بس ابغى اجدد الرخصة',
+      'شكراً، عندي سؤال عن جواز السفر'
+    ]) {
+      test(`"${t}" → not thanks`, () => assert.notEqual(greetingIntent(t), 'thanks', t));
+    }
+  });
+});
