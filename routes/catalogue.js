@@ -74,8 +74,13 @@ function rrfFuse(lanes) {
 // Build the WHERE clause + args for the citizen-side filter set. Designed
 // to be ANDed with whatever id-filter the search lanes produce (or used
 // alone in browse-mode).
-function buildFilterClause({ entity, beneficiary, feeMin, feeMax, hasDocs, isLaunch, freeOnly }) {
-  const where = ['s.is_active = 1'];
+function buildFilterClause({ entity, beneficiary, feeMin, feeMax, hasDocs, isLaunch, freeOnly, includeInactive }) {
+  // Citizens only ever see active services. `includeInactive` is honored ONLY
+  // for signed-in officers (gated in the route) so they can find a not-yet-
+  // active service to assign to a request. Base term keeps the clause valid as
+  // a `WHERE …` even when no other filter is set (the hybrid post-filter ANDs
+  // an `s.id IN (…)` onto it).
+  const where = [includeInactive ? '1=1' : 's.is_active = 1'];
   const args = [];
   if (entity) { where.push(`s.entity_en = ?`); args.push(entity); }
   if (beneficiary) { where.push(`COALESCE(s.beneficiary,'') = ?`); args.push(beneficiary); }
@@ -94,7 +99,7 @@ function buildFilterClause({ entity, beneficiary, feeMin, feeMax, hasDocs, isLau
 
 const HYBRID_SELECT = `
   s.id, s.entity_en, s.entity_ar, s.name_en, s.name_ar,
-  s.description_en, s.description_ar,
+  s.description_en, s.description_ar, s.is_active,
   s.fee_omr, s.fees_text, s.avg_time_en, s.avg_time_ar,
   s.beneficiary, s.required_documents_json`;
 
@@ -128,7 +133,11 @@ catalogueRouter.get('/hybrid', async (req, res) => {
 
   const isLaunch = req.query.is_launch === '1' || req.query.is_launch === 'true';
   const freeOnly = req.query.free === '1' || req.query.free === 'true';
-  const filters = { entity, beneficiary, feeMin, feeMax, hasDocs, isLaunch, freeOnly };
+  // Only a signed-in officer may surface inactive (not-yet-verified) services —
+  // used by the reclassify picker so they can assign one (which activates it).
+  // Citizens (no officer session) always get active-only.
+  const includeInactive = req.query.include_inactive === '1' && !!req.officer;
+  const filters = { entity, beneficiary, feeMin, feeMax, hasDocs, isLaunch, freeOnly, includeInactive };
   const { clause: filterClause, args: filterArgs } = buildFilterClause(filters);
 
   try {

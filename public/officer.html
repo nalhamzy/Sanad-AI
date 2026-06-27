@@ -3506,6 +3506,10 @@
     if (benef) params.set('beneficiary', benef);
     if (free) params.set('free', '1');
     if (isLaunch) params.set('is_launch', '1');
+    // Officers may assign a not-yet-active catalogue service (it activates on
+    // assign). Ask the API to include inactive rows — it honors this only for a
+    // signed-in officer, so citizens never see them.
+    params.set('include_inactive', '1');
     params.set('limit', '25');
     const res = document.getElementById('rcResults');
     res.innerHTML = '<div class="p-4 text-center text-[12px]" style="color:var(--text-mute)">… يبحث</div>';
@@ -3541,6 +3545,12 @@
       res.innerHTML = validItems.map(s => {
         const idNum = Number(s.id);
         const fee = s.fee_omr != null ? `${Number(s.fee_omr).toFixed(3)} ر.ع` : 'حسب الجهة';
+        // Inactive (not-yet-verified) services are visible only to officers in
+        // this picker. Badge them so the officer knows assigning will activate.
+        const inactive = Number(s.is_active) === 0;
+        const badge = inactive
+          ? `<span class="chip chip-sm" style="white-space:nowrap;background:#fef3c7;color:#92400e;border-color:#fde68a">غير مفعّلة · تُفعَّل عند التعيين</span>`
+          : '';
         return `<button type="button" class="rc-item w-full text-start p-3 mb-2 rounded-lg" data-id="${idNum}"
                        data-name-ar="${escapeHtml(s.name_ar || '')}"
                        data-name-en="${escapeHtml(s.name_en || '')}"
@@ -3552,7 +3562,10 @@
             <div class="flex-1 min-w-0">
               <div class="font-bold text-[13px] truncate">${escapeHtml(s.name_ar || s.name_en || '—')}</div>
               <div class="text-[11px] mt-0.5" style="color:var(--text-mute)">${escapeHtml(s.entity_ar || s.entity_en || '')}</div>
-              <div class="text-[10px] mt-0.5 mono" style="color:var(--text-mute);opacity:.6">#${idNum}</div>
+              <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                <span class="text-[10px] mono" style="color:var(--text-mute);opacity:.6">#${idNum}</span>
+                ${badge}
+              </div>
             </div>
             <span class="chip chip-sm" style="white-space:nowrap">${fee}</span>
           </div>

@@ -1269,7 +1269,7 @@ officerRouter.post('/request/:id/reclassify',
                      r.payment_status, r.office_fee_omr AS old_office_fee, r.government_fee_omr AS old_gov_fee,
                      c.phone AS citizen_phone,
                      s.name_en AS new_service_name, s.name_ar AS new_service_name_ar, s.fee_omr AS new_catalog_fee,
-                     s.gov_fee_tbd AS new_gov_fee_tbd
+                     s.gov_fee_tbd AS new_gov_fee_tbd, s.is_active AS new_is_active
                 FROM request r
                 LEFT JOIN service_catalog s ON s.id = ?
                 LEFT JOIN citizen c ON c.id = r.citizen_id
@@ -1328,6 +1328,22 @@ officerRouter.post('/request/:id/reclassify',
                      payment_amount_omr=NULL, payment_provider=NULL, payment_session_id=NULL
                WHERE id=? AND payment_status='awaiting'`,
         args: [id]
+      });
+    }
+
+    // Office picked a not-yet-active catalogue service to assign → activate it
+    // immediately. Citizens only ever see active services (search + browse), so
+    // an office assigning an inactive one is the vetting step that promotes it
+    // into the live set. Idempotent (only flips 0→1) and audit-logged.
+    if (Number(r.new_is_active) === 0) {
+      await db.execute({
+        sql: `UPDATE service_catalog SET is_active=1, version=COALESCE(version,1)+1 WHERE id=? AND is_active=0`,
+        args: [newServiceId]
+      });
+      await db.execute({
+        sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
+              VALUES ('officer',?, 'service_activated_on_assign', 'service', ?, ?)`,
+        args: [req.officer.officer_id, newServiceId, JSON.stringify({ request_id: id, via: 'reclassify' })]
       });
     }
 
