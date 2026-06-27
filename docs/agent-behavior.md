@@ -1,5 +1,10 @@
 # Sanad-AI · Agent Behavior Spec
 
+> ⚠️ **Historical (2026-05-08).** The state machine + "no marketplace/offers" claims below
+> are out of date. For current behavior (deterministic gates, active-only catalog, lifecycle
+> `collecting → ready → claimed → … → completed`, office-chat-from-claim) read
+> **[PROJECT_STATUS.md](PROJECT_STATUS.md)** first.
+
 Last updated: 2026-05-08 (codex iter-14).
 Loop bench (13 scenarios): button-attached **80%**, deterministic **57%**, English-leaks **0%**, silent-failures **0**, flow reach `collecting:9 reviewing:6 queued:6`. Codex verdicts: 10 pass / 2 minor / 1 fail (down from 4 fails in iter-7).
 Source of truth for what the WhatsApp/web agent does in every interaction.

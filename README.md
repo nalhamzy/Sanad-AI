@@ -2,10 +2,12 @@
 
 One WhatsApp assistant for every Sanad service in Oman. Web-first dev mode, WhatsApp-ready.
 
+> **📍 Read [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) first** — it's the up-to-date single source of truth for status, setup, deployment, and how things run. Parts of this README predate the Turso migration, the curated active-only catalog, and the office-chat-from-claim change.
+
 This repo implements [SANAD_AI_PLAN_V2.md](SANAD_AI_PLAN_V2.md). It ships:
 - A **unified tool-calling citizen agent (v2)** — every session state (idle → confirming → collecting → reviewing → queued → claimed) is driven by explicit tool calls, not scripted regex branches. Architecture documented in [AGENT.md](AGENT.md). Heuristic v1 kept as graceful fallback when `QWEN_API_KEY` is empty.
 - **Hybrid service search** — FTS5 BM25 + Qwen `text-embedding-v3` (1024-dim) + structured filters, fused via RRF (k=60) with launch/popularity boosts. ~120 ms per turn, warm.
-- Full **3,417-service catalogue** (`oman_services_directory.csv`) imported with all 33 columns: beneficiary, main_service, payment method, channels, working/avg time, process steps parsed to JSON.
+- A **curated government-service catalogue** — 655 services imported (all 33 columns: beneficiary, main_service, payment method, channels, working/avg time, process steps → JSON); **only ~54 are active/verified** and citizen-visible (see [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) §4).
 - A **web test chatbot** (`/chat.html`) that talks to the *same backend agent* as WhatsApp will.
 - An **officer dashboard** (`/officer.html`) with marketplace, atomic claim, request detail, chat relay, OTP window, grid/list views, command palette (⌘K).
 - An **admin/debug page** (`/admin.html`) with DB counts, latest requests, OTP simulator.
@@ -18,10 +20,10 @@ This repo implements [SANAD_AI_PLAN_V2.md](SANAD_AI_PLAN_V2.md). It ships:
 
 **You are likely here because this project was handed off mid-stream.** Read this section first.
 
-- **Source of truth for the product vision:** [SANAD_AI_PLAN_V2.md](SANAD_AI_PLAN_V2.md) (read it first, it's the spec).
-- **Source of truth for the chat agent architecture:** [AGENT.md](AGENT.md) (v2 tool loop, hybrid search, 17-tool surface).
-- **Source of truth for design decisions:** [SANAD_AI_DESIGN.md](SANAD_AI_DESIGN.md).
-- **Verify you haven't broken anything:** `npm test` — must be 70/70 green before you change anything risky.
+- **Current status, setup, deployment & how it runs:** [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) — **read this first** (the most up-to-date overview; supersedes stale parts of this README).
+- **Product vision / spec:** [SANAD_AI_PLAN_V2.md](SANAD_AI_PLAN_V2.md) + the v3 marketplace design in [MARKETPLACE_SCALING.md](MARKETPLACE_SCALING.md).
+- **Chat agent architecture:** [AGENT.md](AGENT.md). **Design decisions:** [SANAD_AI_DESIGN.md](SANAD_AI_DESIGN.md).
+- **Verify you haven't broken anything:** `npm test` — must be **492/492** green before you change anything risky.
 - **Never** introduce a new dependency without strong reason — the stack is intentionally small (Express + libSQL + csv-parse + multer + dotenv).
 - **Two agent paths coexist.** v2 (default when `QWEN_API_KEY` is set and `SANAD_AGENT_V2=true`) is a single Qwen tool-calling loop. v1 (heuristic state machine) runs when the key is empty or the flag is `false`. All pinned tests (`03-agent`, `05-agent-tricky`) target v1 for determinism; v2 has its own LLM-path suite (`tests/07-agent-v2.test.js`).
 - **Arabic matters.** Every user-facing string has an AR + EN variant. `normalize()` in `lib/catalogue.js` handles tashkeel/alef/yaa-variants; use it, don't re-implement.

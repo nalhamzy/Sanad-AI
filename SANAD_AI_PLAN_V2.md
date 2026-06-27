@@ -1,5 +1,11 @@
 # Sanad-AI — Multi-Office Production Plan (v2)
 
+> ⚠️ **Partly historical.** This is the original v2 build spec. For the **current** running
+> state (Turso DB, curated active-only catalog, FCFS claim, office-chat-from-claim), read
+> **[docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md)** first; the v3 marketplace direction
+> lives in [MARKETPLACE_SCALING.md](MARKETPLACE_SCALING.md). Sections below describing the
+> offer mechanic / multi-stage queue describe the older model.
+
 > Supersedes `SANAD_AI_DESIGN.md`. This is the build spec.
 
 ---
