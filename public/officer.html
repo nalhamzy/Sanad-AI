@@ -1073,7 +1073,7 @@
         <textarea id="riNote" class="input w-full" rows="2"
           placeholder="مثال: نحتاج هذه التعديلات لإكمال معاملتك. (أرقام الهاتف والروابط ستُحذف تلقائياً)"></textarea>
         <div class="text-[10.5px] mt-1" style="color:var(--text-mute)">
-          ⚠ مقفل قبل الدفع: 2 طلب توضيح كحد أقصى لكل طلب. هذه ميزة لمنع الاتصال خارج المنصة.
+          ℹ️ يمكنك التواصل مع المواطن مباشرة بعد استلام الطلب — بدون حد. أرقام الهاتف والروابط والبريد تُحذف تلقائياً للحفاظ على التواصل داخل المنصة.
         </div>
       </section>
     </div>
@@ -3790,9 +3790,7 @@
       await loadInbox();
     } catch (e) {
       const m = e.message || '';
-      if (m.includes('pre_pay_limit_reached')) {
-        Sanad.toast('وصلت للحد الأقصى لطلبات التوضيح قبل الدفع — أرسل رابط الدفع أو حرّر الطلب', 'warn', 3600);
-      } else if (m.includes('reason_required')) {
+      if (m.includes('reason_required')) {
         Sanad.toast('السبب فارغ بعد إزالة الأرقام/الروابط', 'warn', 2800);
       } else {
         Sanad.toast('فشل الإرسال: ' + m, 'err', 3200);

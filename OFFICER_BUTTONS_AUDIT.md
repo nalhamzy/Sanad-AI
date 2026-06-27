@@ -177,7 +177,7 @@ Side actions (`#detailActionsSecondary`):
 
 | Button | Endpoint | Notes |
 |---|---|---|
-| 📝 طلب توضيح | (modal → `POST /:id/request-info`) | Cap = 2 pre-pay (env `SANAD_REQ_INFO_PREPAY_LIMIT`) |
+| 📝 طلب توضيح | (modal → `POST /:id/request-info`) | Open from claim, no cap (2026-06-27: offices communicate directly once claimed); text sanitized |
 | 🔄 تغيير الخدمة | (modal → `POST /:id/reclassify`) | Citizen must approve via 'موافق'/'رفض'; allowed in claimed / needs_more_info / awaiting_payment / awaiting_reclassify_ack |
 | ↩ إرجاع | `POST /:id/release` | Refund-required hint when paid |
 | 🚩 إبلاغ (marketplace only) | `POST /:id/flag` | Auto-quarantine after 2 distinct flags |

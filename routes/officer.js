@@ -477,9 +477,9 @@ officerRouter.get('/request/:id', async (req, res) => {
   // number. All communication runs through the relayed chat (this app) or
   // WhatsApp via the bot. Only docs, service info, and messages are exposed.
   //
-  // CHAT GATE: pre-payment (paid_at IS NULL) the office sees only the
-  // documents — NO message history. The office cannot influence the citizen
-  // until payment is committed. After paid_at, the full thread unlocks.
+  // CHAT GATE: the chat opens as soon as the office CLAIMS the request
+  // (office_id set) — not gated on payment. The office sees the full message
+  // history + can send free text from claim onward.
   const { rows: docs } = await db.execute({
     sql: `SELECT id, doc_code, label, storage_url, mime, size_bytes, status,
                  caption, matched_via, original_name, is_issued,
@@ -487,9 +487,9 @@ officerRouter.get('/request/:id', async (req, res) => {
             FROM request_document WHERE request_id=? ORDER BY id ASC`,
     args: [id]
   });
-  // Pre-payment vs post-payment chat semantics:
-  //   • Sending office → citizen free-text is gated on paid_at (POST /message
-  //     enforces it). This prevents the office from badgering the citizen.
+  // Chat semantics (claim-gated, not payment-gated):
+  //   • Sending office → citizen free-text is allowed from CLAIM (POST /message
+  //     only requires the office to own the request). Text is sanitized.
   //   • READING messages is NOT gated — the office must see the citizen's
   //     replies to structured prompts ("upload this doc", "we need X") so
   //     they can actually progress the request. Without this, when the
@@ -642,9 +642,10 @@ officerRouter.post(
 );
 
 // ─── POST /request/:id/message ─────────────────────────────
-// Officer → citizen chat. Owner-office only AND only after payment.
-// The citizen's chat thread is sealed pre-payment so the office cannot
-// influence the citizen until they've actually committed money.
+// Officer → citizen chat. Owner-office only, OPEN FROM CLAIM (no payment gate
+// — requirement change 2026-06-27: offices communicate directly once they own
+// the request). Free text is sanitized (phone/URL/email stripped) so the
+// office still can't pull the citizen off-platform.
 officerRouter.post('/request/:id/message', async (req, res) => {
   const id = Number(req.params.id);
   const text = String(req.body?.text || '').trim();
@@ -1124,11 +1125,8 @@ officerRouter.post('/request/:id/document/:docId/reject', async (req, res) => {
 // Only the OFFICE that holds the request can call this. Status must be
 // 'claimed' (pre-pay) or 'in_progress' (post-pay) — both are valid
 // "we need more from you" moments.
-// Pre-pay request-info is rate-limited per request to discourage an office
-// from using it as a back-channel for free-form chat. Post-pay paid_at gates
-// fall away (full chat is open by then anyway).
-const REQUEST_INFO_PREPAY_LIMIT = Number(process.env.SANAD_REQ_INFO_PREPAY_LIMIT || 2);
-
+// Open from claim — no pre-pay cap. The claiming office may request info as
+// many times as the case needs; sanitizeOfficeText keeps it on-platform.
 officerRouter.post('/request/:id/request-info',
   requireOfficer({ roles: ['owner', 'manager', 'officer'] }),
   async (req, res) => {
@@ -1171,23 +1169,10 @@ officerRouter.post('/request/:id/request-info',
     const ok = ['claimed','awaiting_payment','in_progress','needs_more_info'].includes(r.status);
     if (!ok) return res.status(409).json({ error: 'bad_state', status: r.status });
 
-    // Rate-limit pre-payment: cap at REQUEST_INFO_PREPAY_LIMIT distinct
-    // request-info messages per request. Doesn't apply post-pay.
-    if (!r.paid_at) {
-      const { rows: c } = await db.execute({
-        sql: `SELECT COUNT(*) AS n FROM audit_log
-               WHERE action='request_more_info' AND target_type='request' AND target_id=?`,
-        args: [id]
-      });
-      if ((c[0]?.n || 0) >= REQUEST_INFO_PREPAY_LIMIT) {
-        return res.status(429).json({
-          error: 'pre_pay_limit_reached',
-          limit: REQUEST_INFO_PREPAY_LIMIT,
-          hint: 'Send the payment link or release the request — pre-pay clarifications are capped.'
-        });
-      }
-    }
-
+    // No pre-pay cap: an office that has CLAIMED the request may ask the
+    // citizen for clarifications as many times as needed (requirement change
+    // 2026-06-27 — offices communicate directly once claimed). Off-platform
+    // poaching is still blocked by sanitizeOfficeText (phone/URL/email stripped).
     const upd = await db.execute({
       sql: `UPDATE request
                SET status='needs_more_info',

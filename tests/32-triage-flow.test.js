@@ -190,6 +190,25 @@ describe('lib/agent · triage / unsure-service intake', () => {
       assert.ok(Number(aud.rows[0].n) >= 1, 'activation should be audit-logged');
     });
 
+    test('request-info has NO pre-pay cap — office communicates freely from claim', async () => {
+      const r = await TOOL_IMPL_V2.submit_triage(
+        { state: { status: 'triage', pending_uploads: [] }, session_id: 'wa:+96890000107', citizen_phone: '+96890000107', trace: [] },
+        { intent_summary: 'أحتاج عدة توضيحات قبل الدفع' }
+      );
+      const id = r.request_id;
+      const claim = await fetchJSON(srv.origin, `/api/officer/request/${id}/claim`, { method: 'POST', headers: { cookie } });
+      assert.equal(claim.status, 200, 'claim: ' + JSON.stringify(claim.body));
+      // Pre-payment (paid_at NULL): send 4 clarifications — all must succeed
+      // (the old 2-message pre-pay cap is gone).
+      for (let i = 1; i <= 4; i++) {
+        const ri = await fetchJSON(srv.origin, `/api/officer/request/${id}/request-info`, {
+          method: 'POST', headers: { cookie, 'content-type': 'application/json' },
+          body: JSON.stringify({ reason: `توضيح رقم ${i}` })
+        });
+        assert.equal(ri.status, 200, `request-info #${i} must succeed pre-pay (no cap): ${JSON.stringify(ri.body)}`);
+      }
+    });
+
     test('cleanup: stop server', async () => { await srv.stop(); });
   });
 });
