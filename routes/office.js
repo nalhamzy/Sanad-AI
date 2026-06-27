@@ -323,3 +323,111 @@ officeRouter.post('/catalog/service', requireOfficer({ roles: ['owner', 'manager
   });
   res.status(201).json({ ok: true, service_id: serviceId });
 });
+
+// ─── GET /catalog/services — FULL catalog for office maintainers ────────
+// Owner/manager only. Unlike the public /api/catalogue/* (active-only, what
+// CITIZENS see), this returns the FULL shared catalog (active + inactive) so an
+// office can co-maintain it. Filters: ?q (name/entity substring, AR or EN),
+// ?entity (exact entity_en), ?status (active|inactive|all, default all),
+// ?limit (def 100, max 500), ?offset.
+officeRouter.get('/catalog/services', requireOfficer({ roles: ['owner', 'manager'] }), async (req, res) => {
+  const q = String(req.query.q || '').trim();
+  const entity = String(req.query.entity || '').trim();
+  const status = String(req.query.status || 'all');
+  const limit = Math.min(Number(req.query.limit) || 100, 500);
+  const offset = Math.max(Number(req.query.offset) || 0, 0);
+  const where = [];
+  const args = [];
+  if (status === 'active') where.push('is_active=1');
+  else if (status === 'inactive') where.push('is_active=0');
+  if (q) {
+    where.push('(name_en LIKE ? OR name_ar LIKE ? OR entity_en LIKE ? OR entity_ar LIKE ?)');
+    const like = `%${q}%`; args.push(like, like, like, like);
+  }
+  if (entity) { where.push('entity_en = ?'); args.push(entity); }
+  const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const { rows } = await db.execute({
+    sql: `SELECT id, entity_en, entity_ar, name_en, name_ar, fee_omr, office_fee_omr,
+                 fees_text, gov_fee_tbd, is_active, verification_status, version,
+                 required_documents_json
+            FROM service_catalog ${whereSql}
+            ORDER BY is_active DESC, name_ar LIMIT ${limit} OFFSET ${offset}`,
+    args
+  });
+  const { rows: tot } = await db.execute({ sql: `SELECT COUNT(*) AS n FROM service_catalog ${whereSql}`, args });
+  res.json({ services: rows, total: tot[0]?.n || 0, limit, offset });
+});
+
+// ─── PATCH /catalog/service/:id — edit / activate / deactivate ──────────
+// Owner/manager only. Offices co-maintain the shared catalog. Editable subset:
+// name_ar/en, entity_ar/en, fees_text, office_fee_omr, fee_omr (gov; null →
+// gov_fee_tbd), is_active (activate/deactivate), documents. FTS + search_blob
+// re-synced, version bumped, audit-logged as 'service_update' (actor=officer).
+officeRouter.patch('/catalog/service/:id', requireOfficer({ roles: ['owner', 'manager'] }), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'bad_id' });
+  const b = req.body || {};
+  const patch = {};
+  if (typeof b.name_ar   === 'string') patch.name_ar   = b.name_ar.trim().slice(0, 200);
+  if (typeof b.name_en   === 'string') patch.name_en   = b.name_en.trim().slice(0, 200);
+  if (typeof b.entity_ar === 'string') patch.entity_ar = b.entity_ar.trim().slice(0, 200);
+  if (typeof b.entity_en === 'string') patch.entity_en = b.entity_en.trim().slice(0, 200);
+  if (typeof b.fees_text === 'string') patch.fees_text = b.fees_text.trim().slice(0, 200);
+  if (b.office_fee_omr !== undefined) {
+    const f = Number(b.office_fee_omr);
+    if (!Number.isFinite(f) || f < 0 || f > 500) return res.status(400).json({ error: 'bad_commission' });
+    patch.office_fee_omr = f;
+  }
+  if (b.fee_omr !== undefined) {
+    if (b.fee_omr === null || b.fee_omr === '') { patch.fee_omr = null; patch.gov_fee_tbd = 1; }
+    else {
+      const f = Number(b.fee_omr);
+      if (!Number.isFinite(f) || f < 0 || f > 5000) return res.status(400).json({ error: 'bad_fee' });
+      patch.fee_omr = f; patch.gov_fee_tbd = 0;
+    }
+  }
+  if (b.is_active !== undefined) patch.is_active = b.is_active ? 1 : 0;
+  if (Array.isArray(b.documents)) {
+    const TYPES = new Set(['file', 'text', 'date', 'number']);
+    const docs = b.documents.slice(0, 30).map((d, i) => {
+      const la = String(d?.label_ar || '').trim().slice(0, 160);
+      const le = String(d?.label_en || '').trim().slice(0, 160);
+      if (!la && !le) return null;
+      return { code: `doc_${i + 1}`, label_ar: la || le, label_en: le || la, type: TYPES.has(d?.type) ? d.type : 'file' };
+    }).filter(Boolean);
+    patch.required_documents_json = JSON.stringify(docs);
+  }
+  if (!Object.keys(patch).length) return res.status(400).json({ error: 'no_fields' });
+
+  const exists = await db.execute({ sql: `SELECT id FROM service_catalog WHERE id=?`, args: [id] });
+  if (!exists.rows.length) return res.status(404).json({ error: 'not_found' });
+
+  const cols = Object.keys(patch);
+  await db.execute({
+    sql: `UPDATE service_catalog SET ${cols.map(c => `${c}=?`).join(',')}, version=COALESCE(version,1)+1 WHERE id=?`,
+    args: [...cols.map(c => patch[c]), id]
+  });
+  // Re-sync the search lanes if any searchable field changed.
+  if (['name_en', 'name_ar', 'entity_en', 'entity_ar'].some(c => c in patch)) {
+    try {
+      const { rows: cur } = await db.execute({
+        sql: `SELECT name_en, name_ar, description_en, description_ar, entity_en, entity_ar FROM service_catalog WHERE id=?`,
+        args: [id]
+      });
+      const r = cur[0] || {};
+      const blob = [r.name_en, r.name_ar, r.entity_en, r.entity_ar].filter(Boolean).join(' ').toLowerCase();
+      await db.execute({ sql: `UPDATE service_catalog SET search_blob=? WHERE id=?`, args: [blob, id] });
+      await db.execute({ sql: `DELETE FROM service_catalog_fts WHERE rowid=?`, args: [id] });
+      await db.execute({
+        sql: `INSERT INTO service_catalog_fts(rowid,name_en,name_ar,description_en,description_ar,entity_en,entity_ar) VALUES (?,?,?,?,?,?,?)`,
+        args: [id, r.name_en || '', r.name_ar || '', r.description_en || '', r.description_ar || '', r.entity_en || '', r.entity_ar || '']
+      });
+    } catch { /* contentless FTS — safe to ignore */ }
+  }
+  await db.execute({
+    sql: `INSERT INTO audit_log(actor_type,actor_id,action,target_type,target_id,diff_json)
+          VALUES ('officer',?, 'service_update', 'service', ?, ?)`,
+    args: [req.officer.officer_id, id, JSON.stringify({ ...patch, by_office: req.office.id })]
+  });
+  res.json({ ok: true, patched: patch });
+});

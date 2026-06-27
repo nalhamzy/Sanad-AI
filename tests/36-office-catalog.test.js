@@ -77,3 +77,78 @@ describe('office → global catalog', () => {
     assert.equal(r.body.error, 'insufficient_role');
   });
 });
+
+describe('office → catalog maintenance (full view + edit + activate/deactivate)', () => {
+  async function seedInactive(name_ar, name_en) {
+    const ins = await db.execute({
+      sql: `INSERT INTO service_catalog (entity_en,entity_ar,name_en,name_ar,fee_omr,office_fee_omr,gov_fee_tbd,is_active,verification_status,version)
+            VALUES ('Test Entity','جهة اختبار',?,?,NULL,3,1,0,'unverified',1)`,
+      args: [name_en || (name_ar + '_en'), name_ar]
+    });
+    return Number(ins.lastInsertRowid);
+  }
+  const getCat = (cookie, qs = '') => fetchJSON(srv.origin, '/api/office/catalog/services' + qs, { headers: { cookie } });
+  const patchSvc = (cookie, id, body) => fetchJSON(srv.origin, '/api/office/catalog/service/' + id, {
+    method: 'PATCH', headers: { 'content-type': 'application/json', cookie }, body: JSON.stringify(body)
+  });
+
+  test('owner sees FULL catalog incl. inactive; citizen search does not', async () => {
+    const { cookie } = await registerAndApproveOffice(srv.origin);
+    const id = await seedInactive('خدمة غير مفعلة ' + Date.now());
+    const r = await getCat(cookie, '?status=inactive&limit=500');
+    assert.equal(r.status, 200);
+    assert.ok(r.body.services.some(s => s.id === id), 'office sees the inactive service');
+    const { searchServices } = await import('../lib/hybrid_search.js');
+    const found = await searchServices('غير مفعلة', {}, { k: 8 });
+    assert.ok(!found.services.some(s => s.id === id), 'citizen search hides inactive');
+  });
+
+  test('owner edits name + commission → version bumps', async () => {
+    const { cookie } = await registerAndApproveOffice(srv.origin);
+    const id = await seedInactive('خدمة للتعديل ' + Date.now());
+    assert.equal((await patchSvc(cookie, id, { name_ar: 'اسم معدّل', office_fee_omr: 7 })).status, 200);
+    const { rows } = await db.execute({ sql: 'SELECT name_ar, office_fee_omr, version FROM service_catalog WHERE id=?', args: [id] });
+    assert.equal(rows[0].name_ar, 'اسم معدّل');
+    assert.equal(Number(rows[0].office_fee_omr), 7);
+    assert.ok(Number(rows[0].version) >= 2);
+  });
+
+  test('owner activates an inactive service → becomes citizen-searchable', async () => {
+    const { cookie } = await registerAndApproveOffice(srv.origin);
+    const word = 'Activateme' + Date.now();
+    const id = await seedInactive('خدمة تفعيل', word);
+    assert.equal((await patchSvc(cookie, id, { is_active: true })).status, 200);
+    const { rows } = await db.execute({ sql: 'SELECT is_active FROM service_catalog WHERE id=?', args: [id] });
+    assert.equal(Number(rows[0].is_active), 1);
+    const { searchServices } = await import('../lib/hybrid_search.js');
+    const found = await searchServices(word, {}, { k: 5 });
+    assert.ok(found.services.some(s => s.id === id), 'activated service is citizen-searchable');
+  });
+
+  test('owner deactivates a service → removed from citizen search', async () => {
+    const { cookie } = await registerAndApproveOffice(srv.origin);
+    const word = 'Deactivateme' + Date.now();
+    const add = await addSvc(cookie, { name_ar: 'خدمة لإيقاف ' + word, name_en: word, office_fee_omr: 3 });
+    const id = add.body.service_id;
+    assert.equal((await patchSvc(cookie, id, { is_active: false })).status, 200);
+    const { searchServices } = await import('../lib/hybrid_search.js');
+    const found = await searchServices(word, {}, { k: 5 });
+    assert.ok(!found.services.some(s => s.id === id), 'deactivated service hidden from citizens');
+  });
+
+  test('junior officer blocked on list + edit (owner/manager only)', async () => {
+    const { cookie } = await registerAndApproveOffice(srv.origin);
+    const inviteEmail = `jr2-${Date.now()}@t.om`;
+    await fetchJSON(srv.origin, '/api/office/team/invite', {
+      method: 'POST', headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ email: inviteEmail, full_name: 'Jr', role: 'officer', initial_password: 'JuniorPass#2026' })
+    });
+    const lr = await fetch(srv.origin + '/api/auth/login', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: inviteEmail, password: 'JuniorPass#2026' })
+    });
+    const jr = (lr.headers.get('set-cookie') || '').split(';')[0];
+    assert.equal((await getCat(jr)).status, 403);
+    assert.equal((await patchSvc(jr, 1, { is_active: false })).status, 403);
+  });
+});

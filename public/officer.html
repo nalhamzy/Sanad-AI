@@ -377,9 +377,9 @@
             <span data-i18n="offer.quick_send">إرسال سريع</span>
             <span class="kbd" style="background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.35);color:white">C</span>
           </button>
-          <button id="addServiceBtn" class="btn btn-secondary w-full justify-center mt-2" style="height:34px;font-size:12px">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-            <span>إضافة خدمة للكتالوج</span>
+          <button id="catalogBtn" class="btn btn-secondary w-full justify-center mt-2" style="height:34px;font-size:12px">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20V3H6.5A2.5 2.5 0 004 5.5v14z"/><path d="M8 7h8M8 11h6"/></svg>
+            <span>إدارة الكتالوج</span>
           </button>
           <button id="openSettings" class="btn btn-secondary w-full justify-center mt-2" style="height:34px;font-size:12px">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3h.1a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8v.1a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
@@ -918,7 +918,7 @@
 <div id="addServiceOverlay" class="hidden fixed inset-0 z-50 overlay grid place-items-center p-4">
   <div class="surface-pop w-full max-w-xl max-h-[90vh] overflow-hidden scale-in flex flex-col">
     <div class="px-5 py-3 flex items-center" style="border-bottom:1px solid var(--line)">
-      <div class="font-bold text-[14px]">➕ إضافة خدمة للكتالوج · Add a service</div>
+      <div id="svcModalTitle" class="font-bold text-[14px]">➕ إضافة خدمة للكتالوج · Add a service</div>
       <button id="closeAddService" class="icon-btn ms-auto">✕</button>
     </div>
     <div class="overflow-y-auto p-5 space-y-4 text-[13px]">
@@ -955,6 +955,17 @@
         <textarea id="svcDocs" rows="4" class="input w-full" placeholder="مستند واحد في كل سطر، مثال:&#10;بطاقة العمل&#10;جواز السفر&#10;صورة شخصية"></textarea>
         <div class="mt-1 text-[11px]" style="color:var(--text-mute)">سطر لكل مستند (تُسجَّل كمرفقات افتراضياً).</div>
       </div>
+      <!-- Government fee (optional) + active toggle — shown when editing. -->
+      <div id="svcEditExtra" class="hidden space-y-3">
+        <div>
+          <label class="block mb-1 font-semibold">الرسوم الحكومية (ر.ع) — اختياري</label>
+          <input id="svcGovFee" type="number" step="0.001" min="0" max="5000" class="input w-full md:w-1/3" placeholder="اتركها فارغة = تُحدَّد لكل طلب"/>
+        </div>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input id="svcActive" type="checkbox" class="w-4 h-4"/>
+          <span class="font-semibold">مفعّلة — يراها المواطنون في البحث</span>
+        </label>
+      </div>
       <div id="svcErr" class="hidden text-[12px] p-2 rounded-md" style="background:rgba(244,63,94,.08);color:#b91c1c"></div>
       <div class="flex items-center justify-end gap-2 pt-1">
         <button id="svcSubmit" class="btn btn-primary">إضافة الخدمة</button>
@@ -972,6 +983,28 @@
        • write a reason (sanitised server-side; no phones/URLs)
      The proposal goes to the citizen and waits for موافق/رفض.
      ═════════════════════════════════════════════════════════ -->
+<!-- Catalog manager — full shared catalog (active + inactive): search, add, edit, activate/deactivate. Owner/manager only. Citizens still see ONLY active services. -->
+<div id="catalogOverlay" class="hidden fixed inset-0 z-50 overlay grid place-items-center p-4">
+  <div class="surface-pop w-full max-w-3xl max-h-[90vh] overflow-hidden scale-in flex flex-col">
+    <div class="px-5 py-3 flex items-center gap-2" style="border-bottom:1px solid var(--line)">
+      <div class="font-bold text-[14px]">📚 إدارة الكتالوج</div>
+      <span class="text-[11px]" style="color:var(--text-mute)">— الكتالوج المشترك · المواطن يرى المفعّلة فقط</span>
+      <button id="catAddBtn" class="btn btn-primary ms-auto" style="height:30px;font-size:12px">➕ خدمة جديدة</button>
+      <button id="closeCatalog" class="icon-btn">✕</button>
+    </div>
+    <div class="px-5 py-3 flex items-center gap-2 shrink-0" style="border-bottom:1px solid var(--line);background:var(--surface-2)">
+      <input id="catSearch" class="input flex-1" placeholder="ابحث بالاسم أو الجهة…"/>
+      <select id="catStatus" class="input" style="height:36px;font-size:12px;width:140px">
+        <option value="all">الكل</option>
+        <option value="active">مفعّلة فقط</option>
+        <option value="inactive">غير مفعّلة فقط</option>
+      </select>
+      <span id="catCount" class="text-[11px]" style="color:var(--text-mute);min-width:70px;text-align:end"></span>
+    </div>
+    <div id="catRows" class="flex-1 overflow-y-auto p-3" style="background:var(--surface)"></div>
+  </div>
+</div>
+
 <div id="reclassifyOverlay" class="hidden fixed inset-0 z-50 overlay grid place-items-center p-4">
   <div class="surface-pop w-full max-w-3xl max-h-[90vh] overflow-hidden scale-in flex flex-col">
     <div class="px-5 py-3 flex items-center gap-2" style="border-bottom:1px solid var(--line)">
@@ -3080,48 +3113,121 @@
   document.getElementById('openSettings').addEventListener('click', openSettingsModal);
 
   // ─ Add a service to the global catalog (owner/manager) ─
+  // ─ Catalog management: full catalog browse + add / edit / activate / deactivate ─
   (function () {
     const ov = document.getElementById('addServiceOverlay');
-    if (!ov) return;
-    const err = document.getElementById('svcErr');
+    const catOv = document.getElementById('catalogOverlay');
+    if (!ov || !catOv) return;
+    const $ = id => document.getElementById(id);
+    const err = $('svcErr');
     const fail = (m) => { err.textContent = m; err.classList.remove('hidden'); };
-    const fields = ['svcNameAr', 'svcNameEn', 'svcEntityAr', 'svcEntityEn', 'svcFee', 'svcDocs'];
-    function openAdd() { err.classList.add('hidden'); ov.classList.remove('hidden'); setTimeout(() => document.getElementById('svcNameAr')?.focus(), 10); }
-    function closeAdd() { ov.classList.add('hidden'); }
-    document.getElementById('addServiceBtn')?.addEventListener('click', openAdd);
-    document.getElementById('closeAddService')?.addEventListener('click', closeAdd);
-    ov.addEventListener('click', e => { if (e.target === ov) closeAdd(); });
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    let editId = null;   // null = create, number = edit
 
-    document.getElementById('svcSubmit')?.addEventListener('click', async () => {
+    function openEditor(svc) {
+      editId = svc ? Number(svc.id) : null;
       err.classList.add('hidden');
-      const name_ar   = document.getElementById('svcNameAr').value.trim();
-      const name_en   = document.getElementById('svcNameEn').value.trim();
-      const entity_ar = document.getElementById('svcEntityAr').value.trim();
-      const entity_en = document.getElementById('svcEntityEn').value.trim();
-      const office_fee_omr = Number(document.getElementById('svcFee').value);
-      if (!name_ar && !name_en)      return fail('أدخل اسم الخدمة.');
-      if (!(office_fee_omr > 0))     return fail('أدخل عمولة المكتب (أكبر من صفر).');
-      const documents = document.getElementById('svcDocs').value
-        .split('\n').map(s => s.trim()).filter(Boolean)
-        .map(label => ({ label_ar: label, type: 'file' }));
-      const btn = document.getElementById('svcSubmit'); btn.disabled = true;
+      $('svcModalTitle').textContent = svc ? '✏️ تعديل خدمة · Edit service' : '➕ إضافة خدمة للكتالوج · Add a service';
+      $('svcSubmit').textContent = svc ? 'حفظ التعديلات' : 'إضافة الخدمة';
+      $('svcNameAr').value   = svc?.name_ar || '';
+      $('svcNameEn').value   = svc?.name_en || '';
+      $('svcEntityAr').value = svc?.entity_ar || '';
+      $('svcEntityEn').value = svc?.entity_en || '';
+      $('svcFee').value      = svc?.office_fee_omr != null ? svc.office_fee_omr : '';
+      let docs = []; try { docs = JSON.parse(svc?.required_documents_json || '[]'); } catch {}
+      $('svcDocs').value = Array.isArray(docs) ? docs.map(d => d.label_ar || d.label_en || '').filter(Boolean).join('\n') : '';
+      $('svcEditExtra').classList.toggle('hidden', !svc);
+      if (svc) { $('svcGovFee').value = svc.fee_omr != null ? svc.fee_omr : ''; $('svcActive').checked = Number(svc.is_active) === 1; }
+      ov.classList.remove('hidden');
+      setTimeout(() => $('svcNameAr')?.focus(), 10);
+    }
+    function closeEditor() { ov.classList.add('hidden'); }
+    $('closeAddService')?.addEventListener('click', closeEditor);
+    ov.addEventListener('click', e => { if (e.target === ov) closeEditor(); });
+
+    $('svcSubmit')?.addEventListener('click', async () => {
+      err.classList.add('hidden');
+      const name_ar = $('svcNameAr').value.trim(), name_en = $('svcNameEn').value.trim();
+      const entity_ar = $('svcEntityAr').value.trim(), entity_en = $('svcEntityEn').value.trim();
+      const office_fee_omr = Number($('svcFee').value);
+      if (!name_ar && !name_en)  return fail('أدخل اسم الخدمة.');
+      if (!(office_fee_omr > 0))  return fail('أدخل عمولة المكتب (أكبر من صفر).');
+      const documents = $('svcDocs').value.split('\n').map(s => s.trim()).filter(Boolean).map(label => ({ label_ar: label, type: 'file' }));
+      const btn = $('svcSubmit'); btn.disabled = true;
       try {
-        await api('/api/office/catalog/service', {
-          method: 'POST',
-          body: JSON.stringify({ name_ar, name_en, entity_ar, entity_en, office_fee_omr, documents })
-        });
-        Sanad.toast('✅ تمت إضافة الخدمة إلى الكتالوج المشترك', 'ok', 2200);
-        fields.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-        closeAdd();
+        if (editId) {
+          const gov = $('svcGovFee').value.trim();
+          await api('/api/office/catalog/service/' + editId, { method: 'PATCH', body: JSON.stringify({
+            name_ar, name_en, entity_ar, entity_en, office_fee_omr, documents,
+            is_active: $('svcActive').checked, fee_omr: gov === '' ? null : Number(gov)
+          }) });
+          Sanad.toast('✅ تم حفظ التعديلات', 'ok', 2000);
+        } else {
+          await api('/api/office/catalog/service', { method: 'POST', body: JSON.stringify({ name_ar, name_en, entity_ar, entity_en, office_fee_omr, documents }) });
+          Sanad.toast('✅ تمت إضافة الخدمة إلى الكتالوج المشترك', 'ok', 2200);
+        }
+        closeEditor();
+        if (!catOv.classList.contains('hidden')) loadCatalog();
       } catch (e2) {
-        const msg = e2.message || '';
-        fail(/already_exists/.test(msg)     ? 'توجد خدمة بنفس الاسم في الكتالوج.'
-           : /bad_commission/.test(msg)     ? 'قيمة العمولة غير صحيحة.'
-           : /insufficient_role/.test(msg)  ? 'إضافة الخدمات متاحة للمالك أو المدير فقط.'
-           : /name_required/.test(msg)      ? 'أدخل اسم الخدمة.'
-           : 'تعذّرت الإضافة — حاول مرة أخرى.');
+        const m = e2.message || '';
+        fail(/already_exists/.test(m) ? 'توجد خدمة بنفس الاسم في الكتالوج.'
+           : /bad_commission/.test(m) ? 'قيمة العمولة غير صحيحة.'
+           : /bad_fee/.test(m) ? 'قيمة الرسوم الحكومية غير صحيحة.'
+           : /insufficient_role/.test(m) ? 'إدارة الكتالوج متاحة للمالك أو المدير فقط.'
+           : /name_required/.test(m) ? 'أدخل اسم الخدمة.'
+           : 'تعذّر الحفظ — حاول مرة أخرى.');
       } finally { btn.disabled = false; }
     });
+
+    // ── Catalog browser / manager ──
+    let catTimer = null;
+    function openCatalog() { catOv.classList.remove('hidden'); loadCatalog(); }
+    function closeCatalog() { catOv.classList.add('hidden'); }
+    $('catalogBtn')?.addEventListener('click', openCatalog);
+    $('closeCatalog')?.addEventListener('click', closeCatalog);
+    catOv.addEventListener('click', e => { if (e.target === catOv) closeCatalog(); });
+    $('catAddBtn')?.addEventListener('click', () => openEditor(null));
+    $('catSearch')?.addEventListener('input', () => { clearTimeout(catTimer); catTimer = setTimeout(loadCatalog, 250); });
+    $('catStatus')?.addEventListener('change', loadCatalog);
+
+    async function loadCatalog() {
+      const rows = $('catRows');
+      const q = encodeURIComponent($('catSearch').value.trim());
+      const status = $('catStatus').value;
+      rows.innerHTML = '<div class="p-4 text-center text-[12px]" style="color:var(--text-mute)">… يحمّل</div>';
+      try {
+        const j = await api('/api/office/catalog/services?status=' + status + '&q=' + q + '&limit=300');
+        const list = j.services || [];
+        $('catCount').textContent = j.total != null ? j.total + ' خدمة' : '';
+        if (!list.length) { rows.innerHTML = '<div class="p-6 text-center text-[12px]" style="color:var(--text-mute)">لا توجد نتائج.</div>'; return; }
+        rows.innerHTML = list.map(s => {
+          const active = Number(s.is_active) === 1;
+          const fee = s.office_fee_omr != null ? Number(s.office_fee_omr).toFixed(3) + ' ر.ع' : '—';
+          const badge = active
+            ? '<span class="chip chip-sm" style="background:#dcfce7;color:#166534;border-color:#bbf7d0;white-space:nowrap">مفعّلة</span>'
+            : '<span class="chip chip-sm" style="background:#fef3c7;color:#92400e;border-color:#fde68a;white-space:nowrap">غير مفعّلة</span>';
+          return `<div class="flex items-center gap-2 p-2.5 mb-1.5 rounded-lg" style="background:var(--surface-3);border:1px solid var(--line)">
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-[13px] truncate">${esc(s.name_ar || s.name_en || '—')}</div>
+              <div class="text-[11px]" style="color:var(--text-mute)">${esc(s.entity_ar || s.entity_en || '')} · ${fee} · #${s.id}</div>
+            </div>
+            ${badge}
+            <button class="btn btn-secondary cat-edit" data-id="${s.id}" style="height:28px;font-size:11px;white-space:nowrap">✏️ تعديل</button>
+            <button class="btn btn-secondary cat-toggle" data-id="${s.id}" data-active="${active ? 1 : 0}" style="height:28px;font-size:11px;white-space:nowrap;${active ? 'color:#b45309' : 'color:#166534'}">${active ? '⏸ إيقاف' : '▶ تفعيل'}</button>
+          </div>`;
+        }).join('');
+        rows.querySelectorAll('.cat-edit').forEach(b => b.addEventListener('click', () => {
+          const svc = list.find(x => String(x.id) === b.dataset.id); if (svc) openEditor(svc);
+        }));
+        rows.querySelectorAll('.cat-toggle').forEach(b => b.addEventListener('click', async () => {
+          b.disabled = true;
+          try { await api('/api/office/catalog/service/' + b.dataset.id, { method: 'PATCH', body: JSON.stringify({ is_active: b.dataset.active !== '1' }) }); loadCatalog(); }
+          catch (e) { Sanad.toast('تعذّر التحديث', 'err', 2000); b.disabled = false; }
+        }));
+      } catch (e) {
+        rows.innerHTML = '<div class="p-4 text-center text-[12px]" style="color:var(--bad)">فشل التحميل: ' + esc(e.message || '') + '</div>';
+      }
+    }
   })();
 
   // ─ Command palette ─
