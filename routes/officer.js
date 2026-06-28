@@ -450,7 +450,10 @@ officerRouter.get('/request/:id', async (req, res) => {
       return res.status(403).json({ error: 'not_available' });
     }
     const { rows: docs } = await db.execute({
-      sql: `SELECT id, doc_code, label, mime, size_bytes, status, uploaded_at
+      // Anonymized: labels/sizes/types only — NO storage_url, NO caption (the
+      // citizen's content/PII stays gated until claim). matched_via lets the UI
+      // mark a typed field (e.g. email) as "value shown after you claim".
+      sql: `SELECT id, doc_code, label, mime, size_bytes, status, uploaded_at, matched_via
               FROM request_document WHERE request_id=? ORDER BY id ASC`,
       args: [id]
     });

@@ -2228,23 +2228,29 @@
       // apply form. Show the value as readable inline text, not a file/download card.
       const isTyped = d.matched_via === 'typed' || (!url && !!d.caption && (mime === 'text/plain' || mime === ''));
       if (isTyped) {
-        const val = (d.caption || '').trim() || (d.label || '');
-        const isEmailVal = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+        const val = (d.caption || '').trim();
+        const gated = !val; // anonymized (pre-claim) view withholds citizen content
+        const looksEmail = /e-?mail|بريد|ايميل|إيميل/i.test(d.label || '') || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
         const rejLine = d.status === 'rejected' && d.reject_reason
           ? `<div class="text-[11px] mt-1.5" style="color:var(--bad)">✕ ${escapeHtml(d.reject_reason)}</div>` : '';
+        const tile = gated
+          ? `<span style="font-size:30px;opacity:.7">🔒</span>
+             <div style="font-size:12px;color:var(--text-mute);font-weight:600">تظهر القيمة بعد استلام الطلب</div>`
+          : `<span style="font-size:34px">${looksEmail ? '✉️' : '🔤'}</span>
+             <div class="mono" style="font-size:14px;font-weight:700;color:var(--text);word-break:break-all;direction:ltr;line-height:1.45">${escapeHtml(val)}</div>`;
         return `
         <div class="doc">
           <div style="position:relative">
             <div style="display:flex;height:176px;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--surface-3),var(--surface-2));flex-direction:column;gap:10px;padding:18px;text-align:center">
-              <span style="font-size:34px">${isEmailVal ? '✉️' : '🔤'}</span>
-              <div class="mono" style="font-size:14px;font-weight:700;color:var(--text);word-break:break-all;direction:ltr;line-height:1.45">${escapeHtml(val)}</div>
+              ${tile}
             </div>
             <span class="chip ${chipClass} chip-sm" style="position:absolute;top:10px;right:10px">${d.status}</span>
             <span class="chip chip-sm" style="position:absolute;top:10px;left:10px;background:rgba(16,185,129,.85);color:#fff">⌨ مُدخَل</span>
           </div>
           <div class="p-3">
             <div class="text-[12.5px] font-semibold truncate" title="${escapeHtml(d.label || d.doc_code)}">${escapeHtml(d.label || d.doc_code)}</div>
-            <div class="text-[10.5px] mono mt-0.5" style="color:var(--text-mute)">${escapeHtml(d.doc_code || '')} · ${isEmailVal ? 'EMAIL' : 'TEXT'}</div>
+            <div class="text-[10.5px] mono mt-0.5" style="color:var(--text-mute)">${escapeHtml(d.doc_code || '')} · ${looksEmail ? 'EMAIL' : 'TEXT'}</div>
+            ${gated ? `<div class="mt-2 text-[11px]" style="color:var(--text-mute)">🔒 محتوى المواطن محجوب حتى تستلم الطلب</div>` : `
             <div class="mt-2 p-2 rounded-lg" style="background:var(--surface-2);border:1px solid var(--border);direction:ltr;text-align:left">
               <span class="mono" style="font-size:12.5px;font-weight:600;word-break:break-all;user-select:all">${escapeHtml(val)}</span>
             </div>
@@ -2253,7 +2259,7 @@
               <button class="btn btn-primary flex-1" data-copy="${escapeHtml(val)}"
                       onclick="navigator.clipboard.writeText(this.getAttribute('data-copy')).then(()=>{try{Sanad.toast('📋 نُسخ','success',1500)}catch(e){}})"
                       style="height:28px;font-size:11px;display:flex;align-items:center;justify-content:center;gap:4px">📋 نسخ</button>
-              ${isEmailVal ? `<a class="btn btn-secondary" href="mailto:${escapeHtml(val)}" style="height:28px;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 10px;text-decoration:none" title="إرسال بريد">✉️</a>` : ''}
+              ${looksEmail ? `<a class="btn btn-secondary" href="mailto:${escapeHtml(val)}" style="height:28px;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 10px;text-decoration:none" title="إرسال بريد">✉️</a>` : ''}
             </div>
             <div class="flex gap-1.5 mt-1.5">
               <button class="btn btn-secondary flex-1" onclick="verifyDoc(${d.id})" ${d.status==='verified'?'disabled':''}
@@ -2262,7 +2268,7 @@
               <button class="btn btn-secondary flex-1" onclick="rejectDoc(${d.id})" ${d.status==='rejected'?'disabled':''}
                       data-tip="رفض مع اختيار سبب من قائمة"
                       style="height:28px;font-size:11.5px;font-weight:700;background:#fee2e2;color:#991b1b;border-color:#fca5a5">✕ رفض…</button>
-            </div>
+            </div>`}
           </div>
         </div>`;
       }
