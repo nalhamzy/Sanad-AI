@@ -400,8 +400,11 @@
                terminal "completed" bucket. The previous mix of وضعيات
                (waiting/SLA-near/done) overlapped and was confusing. -->
           <div class="sh" data-i18n="officer.sh.queue">القائمة</div>
-          <!-- طلباتي first — it's the default view (filterMode='mine'), so it
-               leads the nav; سوق الطلبات (marketplace) sits below it. -->
+          <button data-filter="ready" class="filter-btn">
+            <span style="font-size:14px">🛒</span>
+            <span>سوق الطلبات</span>
+            <span class="filter-count" data-count="ready">—</span>
+          </button>
           <button data-filter="mine" class="filter-btn">
             <span style="font-size:14px">📋</span>
             <span>طلباتي</span>
@@ -433,12 +436,6 @@
               <span class="filter-count" data-count="done">—</span>
             </button>
           </div>
-
-          <button data-filter="ready" class="filter-btn">
-            <span style="font-size:14px">🛒</span>
-            <span>سوق الطلبات</span>
-            <span class="filter-count" data-count="ready">—</span>
-          </button>
 
           <div class="sh mt-4">التنقّل</div>
           <a href="/chat.html" target="_blank" class="filter-btn">
