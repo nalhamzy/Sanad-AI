@@ -43,7 +43,7 @@ describe('renderServiceConfirmCard() — pre-commit confirmation card', () => {
     assert.match(out, /شرطة عمان السلطانية/);
     assert.match(out, /💰 5 ر\.ع/);
     assert.match(out, /⏱️ 5 أيام عمل/);
-    assert.match(out, /📎 الملفات المطلوبة:/);
+    assert.match(out, /📋 المطلوب منك:/);
     assert.match(out, /1\) البطاقة المدنية/);
     assert.match(out, /2\) صورة شخصية/);
     assert.match(out, /هل نبدأ؟/);
