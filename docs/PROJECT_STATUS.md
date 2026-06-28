@@ -12,7 +12,32 @@
 > (human or agent) sees the latest at a glance. `git log --oneline` is the full record;
 > this is the curated narrative. Keep newest on top.
 
-### 2026-06-28
+### 2026-06-28 (session 2 — typed fields + delivery)
+- **CRITICAL: typed-value document fields now work end-to-end.** Services whose
+  required item is a TYPED value (a phone number, an email — e.g. «تحديث رقم الهاتف»)
+  could never be submitted over chat/WhatsApp: the agent (Qwen, v1-heuristic on prod)
+  *acknowledged* the value but never recorded it, so the slot never filled, the state
+  never reached `reviewing`, `submit_request` never ran — **no request row was created
+  and the office saw nothing**, yet the bot said «تم إرسال طلبك لمكتب سند». Fix: a
+  deterministic typed-value capture runs BEFORE the LLM (`captureTypedDocValue`),
+  records the value, advances to `reviewing`, and submits; an affirmative in
+  `reviewing` and the `review:submit` button now submit deterministically and count
+  typed slots. **Verified live** (web chat → request **#R-13**). (`7b55aa7`)
+- **File-vs-text aware prompts (issue #1).** Collection prompts, the confirm-card doc
+  list, and the checklist now distinguish typed fields from file uploads
+  («اكتب الرقم الجديد» vs «أرسل الملفات»; typed items tagged ✍️; header «📋 المطلوب منك:»).
+  A submit-to-office button stays available through typed collection. (`c4009c7`)
+- **Office deliverables broadened + typed display.** Issued-document upload now accepts
+  Word/Excel/PPT/text (extension-first, blocks .exe/.html); typed citizen values render
+  as readable text in the office (not a broken file card); pre-claim cards no longer open
+  officer.html in a new tab; typed values visible to the office pre-claim.
+  (`a4e75b0`, `cb4105f`, `f9d863d`, `1db6f56`)
+- **Citizen apply form**: email-labeled required fields render as a validated email box
+  instead of a file upload. (`e4e9b74`)
+- **Turso confirmed as the prod DB** (R-12/R-13 + the office board all read/write Turso;
+  `lib/db.js` selects Turso whenever `DB_URL`/`DB_AUTH_TOKEN` are set). Tests: **503 green**.
+
+### 2026-06-28 (session 1)
 - **Offices co-maintain the catalog.** New owner/manager-gated, audit-logged endpoints
   `GET /api/office/catalog/services` (full list incl. inactive, search/filter) + `PATCH
   /api/office/catalog/service/:id` (edit + activate/deactivate). New **"📚 إدارة الكتالوج"**
