@@ -99,9 +99,26 @@
   </section>
 
   <!-- ═══════════════════════════════════════════════════════════════
-       START A NEW REQUEST — hybrid search + filter rail
+       MY REQUESTS — citizen's own requests lead the page
        ═══════════════════════════════════════════════════════════════ -->
   <section class="mt-7 sm:mt-9">
+    <div class="flex items-end justify-between flex-wrap gap-2 mb-4">
+      <div>
+        <div class="text-[11px] font-extrabold uppercase tracking-[0.18em] brand mb-1" data-i18n="account.requests.eyebrow"></div>
+        <h2 class="text-xl sm:text-2xl font-black tracking-tight" data-i18n="account.requests.h2"></h2>
+      </div>
+      <div class="flex gap-3 text-xs ink-500" id="reqStats"></div>
+    </div>
+    <div id="reqList" class="space-y-3">
+      <div class="panel p-5"><div class="skel h-4 w-32 rounded mb-2"></div><div class="skel h-3 w-full rounded"></div></div>
+      <div class="panel p-5"><div class="skel h-4 w-24 rounded mb-2"></div><div class="skel h-3 w-3/4 rounded"></div></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       START A NEW REQUEST — hybrid search + filter rail
+       ═══════════════════════════════════════════════════════════════ -->
+  <section class="mt-10 sm:mt-12">
     <div class="flex items-end justify-between flex-wrap gap-2 mb-4">
       <div>
         <div class="text-[11px] font-extrabold uppercase tracking-[0.18em] brand mb-1" data-i18n="account.start.eyebrow"></div>
@@ -187,23 +204,6 @@
           <button id="loadMore" class="hidden px-5 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 font-semibold text-sm" data-i18n="catalogue.load_more"></button>
         </div>
       </section>
-    </div>
-  </section>
-
-  <!-- ═══════════════════════════════════════════════════════════════
-       MY REQUESTS
-       ═══════════════════════════════════════════════════════════════ -->
-  <section class="mt-10 sm:mt-12">
-    <div class="flex items-end justify-between flex-wrap gap-2 mb-4">
-      <div>
-        <div class="text-[11px] font-extrabold uppercase tracking-[0.18em] brand mb-1" data-i18n="account.requests.eyebrow"></div>
-        <h2 class="text-xl sm:text-2xl font-black tracking-tight" data-i18n="account.requests.h2"></h2>
-      </div>
-      <div class="flex gap-3 text-xs ink-500" id="reqStats"></div>
-    </div>
-    <div id="reqList" class="space-y-3">
-      <div class="panel p-5"><div class="skel h-4 w-32 rounded mb-2"></div><div class="skel h-3 w-full rounded"></div></div>
-      <div class="panel p-5"><div class="skel h-4 w-24 rounded mb-2"></div><div class="skel h-3 w-3/4 rounded"></div></div>
     </div>
   </section>
 
