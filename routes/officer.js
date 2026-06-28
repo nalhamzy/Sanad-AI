@@ -53,11 +53,36 @@ const SUBS_V1_ENABLED =
 // thread.
 const ISSUED_DIR = path.resolve('./data/uploads/issued');
 fs.mkdirSync(ISSUED_DIR, { recursive: true });
+// Office deliverables can be scans/photos, a PDF, or an office document
+// (Word/Excel/PowerPoint/text). We KEEP a strict allow-list (no .exe/.html/.svg/
+// .js) so nothing executable/renderable reaches the citizen's download.
 const ISSUED_ALLOWED_MIMES = new Set([
   'image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif', 'image/webp',
-  'application/pdf'
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'text/plain'
 ]);
-const ISSUED_ALLOWED_EXTS = new Set(['.jpg', '.jpeg', '.png', '.heic', '.heif', '.webp', '.pdf']);
+const ISSUED_ALLOWED_EXTS = new Set([
+  '.jpg', '.jpeg', '.png', '.heic', '.heif', '.webp', '.pdf',
+  '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt'
+]);
+const ISSUED_MIME_EXT = {
+  'image/jpeg': '.jpg', 'image/jpg': '.jpg', 'image/png': '.png',
+  'image/heic': '.heic', 'image/heif': '.heif', 'image/webp': '.webp',
+  'application/pdf': '.pdf',
+  'application/msword': '.doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+  'application/vnd.ms-excel': '.xls',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+  'application/vnd.ms-powerpoint': '.ppt',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
+  'text/plain': '.txt'
+};
 const issuedUpload = multer({
   storage: multer.diskStorage({
     destination: (req, _file, cb) => {
@@ -66,20 +91,24 @@ const issuedUpload = multer({
       cb(null, dir);
     },
     filename: (_req, file, cb) => {
-      const mime = (file.mimetype || '').toLowerCase();
-      const ext =
-        mime === 'application/pdf' ? '.pdf' :
-        mime === 'image/png'       ? '.png' :
-        mime === 'image/webp'      ? '.webp' :
-        mime === 'image/heic' || mime === 'image/heif' ? '.heic' :
-        '.jpg';
+      // Preserve the real extension (validated below); fall back to a MIME map
+      // when the filename has none, else .bin. Never silently coerce to .jpg.
+      const origExt = path.extname(file.originalname || '').toLowerCase();
+      const ext = ISSUED_ALLOWED_EXTS.has(origExt)
+        ? origExt
+        : (ISSUED_MIME_EXT[(file.mimetype || '').toLowerCase()] || '.bin');
       cb(null, `${Date.now()}_${crypto.randomBytes(4).toString('hex')}${ext}`);
     }
   }),
   fileFilter: (_req, file, cb) => {
     const mime = (file.mimetype || '').toLowerCase();
     const ext = path.extname(file.originalname || '').toLowerCase();
-    if (!ISSUED_ALLOWED_MIMES.has(mime) || (ext && !ISSUED_ALLOWED_EXTS.has(ext))) {
+    // Extension-first: when the filename has an extension, trust it (this blocks
+    // .exe/.html/.svg/.js and accepts office docs that arrive with a generic
+    // application/octet-stream MIME). Only when there is NO extension do we fall
+    // back to the MIME allow-list.
+    const allowed = ext ? ISSUED_ALLOWED_EXTS.has(ext) : ISSUED_ALLOWED_MIMES.has(mime);
+    if (!allowed) {
       const err = new Error('unsupported_file_type');
       err.code = 'UNSUPPORTED_FILE_TYPE';
       return cb(err);
@@ -863,8 +892,8 @@ function issuedUploadError(err, _req, res, next) {
   if (err.code === 'UNSUPPORTED_FILE_TYPE') {
     return res.status(400).json({
       error: 'unsupported_file_type',
-      message_ar: 'نوع الملف غير مدعوم. ارفع صورة (JPG/PNG) أو ملف PDF فقط.',
-      message_en: 'Unsupported file type. Upload a JPG/PNG image or a PDF only.'
+      message_ar: 'نوع الملف غير مدعوم. المسموح: صورة (JPG/PNG)، PDF، Word، Excel، PowerPoint، أو ملف نصي.',
+      message_en: 'Unsupported file type. Allowed: image (JPG/PNG), PDF, Word, Excel, PowerPoint, or text.'
     });
   }
   if (err.code === 'LIMIT_FILE_SIZE') {

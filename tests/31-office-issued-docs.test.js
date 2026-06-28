@@ -93,6 +93,50 @@ test('office can upload an issued document, citizen can see + download it', asyn
   assert.equal(Number(gone[0].n), 0);
 });
 
+test('office can issue an Office document (docx/txt) even with a generic MIME', async (t) => {
+  await bootTestEnv();
+  const srv = await spawnServer();
+  t.after(() => srv.stop());
+  const { db } = await import('../lib/db.js');
+
+  const office = await registerAndApproveOffice(srv.origin);
+  const { request_id } = await createReadyRequest(srv.origin);
+  await db.execute({
+    sql: `UPDATE request SET office_id=?, status='claimed' WHERE id=?`,
+    args: [office.office_id, request_id]
+  });
+
+  // The exact scenario that silently failed in prod: a Word deliverable whose
+  // browser-supplied MIME is the generic application/octet-stream. Extension-
+  // first validation must accept it on the .docx extension (and keep the ext).
+  const fd = new FormData();
+  fd.append('label', 'الشهادة النهائية');
+  fd.append('file', new Blob([Buffer.from('PK docx')], { type: 'application/octet-stream' }), 'result.docx');
+  const up = await fetch(`${srv.origin}/api/officer/request/${request_id}/issued-document`, {
+    method: 'POST', headers: { cookie: office.cookie }, body: fd
+  });
+  assert.equal(up.status, 200, 'a .docx deliverable must be accepted (extension-first)');
+  const body = await up.json();
+  assert.equal(body.document.is_issued, 1);
+  assert.match(body.document.storage_url, /\.docx$/, 'stored with its real .docx extension, not coerced to .jpg');
+
+  // A plain-text deliverable is accepted too.
+  const fd2 = new FormData();
+  fd2.append('file', new Blob([Buffer.from('hello')], { type: 'text/plain' }), 'notes.txt');
+  const up2 = await fetch(`${srv.origin}/api/officer/request/${request_id}/issued-document`, {
+    method: 'POST', headers: { cookie: office.cookie }, body: fd2
+  });
+  assert.equal(up2.status, 200, 'a .txt deliverable must be accepted');
+
+  // Still blocked: a renderable .html (XSS risk if served inline) stays rejected.
+  const fd3 = new FormData();
+  fd3.append('file', new Blob([Buffer.from('<script>alert(1)</script>')], { type: 'text/html' }), 'x.html');
+  const bad = await fetch(`${srv.origin}/api/officer/request/${request_id}/issued-document`, {
+    method: 'POST', headers: { cookie: office.cookie }, body: fd3
+  });
+  assert.equal(bad.status, 400, '.html must stay rejected');
+});
+
 test('citizen my-request view exposes issued docs with storage_url + is_issued', async (t) => {
   await bootTestEnv();
   const srv = await spawnServer();
