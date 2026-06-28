@@ -101,7 +101,7 @@ chatRouter.post('/apply',
       const files = req.files || [];
 
       if (!Number.isFinite(service_id)) return res.status(400).json({ error: 'bad_service_id' });
-      if (!files.length)                  return res.status(400).json({ error: 'no_files', hint: 'Attach at least one document.' });
+      // Content check (files OR typed values) happens below, once typed fields are parsed.
 
       const { rows: svcRows } = await db.execute({
         sql: `SELECT id, name_en, name_ar, fee_omr, required_documents_json
@@ -124,10 +124,24 @@ chatRouter.post('/apply',
       const slotCodes = arr(req.body.slot_codes);
       const labels    = arr(req.body.labels);
       const isExtras  = arr(req.body.is_extra);
+      // Typed (non-file) field values — e.g. an email field rendered as a
+      // validated text box instead of a file upload. Parallel arrays by index.
+      const textCodes  = arr(req.body.text_codes);
+      const textLabels = arr(req.body.text_labels);
+      const textValues = arr(req.body.text_values);
+      const hasTyped = textValues.some(v => String(v ?? '').trim());
+
+      // A valid submission has at least one file OR one typed value.
+      if (!files.length && !hasTyped) {
+        return res.status(400).json({ error: 'no_content', hint: 'أرفق مستنداً واحداً على الأقل أو أدخل البيانات المطلوبة.' });
+      }
 
       const filledSlots = new Set();
       slotCodes.forEach((code, i) => {
         if (code && (isExtras[i] !== '1' && isExtras[i] !== 1)) filledSlots.add(code);
+      });
+      textCodes.forEach((code, i) => {
+        if (code && String(textValues[i] ?? '').trim()) filledSlots.add(code);
       });
       const missingRequired = [...requiredCodes].filter(c => !filledSlots.has(c));
 
@@ -184,9 +198,29 @@ chatRouter.post('/apply',
         });
       }
 
+      // Persist typed field values (e.g. a validated email) as request_document
+      // rows with no file — the value lives in `caption` so the office sees it.
+      let typedRecorded = 0;
+      for (let i = 0; i < textCodes.length; i++) {
+        const code = (textCodes[i] || '').toString();
+        const value = (textValues[i] ?? '').toString().trim().slice(0, 500);
+        if (!code || !value) continue;
+        const reqEntry = requiredDocs.find(d => d.code === code);
+        const finalLabel = (reqEntry?.label_ar || '').trim() || (textLabels[i] || '').toString().trim() || reqEntry?.label_en || code;
+        await db.execute({
+          sql: `INSERT INTO request_document
+                  (request_id, doc_code, label, storage_url, mime, size_bytes,
+                   status, original_name, caption, matched_via, is_extra)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+          args: [request_id, code, finalLabel, null, 'text/plain', value.length, 'provided', null, value, 'typed', 0]
+        });
+        typedRecorded++;
+      }
+
+      const itemsLine = `${files.length} ملف${typedRecorded ? ` + ${typedRecorded} حقل` : ''}`;
       const summary = missingRequired.length
-        ? `📨 طلبك أُرسل من النموذج عبر الموقع. ${files.length} ملف. ⚠ بعض المستندات المطلوبة لم تُرفق: ${missingRequired.join(', ')} — قد يطلبها مكتب سند عبر واتساب.`
-        : `📨 طلبك أُرسل من النموذج عبر الموقع. ${files.length} ملف. كل المستندات المطلوبة مرفقة.`;
+        ? `📨 طلبك أُرسل من النموذج عبر الموقع. ${itemsLine}. ⚠ بعض المستندات المطلوبة لم تُرفق: ${missingRequired.join(', ')} — قد يطلبها مكتب سند عبر واتساب.`
+        : `📨 طلبك أُرسل من النموذج عبر الموقع. ${itemsLine}. كل المستندات المطلوبة مرفقة.`;
       await storeMessage({
         session_id: sessionId, request_id,
         direction: 'in', actor_type: 'system',
@@ -199,6 +233,7 @@ chatRouter.post('/apply',
         request_id,
         session_id: sessionId,
         files_recorded: files.length,
+        typed_recorded: typedRecorded,
         missing_required_slots: missingRequired
       });
     } catch (e) {
