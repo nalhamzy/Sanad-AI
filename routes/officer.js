@@ -450,13 +450,16 @@ officerRouter.get('/request/:id', async (req, res) => {
       return res.status(403).json({ error: 'not_available' });
     }
     const { rows: docs } = await db.execute({
-      // Anonymized: labels/sizes/types only — NO storage_url, NO caption (the
-      // citizen's content/PII stays gated until claim). matched_via lets the UI
-      // mark a typed field (e.g. email) as "value shown after you claim".
-      sql: `SELECT id, doc_code, label, mime, size_bytes, status, uploaded_at, matched_via
+      // Anonymized: labels/sizes/types + TYPED field values (e.g. email) the office
+      // may see before claiming. File CONTENTS stay gated (no storage_url) and file
+      // captions are stripped below — only typed values are exposed pre-claim.
+      sql: `SELECT id, doc_code, label, mime, size_bytes, status, uploaded_at, matched_via, caption
               FROM request_document WHERE request_id=? ORDER BY id ASC`,
       args: [id]
     });
+    // Show typed field values (email/text) pre-claim, but strip captions on file
+    // uploads so citizen notes/PII on files stay gated until the office claims.
+    docs.forEach(d => { if (d.matched_via !== 'typed') d.caption = null; });
     const { rows: myOffer } = await db.execute({
       sql: `SELECT id, quoted_fee_omr, estimated_hours, note_ar, note_en, status, created_at
               FROM request_offer WHERE request_id=? AND office_id=? LIMIT 1`,
