@@ -2280,8 +2280,17 @@
       const safeLabel = (d.label || d.doc_code || 'document').replace(/[^\w\-]+/g, '_').slice(0, 40);
       const downloadName = `R-${currentRequestId || 'req'}_${d.doc_code || 'doc'}_${safeLabel}.${ext}`;
 
-      // Preview tile: image or inline PDF (first page) or generic icon
-      const preview = isImg
+      // Preview tile: image or inline PDF (first page) or generic icon — only when
+      // we actually have a file URL. Pre-claim (anonymized) the URL is withheld, so
+      // render a non-clickable gated tile instead of <a href=""> (which would open
+      // the current page — officer.html — in a new tab).
+      const hasFile = !!url;
+      const preview = !hasFile
+        ? `<div style="display:flex;height:176px;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--surface-3),var(--surface-2));color:var(--text-mute);flex-direction:column;gap:8px;text-align:center;padding:16px">
+             <span style="font-size:30px;opacity:.7">🔒</span>
+             <span style="font-size:11.5px;font-weight:600">يظهر المحتوى بعد استلام الطلب</span>
+           </div>`
+        : isImg
         ? `<a href="${url}" target="_blank" rel="noopener"><img src="${url}" style="width:100%;height:176px;object-fit:cover;display:block"/></a>`
         : isPdf
           ? `<a href="${url}" target="_blank" rel="noopener" style="display:block;height:176px;position:relative;overflow:hidden;background:#f8fafc">
@@ -2322,10 +2331,12 @@
             ${origLine}
             ${captionLine}
             ${rejectLine}
+            ${hasFile ? `
             <div class="flex gap-1.5 mt-3">
               <a class="btn btn-primary flex-1" href="${url}" download="${downloadName}" style="height:28px;font-size:11px;display:flex;align-items:center;justify-content:center;gap:4px;text-decoration:none">⬇ Download</a>
               <a class="btn btn-secondary" href="${url}" target="_blank" rel="noopener" style="height:28px;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 10px;text-decoration:none" title="Open in new tab">↗</a>
-            </div>
+            </div>` : `
+            <div class="mt-3 text-[11px]" style="color:var(--text-mute)">🔒 التحميل متاح بعد استلام الطلب</div>`}
             <div class="flex gap-1.5 mt-1.5">
               <button class="btn btn-secondary flex-1" onclick="verifyDoc(${d.id})" ${d.status==='verified'?'disabled':''}
                       data-tip="قبول داخلي — لا تنبيه للمواطن، فقط للسجل"
