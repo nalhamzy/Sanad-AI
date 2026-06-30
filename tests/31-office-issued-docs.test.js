@@ -171,6 +171,54 @@ test('citizen my-request view exposes issued docs with storage_url + is_issued',
     'citizen-facing row has a downloadable storage_url');
 });
 
+test('office can issue a deliverable on a COMPLETED request → WhatsApp + طلباتي badge', async (t) => {
+  await bootTestEnv();
+  const srv = await spawnServer();
+  t.after(() => srv.stop());
+  const { db } = await import('../lib/db.js');
+
+  const office = await registerAndApproveOffice(srv.origin);
+  const { request_id } = await createReadyRequest(srv.origin);
+  // A finished request: owned by this office, linked to a citizen with a phone.
+  await db.execute({ sql: `INSERT INTO citizen (phone, name) VALUES ('+96890000555', 'Done Citizen')` });
+  const { rows: cit } = await db.execute({ sql: `SELECT id FROM citizen WHERE phone='+96890000555'` });
+  await db.execute({
+    sql: `UPDATE request SET office_id=?, citizen_id=?, status='completed' WHERE id=?`,
+    args: [office.office_id, cit[0].id, request_id]
+  });
+
+  // Office sends the deliverable AFTER completion — must be allowed (not blocked).
+  const fd = new FormData();
+  fd.append('label', 'الوثيقة النهائية');
+  fd.append('file', new Blob([Buffer.from('%PDF-1.4 final')], { type: 'application/pdf' }), 'final.pdf');
+  const up = await fetch(`${srv.origin}/api/officer/request/${request_id}/issued-document`, {
+    method: 'POST', headers: { cookie: office.cookie }, body: fd
+  });
+  assert.equal(up.status, 200, 'issuing on a completed request must be allowed');
+  const body = await up.json();
+  assert.equal(body.document.is_issued, 1);
+  // Reaches the citizen's phone (WhatsApp attempted: 'whatsapp' with creds, 'stub' without).
+  assert.equal(body.delivery.whatsapp_attempted, true, 'deliverable must be pushed to WhatsApp');
+
+  // Shows in the web dashboard «طلباتي»: the my-requests list computes issued_count,
+  // which drives the "📤 مستند جاهز" badge.
+  const { rows: cnt } = await db.execute({
+    sql: `SELECT (SELECT COUNT(*) FROM request_document d
+                   WHERE d.request_id = r.id AND d.is_issued = 1) AS issued_count
+            FROM request r WHERE r.id = ?`,
+    args: [request_id]
+  });
+  assert.equal(Number(cnt[0].issued_count), 1, 'طلباتي must surface the issued deliverable');
+
+  // And it's downloadable from the request detail (storage_url present).
+  const { rows: docs } = await db.execute({
+    sql: `SELECT storage_url FROM request_document WHERE request_id=? AND is_issued=1`, args: [request_id]
+  });
+  assert.match(docs[0].storage_url, /^\/uploads\/issued\//);
+  const fileRes = await fetch(`${srv.origin}${docs[0].storage_url}`);
+  assert.equal(fileRes.status, 200, 'citizen can download the deliverable');
+});
+
 test('deliverablePhone: delivers to wa: sessions AND web citizens with a known phone', () => {
   // WhatsApp session — the phone IS the session id.
   assert.equal(deliverablePhone({ session_id: 'wa:96890000001' }), '96890000001');
