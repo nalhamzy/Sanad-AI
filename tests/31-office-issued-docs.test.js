@@ -219,6 +219,44 @@ test('office can issue a deliverable on a COMPLETED request → WhatsApp + طل�
   assert.equal(fileRes.status, 200, 'citizen can download the deliverable');
 });
 
+test('طلباتي ALWAYS gets the deliverable — even when WhatsApp is not deliverable', async (t) => {
+  await bootTestEnv();
+  const srv = await spawnServer();
+  t.after(() => srv.stop());
+  const { db } = await import('../lib/db.js');
+
+  const office = await registerAndApproveOffice(srv.origin);
+  const { request_id } = await createReadyRequest(srv.origin);
+  // A phone-less, web-session citizen → WhatsApp cannot be attempted at all. The
+  // web «طلباتي» dashboard must STILL receive the deliverable (dashboard is the
+  // guaranteed channel; WhatsApp is best-effort).
+  await db.execute({ sql: `INSERT INTO citizen (name) VALUES ('No Phone Citizen')` });
+  const { rows: c } = await db.execute({ sql: `SELECT id FROM citizen WHERE name='No Phone Citizen' ORDER BY id DESC LIMIT 1` });
+  await db.execute({
+    sql: `UPDATE request SET office_id=?, citizen_id=?, session_id='web-noph-1', status='completed' WHERE id=?`,
+    args: [office.office_id, c[0].id, request_id]
+  });
+
+  const fd = new FormData();
+  fd.append('label', 'الوثيقة النهائية');
+  fd.append('file', new Blob([Buffer.from('%PDF-1.4')], { type: 'application/pdf' }), 'd.pdf');
+  const up = await fetch(`${srv.origin}/api/officer/request/${request_id}/issued-document`, {
+    method: 'POST', headers: { cookie: office.cookie }, body: fd
+  });
+  assert.equal(up.status, 200, 'issuing must succeed even with no deliverable phone');
+  const body = await up.json();
+  assert.equal(body.document.is_issued, 1);
+  assert.equal(body.delivery.whatsapp_attempted, false, 'no phone → WhatsApp not attempted (but no error)');
+
+  // The deliverable is still in طلباتي (issued_count drives the badge + the
+  // downloadable «مستنداتك الجاهزة» section).
+  const { rows: cnt } = await db.execute({
+    sql: `SELECT (SELECT COUNT(*) FROM request_document d WHERE d.request_id=r.id AND d.is_issued=1) AS n
+            FROM request r WHERE r.id=?`, args: [request_id]
+  });
+  assert.equal(Number(cnt[0].n), 1, 'طلباتي shows the deliverable regardless of WhatsApp');
+});
+
 test('deliverablePhone: delivers to wa: sessions AND web citizens with a known phone', () => {
   // WhatsApp session — the phone IS the session id.
   assert.equal(deliverablePhone({ session_id: 'wa:96890000001' }), '96890000001');
