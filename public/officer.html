@@ -3529,21 +3529,28 @@
   }
   setInterval(tickTime, 30000); tickTime();
 
+  // The activity feed + new-message ping read /api/debug/state, which is gated
+  // OFF in prod (403). Poll it only until the first denial, then stop — otherwise
+  // every 4s tick logs a 403 to the console. Inbox/chat refresh below is
+  // independent and always runs.
+  let _dbgStateOff = false;
   async function liveTick() {
-    try {
-      const d = await api('/api/debug/state');
-      const maxId = Math.max(0, ...d.latestMessages.map(m => m.id));
-      if (lastMsgIdSeen > 0) {
-        const fresh = d.latestMessages.filter(m => m.id > lastMsgIdSeen && m.actor_type === 'citizen');
-        if (fresh.length && !currentRequestId && soundOn) Sanad.ping();
-      }
-      lastMsgIdSeen = maxId;
-      document.getElementById('activity').innerHTML = d.latestMessages.slice(0,6).map(m => `
-        <li class="flex items-start gap-2">
-          <span class="w-1 h-1 rounded-full mt-1.5" style="background:currentColor;opacity:.5"></span>
-          <span class="flex-1 min-w-0 truncate"><b style="color:var(--text)">${m.actor_type}</b> · ${(m.body_text||'').slice(0,38)}</span>
-        </li>`).join('');
-    } catch {}
+    if (!_dbgStateOff) {
+      try {
+        const d = await api('/api/debug/state');
+        const maxId = Math.max(0, ...d.latestMessages.map(m => m.id));
+        if (lastMsgIdSeen > 0) {
+          const fresh = d.latestMessages.filter(m => m.id > lastMsgIdSeen && m.actor_type === 'citizen');
+          if (fresh.length && !currentRequestId && soundOn) Sanad.ping();
+        }
+        lastMsgIdSeen = maxId;
+        document.getElementById('activity').innerHTML = d.latestMessages.slice(0,6).map(m => `
+          <li class="flex items-start gap-2">
+            <span class="w-1 h-1 rounded-full mt-1.5" style="background:currentColor;opacity:.5"></span>
+            <span class="flex-1 min-w-0 truncate"><b style="color:var(--text)">${m.actor_type}</b> · ${(m.body_text||'').slice(0,38)}</span>
+          </li>`).join('');
+      } catch { _dbgStateOff = true; }
+    }
     if (currentRequestId) pollChat();
     else loadInbox();
   }
@@ -3981,6 +3988,10 @@
   window.rejectDoc = rejectDoc;
   window.unrejectDoc = unrejectDoc;
   window.quickReject = quickReject;
+  // "⬆ إرسال للمواطن" + "🗑 حذف" were MISSING here → onclick="uploadIssued()" threw
+  // "uploadIssued is not defined", so the button did nothing (no upload, no feedback).
+  window.uploadIssued = uploadIssued;
+  window.deleteIssued = deleteIssued;
   window.closeReclassify = () => document.getElementById('reclassifyOverlay')?.classList.add('hidden');
   window.closeReqInfo    = () => document.getElementById('reqInfoOverlay')?.classList.add('hidden');
   window.riAddCustomDoc  = () => { try { riAddCustomDoc(); } catch {} };
