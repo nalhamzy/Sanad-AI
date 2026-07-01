@@ -7,6 +7,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { runTurn, trackInflightMedia } from '../lib/agent.js';
+import { flushPendingWa } from '../lib/wa_templates.js';
 import { sendWhatsAppText, sendWhatsAppButtons } from '../lib/whatsapp_send.js';
 
 export const whatsappRouter = Router();
@@ -275,6 +276,11 @@ whatsappRouter.post('/webhook', async (req, res) => {
       console.warn('[whatsapp] received empty payload (no text, no media). msg type:', mt, 'keys:', Object.keys(msg));
       return; // do NOT call runTurn — nothing to process
     }
+
+    // The citizen just messaged us → the 24h window is open again. Deliver any
+    // content we queued while it was closed (office deliverables / updates sent
+    // via a template knock), oldest first, BEFORE handling this new message.
+    try { await flushPendingWa(session_id, from); } catch (e) { console.warn('[whatsapp] flushPendingWa failed:', e?.message || e); }
 
     turn = await runTurn({ session_id, user_text: effectiveText, attachment, citizen_phone: from });
     const reply = turn?.reply || '';

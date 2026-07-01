@@ -804,10 +804,21 @@ officerRouter.post('/request/:id/complete', async (req, res) => {
   });
   // Push the completion to the citizen's WhatsApp too (was in-app only —
   // prod report: "office completed the request, nothing was sent to the user").
+  let svcName = null;
+  try {
+    const { rows: sv } = await db.execute({
+      sql: `SELECT s.name_ar FROM request r LEFT JOIN service_catalog s ON s.id=r.service_id WHERE r.id=?`,
+      args: [id]
+    });
+    svcName = sv[0]?.name_ar || null;
+  } catch {}
   const notify = await notifyCitizen({
     session_id: r.session_id, request_id: id, actor_type: 'bot',
     citizen_phone: r.citizen_phone,
-    body: '✅ تم إنجاز معاملتك بنجاح! شكراً لاستخدامك سند.\n📄 إن وُجدت مستندات صادرة فستجدها في «طلباتي».'
+    body: '✅ تم إنجاز معاملتك بنجاح! شكراً لاستخدامك سند.\n📄 إن وُجدت مستندات صادرة فستجدها في «طلباتي».',
+    // Outside 24h: knock with the "completed" template so the citizen is told
+    // even when they've been inactive; the message above flushes on their reply.
+    template: { kind: 'completed', param: svcName || `#R-${id}` }
   });
   res.json({
     ok: true,
@@ -965,6 +976,9 @@ officerRouter.post('/request/:id/issued-document',
         mime,
         caption: label
       },
+      // Outside the 24h window: knock with the "document ready" template; the
+      // file above is queued and delivered when the citizen replies.
+      template: { kind: 'document', param: label },
       meta: { officer_id: req.officer.officer_id, issued_doc_id: docId }
     });
 
